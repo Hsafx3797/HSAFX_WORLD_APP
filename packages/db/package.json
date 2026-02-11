@@ -12,6 +12,7 @@
     "lint": "tsc --noEmit",
     "generate": "drizzle-kit generate",
     "migrate": "tsx src/migrate.ts",
+    "seed": "tsx src/seed.ts",
     "studio": "drizzle-kit studio",
     "push": "drizzle-kit push",
     "typecheck": "tsc --noEmit",

@@ -1,0 +1,179 @@
+name: Deploy Production
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  # ── Pre-flight: CI must have passed ────────────────────────
+  preflight:
+    name: Preflight Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm turbo lint typecheck
+
+  # ── Deploy Web ─────────────────────────────────────────────
+  deploy-web:
+    name: Deploy Web (Production)
+    needs: [preflight]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install Vercel CLI
+        run: pnpm add -g vercel@latest
+
+      - name: Pull Vercel Environment
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
+
+      - name: Build
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
+
+      - name: Deploy
+        id: deploy
+        run: |
+          URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$URL" >> $GITHUB_OUTPUT
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
+
+      - name: Summary
+        run: echo "### Web production → ${{ steps.deploy.outputs.url }}" >> $GITHUB_STEP_SUMMARY
+
+  # ── Deploy Admin ───────────────────────────────────────────
+  deploy-admin:
+    name: Deploy Admin (Production)
+    needs: [preflight]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install Vercel CLI
+        run: pnpm add -g vercel@latest
+
+      - name: Pull Vercel Environment
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_ADMIN_PROJECT_ID }}
+
+      - name: Build
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_ADMIN_PROJECT_ID }}
+
+      - name: Deploy
+        id: deploy
+        run: |
+          URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$URL" >> $GITHUB_OUTPUT
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_ADMIN_PROJECT_ID }}
+
+      - name: Summary
+        run: echo "### Admin production → ${{ steps.deploy.outputs.url }}" >> $GITHUB_STEP_SUMMARY
+
+  # ── Deploy FastAPI ─────────────────────────────────────────
+  deploy-fastapi:
+    name: Deploy FastAPI (Production)
+    needs: [preflight]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway
+        run: railway up --service ${{ vars.RAILWAY_FASTAPI_SERVICE }} --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ vars.RAILWAY_PROJECT_ID }}
+
+      - name: Summary
+        run: echo "### FastAPI production deployed" >> $GITHUB_STEP_SUMMARY
+
+  # ── Post-Deploy Smoke Tests ────────────────────────────────
+  smoke-test:
+    name: Production Smoke Tests
+    needs: [deploy-web, deploy-admin, deploy-fastapi]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Wait for deployments
+        run: sleep 30
+
+      - name: Test Web
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://hsafx.world")
+          echo "Web: $STATUS"
+          [ "$STATUS" -eq 200 ] || exit 1
+
+      - name: Test Admin
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://admin.hsafx.world/login")
+          echo "Admin: $STATUS"
+          [ "$STATUS" -eq 200 ] || exit 1
+
+      - name: Test API
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://api.hsafx.world/health")
+          echo "API: $STATUS"
+          [ "$STATUS" -eq 200 ] || exit 1
+
+      - name: Summary
+        run: |
+          echo "### Production Smoke Tests Passed" >> $GITHUB_STEP_SUMMARY
+          echo "- Web: https://hsafx.world" >> $GITHUB_STEP_SUMMARY
+          echo "- Admin: https://admin.hsafx.world" >> $GITHUB_STEP_SUMMARY
+          echo "- API: https://api.hsafx.world" >> $GITHUB_STEP_SUMMARY

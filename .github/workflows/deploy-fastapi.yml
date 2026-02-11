@@ -58,39 +58,17 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # ── Deploy to Cloud Run ──────────────────────────────────
-      # Uncomment and configure when GCP project is ready:
-      #
-      # - name: Authenticate to GCP
-      #   uses: google-github-actions/auth@v2
-      #   with:
-      #     credentials_json: ${{ secrets.GCP_SA_KEY }}
-      #
-      # - name: Deploy to Cloud Run
-      #   uses: google-github-actions/deploy-cloudrun@v2
-      #   with:
-      #     service: hsafx-fastapi
-      #     region: us-central1
-      #     image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-      #     env_vars: |
-      #       REDIS_URL=${{ secrets.REDIS_URL }}
-      #       INTERNAL_SECRET=${{ secrets.INTERNAL_SECRET }}
-      #       AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
-      #       AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      #       SENTRY_DSN=${{ secrets.SENTRY_DSN }}
+      # ── Deploy to Railway ──────────────────────────────────
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
 
-      # ── Alternative: Deploy to Fly.io ────────────────────────
-      # Uncomment and configure when Fly.io app is ready:
-      #
-      # - name: Deploy to Fly.io
-      #   uses: superfly/flyctl-actions/setup-flyctl@master
-      # - run: flyctl deploy --remote-only
-      #   env:
-      #     FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      - name: Deploy to Railway
+        run: railway up --service ${{ vars.RAILWAY_FASTAPI_SERVICE }} --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ vars.RAILWAY_PROJECT_ID }}
 
       - name: Deployment summary
         run: |
-          echo "### 🐳 FastAPI image pushed" >> $GITHUB_STEP_SUMMARY
-          echo "Tags: ${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Deploy target: Configure Cloud Run or Fly.io secrets to enable auto-deploy." >> $GITHUB_STEP_SUMMARY
+          echo "### FastAPI deployed to Railway" >> $GITHUB_STEP_SUMMARY
+          echo "Image: ${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY

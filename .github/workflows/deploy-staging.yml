@@ -1,0 +1,164 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches: [develop]
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/fastapi
+
+jobs:
+  # ── Deploy Web to Vercel (Preview) ─────────────────────────
+  deploy-web:
+    name: Deploy Web (Staging)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install Vercel CLI
+        run: pnpm add -g vercel@latest
+
+      - name: Pull Vercel Environment
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
+
+      - name: Build
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
+
+      - name: Deploy
+        id: deploy
+        run: |
+          URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$URL" >> $GITHUB_OUTPUT
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
+
+      - name: Summary
+        run: echo "### Web staging → ${{ steps.deploy.outputs.url }}" >> $GITHUB_STEP_SUMMARY
+    outputs:
+      url: ${{ steps.deploy.outputs.url }}
+
+  # ── Deploy Admin to Vercel (Preview) ───────────────────────
+  deploy-admin:
+    name: Deploy Admin (Staging)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install Vercel CLI
+        run: pnpm add -g vercel@latest
+
+      - name: Pull Vercel Environment
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_ADMIN_PROJECT_ID }}
+
+      - name: Build
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_ADMIN_PROJECT_ID }}
+
+      - name: Deploy
+        id: deploy
+        run: |
+          URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$URL" >> $GITHUB_OUTPUT
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_ADMIN_PROJECT_ID }}
+
+      - name: Summary
+        run: echo "### Admin staging → ${{ steps.deploy.outputs.url }}" >> $GITHUB_STEP_SUMMARY
+    outputs:
+      url: ${{ steps.deploy.outputs.url }}
+
+  # ── Deploy FastAPI to Railway ──────────────────────────────
+  deploy-fastapi:
+    name: Deploy FastAPI (Staging)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway
+        run: railway up --service ${{ vars.RAILWAY_FASTAPI_SERVICE }} --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ vars.RAILWAY_PROJECT_ID }}
+
+      - name: Summary
+        run: echo "### FastAPI staging deployed to Railway" >> $GITHUB_STEP_SUMMARY
+
+  # ── Post-Deploy Smoke Tests ────────────────────────────────
+  smoke-test:
+    name: Smoke Tests
+    needs: [deploy-web, deploy-admin, deploy-fastapi]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Wait for deployments to stabilize
+        run: sleep 30
+
+      - name: Test Web health
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ needs.deploy-web.outputs.url }}")
+          echo "Web status: $STATUS"
+          [ "$STATUS" -eq 200 ] || exit 1
+
+      - name: Test Admin health
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ needs.deploy-admin.outputs.url }}/login")
+          echo "Admin status: $STATUS"
+          [ "$STATUS" -eq 200 ] || exit 1
+
+      - name: Test FastAPI health
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ vars.FASTAPI_STAGING_URL }}/health")
+          echo "FastAPI status: $STATUS"
+          [ "$STATUS" -eq 200 ] || exit 1
+
+      - name: Summary
+        run: |
+          echo "### Smoke Tests Passed" >> $GITHUB_STEP_SUMMARY
+          echo "- Web: ${{ needs.deploy-web.outputs.url }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Admin: ${{ needs.deploy-admin.outputs.url }}" >> $GITHUB_STEP_SUMMARY
+          echo "- API: ${{ vars.FASTAPI_STAGING_URL }}" >> $GITHUB_STEP_SUMMARY
