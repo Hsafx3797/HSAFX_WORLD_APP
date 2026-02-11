@@ -99,15 +99,15 @@ export function ThemeProvider({
     const stored = loadStoredIntent();
     if (stored) {
       const sanitized = filterIntentByTier(stored, userTier);
-      return mergeIntent(sanitized);
+      return mergeIntent(DEFAULT_INTENT, sanitized);
     }
-    if (defaultIntent) return mergeIntent(defaultIntent);
+    if (defaultIntent) return mergeIntent(DEFAULT_INTENT, defaultIntent);
     return DEFAULT_INTENT;
   });
 
   // Derive resolved theme
   const resolved = React.useMemo<ResolvedTheme>(
-    () => deriveTheme(intent, systemScheme),
+    () => deriveTheme(intent, systemScheme === 'dark'),
     [intent, systemScheme],
   );
 
@@ -130,7 +130,7 @@ export function ThemeProvider({
   const setIntent = React.useCallback(
     (partial: Partial<ThemeIntent>) => {
       setIntentState((current) => {
-        const merged = mergeIntent({ ...current, ...partial });
+        const merged = mergeIntent(current, partial);
         const sanitized = filterIntentByTier(merged, userTier);
         saveIntent(sanitized);
         return sanitized;
@@ -148,8 +148,9 @@ export function ThemeProvider({
       }
       const preset = getPreset(presetId);
       if (preset) {
-        saveIntent(preset.intent);
-        setIntentState(preset.intent);
+        const fullIntent = mergeIntent(DEFAULT_INTENT, preset.intent);
+        saveIntent(fullIntent);
+        setIntentState(fullIntent);
       }
     },
     [userTier],
@@ -171,8 +172,9 @@ export function ThemeProvider({
   const resetToDefault = React.useCallback(() => {
     const d = getPreset('default');
     if (d) {
-      saveIntent(d.intent);
-      setIntentState(d.intent);
+      const fullIntent = mergeIntent(DEFAULT_INTENT, d.intent);
+      saveIntent(fullIntent);
+      setIntentState(fullIntent);
     }
   }, []);
 
@@ -203,12 +205,11 @@ export function useTheme(): ThemeContextValue {
 export function useThemeMode(): 'light' | 'dark' {
   return useTheme().effectiveMode;
 }
-}
 
 // Hook to get resolved colors
 export function useThemeColors() {
-  const { resolved, effectiveMode } = useTheme();
-  return effectiveMode === 'dark' ? resolved.colors.dark : resolved.colors.light;
+  const { resolved } = useTheme();
+  return resolved.colors;
 }
 
 // Utility to get initial theme script (for SSR flicker prevention)

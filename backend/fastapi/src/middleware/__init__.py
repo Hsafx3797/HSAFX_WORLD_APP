@@ -10,6 +10,7 @@ from src.middleware.auth import (
     require_super_admin,
 )
 from src.middleware.rate_limit import RateLimitMiddleware
+from src.middleware.security import SecurityHeadersMiddleware
 
 __all__ = [
     "AuthMiddleware",
@@ -18,4 +19,5 @@ __all__ = [
     "require_admin",
     "require_super_admin",
     "RateLimitMiddleware",
+    "SecurityHeadersMiddleware",
 ]

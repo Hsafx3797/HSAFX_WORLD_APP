@@ -17,7 +17,7 @@ import {
   isMACAddress,
   isUUID,
   isSlug,
-} from '../index.ts';
+} from '../index';
 
 // ─── isEmail ─────────────────────────────────────────────
 describe('isEmail', () => {

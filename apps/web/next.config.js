@@ -54,8 +54,13 @@ const nextConfig = {
               "connect-src 'self' https://*.upstash.io https://*.polar.sh https://*.stripe.com",
               "frame-src 'self' https://*.stripe.com https://*.hcaptcha.com",
               "worker-src 'self' blob:",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
             ].join('; '),
           },
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+          { key: 'Cross-Origin-Resource-Policy', value: 'same-origin' },
         ],
       },
       {

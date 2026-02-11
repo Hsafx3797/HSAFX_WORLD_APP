@@ -36,7 +36,7 @@ import {
   truncateMiddle,
   // Slug
   slugify,
-} from '../index.ts';
+} from '../index';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // STRING FORMATTERS

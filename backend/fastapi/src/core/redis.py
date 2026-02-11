@@ -18,7 +18,12 @@ async def init_redis() -> None:
     """Initialize Redis connection"""
     global _redis_client
 
-    logger.info("Initializing Redis connection", url=settings.REDIS_URL.replace(settings.REDIS_URL.split(":")[2].split("@")[0], "***") if "@" in settings.REDIS_URL else settings.REDIS_URL)
+    redacted_url = (
+        settings.REDIS_URL.replace(settings.REDIS_URL.split(":")[2].split("@")[0], "***")
+        if "@" in settings.REDIS_URL
+        else settings.REDIS_URL
+    )
+    logger.info("Initializing Redis connection", url=redacted_url)
 
     _redis_client = redis.from_url(
         settings.REDIS_URL,

@@ -12,7 +12,7 @@ import {
   throwValidationError,
   throwRateLimitError,
   throwInternalError,
-} from '../errors/index.ts';
+} from '../errors/index';
 
 describe('ErrorCode', () => {
   it('should have auth codes in 1xxx range', () => {

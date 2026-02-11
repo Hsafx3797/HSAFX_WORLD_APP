@@ -14,7 +14,7 @@ import {
   isUnlimited,
   PLAN_FEATURES,
   PLAN_LIMITS,
-} from '../permissions/plan-access.ts';
+} from '../permissions/plan-access';
 
 // ─── hasPlanFeature ──────────────────────────────────────
 describe('hasPlanFeature', () => {

@@ -9,7 +9,7 @@ import {
   getGradeScale,
   getSupportedSystems,
 } from '../gpa-calculator';
-import type { Course, GradeSystem } from '../gpa-calculator';
+import type { Course } from '../gpa-calculator';
 
 // ─── File Tree ────────────────────────────────────────────────────────────────
 import {

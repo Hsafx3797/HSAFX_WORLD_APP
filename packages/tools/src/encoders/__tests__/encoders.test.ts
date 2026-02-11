@@ -12,7 +12,7 @@ import {
   decodeURL,
   parseQueryString,
   buildQueryString,
-} from '../index.ts';
+} from '../index';
 
 // ─── Base64 ──────────────────────────────────────────────
 describe('Base64', () => {

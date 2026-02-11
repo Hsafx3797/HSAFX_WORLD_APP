@@ -27,8 +27,13 @@ const nextConfig = {
               "font-src 'self' data:",
               "connect-src 'self' https://*.upstash.io",
               "frame-src 'self'",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
             ].join('; '),
           },
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+          { key: 'Cross-Origin-Resource-Policy', value: 'same-origin' },
         ],
       },
     ];

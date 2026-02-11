@@ -9,6 +9,21 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 
+// ─── CSRF Origin Validation ──────────────────────────────────────────────────
+
+const ALLOWED_ORIGINS = new Set([
+  'http://localhost:3001',
+  'http://localhost:3000',
+  'https://admin.hsafx.world',
+  'https://hsafx.world',
+]);
+
+const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+
+const CSRF_EXEMPT_PREFIXES = ['/api/auth/']; // better-auth manages its own CSRF
+
+// ─── Path classification ─────────────────────────────────────────────────────
+
 // Routes that don't require authentication at all
 const PUBLIC_PATHS = new Set(['/login', '/api/auth']);
 
@@ -45,6 +60,19 @@ export function middleware(request: NextRequest) {
     pathname.includes('.')
   ) {
     return NextResponse.next();
+  }
+
+  // ── CSRF Origin validation on state-changing requests ──
+  if (!SAFE_METHODS.has(request.method) && pathname.startsWith('/api/')) {
+    if (!CSRF_EXEMPT_PREFIXES.some((p) => pathname.startsWith(p))) {
+      const origin = request.headers.get('origin');
+      if (origin && !ALLOWED_ORIGINS.has(origin)) {
+        return NextResponse.json(
+          { error: 'Forbidden: invalid origin' },
+          { status: 403 },
+        );
+      }
+    }
   }
 
   // Check for session cookie (better-auth uses this pattern)

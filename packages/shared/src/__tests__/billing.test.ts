@@ -9,7 +9,7 @@ import {
   getDefaultCostConfig,
   FREE_TOOLS,
   DEFAULT_COSTS_BY_CATEGORY,
-} from '../billing/tool-costs.ts';
+} from '../billing/tool-costs';
 import {
   getCoinPack,
   getEffectiveCoins,
@@ -20,7 +20,7 @@ import {
   COIN_PACKS,
   AD_REWARD_CONFIG,
   DAILY_REWARD_CONFIG,
-} from '../billing/coin-packs.ts';
+} from '../billing/coin-packs';
 import {
   validateSufficientBalance,
   validatePositiveAmount,
@@ -30,7 +30,7 @@ import {
   formatCoinAmount,
   parseCoinCost,
   calculateTransactionSummary,
-} from '../billing/validation.ts';
+} from '../billing/validation';
 
 // ══════════════════════════════════════════════════════════
 // Tool Costs

@@ -11,7 +11,8 @@
     "./errors": "./src/errors/index.ts",
     "./permissions": "./src/permissions/index.ts",
     "./billing": "./src/billing/index.ts",
-    "./env": "./src/env/index.ts"
+    "./env": "./src/env/index.ts",
+    "./logger": "./src/logger.ts"
   },
   "scripts": {
     "lint": "tsc --noEmit",

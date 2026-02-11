@@ -13,7 +13,7 @@ import {
   sqrt,
   nthRoot,
   calculateStatistics,
-} from '../math.ts';
+} from '../math';
 
 // ─── Basic Operations ────────────────────────────────────
 describe('add', () => {

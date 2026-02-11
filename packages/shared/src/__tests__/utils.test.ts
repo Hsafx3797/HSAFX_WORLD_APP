@@ -21,7 +21,7 @@ import {
   isEmpty,
   simpleHash,
   dateRange,
-} from '../utils/index.ts';
+} from '../utils/index';
 
 // ─── sleep ───────────────────────────────────────────────
 describe('sleep', () => {
@@ -240,14 +240,14 @@ describe('safeJsonParse', () => {
 // ─── deepMerge ───────────────────────────────────────────
 describe('deepMerge', () => {
   it('should merge flat objects', () => {
-    const result = deepMerge({ a: 1 }, { b: 2 });
+    const result = deepMerge({ a: 1 }, { b: 2 } as any);
     expect(result).toEqual({ a: 1, b: 2 });
   });
 
   it('should deeply merge nested objects', () => {
     const result = deepMerge(
       { a: { b: 1, c: 2 } },
-      { a: { c: 3, d: 4 } }
+      { a: { c: 3, d: 4 } } as any
     );
     expect(result).toEqual({ a: { b: 1, c: 3, d: 4 } });
   });
@@ -258,7 +258,7 @@ describe('deepMerge', () => {
   });
 
   it('should handle multiple sources', () => {
-    const result = deepMerge({ a: 1 }, { b: 2 }, { c: 3 });
+    const result = deepMerge({ a: 1 }, { b: 2 } as any, { c: 3 } as any);
     expect(result).toEqual({ a: 1, b: 2, c: 3 });
   });
 });

@@ -9,14 +9,14 @@ import {
   SlugParamSchema,
   ApiErrorSchema,
   createApiResponseSchema,
-} from '../api.ts';
+} from '../api';
 import {
   PlanTierSchema,
   BillingIntervalSchema,
   SubscriptionStatusSchema,
   CoinTransactionTypeSchema,
   PlanDetailsSchema,
-} from '../billing.ts';
+} from '../billing';
 import { z } from 'zod';
 
 // ══════════════════════════════════════════════════════════

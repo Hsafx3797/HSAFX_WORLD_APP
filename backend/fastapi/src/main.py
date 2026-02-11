@@ -24,6 +24,7 @@ from src.core.logging import setup_logging
 from src.middleware.auth import AuthMiddleware
 from src.middleware.error_tracking import ErrorTrackingMiddleware
 from src.middleware.rate_limit import RateLimitMiddleware
+from src.middleware.security import SecurityHeadersMiddleware
 
 # Setup structured logging
 setup_logging()
@@ -91,6 +92,9 @@ def create_app() -> FastAPI:
 
     # Compression middleware
     app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+    # Security headers + CSRF Origin validation
+    app.add_middleware(SecurityHeadersMiddleware)
 
     # Error tracking (Sentry) — outermost to catch all errors
     app.add_middleware(ErrorTrackingMiddleware)

@@ -176,6 +176,52 @@ function handleAuth(request: NextRequest): NextResponse | null {
   return null; // No redirect needed
 }
 
+// ─── CSRF Origin Validation ───────────────────────────────────────────────────
+
+/**
+ * Allowed origins for state-changing requests (POST, PUT, DELETE, PATCH).
+ * Requests without a valid Origin header from these domains are rejected.
+ */
+const ALLOWED_ORIGINS = new Set([
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'https://hsafx.world',
+  'https://www.hsafx.world',
+  'https://admin.hsafx.world',
+]);
+
+/** Safe methods that don't require Origin checks */
+const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+
+/** Paths exempt from CSRF checks (webhooks, OAuth callbacks) */
+const CSRF_EXEMPT_PREFIXES = [
+  '/api/auth/',      // better-auth handles its own CSRF via trustedOrigins
+  '/api/webhooks/',  // Stripe/Polar webhooks verify signatures instead
+];
+
+function handleCsrf(request: NextRequest): NextResponse | null {
+  // Only check state-changing methods
+  if (SAFE_METHODS.has(request.method)) return null;
+
+  const pathname = request.nextUrl.pathname;
+
+  // Skip exempt paths
+  if (CSRF_EXEMPT_PREFIXES.some((p) => pathname.startsWith(p))) return null;
+
+  // Only check API routes and server actions
+  if (!pathname.startsWith('/api/')) return null;
+
+  const origin = request.headers.get('origin');
+  if (origin && !ALLOWED_ORIGINS.has(origin)) {
+    return NextResponse.json(
+      { error: 'Forbidden: invalid origin' },
+      { status: 403 },
+    );
+  }
+
+  return null;
+}
+
 // ─── Middleware Entry Point ──────────────────────────────────────────────────
 
 export async function middleware(request: NextRequest) {
@@ -183,7 +229,11 @@ export async function middleware(request: NextRequest) {
   const rateResponse = await handleRateLimit(request);
   if (rateResponse) return rateResponse;
 
-  // 1. Check auth protection
+  // 1. CSRF Origin validation
+  const csrfResponse = handleCsrf(request);
+  if (csrfResponse) return csrfResponse;
+
+  // 2. Check auth protection
   const authRedirect = handleAuth(request);
   if (authRedirect) return authRedirect;
 

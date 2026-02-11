@@ -3,7 +3,7 @@
  * Text analysis (word count, reading time, etc.)
  */
 import { describe, it, expect } from 'vitest';
-import { analyzeText, type TextStats } from '../index.ts';
+import { analyzeText } from '../index';
 
 describe('analyzeText', () => {
   it('should return zeros for empty string', () => {

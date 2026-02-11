@@ -275,12 +275,12 @@ export function cssVarsToStyleString(vars: Record<string, string>): string {
 /**
  * Convert CSS variables map to React style object
  */
-export function cssVarsToStyleObject(vars: Record<string, string>): React.CSSProperties {
+export function cssVarsToStyleObject(vars: Record<string, string>): Record<string, string> {
   const style: Record<string, string> = {};
   for (const [key, value] of Object.entries(vars)) {
     style[key] = value;
   }
-  return style as React.CSSProperties;
+  return style;
 }
 
 /**

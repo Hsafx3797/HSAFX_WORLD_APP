@@ -298,7 +298,10 @@ async def sapt_track_container_html(container_no: str) -> List[ContainerTrackRes
             atd = atd_explicit
             vstatus = status_from_ata_atd(ata, atd)
 
-        position = get_value("Current Position", "CURRENT POSITION", "Position", "Location", "Status", "Container Status", "Yard Position", "Standing")
+        position = get_value(
+            "Current Position", "CURRENT POSITION", "Position", "Location",
+            "Status", "Container Status", "Yard Position", "Standing",
+        )
 
         result = ContainerTrackResult(
             terminal_name="SAPT",
