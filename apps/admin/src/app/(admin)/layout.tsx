@@ -6,7 +6,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/Sheet';
 import { ProtectedRoute } from '@/components/rbac/protected-route';
 import { useRBAC, useAdminRole } from '@/components/rbac/use-rbac';
-import { Can } from '@/components/rbac/permission-guard';
 import type { Permission } from '@/lib/types';
 import { signOut } from '@/lib/auth-client';
 

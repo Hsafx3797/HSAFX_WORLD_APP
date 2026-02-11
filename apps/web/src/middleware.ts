@@ -176,47 +176,6 @@ function handleAuth(request: NextRequest): NextResponse | null {
   return null; // No redirect needed
 }
 
-// ─── Tool URL Redirects ──────────────────────────────────────────────────────
-
-// Tools that should NOT be redirected (specialized tools with individual pages)
-const SPECIALIZED_TOOLS = new Set([
-  'db-schema-visualizer',
-  'db-schema-visualizer-interactive',
-  'file-tree-generator',
-  'cheque-generator',
-  'container-tracker',
-  'vessel-tracker',
-  'text-converter', // Unified text converter page itself
-]);
-
-function handleToolRedirect(request: NextRequest): NextResponse | null {
-  const pathname = request.nextUrl.pathname;
-
-  // Only handle /tools/[slug] paths (not /tools/category/*, /tools/text-converter, etc.)
-  const toolMatch = pathname.match(/^\/tools\/([^\/]+)$/);
-
-  if (!toolMatch) {
-    return null;
-  }
-
-  const slug = toolMatch[1];
-
-  // Skip specialized tools - they keep individual pages
-  if (SPECIALIZED_TOOLS.has(slug!)) {
-    return null;
-  }
-
-  // Skip category-related paths
-  if (slug === 'category' || slug === 'text-converter') {
-    return null;
-  }
-
-  // For now, let the dynamic [slug] page handle routing
-  // The actual redirect logic will be in the [slug] page itself
-  // This is because we need access to the tool registry which is not available in edge middleware
-  return null;
-}
-
 // ─── Middleware Entry Point ──────────────────────────────────────────────────
 
 export async function middleware(request: NextRequest) {
@@ -227,10 +186,6 @@ export async function middleware(request: NextRequest) {
   // 1. Check auth protection
   const authRedirect = handleAuth(request);
   if (authRedirect) return authRedirect;
-
-  // 2. Check tool URL redirects
-  const toolRedirect = handleToolRedirect(request);
-  if (toolRedirect) return toolRedirect;
 
   return NextResponse.next();
 }
