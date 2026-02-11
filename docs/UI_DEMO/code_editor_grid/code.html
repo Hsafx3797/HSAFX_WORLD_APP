@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Data Converters - DevSuite</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Noto+Sans:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#22c55e", 
+                        "primary-hover": "#16a34a",
+                        "primary-light": "#86efac",
+                        "background-light": "#fafafa",
+                        "background-dark": "#0f1215",
+                        "surface-dark": "#161b22",
+                        "surface-card": "#1c2128",
+                        "border-dark": "#30363d",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"],
+                        "body": ["Noto Sans", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"],
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f1215; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #30363d; 
+            border-radius: 5px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #22c55e; 
+        }
+        .card-hover:hover {
+            border-color: #58a6ff;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display min-h-screen flex flex-col">
+<header class="h-16 border-b border-border-dark flex items-center justify-between px-6 shrink-0 bg-background-dark/80 backdrop-blur-md z-10 sticky top-0">
+<div class="flex items-center gap-6">
+<h1 class="text-white text-lg font-bold tracking-tight flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">terminal</span>
+                DevSuite
+            </h1>
+</div>
+<div class="flex items-center gap-3">
+<button class="text-slate-400 hover:text-white transition-colors p-2 rounded-md hover:bg-white/5">
+<span class="material-symbols-outlined text-[20px]">search</span>
+</button>
+<div class="h-5 w-px bg-border-dark mx-1"></div>
+<div class="flex items-center gap-3 cursor-pointer hover:bg-white/5 p-1 rounded-full pr-3 transition-colors">
+<div class="w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-emerald-600 flex items-center justify-center text-xs font-bold text-white shadow-lg">
+                    JD
+                </div>
+<span class="text-sm font-medium text-white hidden md:block">John Doe</span>
+</div>
+</div>
+</header>
+<main class="flex-1 w-full max-w-7xl mx-auto p-8 lg:p-12">
+<div class="text-center mb-12">
+<h1 class="text-4xl font-bold text-white mb-6 tracking-tight">Data Converters</h1>
+<div class="max-w-3xl mx-auto space-y-6">
+<div class="relative group">
+<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-slate-500 group-focus-within:text-primary transition-colors">search</span>
+</div>
+<input class="block w-full pl-12 pr-4 py-3 bg-surface-dark border border-border-dark rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all text-sm" placeholder="Search converters (e.g., CSV to JSON, Base64)..." type="text"/>
+<div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+<span class="text-xs text-slate-600 border border-slate-700 rounded px-1.5 py-0.5 font-mono">⌘K</span>
+</div>
+</div>
+<div class="flex flex-wrap justify-center gap-2">
+<button class="px-4 py-1.5 rounded-full text-xs font-medium bg-primary text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary-hover">All</button>
+<button class="px-4 py-1.5 rounded-full text-xs font-medium bg-surface-dark border border-border-dark text-slate-400 hover:text-white hover:border-slate-500 transition-all">Data Format</button>
+<button class="px-4 py-1.5 rounded-full text-xs font-medium bg-surface-dark border border-border-dark text-slate-400 hover:text-white hover:border-slate-500 transition-all">Encoding</button>
+<button class="px-4 py-1.5 rounded-full text-xs font-medium bg-surface-dark border border-border-dark text-slate-400 hover:text-white hover:border-slate-500 transition-all">Document</button>
+<button class="px-4 py-1.5 rounded-full text-xs font-medium bg-surface-dark border border-border-dark text-slate-400 hover:text-white hover:border-slate-500 transition-all">Minifier</button>
+<button class="px-4 py-1.5 rounded-full text-xs font-medium bg-surface-dark border border-border-dark text-slate-400 hover:text-white hover:border-slate-500 transition-all">Beautifier</button>
+<button class="px-4 py-1.5 rounded-full text-xs font-medium bg-surface-dark border border-border-dark text-slate-400 hover:text-white hover:border-slate-500 transition-all">Validator</button>
+</div>
+</div>
+</div>
+<div class="space-y-12">
+<section>
+<h2 class="text-xl font-bold text-white mb-5 flex items-center gap-2">
+<span class="w-1.5 h-6 bg-primary rounded-full"></span>
+                    Data Format
+                </h2>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+<a class="group relative bg-surface-card border border-border-dark rounded-xl p-5 hover:border-slate-500 transition-all duration-200 block card-hover" href="#">
+<div class="flex justify-between items-start mb-3">
+<span class="material-symbols-outlined text-3xl text-slate-400 group-hover:text-primary transition-colors">data_object</span>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">Popular</span>
+</div>
+<h3 class="text-white font-bold text-lg mb-1 group-hover:text-primary transition-colors">CSV ⇄ JSON</h3>
+<p class="text-slate-400 text-xs mb-4">Convert between CSV and JSON formats with advanced options.</p>
+<div class="flex items-center gap-2 mt-auto">
+<span class="text-[10px] font-mono bg-black/30 text-slate-500 px-1.5 py-0.5 rounded border border-border-dark/50">CSV</span>
+<span class="material-symbols-outlined text-[10px] text-slate-600">sync_alt</span>
+<span class="text-[10px] font-mono bg-black/30 text-slate-500 px-1.5 py-0.5 rounded border border-border-dark/50">JSON</span>
+</div>
+</a>
+<a class="group relative bg-surface-card border border-border-dark rounded-xl p-5 hover:border-slate-500 transition-all duration-200 block card-hover" href="#">
+<div class="flex justify-between items-start mb-3">
+<span class="material-symbols-outlined text-3xl text-slate-400 group-hover:text-primary transition-colors">code</span>
+<div class="flex gap-1">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">WASM</span>
+</div>
+</div>
+<h3 class="text-white font-bold text-lg mb-1 group-hover:text-primary transition-colors">XML ⇄ JSON</h3>
+<p class="text-slate-400 text-xs mb-4">Transform XML data to JSON structures and vice-versa.</p>
+<div class="flex items-center gap-2 mt-auto">
+<span class="text-[10px] font-mono bg-black/30 text-slate-500 px-1.5 py-0.5 rounded border border-border-dark/50">XML</span>
+<span class="material-symbols-outlined text-[10px] text-slate-600">sync_alt</span>
+<span class="text-[10px] font-mono bg-black/30 text-slate-500 px-1.5 py-0.5 rounded border border-border-dark/50">JSON</span>
+</div>
+</a>
+<a class="group relative bg-surface-card border border-border-dark rounded-xl p-5 hover:border-slate-500 transition-all duration-200 block card-hover" href="#">
+<div class="flex justify-between items-start mb-3">
+<span class="material-symbols-outlined text-3xl text-slate-400 group-hover:text-primary transition-colors">description</span>
+</div>
+<h3 class="text-white font-bold text-lg mb-1 group-hover:text-primary transition-colors">YAML ⇄ JSON</h3>
+<p class="text-slate-400 text-xs mb-4">Convert configuration files between YAML and JSON.</p>
+<div class="flex items-center gap-2 mt-auto">
+<span class="text-[10px] font-mono bg-black/30 text-slate-500 px-1.5 py-0.5 rounded border border-border-dark/50">YAML</span>
+<span class="material-symbols-outlined text-[10px] text-slate-600">sync_alt</span>
+<span class="text-[10px] font-mono bg-black/30 text-slate-500 px-1.5 py-0.5 rounded border border-border-dark/50">JSON</span>
+</div>
+</a>
+<a class="group relative bg-surface-card border border-border-dark rounded-xl p-5 hover:border-slate-500 transition-all duration-200 block card-hover" href="#">
+<div class="flex justify-between items-start mb-3">
+<span class="material-symbols-outlined text-3xl text-slate-400 group-hover:text-primary transition-colors">settings_suggest</span>
+</div>
+<h3 class="text-white font-bold text-lg mb-1 group-hover:text-primary transition-colors">INI ⇄ JSON</h3>
+<p class="text-slate-400 text-xs mb-4">Parse INI configuration files into structured JSON.</p>
+<div class="flex items-center gap-2 mt-auto">
+<span class="text-[10px] font-mono bg-black/30 text-slate-500 px-1.5 py-0.5 rounded border border-border-dark/50">INI</span>
+<span class="material-symbols-outlined text-[10px] text-slate-600">sync_alt</span>
+<span class="text-[10px] font-mono bg-black/30 text-slate-500 px-1.5 py-0.5 rounded border border-border-dark/50">JSON</span>
+</div>
+</a>
+<a class="group relative bg-surface-card border border-border-dark rounded-xl p-5 hover:border-slate-500 transition-all duration-200 block card-hover" href="#">
+<div class="flex justify-between items-start mb-3">
+<span class="material-symbols-outlined text-3xl text-slate-400 group-hover:text-primary transition-colors">table_view</span>
+</div>
+<h3 class="text-white font-bold text-lg mb-1 group-hover:text-primary transition-colors">TOML ⇄ JSON</h3>
+<p class="text-slate-400 text-xs mb-4">Convert TOML config to JSON format.</p>
+<div class="flex items-center gap-2 mt-auto">
+<span class="text-[10px] font-mono bg-black/30 text-slate-500 px-1.5 py-0.5 rounded border border-border-dark/50">TOML</span>
+<span class="material-symbols-outlined text-[10px] text-slate-600">sync_alt</span>
+<span class="text-[10px] font-mono bg-black/30 text-slate-500 px-1.5 py-0.5 rounded border border-border-dark/50">JSON</span>
+</div>
+</a>
+<a class="group relative bg-surface-card border border-border-dark rounded-xl p-5 hover:border-slate-500 transition-all duration-200 block card-hover" href="#">
+<div class="flex justify-between items-start mb-3">
+<span class="material-symbols-outlined text-3xl text-slate-400 group-hover:text-primary transition-colors">schema</span>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">Beta</span>
+</div>
+<h3 class="text-white font-bold text-lg mb-1 group-hover:text-primary transition-colors">Protobuf ⇄ JSON</h3>
+<p class="text-slate-400 text-xs mb-4">Convert Protocol Buffer text format to JSON.</p>
+<div class="flex items-center gap-2 mt-auto">
+<span class="text-[10px] font-mono bg-black/30 text-slate-500 px-1.5 py-0.5 rounded border border-border-dark/50">PROTO</span>
+<span class="material-symbols-outlined text-[10px] text-slate-600">sync_alt</span>
+<span class="text-[10px] font-mono bg-black/30 text-slate-500 px-1.5 py-0.5 rounded border border-border-dark/50">JSON</span>
+</div>
+</a>
+</div>
+</section>
+<section>
+<h2 class="text-xl font-bold text-white mb-5 mt-10 flex items-center gap-2">
+<span class="w-1.5 h-6 bg-purple-500 rounded-full"></span>
+                    Encoding
+                </h2>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+<a class="group relative bg-surface-card border border-border-dark rounded-xl p-5 hover:border-slate-500 transition-all duration-200 block card-hover" href="#">
+<div class="flex justify-between items-start mb-3">
+<span class="material-symbols-outlined text-3xl text-slate-400 group-hover:text-purple-400 transition-colors">link</span>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">Popular</span>
+</div>
+<h3 class="text-white font-bold text-lg mb-1 group-hover:text-purple-400 transition-colors">URL Encode/Decode</h3>
+<p class="text-slate-400 text-xs mb-4">Encode and decode URL parameters safely.</p>
+<div class="flex items-center gap-2 mt-auto">
+<span class="text-[10px] font-mono bg-black/30 text-slate-500 px-1.5 py-0.5 rounded border border-border-dark/50">TEXT</span>
+<span class="material-symbols-outlined text-[10px] text-slate-600">sync_alt</span>
+<span class="text-[10px] font-mono bg-black/30 text-slate-500 px-1.5 py-0.5 rounded border border-border-dark/50">URL</span>
+</div>
+</a>
+<a class="group relative bg-surface-card border border-border-dark rounded-xl p-5 hover:border-slate-500 transition-all duration-200 block card-hover" href="#">
+<div class="flex justify-between items-start mb-3">
+<span class="material-symbols-outlined text-3xl text-slate-400 group-hover:text-purple-400 transition-colors">format_quote</span>
+<div class="flex gap-1">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">Secure</span>
+</div>
+</div>
+<h3 class="text-white font-bold text-lg mb-1 group-hover:text-purple-400 transition-colors">Base64 Encode/Decode</h3>
+<p class="text-slate-400 text-xs mb-4">Convert text and files to Base64 strings.</p>
+<div class="flex items-center gap-2 mt-auto">
+<span class="text-[10px] font-mono bg-black/30 text-slate-500 px-1.5 py-0.5 rounded border border-border-dark/50">TEXT</span>
+<span class="material-symbols-outlined text-[10px] text-slate-600">sync_alt</span>
+<span class="text-[10px] font-mono bg-black/30 text-slate-500 px-1.5 py-0.5 rounded border border-border-dark/50">B64</span>
+</div>
+</a>
+<a class="group relative bg-surface-card border border-border-dark rounded-xl p-5 hover:border-slate-500 transition-all duration-200 block card-hover" href="#">
+<div class="flex justify-between items-start mb-3">
+<span class="material-symbols-outlined text-3xl text-slate-400 group-hover:text-purple-400 transition-colors">html</span>
+</div>
+<h3 class="text-white font-bold text-lg mb-1 group-hover:text-purple-400 transition-colors">HTML Entity Encode</h3>
+<p class="text-slate-400 text-xs mb-4">Escape special characters for HTML safe usage.</p>
+<div class="flex items-center gap-2 mt-auto">
+<span class="text-[10px] font-mono bg-black/30 text-slate-500 px-1.5 py-0.5 rounded border border-border-dark/50">TEXT</span>
+<span class="material-symbols-outlined text-[10px] text-slate-600">sync_alt</span>
+<span class="text-[10px] font-mono bg-black/30 text-slate-500 px-1.5 py-0.5 rounded border border-border-dark/50">HTML</span>
+</div>
+</a>
+</div>
+</section>
+<section>
+<h2 class="text-xl font-bold text-white mb-5 mt-10 flex items-center gap-2">
+<span class="w-1.5 h-6 bg-blue-500 rounded-full"></span>
+                    Document
+                </h2>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+<a class="group relative bg-surface-card border border-border-dark rounded-xl p-5 hover:border-slate-500 transition-all duration-200 block card-hover" href="#">
+<div class="flex justify-between items-start mb-3">
+<span class="material-symbols-outlined text-3xl text-slate-400 group-hover:text-blue-400 transition-colors">markdown</span>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">Popular</span>
+</div>
+<h3 class="text-white font-bold text-lg mb-1 group-hover:text-blue-400 transition-colors">Markdown ⇄ HTML</h3>
+<p class="text-slate-400 text-xs mb-4">Convert Markdown syntax to raw HTML.</p>
+<div class="flex items-center gap-2 mt-auto">
+<span class="text-[10px] font-mono bg-black/30 text-slate-500 px-1.5 py-0.5 rounded border border-border-dark/50">MD</span>
+<span class="material-symbols-outlined text-[10px] text-slate-600">sync_alt</span>
+<span class="text-[10px] font-mono bg-black/30 text-slate-500 px-1.5 py-0.5 rounded border border-border-dark/50">HTML</span>
+</div>
+</a>
+<a class="group relative bg-surface-card border border-border-dark rounded-xl p-5 hover:border-slate-500 transition-all duration-200 block card-hover" href="#">
+<div class="flex justify-between items-start mb-3">
+<span class="material-symbols-outlined text-3xl text-slate-400 group-hover:text-blue-400 transition-colors">grid_on</span>
+</div>
+<h3 class="text-white font-bold text-lg mb-1 group-hover:text-blue-400 transition-colors">TSV ⇄ CSV</h3>
+<p class="text-slate-400 text-xs mb-4">Convert between Tab Separated and Comma Separated Values.</p>
+<div class="flex items-center gap-2 mt-auto">
+<span class="text-[10px] font-mono bg-black/30 text-slate-500 px-1.5 py-0.5 rounded border border-border-dark/50">TSV</span>
+<span class="material-symbols-outlined text-[10px] text-slate-600">sync_alt</span>
+<span class="text-[10px] font-mono bg-black/30 text-slate-500 px-1.5 py-0.5 rounded border border-border-dark/50">CSV</span>
+</div>
+</a>
+<a class="group relative bg-surface-card border border-border-dark rounded-xl p-5 hover:border-slate-500 transition-all duration-200 block card-hover" href="#">
+<div class="flex justify-between items-start mb-3">
+<span class="material-symbols-outlined text-3xl text-slate-400 group-hover:text-blue-400 transition-colors">functions</span>
+</div>
+<h3 class="text-white font-bold text-lg mb-1 group-hover:text-blue-400 transition-colors">LaTeX ⇄ HTML</h3>
+<p class="text-slate-400 text-xs mb-4">Render LaTeX math equations to HTML.</p>
+<div class="flex items-center gap-2 mt-auto">
+<span class="text-[10px] font-mono bg-black/30 text-slate-500 px-1.5 py-0.5 rounded border border-border-dark/50">LATEX</span>
+<span class="material-symbols-outlined text-[10px] text-slate-600">sync_alt</span>
+<span class="text-[10px] font-mono bg-black/30 text-slate-500 px-1.5 py-0.5 rounded border border-border-dark/50">HTML</span>
+</div>
+</a>
+</div>
+</section>
+</div>
+</main>
+<div class="fixed bottom-6 right-6 bg-[#1c2128] border border-border-dark rounded-lg p-3 shadow-2xl flex items-center gap-3 animate-in slide-in-from-bottom-5 fade-in duration-500 z-50">
+<span class="material-symbols-outlined text-primary text-[20px]">keyboard_command_key</span>
+<div class="flex flex-col">
+<span class="text-xs text-white font-medium">Quick Navigate</span>
+<span class="text-[10px] text-slate-400">Press <kbd class="bg-slate-700 px-1 rounded text-white font-mono">⌘</kbd> + <kbd class="bg-slate-700 px-1 rounded text-white font-mono">K</kbd> to search tools.</span>
+</div>
+</div>
+
+</body></html>

@@ -1,0 +1,12 @@
+{
+  "countryName": "Pakistan",
+  "bankName": "Askari Bank Limited",
+  "chequeOrientation": "Portrait",
+  "payeeName": "Muhammad Asher",
+  "date": "25 OCT 25",
+  "amountInNumber": "123,456",
+  "amountInWords": "ONE HUNDRED AND TWENTY-THREE THOUSAND FOUR HUNDRED AND FIFTY-SIX",
+  "acPayee": true,
+  "notNegotiable": true,
+  "orBearer": true
+}

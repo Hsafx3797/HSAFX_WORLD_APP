@@ -1,0 +1,131 @@
+{
+  "name": "@hsafx/tool-execution",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./calculators": {
+      "types": "./dist/calculators/index.d.ts",
+      "import": "./dist/calculators/index.mjs",
+      "require": "./dist/calculators/index.js"
+    },
+    "./calculators/compat": {
+      "types": "./dist/calculators/compat.d.ts",
+      "import": "./dist/calculators/compat.mjs",
+      "require": "./dist/calculators/compat.js"
+    },
+    "./calculators/islamic-compat": {
+      "types": "./dist/calculators/islamic-compat.d.ts",
+      "import": "./dist/calculators/islamic-compat.mjs",
+      "require": "./dist/calculators/islamic-compat.js"
+    },
+    "./calculators/web": {
+      "types": "./dist/calculators/web.d.ts",
+      "import": "./dist/calculators/web.mjs",
+      "require": "./dist/calculators/web.js"
+    },
+    "./converters": {
+      "types": "./dist/converters/index.d.ts",
+      "import": "./dist/converters/index.mjs",
+      "require": "./dist/converters/index.js"
+    },
+    "./data-converters": {
+      "types": "./dist/data-converters/index.d.ts",
+      "import": "./dist/data-converters/index.mjs",
+      "require": "./dist/data-converters/index.js"
+    },
+    "./encoders": {
+      "types": "./dist/encoders/index.d.ts",
+      "import": "./dist/encoders/index.mjs",
+      "require": "./dist/encoders/index.js"
+    },
+    "./formatters": {
+      "types": "./dist/formatters/index.d.ts",
+      "import": "./dist/formatters/index.mjs",
+      "require": "./dist/formatters/index.js"
+    },
+    "./generators": {
+      "types": "./dist/generators/index.d.ts",
+      "import": "./dist/generators/index.mjs",
+      "require": "./dist/generators/index.js"
+    },
+    "./generators/compat": {
+      "types": "./dist/generators/compat.d.ts",
+      "import": "./dist/generators/compat.mjs",
+      "require": "./dist/generators/compat.js"
+    },
+    "./generators/seo": {
+      "types": "./dist/generators/seo.d.ts",
+      "import": "./dist/generators/seo.mjs",
+      "require": "./dist/generators/seo.js"
+    },
+    "./generators/css": {
+      "types": "./dist/generators/css.d.ts",
+      "import": "./dist/generators/css.mjs",
+      "require": "./dist/generators/css.js"
+    },
+    "./generators/web": {
+      "types": "./dist/generators/web.d.ts",
+      "import": "./dist/generators/web.mjs",
+      "require": "./dist/generators/web.js"
+    },
+    "./generators/web-css": {
+      "types": "./dist/generators/web-css.d.ts",
+      "import": "./dist/generators/web-css.mjs",
+      "require": "./dist/generators/web-css.js"
+    },
+    "./generators/web-seo": {
+      "types": "./dist/generators/web-seo.d.ts",
+      "import": "./dist/generators/web-seo.mjs",
+      "require": "./dist/generators/web-seo.js"
+    },
+    "./text": {
+      "types": "./dist/text/index.d.ts",
+      "import": "./dist/text/index.mjs",
+      "require": "./dist/text/index.js"
+    },
+    "./validators": {
+      "types": "./dist/validators/index.d.ts",
+      "import": "./dist/validators/index.mjs",
+      "require": "./dist/validators/index.js"
+    },
+    "./validators/compat": {
+      "types": "./dist/validators/compat.d.ts",
+      "import": "./dist/validators/compat.mjs",
+      "require": "./dist/validators/compat.js"
+    },
+    "./validators/web": {
+      "types": "./dist/validators/web.d.ts",
+      "import": "./dist/validators/web.mjs",
+      "require": "./dist/validators/web.js"
+    },
+    "./specialized": {
+      "types": "./dist/specialized/index.d.ts",
+      "import": "./dist/specialized/index.mjs",
+      "require": "./dist/specialized/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "clean": "rimraf dist .turbo"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "rimraf": "^5.0.5",
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.3"
+  }
+}

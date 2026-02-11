@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Case Converter Advanced Utility</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&amp;family=JetBrains+Mono:wght@400;500&amp;family=Manrope:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#0a6b6b",
+              "primary-hover": "#0e8a8a",
+              "background-light": "#fafafa",
+              "background-dark": "#0f1215",
+              "surface-dark": "#161b22",
+              "card-dark": "#1E242B",
+              "border-dark": "#244747",
+              "text-muted": "#92c8c8",
+            },
+            fontFamily: {
+              "display": ["Space Grotesk", "sans-serif"],
+              "body": ["Manrope", "sans-serif"],
+              "mono": ["JetBrains Mono", "monospace"],
+            },
+            boxShadow: {
+                'recessed': 'inset 0 2px 8px 0 rgb(0 0 0 / 0.6)',
+                'glow': '0 0 15px rgba(10, 107, 107, 0.3)',
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style type="text/tailwindcss">
+    @layer utilities {
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    }
+    details > summary {
+      list-style: none;
+    }
+    details > summary::-webkit-details-marker {
+      display: none;
+    }
+    details[open] summary ~ * {
+        animation: slideDown 0.3s ease-in-out;
+    }
+    @keyframes slideDown {
+        0% { opacity: 0; transform: translateY(-10px); }
+        100% { opacity: 1; transform: translateY(0); }
+    }
+</style>
+<style>
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+        background: #0f1215; 
+    }
+    ::-webkit-scrollbar-thumb {
+        background: #244747; 
+        border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: #0a6b6b; 
+    }
+</style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-body min-h-screen w-full flex flex-col items-center py-10 selection:bg-primary/30">
+<div class="w-full max-w-5xl px-4 md:px-6 flex flex-col gap-8">
+<header class="text-center relative">
+<h1 class="text-white font-display text-4xl font-bold tracking-tight mb-2">Case Converter</h1>
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-primary/20 blur-3xl -z-10 rounded-full"></div>
+</header>
+<main class="w-full bg-surface-dark border border-border-dark rounded-xl shadow-2xl overflow-hidden relative">
+<div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-5 pointer-events-none" data-alt="Subtle carbon fibre texture overlay"></div>
+<div class="p-6 md:p-8 flex flex-col gap-6 relative z-10">
+<div class="flex flex-col gap-3">
+<div class="relative group">
+<textarea class="w-full h-48 md:h-56 resize-y rounded-lg bg-[#080a0c] text-slate-300 focus:text-white border border-border-dark focus:border-primary focus:ring-1 focus:ring-primary/50 shadow-recessed p-5 font-mono text-sm leading-relaxed outline-none transition-all duration-200 placeholder:text-[#2d3b3b]" placeholder="Enter your text here to convert..." spellcheck="false"></textarea>
+</div>
+<div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-mono text-text-muted px-1">
+<span class="flex items-center gap-1"><span class="text-slate-500">Characters:</span> <strong class="text-white">0</strong></span>
+<span class="flex items-center gap-1"><span class="text-slate-500">Words:</span> <strong class="text-white">0</strong></span>
+<span class="flex items-center gap-1"><span class="text-slate-500">Sentences:</span> <strong class="text-white">0</strong></span>
+<span class="flex items-center gap-1"><span class="text-slate-500">Lines:</span> <strong class="text-white">1</strong></span>
+<span class="flex items-center gap-1"><span class="text-slate-500">Palindrome:</span> <strong class="text-white">No</strong></span>
+</div>
+<div class="flex flex-wrap gap-3 mt-2">
+<button class="flex items-center gap-2 px-4 py-2 rounded-md bg-card-dark hover:bg-primary/20 text-slate-300 hover:text-white text-sm font-medium transition-colors border border-border-dark hover:border-primary/50">
+<span class="material-symbols-outlined text-[18px]">content_copy</span>
+                            Copy
+                        </button>
+<button class="flex items-center gap-2 px-4 py-2 rounded-md bg-card-dark hover:bg-primary/20 text-slate-300 hover:text-white text-sm font-medium transition-colors border border-border-dark hover:border-primary/50">
+<span class="material-symbols-outlined text-[18px]">download</span>
+                            Download
+                        </button>
+<button class="flex items-center gap-2 px-4 py-2 rounded-md bg-card-dark hover:bg-red-900/20 text-slate-300 hover:text-red-300 text-sm font-medium transition-colors border border-border-dark hover:border-red-900/50">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+                            Clear
+                        </button>
+</div>
+</div>
+<div class="flex flex-col gap-4 mt-2">
+<h3 class="text-lg font-display font-semibold text-white">Select Conversion</h3>
+<div class="flex flex-col gap-2">
+<details class="group bg-card-dark rounded-lg border border-border-dark overflow-hidden" open="">
+<summary class="flex items-center justify-between p-4 cursor-pointer hover:bg-[#252b33] transition-colors select-none">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-yellow-500 text-[20px]">edit_note</span>
+<span class="text-slate-200 font-medium">Basic Cases</span>
+<span class="px-2 py-0.5 rounded-full bg-[#112222] border border-border-dark text-[10px] text-text-muted font-mono">7 options</span>
+</div>
+<span class="material-symbols-outlined text-text-muted transition-transform duration-200 group-open:rotate-180">expand_more</span>
+</summary>
+<div class="p-4 border-t border-border-dark bg-[#181d23]">
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+<button class="px-3 py-2 rounded bg-[#0f1215] border border-border-dark hover:border-primary text-slate-300 hover:text-white text-xs font-mono transition-all hover:bg-primary/10">UPPERCASE</button>
+<button class="px-3 py-2 rounded bg-[#0f1215] border border-border-dark hover:border-primary text-slate-300 hover:text-white text-xs font-mono transition-all hover:bg-primary/10">lowercase</button>
+<button class="px-3 py-2 rounded bg-[#0f1215] border border-border-dark hover:border-primary text-slate-300 hover:text-white text-xs font-mono transition-all hover:bg-primary/10">Sentence case</button>
+<button class="px-3 py-2 rounded bg-[#0f1215] border border-border-dark hover:border-primary text-slate-300 hover:text-white text-xs font-mono transition-all hover:bg-primary/10">Capitalized Case</button>
+<button class="px-3 py-2 rounded bg-[#0f1215] border border-border-dark hover:border-primary text-slate-300 hover:text-white text-xs font-mono transition-all hover:bg-primary/10">Title Case</button>
+<button class="px-3 py-2 rounded bg-[#0f1215] border border-border-dark hover:border-primary text-slate-300 hover:text-white text-xs font-mono transition-all hover:bg-primary/10">aLtErNaTiNg cAsE</button>
+<button class="px-3 py-2 rounded bg-[#0f1215] border border-border-dark hover:border-primary text-slate-300 hover:text-white text-xs font-mono transition-all hover:bg-primary/10">iNVERSE cASE</button>
+</div>
+</div>
+</details>
+<details class="group bg-card-dark rounded-lg border border-border-dark overflow-hidden">
+<summary class="flex items-center justify-between p-4 cursor-pointer hover:bg-[#252b33] transition-colors select-none">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-green-500 text-[20px]">terminal</span>
+<span class="text-slate-200 font-medium">Programming Cases</span>
+<span class="px-2 py-0.5 rounded-full bg-[#112222] border border-border-dark text-[10px] text-text-muted font-mono">8 options</span>
+</div>
+<span class="material-symbols-outlined text-text-muted transition-transform duration-200 group-open:rotate-180">expand_more</span>
+</summary>
+<div class="p-4 border-t border-border-dark bg-[#181d23]">
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+<button class="px-3 py-2 rounded bg-[#0f1215] border border-border-dark hover:border-primary text-slate-300 hover:text-white text-xs font-mono transition-all hover:bg-primary/10">camelCase</button>
+<button class="px-3 py-2 rounded bg-[#0f1215] border border-border-dark hover:border-primary text-slate-300 hover:text-white text-xs font-mono transition-all hover:bg-primary/10">snake_case</button>
+<button class="px-3 py-2 rounded bg-[#0f1215] border border-border-dark hover:border-primary text-slate-300 hover:text-white text-xs font-mono transition-all hover:bg-primary/10">kebab-case</button>
+<button class="px-3 py-2 rounded bg-[#0f1215] border border-border-dark hover:border-primary text-slate-300 hover:text-white text-xs font-mono transition-all hover:bg-primary/10">PascalCase</button>
+<button class="px-3 py-2 rounded bg-[#0f1215] border border-border-dark hover:border-primary text-slate-300 hover:text-white text-xs font-mono transition-all hover:bg-primary/10">CONSTANT_CASE</button>
+</div>
+</div>
+</details>
+<details class="group bg-card-dark rounded-lg border border-border-dark overflow-hidden">
+<summary class="flex items-center justify-between p-4 cursor-pointer hover:bg-[#252b33] transition-colors select-none">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-blue-400 text-[20px]">swap_horiz</span>
+<span class="text-slate-200 font-medium">Symbol Separators</span>
+<span class="px-2 py-0.5 rounded-full bg-[#112222] border border-border-dark text-[10px] text-text-muted font-mono">27 options</span>
+</div>
+<span class="material-symbols-outlined text-text-muted transition-transform duration-200 group-open:rotate-180">expand_more</span>
+</summary>
+<div class="p-4 border-t border-border-dark bg-[#181d23]">
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+<button class="px-3 py-2 rounded bg-[#0f1215] border border-border-dark hover:border-primary text-slate-300 hover:text-white text-xs font-mono transition-all hover:bg-primary/10">Dash-Separated</button>
+<button class="px-3 py-2 rounded bg-[#0f1215] border border-border-dark hover:border-primary text-slate-300 hover:text-white text-xs font-mono transition-all hover:bg-primary/10">Dot.Separated</button>
+<button class="px-3 py-2 rounded bg-[#0f1215] border border-border-dark hover:border-primary text-slate-300 hover:text-white text-xs font-mono transition-all hover:bg-primary/10">Slash/Separated</button>
+</div>
+</div>
+</details>
+<details class="group bg-card-dark rounded-lg border border-border-dark overflow-hidden">
+<summary class="flex items-center justify-between p-4 cursor-pointer hover:bg-[#252b33] transition-colors select-none">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-purple-400 text-[20px]">auto_awesome</span>
+<span class="text-slate-200 font-medium">Text Effects</span>
+<span class="px-2 py-0.5 rounded-full bg-[#112222] border border-border-dark text-[10px] text-text-muted font-mono">14 options</span>
+</div>
+<span class="material-symbols-outlined text-text-muted transition-transform duration-200 group-open:rotate-180">expand_more</span>
+</summary>
+<div class="p-4 border-t border-border-dark bg-[#181d23]">
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+<button class="px-3 py-2 rounded bg-[#0f1215] border border-border-dark hover:border-primary text-slate-300 hover:text-white text-xs font-mono transition-all hover:bg-primary/10">Reverse</button>
+<button class="px-3 py-2 rounded bg-[#0f1215] border border-border-dark hover:border-primary text-slate-300 hover:text-white text-xs font-mono transition-all hover:bg-primary/10">Upside Down</button>
+</div>
+</div>
+</details>
+<details class="group bg-card-dark rounded-lg border border-border-dark overflow-hidden">
+<summary class="flex items-center justify-between p-4 cursor-pointer hover:bg-[#252b33] transition-colors select-none">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-orange-400 text-[20px]">lock</span>
+<span class="text-slate-200 font-medium">Encoding &amp; Ciphers</span>
+<span class="px-2 py-0.5 rounded-full bg-[#112222] border border-border-dark text-[10px] text-text-muted font-mono">12 options</span>
+</div>
+<span class="material-symbols-outlined text-text-muted transition-transform duration-200 group-open:rotate-180">expand_more</span>
+</summary>
+<div class="p-4 border-t border-border-dark bg-[#181d23]">
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+<button class="px-3 py-2 rounded bg-[#0f1215] border border-border-dark hover:border-primary text-slate-300 hover:text-white text-xs font-mono transition-all hover:bg-primary/10">Base64 Encode</button>
+<button class="px-3 py-2 rounded bg-[#0f1215] border border-border-dark hover:border-primary text-slate-300 hover:text-white text-xs font-mono transition-all hover:bg-primary/10">Base64 Decode</button>
+<button class="px-3 py-2 rounded bg-[#0f1215] border border-border-dark hover:border-primary text-slate-300 hover:text-white text-xs font-mono transition-all hover:bg-primary/10">URL Encode</button>
+</div>
+</div>
+</details>
+<details class="group bg-card-dark rounded-lg border border-border-dark overflow-hidden">
+<summary class="flex items-center justify-between p-4 cursor-pointer hover:bg-[#252b33] transition-colors select-none">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-cyan-400 text-[20px]">language</span>
+<span class="text-slate-200 font-medium">Special Alphabets</span>
+<span class="px-2 py-0.5 rounded-full bg-[#112222] border border-border-dark text-[10px] text-text-muted font-mono">5 options</span>
+</div>
+<span class="material-symbols-outlined text-text-muted transition-transform duration-200 group-open:rotate-180">expand_more</span>
+</summary>
+<div class="p-4 border-t border-border-dark bg-[#181d23]">
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+<button class="px-3 py-2 rounded bg-[#0f1215] border border-border-dark hover:border-primary text-slate-300 hover:text-white text-xs font-mono transition-all hover:bg-primary/10">Full Width</button>
+<button class="px-3 py-2 rounded bg-[#0f1215] border border-border-dark hover:border-primary text-slate-300 hover:text-white text-xs font-mono transition-all hover:bg-primary/10">Leetspeak</button>
+</div>
+</div>
+</details>
+<details class="group bg-card-dark rounded-lg border border-border-dark overflow-hidden">
+<summary class="flex items-center justify-between p-4 cursor-pointer hover:bg-[#252b33] transition-colors select-none">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-teal-400 text-[20px]">transform</span>
+<span class="text-slate-200 font-medium">Transformations</span>
+<span class="px-2 py-0.5 rounded-full bg-[#112222] border border-border-dark text-[10px] text-text-muted font-mono">12 options</span>
+</div>
+<span class="material-symbols-outlined text-text-muted transition-transform duration-200 group-open:rotate-180">expand_more</span>
+</summary>
+<div class="p-4 border-t border-border-dark bg-[#181d23]">
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+<button class="px-3 py-2 rounded bg-[#0f1215] border border-border-dark hover:border-primary text-slate-300 hover:text-white text-xs font-mono transition-all hover:bg-primary/10">Remove Extra Spaces</button>
+<button class="px-3 py-2 rounded bg-[#0f1215] border border-border-dark hover:border-primary text-slate-300 hover:text-white text-xs font-mono transition-all hover:bg-primary/10">Sort Lines</button>
+</div>
+</div>
+</details>
+</div>
+</div>
+<div class="mt-4 pt-4 border-t border-border-dark">
+<h4 class="text-white font-bold text-sm mb-2">How to Use</h4>
+<ul class="list-disc list-inside text-text-muted text-xs space-y-1">
+<li>Enter or paste your text in the input area above.</li>
+<li>Review the character, word, and sentence statistics automatically updated.</li>
+<li>Select a conversion category to expand available options.</li>
+<li>Click any transformation button to instantly convert the text.</li>
+<li>Use the Copy or Download buttons to export your result.</li>
+</ul>
+</div>
+</div>
+</main>
+</div>
+
+</body></html>

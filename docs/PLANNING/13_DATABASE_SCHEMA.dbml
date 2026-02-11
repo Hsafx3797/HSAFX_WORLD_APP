@@ -1,0 +1,1037 @@
+// ============================================================================
+// Under Planning Stage
+// DATABASE SCHEMA
+// Project: MacroApps
+// Database: PostgreSQL
+// ============================================================================
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+Enum payment_status {
+  pending
+  paid
+  failed
+  refunded
+}
+
+Enum invoice_status {
+  draft
+  open
+  partially_paid
+  paid
+  void
+  uncollectible
+}
+
+Enum audit_action {
+  create
+  update
+  delete
+  grant
+  revoke
+  login
+  logout
+  payment
+  refund
+} 
+
+Enum permission_target {
+  role_permission
+  user_override
+  plan_feature
+} 
+
+Enum admin_role_type {
+  system
+  custom
+}
+
+Enum plan_change_type {
+  feature_toggle
+  limit_update
+  metadata_add
+  metadata_remove
+} 
+
+Enum plan_limit_type {
+  integer
+  size
+  duration
+  boolean
+  complex
+} 
+
+Enum reset_period {
+  hourly
+  daily
+  monthly
+  yearly
+  never
+}
+
+Enum email_provider {
+  resend
+  smtp
+}
+
+Enum coin_txn_type {
+  purchase
+  bonus
+  spend
+  refund
+  admin_adjust
+  expiration
+}
+
+Enum identifier_type {
+  ip_hash
+  fingerprint
+}
+
+Enum billing_interval {
+  monthly
+  yearly
+}
+
+// ============================================================================
+// CORE USER MANAGEMENT
+// ============================================================================
+
+Table users {
+  id uuid [pk, default: `gen_random_uuid()`]
+  email text [not null, unique, note: 'User email address - must be unique']
+  username text [unique, note: 'Optional username - must be unique if provided']
+  password_hash text [not null, note: 'Hashed password using bcrypt']
+  full_name text [note: 'User full name']
+  avatar_url text [note: 'URL to user profile picture']
+  phone_number text [note: 'User contact number']
+  is_active boolean [not null, default: true, note: 'Account active status - false means account is disabled'] // Roles are managed via `user_roles` ( join table to `roles`) for flexible RBAC and to avoid enum coupling.
+  is_email_verified boolean [not null, default: false, note: 'Email verification status']
+  last_login timestamp [note: 'Last successful login timestamp']
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+  deleted_at timestamp [note: 'Soft delete timestamp - null means not deleted']
+  
+  Note: 'Core user accounts table. Stores authentication and basic profile information.'
+}
+
+Table sessions {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, ref: > users.id, note: 'User who owns this session']
+  refresh_token_hash text [not null, note: 'SHA256 hash of refresh token — NEVER store plaintext. Unique per user (use unique index on (user_id, refresh_token_hash))']
+  expires_at timestamp [not null, note: 'Session expiration timestamp']
+  created_at timestamp [not null, default: `now()`]
+  ip_address text [note: 'IP address when session was created']
+  user_agent text [note: 'Browser/device information']
+
+  indexes {
+    (user_id, refresh_token_hash) [name: 'u_sessions_user_refresh_hash', unique]
+  }
+  
+  Note: 'Active user sessions for authentication. Auto-deleted when user account is deleted.'
+}
+
+Table social_auths {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, ref: > users.id, note: 'User linked to this social account']
+  provider text [not null, note: 'OAuth provider: google, github, etc.']
+  provider_id text [not null, note: 'Unique user ID from the OAuth provider']
+  access_token text [note: 'OAuth access token']
+  refresh_token text [note: 'OAuth refresh token']
+  expires_at timestamp [note: 'Access token expiration']
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+  
+  Note: 'OAuth social login integrations. Links external accounts to user accounts. Security: Access and refresh tokens are sensitive; consider encrypting them at rest or storing them in a secure secrets manager rather than plain DB columns.'
+}
+
+Table password_reset_tokens {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, ref: > users.id, note: 'User requesting password reset']
+  token text [not null, unique, note: 'Unique reset token sent via email']
+  expires_at timestamp [not null, note: 'Token expiration timestamp']
+  used boolean [not null, default: false, note: 'Whether token has been used']
+  created_at timestamp [not null, default: `now()`]
+  
+  Note: 'Password reset tokens for forgotten passwords. Tokens expire after set duration.'
+}
+
+Table email_verification_tokens {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, ref: > users.id, note: 'User to verify']
+  token text [not null, unique, note: 'Unique verification token sent via email']
+  expires_at timestamp [not null, note: 'Token expiration timestamp']
+  verified boolean [not null, default: false, note: 'Whether email has been verified']
+  created_at timestamp [not null, default: `now()`]
+  
+  Note: 'Email verification tokens. Sent after registration to verify email ownership.'
+}
+
+// ============================================================================
+// USER PREFERENCES & SETTINGS
+// ============================================================================
+
+Table user_preferences {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, unique, ref: > users.id, note: 'User these preferences belong to']
+  theme text [default: 'system', note: 'UI theme: light, dark, system']
+  language text [default: 'en', note: 'UI language preference']
+  timezone text [default: 'UTC', note: 'User timezone']
+  preferences jsonb [default: '{}', note: 'Additional custom preferences as JSON']
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+  
+  Note: 'User UI preferences. One-to-one relationship with users.'
+}
+
+Table user_settings {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, unique, ref: > users.id, note: 'User these settings belong to']
+  email_notifications boolean [not null, default: true, note: 'Receive email notifications']
+  push_notifications boolean [not null, default: false, note: 'Receive push notifications']
+  marketing_emails boolean [not null, default: false, note: 'Receive marketing emails']
+  settings jsonb [default: '{}', note: 'Additional custom settings as JSON']
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+  
+  Note: 'User notification and communication settings. One-to-one relationship with users.'
+}
+
+// ============================================================================
+// SUBSCRIPTION SYSTEM
+// ============================================================================
+
+Table subscription_plans {
+  id uuid [pk, default: `gen_random_uuid()`]
+  code text [not null, unique, note: 'Plan code: free, pro, advance (stable identifier for business logic)']
+  name text [not null, note: 'Plan display name: "Pro Plan", "Enterprise", etc.']
+  price_cents bigint [not null, default: 0, note: 'Price in cents (e.g., 1999 = $19.99)']
+  currency text [not null, default: 'USD', note: 'Currency code: USD, EUR, etc.']
+  interval billing_interval [not null, default: 'monthly', note: 'Billing interval (enum): monthly, yearly']
+  description text [note: 'Plan description for users']
+  is_active boolean [not null, default: true, note: 'Plan active status']
+  is_popular boolean [not null, default: false, note: 'Display as popular/featured plan']
+  stripe_price_id text [note: 'Stripe Price ID for payment integration']
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+  deleted_at timestamp [note: 'Soft delete timestamp']
+  
+  indexes {
+    code [name: 'idx_subscription_plans_code']
+  }
+  
+  Note: 'Subscription plan definitions. Use `code` as the stable label; plan configuration is data-driven.'
+} 
+
+Table subscriptions {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, ref: > users.id, note: 'User who owns this subscription']
+  plan_id uuid [not null, ref: > subscription_plans.id, note: 'Plan user is subscribed to']
+  start_date timestamp [not null, note: 'Subscription start date']
+  current_period_start timestamp [note: 'Current billing period start (preferred for billing logic)']
+  current_period_end timestamp [note: 'Current billing period end (preferred for billing logic)']
+  end_date timestamp [note: 'Subscription end/renewal date']
+  trial_ends_at timestamp [note: 'Trial period expiration']
+  canceled_at timestamp [note: 'When subscription was canceled']
+  cancel_reason text [note: 'User-provided cancellation reason']
+  cancel_at_period_end boolean [not null, default: false, note: 'Whether subscription is set to cancel at period end']
+  auto_renew boolean [not null, default: true, note: 'Whether subscription renews automatically']
+  allow_coin_usage_override boolean [note: 'Subscription-level override for plan coin usage: true = allow, false = deny, NULL = inherit plan setting']
+  stripe_subscription_id text [note: 'Stripe Subscription ID']
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+  deleted_at timestamp [note: 'Soft delete timestamp']
+  
+  indexes {
+    user_id [name: 'idx_subscriptions_user']
+    plan_id [name: 'idx_subscriptions_plan']
+    (end_date) [name: 'idx_subscriptions_end_date']
+    stripe_subscription_id [name: 'idx_subscriptions_stripe']
+  }
+  
+  Note: 'User subscription assignments. Compute subscription state at query time from `trial_ends_at`, `current_period_end`, `canceled_at`, `cancel_at_period_end`, and `auto_renew`.'
+}
+
+// ============================================================================
+// PAYMENT SYSTEM
+// ============================================================================
+
+Table payments {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, ref: > users.id, note: 'User who made the payment']
+  subscription_id uuid [ref: > subscriptions.id, note: 'Related subscription (if applicable)']
+  amount_cents bigint [not null, note: 'Payment amount in cents']
+  currency text [not null, default: 'USD', note: 'Currency code']
+  status payment_status [not null, default: 'pending', note: 'Payment status: pending, paid, failed, refunded']
+  provider text [not null, note: 'Payment provider: stripe, paypal, etc.']
+  provider_payment_id text [note: 'Payment ID from provider']
+  payment_method_id text [note: 'Payment method used']
+  metadata jsonb [default: '{}', note: 'Additional payment metadata']
+  paid_at timestamp [note: 'When payment was completed']
+  created_at timestamp [not null, default: `now()`]
+  deleted_at timestamp [note: 'Soft delete timestamp']
+  
+  indexes {
+    user_id [name: 'idx_payments_user']
+    subscription_id [name: 'idx_payments_subscription']
+    status [name: 'idx_payments_status']
+    provider_payment_id [name: 'idx_payments_provider']
+    (user_id, created_at) [name: 'idx_payments_user_date']
+    (subscription_id, status) [name: 'idx_payments_subscription_status']
+  }
+  
+  Note: 'Payment transaction records. Tracks all payments made by users.'
+}
+
+Table invoices {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, ref: > users.id, note: 'User receiving the invoice']
+  subscription_id uuid [ref: > subscriptions.id, note: 'Related subscription']
+  invoice_number text [not null, unique, note: 'Unique invoice number']
+  amount_cents bigint [not null, note: 'Invoice amount in cents']
+  currency text [not null, default: 'USD', note: 'Currency code']
+  status invoice_status [not null, default: 'draft', note: 'Derived from `invoice_payments` (payments and refunds)']
+  due_date timestamp [not null, note: 'Payment due date']
+  paid_at timestamp [note: 'When invoice was paid']
+  payload jsonb [default: '{}', note: 'Invoice line items and details']
+  created_at timestamp [not null, default: `now()`]
+  deleted_at timestamp [note: 'Soft delete timestamp']
+  
+  indexes {
+    user_id [name: 'idx_invoices_user']
+    subscription_id [name: 'idx_invoices_subscription']
+    invoice_number [name: 'idx_invoices_number']
+    status [name: 'idx_invoices_status']
+    due_date [name: 'idx_invoices_due_date']
+  }
+  
+  Note: 'Invoice records for subscription billing and accounting.'
+}
+
+Table invoice_payments {
+  id uuid [pk, default: `gen_random_uuid()`]
+  invoice_id uuid [not null, ref: > invoices.id, note: 'Invoice being paid']
+  payment_id uuid [not null, ref: > payments.id, note: 'Payment applied to the invoice']
+  amount_cents bigint [not null, note: 'Amount from the payment applied to this invoice']
+  created_at timestamp [not null, default: `now()`]
+  
+  indexes {
+    invoice_id [name: 'idx_invoice_payments_invoice']
+    payment_id [name: 'idx_invoice_payments_payment']
+  }
+  
+  Note: 'Link payments to invoices to support partial payments and refunds.'
+} 
+
+Table payment_methods {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, ref: > users.id, note: 'User who owns this payment method']
+  provider text [not null, note: 'Payment provider: stripe, paypal']
+  provider_method_id text [not null, note: 'Payment method ID from provider']
+  type text [not null, note: 'Payment type: card, bank_account']
+  last4 text [note: 'Last 4 digits of card/account']
+  brand text [note: 'Card brand: visa, mastercard, etc.']
+  expiry_month text [note: 'Card expiry month']
+  expiry_year text [note: 'Card expiry year']
+  is_default boolean [not null, default: false, note: 'Is this the default payment method']
+  created_at timestamp [not null, default: `now()`]
+  deleted_at timestamp [note: 'Soft delete timestamp']
+  
+  indexes {
+    user_id [name: 'idx_payment_methods_user']
+    (user_id, is_default) [name: 'idx_payment_methods_user_default']
+  }
+  
+  Note: 'Stored payment methods for recurring billing.
+  Security: `provider_method_id` and any provider tokens are sensitive and should be encrypted at rest or stored via a secure tokenization/service when possible.'
+}
+
+// ============================================================================
+// PERMISSIONS SYSTEM (Legacy - Partially Deprecated)
+// ============================================================================
+
+Table user_permission_overrides {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, ref: > users.id, note: 'User to override permissions for']
+  permission_id uuid [not null, ref: > permissions_catalog.id, note: 'Permission being overridden (FK to catalog)']
+  granted boolean [not null, note: 'Explicit override: true = grant, false = deny. This is the authoritative override field.']
+  scope text [default: 'all', note: "Permission scope: 'own', 'team', or 'all'. Defaults to 'all'."]
+  scope_conditions jsonb [note: 'Optional conditions for scope (e.g., team IDs, resource filters)']
+  reason text [note: 'Reason for override']
+  expires_at timestamp [note: 'Optional expiration date']
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+  
+  indexes {
+    (user_id, permission_id) [name: 'u_user_permission_overrides_user_permission', unique]
+  }
+  
+  Note: 'User-specific permission overrides. **`granted` is the single source of truth and MUST be NOT NULL.**'
+}   
+
+Table permission_audit_logs {
+  id uuid [pk, default: `gen_random_uuid()`]
+  actor_id uuid [not null, ref: > users.id, note: 'Admin who made the change']
+  action audit_action [not null, note: 'Action: create, update, delete, grant, revoke']
+  target_type permission_target [not null, note: 'What was changed: role_permission, user_override, plan_feature']
+  target_id uuid [note: 'ID of changed permission']
+  permission_id uuid [not null, ref: > permissions_catalog.id, note: 'Permission that was changed (FK to catalog)']
+  old_value text [note: 'Previous value']
+  new_value text [note: 'New value']
+  reason text [note: 'Reason for change']
+  ip_address text [note: 'IP address of actor']
+  user_agent text [note: 'Browser/device info']
+  created_at timestamp [not null, default: `now()`]
+  
+  Note: 'Audit trail for all permission changes. Tracks who changed what and when.'
+} 
+
+// ============================================================================
+// ADMIN RBAC SYSTEM (Role-Based Access Control)
+// ============================================================================
+
+Table roles {
+  id uuid [pk, default: `gen_random_uuid()`]
+  name text [not null, note: 'Role identifier: super_admin, admin, developer — unique among non-deleted entries']
+  role_type admin_role_type [not null, default: 'system', note: 'system = built-in, custom = user-created']
+  description text [note: 'Role description']
+  is_default boolean [not null, default: false, note: 'True for system roles']
+  is_active boolean [not null, default: true, note: 'Role active status']
+  sort_order int [not null, default: 0, note: 'Display order in UI']
+  deleted_at timestamp [note: 'Soft delete timestamp — NULL = active']
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+  
+  indexes {
+    name [name: 'u_roles_name_active', unique]
+  }
+
+  Note: 'Role definitions are used across admin and user scopes. Derive a role\'s effective scope from the scopes of its assigned permissions (`role_permissions` -> `permissions_catalog.scope`).'
+} 
+
+Table permission_groups {
+  id uuid [pk, default: `gen_random_uuid()`]
+  key text [not null, unique, note: 'Stable group key: admin_pages, user_management, subscriptions']
+  name text [not null, note: 'Display name for the permission group']
+  description text [note: 'Optional description']
+  sort_order int [not null, default: 0, note: 'Display order in UI']
+  created_at timestamp [not null, default: `now()`]
+
+  Note: 'Managed permission groups to avoid free-text typos and ensure consistent UI grouping.'
+}
+
+Table permissions_catalog {
+  id uuid [pk, default: `gen_random_uuid()`]
+  permission_key text [not null, note: 'Permission identifier: admin.users.create, billing.invoices.read — unique among non-deleted entries']
+  scope text [not null, default: 'admin', note: 'Scope: admin or user']
+  permission_group_id uuid [not null, ref: > permission_groups.id, note: 'FK to managed permission groups (replaces free-text `permission_group`)']
+  description text [note: 'Permission description']
+  sort_order int [not null, default: 0, note: 'Display order within group']
+  deleted_at timestamp [note: 'Soft delete timestamp — NULL = active']
+  created_at timestamp [not null, default: `now()`]
+
+  indexes {
+    (permission_group_id, sort_order) [name: 'idx_permissions_catalog_group_order']
+    permission_key [name: 'u_permissions_catalog_permission_key_active', unique]
+  }
+  
+  Note: 'Catalog of all available permissions for admin and user scopes. `permission_group_id` references `permission_groups` to ensure consistent grouping and avoid typos.'
+}
+
+Table role_permissions {
+  id uuid [pk, default: `gen_random_uuid()`]
+  role_id uuid [not null, ref: > roles.id, note: 'Role receiving permission']
+  permission_id uuid [not null, ref: > permissions_catalog.id, note: 'Permission being granted']
+  granted boolean [not null, default: true, note: 'True = granted, False = denied']
+  scope text [default: 'all', note: "Permission scope: 'own' (user's own resources), 'team' (user's team), 'all' (global). Defaults to 'all' for backward compatibility."]
+  scope_conditions jsonb [note: 'Optional conditions for scope (e.g., team IDs, resource filters)']
+  created_at timestamp [not null, default: `now()`]
+  
+  indexes {
+    (role_id, permission_id) [name: 'u_role_permissions_role_permission', unique]
+  }
+  
+  Note: 'Junction table linking roles to permissions. Defines what each role can do. `scope` enables limited permissions like support_agent having users.update:own access.'
+}  
+
+Table admin_settings {
+  id uuid [pk, default: `gen_random_uuid()`]
+  setting_key text [not null, unique, note: 'Setting identifier: platform.app_name, email.smtp_host']
+  setting_value text [note: 'Setting value (JSON for complex values)']
+  setting_group text [not null, note: 'Group: platform, email, security']
+  description text [note: 'Setting description']
+  is_encrypted boolean [not null, default: false, note: 'True for sensitive data like API keys']
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+  
+  Note: 'Platform-wide admin settings. Key-value storage for configuration.'
+}
+
+Table user_roles {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, ref: > users.id, note: 'User assigned to role']
+  role_id uuid [not null, ref: > roles.id, note: 'Assigned role']
+  expires_at timestamp [note: 'Optional expiration for temporary roles']
+  created_at timestamp [not null, default: `now()`]
+  
+  indexes {
+    (user_id, role_id) [name: 'idx_user_roles_user_role']
+  }
+  
+  Note: 'User-to-role assignments. Replace `users.role` enum with flexible role assignments.'
+}
+
+// ============================================================================
+// TIER SYSTEM (Feature Flags & Limits)
+// ============================================================================
+
+Table plan_features {
+  id uuid [pk, default: `gen_random_uuid()`]
+  plan_id uuid [not null, ref: > subscription_plans.id, note: 'Plan this feature applies to']
+  feature_key text [not null, note: 'Feature identifier: ads_visibility, priority_support, api_access']
+  enabled boolean [not null, default: false, note: 'Whether feature is enabled for this plan']
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+  
+  indexes {
+    (plan_id, feature_key) [name: 'u_plan_features_plan_feature', unique]
+  }
+  
+  Note: 'Feature toggles per plan. Replaces tier-based feature toggles. (Unique on plan+feature prevents duplicates)'
+}  
+
+Table plan_limits {
+  id uuid [pk, default: `gen_random_uuid()`]
+  plan_id uuid [not null, ref: > subscription_plans.id, note: 'Which plan this limit applies to']
+  resource_key text [not null, note: 'Resource identifier: image.file_size, video.duration, cheque.usage']
+  value_type plan_limit_type [note: 'Optional type hint for plan limits: integer, size, duration, boolean, complex']
+  is_unlimited boolean [not null, default: false, note: 'Whether this limit is unlimited (preferred over magic strings in `max_value`)'] 
+  max_value text [note: 'DEPRECATED: legacy flexible value. Prefer typed fields `max_value_bigint` / `max_value_json` or `is_unlimited`.']
+  max_value_bigint bigint [note: 'Optional numeric limit (nullable) for numeric/quantity limits']
+  max_value_json jsonb [note: 'Optional structured limit representation for complex rules (nullable)']
+  reset_period reset_period [note: 'When limit resets: daily, monthly, yearly, never']
+  sort_order int [not null, default: 0, note: 'Display order in UI']
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+  
+  indexes {
+    resource_key [name: 'plan_limits_resource_key_idx']
+    (plan_id, resource_key) [name: 'u_plan_limits_plan_resource', unique]
+  }
+  
+  Note: 'Flexible resource limits per plan. Prefer typed fields for new logic.'
+}  
+
+Table plan_metadata {
+  id uuid [pk, default: `gen_random_uuid()`]
+  plan_id uuid [not null, ref: > subscription_plans.id, note: 'Which plan this metadata applies to']
+  meta_key text [not null, note: 'Metadata key: promo_message, beta_flag, partner_integration']
+  meta_value jsonb [note: 'Metadata value (JSON)']
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+  
+  Note: 'Custom plan attributes. Flexible key-value storage for plan configuration.'
+} 
+
+Table plan_upgrade_rules {
+  id uuid [pk, default: `gen_random_uuid()`]
+  from_plan_id uuid [not null, ref: > subscription_plans.id, note: 'Source plan']
+  to_plan_id uuid [not null, ref: > subscription_plans.id, note: 'Target plan']
+  auto_upgrade boolean [not null, default: false, note: 'Whether upgrade happens automatically']
+  conditions jsonb [default: '{}', note: 'Upgrade conditions: {usageThreshold: 90, consecutiveMonths: 2}']
+  is_active boolean [not null, default: true, note: 'Rule active status']
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+  
+  Note: 'Automated plan upgrade rules. Defines when users should be upgraded.'
+} 
+
+Table plan_audit_logs {
+  id uuid [pk, default: `gen_random_uuid()`]
+  plan_id uuid [not null, ref: > subscription_plans.id, note: 'Plan that was changed']
+  changed_by uuid [not null, ref: > users.id, note: 'Admin who made the change']
+  change_type plan_change_type [not null, note: 'Type: feature_toggle, limit_update, metadata_add, metadata_remove'] 
+  changes jsonb [not null, note: 'What changed: {old: {...}, new: {...}}']
+  reason text [note: 'Reason for change']
+  ip_address text [note: 'IP address']
+  user_agent text [note: 'Browser/device info']
+  created_at timestamp [not null, default: `now()`]
+  
+  Note: 'Audit trail for plan configuration changes.'
+} 
+
+// ============================================================================
+// COIN / CREDIT SYSTEM
+// ============================================================================
+
+Table user_coin_wallets {
+  user_id uuid [pk, ref: > users.id, note: 'One wallet per user - cached balance derived from ledger']
+  balance bigint [not null, default: 0, note: 'CACHED ONLY: Current available coins derived from `coin_transactions`. DO NOT UPDATE DIRECTLY. Updated via `coin_transactions` trigger or background reconciliation job.']
+  lifetime_earned bigint [not null, default: 0]
+  lifetime_spent bigint [not null, default: 0]
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+
+  Note: 'Single wallet per user. Balance is a cache derived from `coin_transactions` (immutable ledger) and must not be mutated directly by application code.'
+}
+
+/*
+Implementation note: enforce invariants at deploy-time
+- Restrict direct UPDATE on `user_coin_wallets.balance` to a small set of DB roles.
+- Implement either a lightweight trigger that updates the wallet on ledger inserts, or
+  a background reconciliation job that recomputes wallet balances from `coin_transactions` and
+  corrects drift. Prefer reconciliation for high-write workloads; prefer trigger for small/low-volume setups.
+*/
+
+Table coin_transactions {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, ref: > users.id]
+  amount bigint [not null, note: '+ = credit, - = debit']
+  txn_type coin_txn_type [not null]
+  reference_type text [note: 'payment, tool_usage, admin, subscription']
+  reference_id uuid [note: 'ID of related entity']
+  metadata jsonb [default: '{}']
+  created_at timestamp [not null, default: `now()`]
+
+  indexes {
+    user_id
+    txn_type
+    created_at
+    # NOTE: uniqueness is intentionally NOT declared here in DBML because Postgres requires a
+    # partial-unique index to make this idempotency constraint work when reference_* are present.
+    # See recommended Postgres DDL section below for the concrete partial-unique index.
+    (reference_type, reference_id, txn_type) [name: 'u_coin_transactions_reference_txn']
+  }
+
+  Note: 'Immutable coin ledger. Wallet balance must match sum(amount). Do not mutate balance without ledger entry.'
+}
+
+Table ad_reward_transactions {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, ref: > users.id]
+  ad_provider varchar(50) [not null, note: 'google_adsense, meta_audience_network, custom']
+  ad_unit_id varchar(100) [note: 'Provider-specific ad identifier']
+  coins_earned integer [not null, default: 10]
+  watched_at timestamptz [not null, default: `now()`]
+  ip_address inet [not null, note: 'For fraud detection']
+  user_agent text [note: 'For fraud detection']
+  fingerprint_hash varchar(64) [note: 'SHA256 browser fingerprint for abuse prevention']
+  validation_status varchar(20) [not null, default: 'pending', note: 'pending, verified, fraud, expired']
+  expires_at timestamptz [not null, note: 'Ad watch must be verified within 5 minutes']
+  created_at timestamptz [not null, default: `now()`]
+  
+  indexes {
+    (user_id, watched_at) [name: 'idx_ad_rewards_user_date']
+    validation_status [name: 'idx_ad_rewards_status']
+    (fingerprint_hash, watched_at) [name: 'idx_ad_rewards_fingerprint']
+  }
+
+  Note: 'Tracks ad-watching coin rewards. Immutable audit log for fraud detection. Only verified transactions create coin_transactions entries.'
+}
+
+Table user_ad_daily_caps {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, ref: > users.id]
+  date date [not null, default: 'CURRENT_DATE']
+  ads_watched integer [not null, default: 0]
+  coins_earned integer [not null, default: 0]
+  last_updated_at timestamptz [not null, default: `now()`]
+  
+  indexes {
+    (user_id, date) [unique, name: 'idx_user_ad_daily_cap_unique']
+  }
+
+  Note: 'Daily ad-watching caps per user. Single row per user per day. Reset at midnight UTC. High-performance lookup for cap enforcement.'
+}
+
+Table anonymous_usage_tracking {
+  id uuid [pk, default: `gen_random_uuid()`]
+  fingerprint_hash varchar(64) [not null, note: 'SHA256 of browser fingerprint (canvas + fonts + timezone)']
+  ip_address inet [not null, note: 'Fallback identifier if fingerprint blocked']
+  tool_id uuid [not null, ref: > tools.id]
+  usage_count integer [not null, default: 1]
+  last_used_at timestamptz [not null, default: `now()`]
+  date date [not null, default: 'CURRENT_DATE']
+  created_at timestamptz [not null, default: `now()`]
+  
+  indexes {
+    (fingerprint_hash, tool_id, date) [name: 'idx_anon_usage_tracking']
+    (ip_address, date) [name: 'idx_anon_ip_date']
+  }
+
+  Note: 'Tracks anonymous user tool usage for rate limiting. Expires after 24 hours (auto-delete via TTL job). No persistent storage beyond daily reset.'
+}
+
+Table coin_packs {
+  id uuid [pk, default: `gen_random_uuid()`]
+  code text [not null, unique, note: 'starter_100, pro_1000']
+  coins bigint [not null]
+  price_cents bigint [not null]
+  currency text [not null, default: 'USD']
+  bonus_coins bigint [not null, default: 0]
+  is_active boolean [not null, default: true]
+  stripe_price_id text
+  created_at timestamp [not null, default: `now()`]
+
+  Note: 'Purchasable coin bundles.'
+}
+
+Table coin_purchase_payments {
+  id uuid [pk, default: `gen_random_uuid()`]
+  payment_id uuid [not null, ref: > payments.id]
+  coin_pack_id uuid [not null, ref: > coin_packs.id]
+  coins_credited bigint [not null]
+  created_at timestamp [not null, default: `now()`]
+
+  Note: 'Maps successful payments to coin credits.'
+}
+
+Table tool_coin_costs {
+  id uuid [pk, default: `gen_random_uuid()`]
+  tool_id uuid [not null, ref: > tools.id]
+  action_key text [not null, note: 'image.generate, pdf.export, api.call']
+  coin_cost bigint [not null, note: 'Per-tool coin cost override; calculated from BA weight and plan discounts']
+  is_active boolean [not null, default: true]
+  created_at timestamp [not null, default: `now()`]
+
+  indexes {
+    (tool_id, action_key) [unique]
+  }
+
+  Note: 'Optional per-tool coin cost overrides. If not set, inherits from tool_class_policy via tools.tool_class. See BILLING_SPECIFICATION.md Section 2.'
+
+  plan_id uuid [not null, ref: > subscription_plans.id]
+  tool_class varchar(100) [note: 'NULL = applies to all tool classes; specific class = override for that class']
+  allow_coin_usage boolean [not null, default: true]
+  coin_discount_percent decimal(5,2) [not null, default: 0, note: '0.00–100.00']
+  created_at timestamp [not null, default: `now()`]
+
+  indexes {
+    (plan_id, tool_class) [name: 'u_plan_coin_rules_plan_class', unique]
+  }
+
+  Note: 'Plan-specific coin discounts per tool class. Formula: coins = ceil(ba_charged × (1 - discount/100)). See UNIFIED_BILLING_SYSTEM.md Section 3.2.'
+}
+
+Table usage_coin_fallbacks {
+  id uuid [pk, default: `gen_random_uuid()`]
+  plan_id uuid [not null, ref: > subscription_plans.id, note: 'Plan this fallback applies to']
+  tool_class varchar(100) [not null, note: 'Tool class to apply fallback rate to']
+  coin_discount_percent decimal(5,2) [not null, default: 0, note: 'Fallback discount when over limit — typically less favorable than standard plan rates']
+  created_at timestamp [not null, default: `now()`]
+
+  indexes {
+    (plan_id, tool_class) [name: 'u_usage_coin_fallbacks_plan_class', unique]
+  }
+
+  Note: 'Defines coin discount rates when plan limits are exceeded. Formula: coins = ceil(ba_charged × (1 - discount/100)). See UNIFIED_BILLING_SYSTEM.md Section 7.1.'
+}
+
+// ============================================================================
+// USAGE TRACKING SYSTEM
+// ============================================================================
+
+Table usage_counters {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, ref: > users.id, note: 'User being tracked']
+  resource_key text [not null, note: 'Feature or resource key: image.convert.count, api.requests.count']
+  source text [note: 'api, cron, admin']
+  period_start timestamp [not null, note: 'Period start timestamp']
+  period_end timestamp [not null, note: 'Period end timestamp']
+  usage_value bigint [not null, default: 0, note: 'Usage value for the period']
+  last_reset_at timestamp [not null, default: `now()`, note: 'When counter was last reset']
+  metadata jsonb [default: '{}', note: 'Additional tracking data']
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+  
+  indexes {
+    (user_id, resource_key, period_start) [name: 'u_usage_counters_user_resource_period', unique]
+  } 
+  
+  Note: 'Authoritative usage counters for features and limits. Use `resource_key` to model any metric.'
+} 
+
+// ============================================================================
+// TOOLS & API (Rate Limits, Anonymous Usage, Request Logs)
+// ============================================================================
+
+Table tools {
+  id uuid [pk, default: `gen_random_uuid()`]
+  tool_key text [not null, note: 'image_converter, pdf_merge, cheque_print — unique among non-deleted entries']
+  name text [not null]
+  description text
+  tool_class varchar(100) [note: 'text_transform, image_converter, calculator, etc. — references tool_class_policy']
+  is_public boolean [not null, default: true, note: 'Accessible without subscription?']
+  is_active boolean [not null, default: true]
+  deleted_at timestamp [note: 'Soft delete timestamp — NULL = active']
+  created_at timestamp [not null, default: `now()`]
+
+  Note: 'Single source of truth for API tools/endpoints. tool_class determines billing behavior via tool_class_policy.'
+}
+
+Table tool_class_policy {
+  tool_class varchar(100) [pk, note: 'text_transform, calculator, image_converter, etc.']
+  ba_weight decimal(5,2) [not null, default: 1.0, note: 'Multiplier for BA bundling: 0.2 = 5 successes per 1 BA, 1.0 = standard']
+  execution_mode varchar(20) [not null, default: 'sync', note: 'sync | async']
+  async_required boolean [not null, default: false, note: 'Hard requirement for async execution']
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  Note: 'Defines billing behavior and execution requirements per tool class. Coins = ceil(ba_charged × (1 - discount/100)). See UNIFIED_BILLING_SYSTEM.md Section 2 for canonical policies.'
+}
+
+Table api_rate_limits {
+  id uuid [pk, default: `gen_random_uuid()`]
+  tool_id uuid [not null, ref: > tools.id]
+  plan_id uuid [ref: > subscription_plans.id, note: 'NULL = applies to all plans']
+  requests_per_minute int
+  burst_limit int
+  period reset_period [note: 'Optional. When set, indicates the reset window (daily, monthly, yearly). When NULL, `requests_per_minute` is enforced as a per-minute limit.']
+  created_at timestamp [not null, default: `now()`]
+
+  indexes {
+    (tool_id, plan_id) [unique]
+  }
+
+  Note: 'Logical rate limit configuration (enforced via Redis/edge). `requests_per_minute` remains functional (per-minute limit) when `period` is NULL. When `period` is set, `requests_per_minute` may be ignored or used in combination depending on enforcement strategy — document and validate allowed combinations in application logic and add tests. Use `period = never` for unlimited/always-on features sparingly and document its semantics.'
+}
+
+Table anonymous_usage {
+  id uuid [pk, default: `gen_random_uuid()`]
+  identifier text [not null, note: 'IP hash or fingerprint value']
+  identifier_type identifier_type [not null, default: 'ip_hash', note: 'Enum: ip_hash | fingerprint (normalizes identifier semantics)']
+  tool_id uuid [not null, ref: > tools.id]
+  period_start timestamp [not null]
+  period_end timestamp [not null]
+  usage_value bigint [not null, default: 0]
+  created_at timestamp [not null, default: `now()`]
+
+  indexes {
+    (identifier_type, identifier, tool_id, period_start) [name: 'u_anonymous_usage_identifier_type_identifier_tool_period', unique]
+  }
+
+  Note: 'Tracks anonymous/IP-based usage for unauthenticated endpoints. `identifier_type` normalizes the meaning of `identifier` (e.g., ip_hash, fingerprint).'
+}
+
+Table api_request_logs {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [ref: > users.id]
+  tool_id uuid [not null, ref: > tools.id]
+  status_code int
+  duration_ms int
+  ip_address text
+  user_agent text
+  created_at timestamp [not null, default: `now()`]
+
+  indexes {
+    tool_id
+    user_id
+    created_at
+  }
+
+  Note: 'Sampled per-request logs for forensics and performance monitoring.'
+}
+
+Table api_keys {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, ref: > users.id, note: 'Owner of the API key']
+  key_hash text [not null, unique, note: 'SHA256 hash of the API key — NEVER store plaintext']
+  key_prefix text [not null, note: 'First 8 characters for display (e.g., "hsafx_12") — allows users to identify keys']
+  name text [not null, note: 'User-defined name for the key (e.g., "Production Integration")']
+  scopes text[] [note: 'Optional: array of permission scopes this key grants (e.g., ["tools.use", "user.read"])']
+  rate_limit_per_hour int [not null, default: 100, note: '✅ ADMIN-CONFIGURABLE: Requests allowed per hour (default: 100 for free, 1000 for pro, custom for enterprise)']
+  last_used_at timestamp [note: 'Last time this key was used']
+  expires_at timestamp [note: 'Optional expiration timestamp']
+  is_active boolean [not null, default: true, note: 'Can be revoked by setting to false']
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+
+  indexes {
+    key_hash [name: 'u_api_keys_key_hash', unique]
+    user_id
+    (user_id, is_active)
+  }
+
+  Note: 'API keys for programmatic access. Store hashed keys only, never plaintext. Prefix allows display without exposing full key.'
+}
+
+// ============================================================================
+// AUDIT & LOGGING
+// ============================================================================
+
+Table audit_logs {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [ref: > users.id, note: 'User who performed the action']
+  target_user_id uuid [ref: > users.id, note: 'User affected by the action']
+  action audit_action [not null, note: 'Action type (enum). Use `action_detail` for specifics when needed.']
+  action_detail text [note: 'Optional free-text detail: resource, reason, or other contextual detail when enum alone is insufficient']
+  resource text [not null, note: 'Resource affected: user, subscription, permission']
+  resource_id uuid [note: 'ID of affected resource']
+  changes jsonb [default: '{}', note: 'What changed: {old: {...}, new: {...}}']
+  ip_address text [note: 'IP address of actor']
+  user_agent text [note: 'Browser/device info']
+  metadata jsonb [default: '{}', note: 'Additional context']
+  created_at timestamp [not null, default: `now()`]
+
+  Note: 'System-wide audit log. `action` is an enum for consistent querying; `action_detail` stores free-text context when necessary.'
+}
+
+// ============================================================================
+// EMAIL SYSTEM
+// ============================================================================
+
+Table email_provider_config {
+  id uuid [pk, default: `gen_random_uuid()`]
+  provider email_provider [not null, unique, note: 'Email provider: resend, smtp']
+  daily_limit int [not null, default: 100, note: 'Maximum emails per day']
+  monthly_limit int [not null, default: 3000, note: 'Maximum emails per month']
+  is_enabled boolean [not null, default: true, note: 'Whether provider is active']
+  priority int [not null, default: 1, note: 'Priority: 1 = primary, 2 = fallback']
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+  
+  Note: 'Email provider configuration. Manages multiple email providers with fallbacks.'
+}
+
+Table email_usage_tracking {
+  id uuid [pk, default: `gen_random_uuid()`]
+  provider email_provider [not null, note: 'Email provider being tracked']
+  period_type reset_period [not null, note: 'Period granularity: daily, monthly, yearly, never']
+  period_start timestamp [not null, note: 'Period start timestamp']
+  period_end timestamp [not null, note: 'Period end timestamp']
+  emails_sent int [not null, default: 0, note: 'Number of emails sent this period']
+  emails_failed int [not null, default: 0, note: 'Number of failed emails this period']
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+  
+  Note: 'Tracks email usage per provider. Used for rate limiting and monitoring.'
+}
+
+Table background_jobs {
+  id uuid [pk, default: `gen_random_uuid()`]
+  job_type text [not null, note: 'Job type identifier: email_verification, usage_cleanup, wallet_reconciliation']
+  payload jsonb [not null, note: 'Job data and parameters']
+  status text [not null, default: 'pending', note: 'Job status: pending, processing, completed, failed']
+  attempts int [not null, default: 0, note: 'Number of execution attempts']
+  max_attempts int [not null, default: 3, note: 'Maximum retry attempts before marking as failed']
+  scheduled_at timestamp [not null, default: `now()`, note: 'When job should be executed']
+  started_at timestamp [note: 'When job processing began']
+  completed_at timestamp [note: 'When job completed (success or failure)']
+  error_message text [note: 'Error details if job failed']
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+
+  indexes {
+    (status, scheduled_at) [name: 'idx_background_jobs_status_scheduled']
+    job_type
+    created_at
+  }
+
+  Note: 'Fallback job queue when Inngest is unavailable. Ensures critical jobs (email verification, usage cleanup) still execute. Poll this table when Inngest health check fails.'
+}
+
+// ============================================================================
+// RELATIONSHIPS SUMMARY
+// ============================================================================
+
+// User Authentication & Profile
+Ref: sessions.user_id > users.id [delete: cascade]
+Ref: social_auths.user_id > users.id [delete: cascade]
+Ref: password_reset_tokens.user_id > users.id [delete: cascade]
+Ref: email_verification_tokens.user_id > users.id [delete: cascade]
+Ref: user_preferences.user_id > users.id [delete: cascade]
+Ref: user_settings.user_id > users.id [delete: cascade]
+
+// Subscriptions & Billing
+Ref: subscriptions.user_id > users.id [delete: cascade]
+Ref: subscriptions.plan_id > subscription_plans.id
+Ref: payments.user_id > users.id [delete: cascade]
+Ref: payments.subscription_id > subscriptions.id
+Ref: invoices.user_id > users.id [delete: cascade]
+Ref: invoices.subscription_id > subscriptions.id
+Ref: payment_methods.user_id > users.id [delete: cascade]
+Ref: invoice_payments.invoice_id > invoices.id [delete: cascade]
+Ref: invoice_payments.payment_id > payments.id [delete: cascade]
+
+// Coins & Purchases
+Ref: user_coin_wallets.user_id > users.id [delete: cascade]
+Ref: coin_transactions.user_id > users.id [delete: cascade]
+Ref: coin_purchase_payments.payment_id > payments.id [delete: cascade]
+Ref: coin_purchase_payments.coin_pack_id > coin_packs.id
+Ref: tool_coin_costs.tool_id > tools.id
+Ref: plan_coin_rules.plan_id > subscription_plans.id
+Ref: usage_coin_fallbacks.plan_id > subscription_plans.id
+
+// Permissions & Overrides
+Ref: user_permission_overrides.user_id > users.id [delete: cascade]
+Ref: permission_audit_logs.actor_id > users.id
+
+// RBAC
+Ref: role_permissions.role_id > roles.id [delete: cascade]
+Ref: role_permissions.permission_id > permissions_catalog.id [delete: cascade]
+Ref: permissions_catalog.permission_group_id > permission_groups.id
+Ref: user_roles.user_id > users.id [delete: cascade]
+Ref: user_roles.role_id > roles.id [delete: cascade]
+
+// Usage Tracking
+Ref: usage_counters.user_id > users.id [delete: cascade]
+Ref: api_rate_limits.tool_id > tools.id
+Ref: api_rate_limits.plan_id > subscription_plans.id
+Ref: anonymous_usage.tool_id > tools.id
+Ref: api_request_logs.tool_id > tools.id
+Ref: api_request_logs.user_id > users.id
+
+// Audit Logs
+Ref: audit_logs.user_id > users.id
+Ref: audit_logs.target_user_id > users.id
+Ref: plan_audit_logs.changed_by > users.id
+
+// ============================================================================
+// RECOMMENDED POSTGRES DDL (apply during migration)
+// ============================================================================
+/*
+The schema uses soft-deletes (deleted_at). To enforce "unique among active rows" semantics
+create partial unique indexes in Postgres. Examples below are intentionally `CONCURRENTLY` to
+avoid long locks in production.
+
+-- Roles: enforce unique name among non-deleted rows
+CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS u_roles_name_active
+  ON roles (name)
+  WHERE deleted_at IS NULL;
+
+-- Permissions catalog: enforce permission_key unique among active rows
+CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS u_permissions_catalog_permission_key_active
+  ON permissions_catalog (permission_key)
+  WHERE deleted_at IS NULL;
+
+-- Coin transactions idempotency: enforce uniqueness only when reference_type and reference_id are present
+CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS u_coin_transactions_reference_txn
+  ON coin_transactions (reference_type, reference_id, txn_type)
+  WHERE reference_type IS NOT NULL AND reference_id IS NOT NULL;
+
+-- Wallet invariant options (choose one):
+-- Option A: lightweight trigger (simpler but may contend under heavy write load)
+-- CREATE FUNCTION fn_coin_transactions_wallet_update() RETURNS trigger AS $$
+-- BEGIN
+--   IF TG_OP = 'INSERT' THEN
+--     UPDATE user_coin_wallets
+--       SET balance = balance + NEW.amount,
+--           lifetime_earned = lifetime_earned + GREATEST(NEW.amount,0),
+--           lifetime_spent = lifetime_spent + GREATEST(-NEW.amount,0),
+--           updated_at = now()
+--     WHERE user_id = NEW.user_id;
+--     RETURN NEW;
+--   END IF;
+--   RETURN NULL;
+-- END; $$ LANGUAGE plpgsql;
+-- CREATE TRIGGER trg_coin_txn_wallet_update AFTER INSERT ON coin_transactions
+--   FOR EACH ROW EXECUTE FUNCTION fn_coin_transactions_wallet_update();
+
+-- Option B: background reconciliation job (recommended for high-volume systems)
+-- Periodically recompute wallet balances with:
+--   SELECT user_id, SUM(amount) AS balance FROM coin_transactions GROUP BY user_id;
+-- and upsert into user_coin_wallets. Also use this job to detect and fix drift.
+
+*/

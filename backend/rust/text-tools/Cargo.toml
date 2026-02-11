@@ -1,0 +1,40 @@
+[package]
+name = "text-tools"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wasm-bindgen.workspace = true
+serde.workspace = true
+serde-wasm-bindgen.workspace = true
+serde_json.workspace = true
+regex.workspace = true
+base64.workspace = true
+hex.workspace = true
+sha2.workspace = true
+md-5.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+percent-encoding = "2.3"
+urlencoding = "2.1"
+console_error_panic_hook = { version = "0.1", optional = true }
+
+[features]
+default = ["console_error_panic_hook"]
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"
+
+[profile.release]
+opt-level = "z"     # Optimize for size
+lto = true          # Enable Link Time Optimization
+codegen-units = 1   # Reduce parallel code generation for better optimization
+strip = true        # Strip symbols from binary
+panic = "abort"     # Abort on panic instead of unwinding
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ["-Oz", "--enable-mutable-globals"]

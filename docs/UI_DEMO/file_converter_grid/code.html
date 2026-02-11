@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Data Converters - Developer Tools</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Manrope:wght@300;400;500;600&amp;family=Fira+Code:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#333333",
+                        "primary-hover": "#444444",
+                        "background-light": "#fafafa",
+                        "background-dark": "#0b0f1a","card-dark": "#161b22","card-border": "#1f2631","pill-bg": "#161b22",
+                        "pill-hover": "#1f2631",
+                        "pill-active": "#3b82f6","badge-bg": "#1f2631",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"],
+                        "body": ["Manrope", "sans-serif"],
+                        "mono": ["Fira Code", "monospace"],
+                    },
+                    boxShadow: {
+                        'inner-strong': 'inset 0 2px 4px 0 rgb(0 0 0 / 0.5)',
+                        'lift': '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.15)',
+                        'card-glow': '0 0 0 1px rgba(31, 38, 49, 1)',
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(11, 15, 26, 0.9);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1f2631;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #2d3542;
+        }
+        .tool-card:hover h3 {
+             color: #60a5fa;}
+        .tool-card:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+    </style>
+</head>
+<body class="bg-background-dark text-slate-900 dark:text-gray-300 font-body h-screen w-full flex flex-col overflow-hidden selection:bg-blue-500/30">
+<main class="flex-1 flex flex-col h-full relative overflow-hidden bg-background-dark">
+<div class="w-full pt-8 pb-6 px-4 md:px-6 z-10 bg-background-dark sticky top-0 border-b border-card-border/50 backdrop-blur-sm bg-opacity-95">
+<div class="max-w-6xl mx-auto flex flex-col items-center gap-8">
+<h1 class="text-3xl md:text-5xl font-bold text-white tracking-tight font-display">Data Converters</h1>
+<div class="w-full max-w-2xl relative">
+<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-gray-500">search</span>
+</div>
+<input class="block w-full pl-12 pr-4 py-3 bg-[#161b22] border border-card-border rounded-xl text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 font-body text-sm transition-all shadow-sm" placeholder="Search converters (e.g., JSON, Base64)..." type="text"/>
+</div>
+<div class="w-full max-w-4xl flex flex-wrap justify-center gap-2">
+<button class="px-4 py-1.5 rounded-full text-xs font-semibold bg-blue-600 text-white shadow-lg shadow-blue-500/20 transition-all transform hover:scale-105">All</button>
+<button class="px-4 py-1.5 rounded-full text-xs font-medium bg-pill-bg text-gray-400 border border-card-border hover:border-gray-500 hover:text-white transition-all">Data Format</button>
+<button class="px-4 py-1.5 rounded-full text-xs font-medium bg-pill-bg text-gray-400 border border-card-border hover:border-gray-500 hover:text-white transition-all">Encoding</button>
+<button class="px-4 py-1.5 rounded-full text-xs font-medium bg-pill-bg text-gray-400 border border-card-border hover:border-gray-500 hover:text-white transition-all">Document</button>
+<button class="px-4 py-1.5 rounded-full text-xs font-medium bg-pill-bg text-gray-400 border border-card-border hover:border-gray-500 hover:text-white transition-all">Minifier</button>
+<button class="px-4 py-1.5 rounded-full text-xs font-medium bg-pill-bg text-gray-400 border border-card-border hover:border-gray-500 hover:text-white transition-all">Beautifier</button>
+<button class="px-4 py-1.5 rounded-full text-xs font-medium bg-pill-bg text-gray-400 border border-card-border hover:border-gray-500 hover:text-white transition-all">Validator</button>
+<button class="px-4 py-1.5 rounded-full text-xs font-medium bg-pill-bg text-gray-400 border border-card-border hover:border-gray-500 hover:text-white transition-all">Lang Transpiler</button>
+<button class="px-4 py-1.5 rounded-full text-xs font-medium bg-pill-bg text-gray-400 border border-card-border hover:border-gray-500 hover:text-white transition-all">Devops</button>
+<button class="px-4 py-1.5 rounded-full text-xs font-medium bg-pill-bg text-gray-400 border border-card-border hover:border-gray-500 hover:text-white transition-all">Database Format</button>
+</div>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto px-4 md:px-6 pb-20 pt-8">
+<div class="max-w-6xl mx-auto flex flex-col gap-12">
+<section class="flex flex-col gap-5">
+<div class="flex items-center gap-3 border-b border-card-border pb-3">
+<span class="material-symbols-outlined text-blue-500">dataset</span>
+<h2 class="text-xl font-bold text-white tracking-wide font-display">Data Format</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+<div class="tool-card group flex flex-col bg-card-dark rounded-xl border border-card-border p-5 transition-all duration-300 cursor-pointer h-36 relative shadow-sm hover:shadow-lg">
+<div class="absolute top-4 right-4 flex gap-1.5">
+<span class="bg-blue-500/10 text-[10px] font-semibold text-blue-400 px-2 py-0.5 rounded border border-blue-500/20">WASM</span>
+<span class="bg-green-500/10 text-[10px] font-semibold text-green-400 px-2 py-0.5 rounded border border-green-500/20">Popular</span>
+</div>
+<div class="flex items-start gap-4 mb-3">
+<div class="p-2 bg-[#0b0f1a] rounded-lg border border-card-border">
+<span class="material-symbols-outlined text-gray-400 text-2xl">data_object</span>
+</div>
+<div>
+<h3 class="text-base font-bold text-gray-200 group-hover:text-blue-400 transition-colors font-display">CSV ⇄ JSON</h3>
+<p class="text-xs text-gray-500 mt-1 leading-relaxed">Convert tabular CSV data to JSON objects and arrays seamlessly.</p>
+</div>
+</div>
+<div class="mt-auto flex gap-2 items-center pt-2 border-t border-white/5">
+<span class="text-[10px] font-mono text-gray-400">CSV</span>
+<span class="text-[10px] text-gray-600">→</span>
+<span class="text-[10px] font-mono text-gray-400">JSON</span>
+</div>
+</div>
+<div class="tool-card group flex flex-col bg-card-dark rounded-xl border border-card-border p-5 transition-all duration-300 cursor-pointer h-36 relative shadow-sm hover:shadow-lg">
+<div class="absolute top-4 right-4 flex gap-1.5">
+<span class="bg-purple-500/10 text-[10px] font-semibold text-purple-400 px-2 py-0.5 rounded border border-purple-500/20">Secure</span>
+</div>
+<div class="flex items-start gap-4 mb-3">
+<div class="p-2 bg-[#0b0f1a] rounded-lg border border-card-border">
+<span class="material-symbols-outlined text-gray-400 text-2xl">code</span>
+</div>
+<div>
+<h3 class="text-base font-bold text-gray-200 group-hover:text-blue-400 transition-colors font-display">XML ⇄ JSON</h3>
+<p class="text-xs text-gray-500 mt-1 leading-relaxed">Transform XML documents into JSON structures for modern APIs.</p>
+</div>
+</div>
+<div class="mt-auto flex gap-2 items-center pt-2 border-t border-white/5">
+<span class="text-[10px] font-mono text-gray-400">XML</span>
+<span class="text-[10px] text-gray-600">→</span>
+<span class="text-[10px] font-mono text-gray-400">JSON</span>
+</div>
+</div>
+<div class="tool-card group flex flex-col bg-card-dark rounded-xl border border-card-border p-5 transition-all duration-300 cursor-pointer h-36 relative shadow-sm hover:shadow-lg">
+<div class="absolute top-4 right-4 flex gap-1.5">
+<span class="bg-orange-500/10 text-[10px] font-semibold text-orange-400 px-2 py-0.5 rounded border border-orange-500/20">PY</span>
+</div>
+<div class="flex items-start gap-4 mb-3">
+<div class="p-2 bg-[#0b0f1a] rounded-lg border border-card-border">
+<span class="material-symbols-outlined text-gray-400 text-2xl">integration_instructions</span>
+</div>
+<div>
+<h3 class="text-base font-bold text-gray-200 group-hover:text-blue-400 transition-colors font-display">YAML ⇄ JSON</h3>
+<p class="text-xs text-gray-500 mt-1 leading-relaxed">Convert YAML configuration files to JSON format instantly.</p>
+</div>
+</div>
+<div class="mt-auto flex gap-2 items-center pt-2 border-t border-white/5">
+<span class="text-[10px] font-mono text-gray-400">YAML</span>
+<span class="text-[10px] text-gray-600">→</span>
+<span class="text-[10px] font-mono text-gray-400">JSON</span>
+</div>
+</div>
+<div class="tool-card group flex flex-col bg-card-dark rounded-xl border border-card-border p-5 transition-all duration-300 cursor-pointer h-36 relative shadow-sm hover:shadow-lg">
+<div class="flex items-start gap-4 mb-3">
+<div class="p-2 bg-[#0b0f1a] rounded-lg border border-card-border">
+<span class="material-symbols-outlined text-gray-400 text-2xl">settings_suggest</span>
+</div>
+<div>
+<h3 class="text-base font-bold text-gray-200 group-hover:text-blue-400 transition-colors font-display">TOML ⇄ JSON</h3>
+<p class="text-xs text-gray-500 mt-1 leading-relaxed">Convert TOML config files to standard JSON format.</p>
+</div>
+</div>
+<div class="mt-auto flex gap-2 items-center pt-2 border-t border-white/5">
+<span class="text-[10px] font-mono text-gray-400">TOML</span>
+<span class="text-[10px] text-gray-600">→</span>
+<span class="text-[10px] font-mono text-gray-400">JSON</span>
+</div>
+</div>
+<div class="tool-card group flex flex-col bg-card-dark rounded-xl border border-card-border p-5 transition-all duration-300 cursor-pointer h-36 relative shadow-sm hover:shadow-lg">
+<div class="flex items-start gap-4 mb-3">
+<div class="p-2 bg-[#0b0f1a] rounded-lg border border-card-border">
+<span class="material-symbols-outlined text-gray-400 text-2xl">tune</span>
+</div>
+<div>
+<h3 class="text-base font-bold text-gray-200 group-hover:text-blue-400 transition-colors font-display">INI ⇄ JSON</h3>
+<p class="text-xs text-gray-500 mt-1 leading-relaxed">Parse INI files and convert sections/keys to JSON.</p>
+</div>
+</div>
+<div class="mt-auto flex gap-2 items-center pt-2 border-t border-white/5">
+<span class="text-[10px] font-mono text-gray-400">INI</span>
+<span class="text-[10px] text-gray-600">→</span>
+<span class="text-[10px] font-mono text-gray-400">JSON</span>
+</div>
+</div>
+<div class="tool-card group flex flex-col bg-card-dark rounded-xl border border-card-border p-5 transition-all duration-300 cursor-pointer h-36 relative shadow-sm hover:shadow-lg">
+<div class="absolute top-4 right-4 flex gap-1.5">
+<span class="bg-blue-500/10 text-[10px] font-semibold text-blue-400 px-2 py-0.5 rounded border border-blue-500/20">WASM</span>
+</div>
+<div class="flex items-start gap-4 mb-3">
+<div class="p-2 bg-[#0b0f1a] rounded-lg border border-card-border">
+<span class="material-symbols-outlined text-gray-400 text-2xl">table_view</span>
+</div>
+<div>
+<h3 class="text-base font-bold text-gray-200 group-hover:text-blue-400 transition-colors font-display">Parquet ⇄ JSON</h3>
+<p class="text-xs text-gray-500 mt-1 leading-relaxed">Read Parquet columnar storage files and export as JSON.</p>
+</div>
+</div>
+<div class="mt-auto flex gap-2 items-center pt-2 border-t border-white/5">
+<span class="text-[10px] font-mono text-gray-400">PARQUET</span>
+<span class="text-[10px] text-gray-600">→</span>
+<span class="text-[10px] font-mono text-gray-400">JSON</span>
+</div>
+</div>
+</div>
+</section>
+<section class="flex flex-col gap-5">
+<div class="flex items-center gap-3 border-b border-card-border pb-3">
+<span class="material-symbols-outlined text-blue-500">lock</span>
+<h2 class="text-xl font-bold text-white tracking-wide font-display">Encoding</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+<div class="tool-card group flex flex-col bg-card-dark rounded-xl border border-card-border p-5 transition-all duration-300 cursor-pointer h-36 relative shadow-sm hover:shadow-lg">
+<div class="absolute top-4 right-4 flex gap-1.5">
+<span class="bg-green-500/10 text-[10px] font-semibold text-green-400 px-2 py-0.5 rounded border border-green-500/20">Popular</span>
+</div>
+<div class="flex items-start gap-4 mb-3">
+<div class="p-2 bg-[#0b0f1a] rounded-lg border border-card-border">
+<span class="material-symbols-outlined text-gray-400 text-2xl">link</span>
+</div>
+<div>
+<h3 class="text-base font-bold text-gray-200 group-hover:text-blue-400 transition-colors font-display">URL Encode ⇄ Decode</h3>
+<p class="text-xs text-gray-500 mt-1 leading-relaxed">Percent-encode URLs or decode them back to plain text.</p>
+</div>
+</div>
+<div class="mt-auto flex gap-2 items-center pt-2 border-t border-white/5">
+<span class="text-[10px] font-mono text-gray-400">TEXT</span>
+<span class="text-[10px] text-gray-600">⇄</span>
+<span class="text-[10px] font-mono text-gray-400">URL</span>
+</div>
+</div>
+<div class="tool-card group flex flex-col bg-card-dark rounded-xl border border-card-border p-5 transition-all duration-300 cursor-pointer h-36 relative shadow-sm hover:shadow-lg">
+<div class="absolute top-4 right-4 flex gap-1.5">
+<span class="bg-purple-500/10 text-[10px] font-semibold text-purple-400 px-2 py-0.5 rounded border border-purple-500/20">Secure</span>
+</div>
+<div class="flex items-start gap-4 mb-3">
+<div class="p-2 bg-[#0b0f1a] rounded-lg border border-card-border">
+<span class="material-symbols-outlined text-gray-400 text-2xl">tag</span>
+</div>
+<div>
+<h3 class="text-base font-bold text-gray-200 group-hover:text-blue-400 transition-colors font-display">Base64 Encode ⇄ Decode</h3>
+<p class="text-xs text-gray-500 mt-1 leading-relaxed">Convert text or binary data to Base64 strings and back.</p>
+</div>
+</div>
+<div class="mt-auto flex gap-2 items-center pt-2 border-t border-white/5">
+<span class="text-[10px] font-mono text-gray-400">TEXT</span>
+<span class="text-[10px] text-gray-600">⇄</span>
+<span class="text-[10px] font-mono text-gray-400">B64</span>
+</div>
+</div>
+<div class="tool-card group flex flex-col bg-card-dark rounded-xl border border-card-border p-5 transition-all duration-300 cursor-pointer h-36 relative shadow-sm hover:shadow-lg">
+<div class="flex items-start gap-4 mb-3">
+<div class="p-2 bg-[#0b0f1a] rounded-lg border border-card-border">
+<span class="material-symbols-outlined text-gray-400 text-2xl">html</span>
+</div>
+<div>
+<h3 class="text-base font-bold text-gray-200 group-hover:text-blue-400 transition-colors font-display">HTML Entity Encode</h3>
+<p class="text-xs text-gray-500 mt-1 leading-relaxed">Escape special characters for safe usage in HTML documents.</p>
+</div>
+</div>
+<div class="mt-auto flex gap-2 items-center pt-2 border-t border-white/5">
+<span class="text-[10px] font-mono text-gray-400">TEXT</span>
+<span class="text-[10px] text-gray-600">⇄</span>
+<span class="text-[10px] font-mono text-gray-400">ENTITIES</span>
+</div>
+</div>
+</div>
+</section>
+<section class="flex flex-col gap-5">
+<div class="flex items-center gap-3 border-b border-card-border pb-3">
+<span class="material-symbols-outlined text-blue-500">description</span>
+<h2 class="text-xl font-bold text-white tracking-wide font-display">Document</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+<div class="tool-card group flex flex-col bg-card-dark rounded-xl border border-card-border p-5 transition-all duration-300 cursor-pointer h-36 relative shadow-sm hover:shadow-lg">
+<div class="absolute top-4 right-4 flex gap-1.5">
+<span class="bg-blue-500/10 text-[10px] font-semibold text-blue-400 px-2 py-0.5 rounded border border-blue-500/20">WASM</span>
+</div>
+<div class="flex items-start gap-4 mb-3">
+<div class="p-2 bg-[#0b0f1a] rounded-lg border border-card-border">
+<span class="material-symbols-outlined text-gray-400 text-2xl">description</span>
+</div>
+<div>
+<h3 class="text-base font-bold text-gray-200 group-hover:text-blue-400 transition-colors font-display">Markdown ⇄ HTML</h3>
+<p class="text-xs text-gray-500 mt-1 leading-relaxed">Render Markdown syntax into clean HTML output.</p>
+</div>
+</div>
+<div class="mt-auto flex gap-2 items-center pt-2 border-t border-white/5">
+<span class="text-[10px] font-mono text-gray-400">MD</span>
+<span class="text-[10px] text-gray-600">⇄</span>
+<span class="text-[10px] font-mono text-gray-400">HTML</span>
+</div>
+</div>
+<div class="tool-card group flex flex-col bg-card-dark rounded-xl border border-card-border p-5 transition-all duration-300 cursor-pointer h-36 relative shadow-sm hover:shadow-lg">
+<div class="flex items-start gap-4 mb-3">
+<div class="p-2 bg-[#0b0f1a] rounded-lg border border-card-border">
+<span class="material-symbols-outlined text-gray-400 text-2xl">grid_on</span>
+</div>
+<div>
+<h3 class="text-base font-bold text-gray-200 group-hover:text-blue-400 transition-colors font-display">TSV ⇄ CSV</h3>
+<p class="text-xs text-gray-500 mt-1 leading-relaxed">Switch delimiter style between Tabs (TSV) and Commas (CSV).</p>
+</div>
+</div>
+<div class="mt-auto flex gap-2 items-center pt-2 border-t border-white/5">
+<span class="text-[10px] font-mono text-gray-400">TSV</span>
+<span class="text-[10px] text-gray-600">⇄</span>
+<span class="text-[10px] font-mono text-gray-400">CSV</span>
+</div>
+</div>
+<div class="tool-card group flex flex-col bg-card-dark rounded-xl border border-card-border p-5 transition-all duration-300 cursor-pointer h-36 relative shadow-sm hover:shadow-lg">
+<div class="absolute top-4 right-4 flex gap-1.5">
+<span class="bg-orange-500/10 text-[10px] font-semibold text-orange-400 px-2 py-0.5 rounded border border-orange-500/20">PY</span>
+</div>
+<div class="flex items-start gap-4 mb-3">
+<div class="p-2 bg-[#0b0f1a] rounded-lg border border-card-border">
+<span class="material-symbols-outlined text-gray-400 text-2xl">functions</span>
+</div>
+<div>
+<h3 class="text-base font-bold text-gray-200 group-hover:text-blue-400 transition-colors font-display">LaTeX ⇄ HTML</h3>
+<p class="text-xs text-gray-500 mt-1 leading-relaxed">Compile LaTeX math equations into web-ready HTML.</p>
+</div>
+</div>
+<div class="mt-auto flex gap-2 items-center pt-2 border-t border-white/5">
+<span class="text-[10px] font-mono text-gray-400">LATEX</span>
+<span class="text-[10px] text-gray-600">⇄</span>
+<span class="text-[10px] font-mono text-gray-400">HTML</span>
+</div>
+</div>
+</div>
+</section>
+<div class="mt-12 border-t border-card-border pt-8 text-center pb-8">
+<p class="text-gray-500 text-sm font-body">
+                        © 2023 DevSuite. Privacy-first, local-only tools.
+                        <a class="ml-2 text-blue-500 hover:text-blue-400 hover:underline" href="#">View Source</a>
+</p>
+</div>
+</div>
+</div>
+</main>
+</body></html>

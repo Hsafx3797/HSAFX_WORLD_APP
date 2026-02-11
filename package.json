@@ -1,0 +1,50 @@
+{
+  "name": "hsafx-world",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HSAFX WORLD - Unified platform for 446+ professional tools",
+  "author": "HSAFX",
+  "license": "PROPRIETARY",
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "dev:web": "turbo run dev --filter=@hsafx/web",
+    "dev:admin": "turbo run dev --filter=@hsafx/admin",
+    "dev:api": "turbo run dev --filter=@hsafx/api",
+    "build": "turbo run build",
+    "build:web": "turbo run build --filter=@hsafx/web",
+    "build:admin": "turbo run build --filter=@hsafx/admin",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:watch": "turbo run test:watch",
+    "test:coverage": "turbo run test:coverage",
+    "test:python": "cd backend/fastapi && .venv/Scripts/python -m pytest tests/ -v",
+    "test:python:coverage": "cd backend/fastapi && .venv/Scripts/python -m pytest tests/ -v --cov=src --cov-report=term-missing",
+    "test:all": "turbo run test && cd backend/fastapi && .venv/Scripts/python -m pytest tests/ -v",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "db:generate": "pnpm --filter=@hsafx/db generate",
+    "db:migrate": "pnpm --filter=@hsafx/db migrate",
+    "db:studio": "pnpm --filter=@hsafx/db studio",
+    "db:push": "pnpm --filter=@hsafx/db push",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\""
+  },
+  "devDependencies": {
+    "@turbo/gen": "^2.0.0",
+    "@vitest/coverage-v8": "^4.0.18",
+    "@vitest/ui": "^4.0.18",
+    "happy-dom": "^20.6.0",
+    "prettier": "^3.2.5",
+    "turbo": "^2.0.0",
+    "typescript": "^5.4.5",
+    "vitest": "^4.0.18"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}

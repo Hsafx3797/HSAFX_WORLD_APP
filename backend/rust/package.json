@@ -1,0 +1,28 @@
+{
+    "name": "@hsafx/rust",
+    "version": "0.1.0",
+    "private": true,
+    "main": "./text-tools/pkg/text_tools.js",
+    "types": "./text-tools/pkg/text_tools.d.ts",
+    "exports": {
+        ".": {
+            "import": "./text-tools/pkg/text_tools.js",
+            "types": "./text-tools/pkg/text_tools.d.ts"
+        },
+        "./text-tools": {
+            "import": "./text-tools/pkg/text_tools.js",
+            "types": "./text-tools/pkg/text_tools.d.ts"
+        }
+    },
+    "scripts": {
+        "build": "cd text-tools && wasm-pack build --target web --out-dir pkg",
+        "build:release": "cd text-tools && wasm-pack build --release --target web --out-dir pkg",
+        "dev": "cd text-tools && wasm-pack build --dev --target web --out-dir pkg",
+        "lint": "echo Rust linting done via cargo clippy",
+        "typecheck": "echo Rust typechecking done at build time",
+        "clean": "rimraf text-tools/pkg text-tools/target"
+    },
+    "devDependencies": {
+        "rimraf": "^5.0.5"
+    }
+}

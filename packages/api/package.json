@@ -1,0 +1,31 @@
+{
+  "name": "@hsafx/api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./routers": "./src/routers/index.ts",
+    "./context": "./src/context.ts"
+  },
+  "scripts": {
+    "lint": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "clean": "rimraf dist .turbo"
+  },
+  "dependencies": {
+    "@hsafx/db": "workspace:*",
+    "@hsafx/shared": "workspace:*",
+    "@polar-sh/sdk": "^0.43.0",
+    "@trpc/server": "^11.0.0",
+    "stripe": "^20.3.1",
+    "superjson": "^2.2.1",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}

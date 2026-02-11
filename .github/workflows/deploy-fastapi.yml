@@ -1,0 +1,96 @@
+name: Deploy FastAPI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/fastapi/**'
+      - 'infra/docker/Dockerfile.fastapi'
+
+concurrency:
+  group: deploy-fastapi
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/fastapi
+
+jobs:
+  build-and-deploy:
+    name: Build & Deploy FastAPI
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=
+            type=raw,value=latest
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend/fastapi
+          file: ./infra/docker/Dockerfile.fastapi
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # ── Deploy to Cloud Run ──────────────────────────────────
+      # Uncomment and configure when GCP project is ready:
+      #
+      # - name: Authenticate to GCP
+      #   uses: google-github-actions/auth@v2
+      #   with:
+      #     credentials_json: ${{ secrets.GCP_SA_KEY }}
+      #
+      # - name: Deploy to Cloud Run
+      #   uses: google-github-actions/deploy-cloudrun@v2
+      #   with:
+      #     service: hsafx-fastapi
+      #     region: us-central1
+      #     image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+      #     env_vars: |
+      #       REDIS_URL=${{ secrets.REDIS_URL }}
+      #       INTERNAL_SECRET=${{ secrets.INTERNAL_SECRET }}
+      #       AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+      #       AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #       SENTRY_DSN=${{ secrets.SENTRY_DSN }}
+
+      # ── Alternative: Deploy to Fly.io ────────────────────────
+      # Uncomment and configure when Fly.io app is ready:
+      #
+      # - name: Deploy to Fly.io
+      #   uses: superfly/flyctl-actions/setup-flyctl@master
+      # - run: flyctl deploy --remote-only
+      #   env:
+      #     FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      - name: Deployment summary
+        run: |
+          echo "### 🐳 FastAPI image pushed" >> $GITHUB_STEP_SUMMARY
+          echo "Tags: ${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Deploy target: Configure Cloud Run or Fly.io secrets to enable auto-deploy." >> $GITHUB_STEP_SUMMARY

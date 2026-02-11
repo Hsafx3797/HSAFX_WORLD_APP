@@ -1,0 +1,12 @@
+{
+  "countryName": "Pakistan",
+  "bankName": "Al Baraka Bank Pakistan Limited",
+  "chequeOrientation": "Portrait",
+  "payeeName": "Maersk Line Pakistan Pvt Ltd",
+  "date": "18/12/2025",
+  "amountInNumber": "Rs. 12,356 /-",
+  "amountInWords": "RUPEES TWELVE THOUSAND AND THREE HUNDRED AND FIFTY SIX ONLY",
+  "acPayee": true,
+  "notNegotiable": true,
+  "orBearer": false
+}

@@ -1,0 +1,1049 @@
+/**
+ * Admin Panel React Hooks
+ * SWR-based data fetching hooks for admin operations
+ */
+
+'use client';
+
+import useSWR, { mutate } from 'swr';
+import { useState, useCallback } from 'react';
+import type {
+  User, UserFilters, UserActivity,
+  Subscription, SubscriptionFilters,
+  CoinTransaction, TransactionFilters, PaymentWebhook,
+  Tool, ToolFilters, ToolCategory,
+  FeatureFlag,
+  AuditLog, AuditFilters,
+  DashboardMetrics, DashboardAnalytics, TopTool, RecentError, Alert,
+  SystemConfig,
+  AdminUser,
+  Plan, CoinPack, ApiKeyRecord,
+  PaginatedResponse,
+} from './types';
+import * as api from './api';
+
+// ==================== DASHBOARD ====================
+
+export function useDashboardMetrics() {
+  const { data, error, isLoading } = useSWR<DashboardMetrics>(
+    '/admin/dashboard/metrics',
+    async () => {
+      const res = await api.getDashboardMetrics();
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    },
+    { refreshInterval: 30000 }
+  );
+  return { metrics: data, error, isLoading };
+}
+
+export function useTopTools(limit = 5) {
+  const { data, error, isLoading } = useSWR<TopTool[]>(
+    `/admin/dashboard/top-tools?limit=${limit}`,
+    async () => {
+      const res = await api.getTopTools(limit);
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    }
+  );
+  return { topTools: data, error, isLoading };
+}
+
+export function useRecentErrors(limit = 10) {
+  const { data, error, isLoading } = useSWR<RecentError[]>(
+    `/admin/dashboard/recent-errors?limit=${limit}`,
+    async () => {
+      const res = await api.getRecentErrors(limit);
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    }
+  );
+  return { recentErrors: data, error, isLoading };
+}
+
+export function useAlerts() {
+  const { data, error, isLoading, mutate: refresh } = useSWR<Alert[]>(
+    '/admin/dashboard/alerts',
+    async () => {
+      const res = await api.getAlerts();
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    }
+  );
+
+  const acknowledge = useCallback(async (id: string) => {
+    await api.acknowledgeAlert(id);
+    refresh();
+  }, [refresh]);
+
+  return { alerts: data, error, isLoading, acknowledge };
+}
+
+export function useDashboardAnalytics(days = 30) {
+  const { data, error, isLoading } = useSWR<DashboardAnalytics>(
+    `/admin/dashboard/analytics?days=${days}`,
+    async () => {
+      const res = await api.getDashboardAnalytics(days);
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    },
+    { refreshInterval: 60000 }
+  );
+  return { analytics: data, error, isLoading };
+}
+
+// ==================== USERS ====================
+
+export function useUsers(filters: UserFilters = {}) {
+  const key = `/admin/users?${JSON.stringify(filters)}`;
+  const { data, error, isLoading, mutate: refresh } = useSWR<PaginatedResponse<User>>(
+    key,
+    async () => {
+      const res = await api.getUsers(filters);
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    }
+  );
+
+  return { 
+    users: data?.data || [], 
+    pagination: data ? { page: data.page, limit: data.limit, total: data.total, totalPages: data.totalPages } : null,
+    error, 
+    isLoading,
+    refresh,
+  };
+}
+
+export function useUser(id: string | null) {
+  const { data, error, isLoading, mutate: refresh } = useSWR<User>(
+    id ? `/admin/users/${id}` : null,
+    async () => {
+      const res = await api.getUser(id!);
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    }
+  );
+  return { user: data, error, isLoading, refresh };
+}
+
+export function useUserMutations() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const update = useCallback(async (id: string, data: Partial<User>) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.updateUser(id, data);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate(`/admin/users/${id}`);
+      return res.data;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to update user');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const ban = useCallback(async (id: string, reason: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.banUser(id, reason);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate(`/admin/users/${id}`);
+      return res.data;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to ban user');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const unban = useCallback(async (id: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.unbanUser(id);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate(`/admin/users/${id}`);
+      return res.data;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to unban user');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const remove = useCallback(async (id: string, totpCode: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.deleteUser(id, totpCode);
+      if (!res.success) throw new Error(res.error?.message);
+      return true;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to delete user');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const resetPassword = useCallback(async (id: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.resetUserPassword(id);
+      if (!res.success) throw new Error(res.error?.message);
+      return true;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to reset password');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const adjustCoins = useCallback(async (id: string, amount: number, reason: string, totpCode: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.adjustUserCoins(id, amount, reason, totpCode);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate(`/admin/users/${id}`);
+      return res.data;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to adjust coins');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { loading, error, update, ban, unban, remove, resetPassword, adjustCoins };
+}
+
+export function useUserActivity(id: string | null) {
+  const { data, error, isLoading } = useSWR<UserActivity[]>(
+    id ? `/admin/users/${id}/activity` : null,
+    async () => {
+      const res = await api.getUserActivity(id!);
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    }
+  );
+  return { activity: data, error, isLoading };
+}
+
+// ==================== SUBSCRIPTIONS ====================
+
+export function useSubscriptions(filters: SubscriptionFilters = {}) {
+  const key = `/admin/subscriptions?${JSON.stringify(filters)}`;
+  const { data, error, isLoading, mutate: refresh } = useSWR<PaginatedResponse<Subscription>>(
+    key,
+    async () => {
+      const res = await api.getSubscriptions(filters);
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    }
+  );
+
+  return { 
+    subscriptions: data?.data || [], 
+    pagination: data ? { page: data.page, limit: data.limit, total: data.total, totalPages: data.totalPages } : null,
+    error, 
+    isLoading,
+    refresh,
+  };
+}
+
+export function useSubscription(id: string | null) {
+  const { data, error, isLoading, mutate: refresh } = useSWR<Subscription>(
+    id ? `/admin/subscriptions/${id}` : null,
+    async () => {
+      const res = await api.getSubscription(id!);
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    }
+  );
+  return { subscription: data, error, isLoading, refresh };
+}
+
+export function useSubscriptionMutations() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const upgrade = useCallback(async (id: string, plan: string, immediate: boolean) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.upgradeSubscription(id, plan, immediate);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate(`/admin/subscriptions/${id}`);
+      return res.data;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to upgrade subscription');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const downgrade = useCallback(async (id: string, plan: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.downgradeSubscription(id, plan);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate(`/admin/subscriptions/${id}`);
+      return res.data;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to downgrade subscription');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const cancel = useCallback(async (id: string, immediate: boolean, totpCode?: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.cancelSubscription(id, immediate, totpCode);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate(`/admin/subscriptions/${id}`);
+      return res.data;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to cancel subscription');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const pause = useCallback(async (id: string, months: number) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.pauseSubscription(id, months);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate(`/admin/subscriptions/${id}`);
+      return res.data;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to pause subscription');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const resume = useCallback(async (id: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.resumeSubscription(id);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate(`/admin/subscriptions/${id}`);
+      return res.data;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to resume subscription');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const refund = useCallback(async (id: string, amount: number, reason: string, totpCode: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.refundSubscription(id, amount, reason, totpCode);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate(`/admin/subscriptions/${id}`);
+      return true;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to process refund');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { loading, error, upgrade, downgrade, cancel, pause, resume, refund };
+}
+
+// ==================== BILLING ====================
+
+export function useTransactions(filters: TransactionFilters = {}) {
+  const key = `/admin/billing/transactions?${JSON.stringify(filters)}`;
+  const { data, error, isLoading } = useSWR<PaginatedResponse<CoinTransaction>>(
+    key,
+    async () => {
+      const res = await api.getTransactions(filters);
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    }
+  );
+
+  return { 
+    transactions: data?.data || [], 
+    pagination: data ? { page: data.page, limit: data.limit, total: data.total, totalPages: data.totalPages } : null,
+    error, 
+    isLoading,
+  };
+}
+
+export function useWebhooks(page = 1, limit = 50) {
+  const key = `/admin/billing/webhooks?page=${page}&limit=${limit}`;
+  const { data, error, isLoading, mutate: refresh } = useSWR<PaginatedResponse<PaymentWebhook>>(
+    key,
+    async () => {
+      const res = await api.getWebhooks(page, limit);
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    }
+  );
+
+  const retry = useCallback(async (id: string) => {
+    const res = await api.retryWebhook(id);
+    if (!res.success) throw new Error(res.error?.message);
+    refresh();
+    return true;
+  }, [refresh]);
+
+  return {
+    webhooks: data?.data || [],
+    pagination: data ? { page: data.page, limit: data.limit, total: data.total, totalPages: data.totalPages } : null,
+    error,
+    isLoading,
+    refresh,
+    retry,
+  };
+}
+
+// ==================== TOOLS ====================
+
+export function useTools(filters: ToolFilters = {}) {
+  const key = `/admin/tools?${JSON.stringify(filters)}`;
+  const { data, error, isLoading, mutate: refresh } = useSWR<PaginatedResponse<Tool>>(
+    key,
+    async () => {
+      const res = await api.getTools(filters);
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    }
+  );
+
+  return { 
+    tools: data?.data || [], 
+    pagination: data ? { page: data.page, limit: data.limit, total: data.total, totalPages: data.totalPages } : null,
+    error, 
+    isLoading,
+    refresh,
+  };
+}
+
+export function useTool(id: string | null) {
+  const { data, error, isLoading, mutate: refresh } = useSWR<Tool>(
+    id ? `/admin/tools/${id}` : null,
+    async () => {
+      const res = await api.getTool(id!);
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    }
+  );
+  return { tool: data, error, isLoading, refresh };
+}
+
+export type ToolAnalyticsData = {
+  executions: { date: string; count: number }[];
+  errors: { date: string; count: number }[];
+  avgTime: { date: string; ms: number }[];
+};
+
+export function useToolAnalytics(id: string | null, period: '24h' | '7d' | '30d' = '7d') {
+  const { data, error, isLoading, mutate: refresh } = useSWR<ToolAnalyticsData>(
+    id ? `/admin/tools/${id}/analytics?period=${period}` : null,
+    async () => {
+      const res = await api.getToolAnalytics(id!, period);
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    }
+  );
+  return { analytics: data, error, isLoading, refresh };
+}
+
+export function useToolMutations() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const update = useCallback(async (id: string, data: Partial<Tool>) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.updateTool(id, data);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate(`/admin/tools/${id}`);
+      return res.data;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to update tool');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const enable = useCallback(async (id: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.enableTool(id);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate(`/admin/tools/${id}`);
+      return res.data;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to enable tool');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const disable = useCallback(async (id: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.disableTool(id);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate(`/admin/tools/${id}`);
+      return res.data;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to disable tool');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { loading, error, update, enable, disable };
+}
+
+// ==================== CATEGORIES ====================
+
+export function useCategories() {
+  const { data, error, isLoading, mutate: refresh } = useSWR<ToolCategory[]>(
+    '/admin/categories',
+    async () => {
+      const res = await api.getCategories();
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    }
+  );
+  return { categories: data || [], error, isLoading, refresh };
+}
+
+export function useCategoryMutations() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const create = useCallback(async (data: Partial<ToolCategory>) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.createCategory(data);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate('/admin/categories');
+      return res.data;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to create category');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const update = useCallback(async (id: string, data: Partial<ToolCategory>) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.updateCategory(id, data);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate('/admin/categories');
+      return res.data;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to update category');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const remove = useCallback(async (id: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.deleteCategory(id);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate('/admin/categories');
+      return true;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to delete category');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const reorder = useCallback(async (ids: string[]) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.reorderCategories(ids);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate('/admin/categories');
+      return true;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to reorder categories');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { loading, error, create, update, remove, reorder };
+}
+
+// ==================== FEATURE FLAGS ====================
+
+export function useFeatureFlags() {
+  const { data, error, isLoading, mutate: refresh } = useSWR<FeatureFlag[]>(
+    '/admin/feature-flags',
+    async () => {
+      const res = await api.getFeatureFlags();
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    }
+  );
+  return { featureFlags: data || [], error, isLoading, refresh };
+}
+
+export function useFeatureFlagMutations() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const update = useCallback(async (id: string, data: Partial<FeatureFlag>) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.updateFeatureFlag(id, data);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate('/admin/feature-flags');
+      return res.data;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to update feature flag');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const create = useCallback(async (data: Partial<FeatureFlag>) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.createFeatureFlag(data);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate('/admin/feature-flags');
+      return res.data;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to create feature flag');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const remove = useCallback(async (id: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.deleteFeatureFlag(id);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate('/admin/feature-flags');
+      return true;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to delete feature flag');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { loading, error, update, create, remove };
+}
+
+// ==================== SYSTEM CONFIG ====================
+
+export function useSystemConfig() {
+  const { data, error, isLoading, mutate: refresh } = useSWR<SystemConfig>(
+    '/admin/config',
+    async () => {
+      const res = await api.getSystemConfig();
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    }
+  );
+
+  const update = useCallback(async (newConfig: Partial<SystemConfig>) => {
+    const res = await api.updateSystemConfig(newConfig);
+    if (!res.success) throw new Error(res.error?.message);
+    refresh();
+    return res.data;
+  }, [refresh]);
+
+  return { config: data, error, isLoading, update, refresh };
+}
+
+// ==================== AUDIT LOG ====================
+
+export function useAuditLogs(filters: AuditFilters = {}) {
+  const key = `/admin/audit?${JSON.stringify(filters)}`;
+  const { data, error, isLoading } = useSWR<PaginatedResponse<AuditLog>>(
+    key,
+    async () => {
+      const res = await api.getAuditLogs(filters);
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    }
+  );
+
+  return { 
+    logs: data?.data || [], 
+    pagination: data ? { page: data.page, limit: data.limit, total: data.total, totalPages: data.totalPages } : null,
+    error, 
+    isLoading,
+  };
+}
+
+// ==================== ADMIN USERS ====================
+
+export function useAdmins() {
+  const { data, error, isLoading, mutate: refresh } = useSWR<AdminUser[]>(
+    '/admin/admins',
+    async () => {
+      const res = await api.getAdmins();
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    }
+  );
+  return { admins: data || [], error, isLoading, refresh };
+}
+
+export function useAdminMutations() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const invite = useCallback(async (email: string, role: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.inviteAdmin(email, role);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate('/admin/admins');
+      return res.data;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to invite admin');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const updateRole = useCallback(async (id: string, role: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.updateAdminRole(id, role);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate('/admin/admins');
+      return res.data;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to update admin role');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const remove = useCallback(async (id: string, totpCode: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.deleteAdmin(id, totpCode);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate('/admin/admins');
+      return true;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to delete admin');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { loading, error, invite, updateRole, remove };
+}
+
+// ==================== PLANS ====================
+
+export function usePlans() {
+  const { data, error, isLoading, mutate: refresh } = useSWR<Plan[]>(
+    '/admin/plans',
+    async () => {
+      const res = await api.getPlans();
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    }
+  );
+  return { plans: data || [], error, isLoading, refresh };
+}
+
+export function usePlanMutations() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const create = useCallback(async (data: Partial<Plan>) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.createPlan(data);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate('/admin/plans');
+      return res.data;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to create plan');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const update = useCallback(async (id: string, data: Partial<Plan>) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.updatePlan(id, data);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate('/admin/plans');
+      return res.data;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to update plan');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { loading, error, create, update };
+}
+
+// ==================== COIN PACKS ====================
+
+export function useCoinPacks() {
+  const { data, error, isLoading, mutate: refresh } = useSWR<CoinPack[]>(
+    '/admin/coin-packs',
+    async () => {
+      const res = await api.getCoinPacks();
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    }
+  );
+  return { coinPacks: data || [], error, isLoading, refresh };
+}
+
+export function useCoinPackMutations() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const create = useCallback(async (data: Partial<CoinPack>) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.createCoinPack(data);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate('/admin/coin-packs');
+      return res.data;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to create coin pack');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const update = useCallback(async (id: string, data: Partial<CoinPack>) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.updateCoinPack(id, data);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate('/admin/coin-packs');
+      return res.data;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to update coin pack');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const remove = useCallback(async (id: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.deleteCoinPack(id);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate('/admin/coin-packs');
+      return true;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to delete coin pack');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { loading, error, create, update, remove };
+}
+
+// ==================== API KEYS ====================
+
+export function useApiKeys(page = 1, limit = 25, search?: string) {
+  const key = `/admin/api-keys?page=${page}&limit=${limit}${search ? `&search=${search}` : ''}`;
+  const { data, error, isLoading, mutate: refresh } = useSWR<PaginatedResponse<ApiKeyRecord>>(
+    key,
+    async () => {
+      const res = await api.getApiKeys(page, limit, search);
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    }
+  );
+
+  return {
+    apiKeys: data?.data || [],
+    pagination: data ? { page: data.page, limit: data.limit, total: data.total, totalPages: data.totalPages } : null,
+    error,
+    isLoading,
+    refresh,
+  };
+}
+
+export function useApiKeyMutations() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const revoke = useCallback(async (id: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.revokeApiKey(id);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate((key: string) => typeof key === 'string' && key.startsWith('/admin/api-keys'), undefined, { revalidate: true });
+      return res.data;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to revoke API key');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { loading, error, revoke };
+}
+
+// ==================== 2FA TOTP ====================
+
+export function use2FAStatus() {
+  const { data, error, isLoading, mutate: refresh } = useSWR<{ enabled: boolean }>(
+    '/admin/2fa/status',
+    async () => {
+      const res = await api.get2FAStatus();
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    }
+  );
+  return { enabled: data?.enabled ?? false, error, isLoading, refresh };
+}
+
+export function use2FAMutations() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const setup = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.setup2FA();
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to setup 2FA');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const enable = useCallback(async (code: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.enable2FA(code);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate('/admin/2fa/status', undefined, { revalidate: true });
+      return res.data!;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to enable 2FA');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const verify = useCallback(async (code: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.verify2FA(code);
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Verification failed');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const disable = useCallback(async (code: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.disable2FA(code);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate('/admin/2fa/status', undefined, { revalidate: true });
+      return res.data!;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to disable 2FA');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { loading, error, setup, enable, verify, disable };
+}

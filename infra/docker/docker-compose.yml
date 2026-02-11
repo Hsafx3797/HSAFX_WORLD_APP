@@ -1,0 +1,102 @@
+# ═══════════════════════════════════════════════════════════════
+# HSAFX World App — Local Development Docker Compose
+# Reference: SOLUTION_ROADMAP Sprint 5.2
+#
+# Services:
+#   - fastapi:  Python compute backend (hot-reload)
+#   - redis:    Job queue + caching
+#   - postgres: Local database for Next.js (Drizzle)
+#
+# Usage:
+#   docker-compose up          # Start all services
+#   docker-compose up -d       # Start in background
+#   docker-compose down        # Stop all services
+#   docker-compose logs -f     # Follow logs
+#
+# Environment: Copy .env.example → .env and fill in values.
+# Next.js apps run natively (pnpm dev) and connect to these services.
+# ═══════════════════════════════════════════════════════════════
+
+services:
+  # ── PostgreSQL 16 ────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: hsafx-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: hsafx_dev
+      POSTGRES_USER: hsafx
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hsafx_local_dev}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hsafx -d hsafx_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ── Redis 7 ──────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: hsafx-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── FastAPI Compute Backend ──────────────────────────────────
+  fastapi:
+    build:
+      context: ../../backend/fastapi
+      dockerfile: ../../infra/docker/Dockerfile.fastapi
+    container_name: hsafx-fastapi
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=true
+      - REDIS_URL=redis://redis:6379/0
+      - HOST=0.0.0.0
+      - PORT=8000
+      - SENTRY_DSN=${SENTRY_DSN:-}
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key}
+      - INTERNAL_SECRET=${INTERNAL_SECRET:-dev-internal-secret}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
+      - S3_BUCKET=${S3_BUCKET:-hsafx-uploads}
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      # Hot-reload: Mount source code for development
+      - ../../backend/fastapi/src:/app/src:ro
+    # Override CMD for hot reload in dev
+    command: >
+      uvicorn src.main:app
+      --host 0.0.0.0
+      --port 8000
+      --reload
+      --reload-dir /app/src
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+# ── Network ────────────────────────────────────────────────────
+# All services on default bridge network.
+# Next.js connects via:
+#   DATABASE_URL=postgresql://hsafx:hsafx_local_dev@localhost:5432/hsafx_dev
+#   UPSTASH_REDIS_REST_URL → Use local Redis via @upstash/redis or ioredis
+#   NEXT_PUBLIC_FASTAPI_URL=http://localhost:8000
