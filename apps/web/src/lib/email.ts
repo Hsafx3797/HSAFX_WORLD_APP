@@ -14,7 +14,8 @@
 
 import { Resend } from 'resend';
 import { db } from '@hsafx/db';
-import { emailLogs } from '@hsafx/db/schema';
+import { emailLogs, emailTemplates } from '@hsafx/db/schema';
+import { eq, and } from '@hsafx/db/schema';
 
 // ─── Configuration ──────────────────────────────────────────────────────────
 
@@ -170,6 +171,7 @@ interface SendRawEmailOptions {
   html: string;
   text?: string;
   userId?: string;
+  templateId?: string;
 }
 
 export interface EmailResult {
@@ -178,12 +180,62 @@ export interface EmailResult {
   error?: string;
 }
 
+// ─── DB Template Layer ──────────────────────────────────────────────────────
+
 /**
- * Send a templated email via Resend
+ * Interpolates `{{variableName}}` placeholders in a string.
+ */
+function interpolate(template: string, variables: Record<string, string>): string {
+  return template.replace(/\{\{(\w+)\}\}/g, (_, key: string) => variables[key] ?? '');
+}
+
+/**
+ * Try to load a template from the database by slug.
+ * Returns null if DB is unavailable or template doesn't exist.
+ */
+async function loadDbTemplate(
+  slug: string
+): Promise<{ id: string; subject: string; htmlBody: string; textBody: string | null } | null> {
+  try {
+    const rows = await db
+      .select({
+        id: emailTemplates.id,
+        subject: emailTemplates.subject,
+        htmlBody: emailTemplates.htmlBody,
+        textBody: emailTemplates.textBody,
+      })
+      .from(emailTemplates)
+      .where(and(eq(emailTemplates.slug, slug), eq(emailTemplates.isActive, true)))
+      .limit(1);
+
+    return rows[0] ?? null;
+  } catch {
+    // DB may not have the table yet — fall back to in-memory
+    return null;
+  }
+}
+
+/**
+ * Send a templated email via Resend.
+ * Priority: DB template (if exists & active) → in-memory fallback template
  */
 export async function sendEmail(options: SendEmailOptions): Promise<EmailResult> {
   const { to, template, variables = {}, userId } = options;
 
+  // 1. Try DB template first
+  const dbTpl = await loadDbTemplate(template);
+  if (dbTpl) {
+    return sendRawEmail({
+      to,
+      subject: interpolate(dbTpl.subject, variables),
+      html: interpolate(dbTpl.htmlBody, variables),
+      text: dbTpl.textBody ? interpolate(dbTpl.textBody, variables) : undefined,
+      userId,
+      templateId: dbTpl.id,
+    });
+  }
+
+  // 2. Fallback to in-memory template
   const tpl = TEMPLATES[template];
   if (!tpl) {
     return { success: false, error: `Unknown template: ${template}` };
