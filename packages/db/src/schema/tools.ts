@@ -11,7 +11,7 @@ import {
   index,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
-import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
+import { InferInsertModel, InferSelectModel, sql } from 'drizzle-orm';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 import { users } from './users';
@@ -70,6 +70,11 @@ export const tools = pgTable('tools', {
   index('tools_category_id_idx').on(t.categoryId),
   index('tools_tool_group_idx').on(t.toolGroup),
   index('tools_is_active_idx').on(t.isActive),
+  // Full-text search GIN index on name + description + tags
+  index('tools_search_gin_idx').using(
+    'gin',
+    sql`to_tsvector('english', coalesce(${t.name}, '') || ' ' || coalesce(${t.description}, '') || ' ' || coalesce(array_to_string(${t.tags}, ' '), ''))`,
+  ),
 ]);
 
 /**

@@ -78,25 +78,52 @@ export const toolsRouter = router({
       pageSize: z.number().int().min(1).max(100).default(20),
       categoryId: z.string().uuid().optional(),
       group: z.number().int().min(1).max(5).optional(),
-      search: z.string().optional(),
+      search: z.string().max(200).optional(),
     }))
     .query(async ({ ctx, input }) => {
       const offset = (input.page - 1) * input.pageSize;
 
-      let query = ctx.db
-        .select()
-        .from(tools)
-        .where(and(eq(tools.isActive, true), isNull(tools.deletedAt)));
+      const conditions = [eq(tools.isActive, true), isNull(tools.deletedAt)];
 
-      const items = await ctx.db
-        .select()
-        .from(tools)
-        .where(and(eq(tools.isActive, true), isNull(tools.deletedAt)))
-        .orderBy(tools.sortOrder)
-        .limit(input.pageSize)
-        .offset(offset);
+      if (input.categoryId) {
+        conditions.push(eq(tools.categoryId, input.categoryId));
+      }
 
-      return { items, page: input.page, pageSize: input.pageSize };
+      if (input.group) {
+        conditions.push(eq(tools.toolGroup, input.group));
+      }
+
+      if (input.search && input.search.trim()) {
+        conditions.push(
+          sql`to_tsvector('english', coalesce(${tools.name}, '') || ' ' || coalesce(${tools.description}, '') || ' ' || coalesce(array_to_string(${tools.tags}, ' '), '')) @@ plainto_tsquery('english', ${input.search.trim()})`,
+        );
+      }
+
+      const where = and(...conditions);
+
+      const [items, countRows] = await Promise.all([
+        ctx.db
+          .select()
+          .from(tools)
+          .where(where)
+          .orderBy(tools.sortOrder)
+          .limit(input.pageSize)
+          .offset(offset),
+        ctx.db
+          .select({ count: sql<number>`count(*)` })
+          .from(tools)
+          .where(where),
+      ]);
+
+      const total = Number(countRows[0]?.count ?? 0);
+
+      return {
+        items,
+        page: input.page,
+        pageSize: input.pageSize,
+        totalCount: total,
+        totalPages: Math.ceil(total / input.pageSize),
+      };
     }),
 
   getBySlug: publicProcedure

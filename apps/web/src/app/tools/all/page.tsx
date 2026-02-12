@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { toolRegistry } from '@/lib/tools/registry';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useToolSearch } from '@/hooks/use-tool-search';
 
 // Category display names and emojis
 const categoryDisplay: Record<string, { name: string; emoji: string }> = {
@@ -33,40 +34,54 @@ export default function AllToolsPage() {
   const [selectedTier, setSelectedTier] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Server-side full-text search (enabled when search query is present)
+  const { isServerSearch, data: serverData, isLoading: searchLoading, isFetching } = useToolSearch({
+    search: searchQuery,
+    page: currentPage,
+    pageSize: ITEMS_PER_PAGE,
+  });
+
   // Get unique categories from registry
   const categories = useMemo(() => {
     const cats = new Set(toolRegistry.map(t => t.category.toLowerCase()));
     return Array.from(cats).sort();
   }, []);
 
-  // Filter tools based on search and filters
-  const filteredTools = useMemo(() => {
+  // Client-side filter (only used when no search query)
+  const clientFilteredTools = useMemo(() => {
+    if (isServerSearch) return [];
     return toolRegistry.filter(tool => {
-      // Search filter
-      const searchLower = searchQuery.toLowerCase();
-      const matchesSearch = !searchQuery || 
-        tool.name.toLowerCase().includes(searchLower) ||
-        tool.description.toLowerCase().includes(searchLower) ||
-        tool.id.toLowerCase().includes(searchLower);
-
-      // Category filter
       const matchesCategory = selectedCategory === 'all' || 
         tool.category.toLowerCase() === selectedCategory;
-
-      // Tier filter
       const matchesTier = selectedTier === 'all' || 
         tool.tier === selectedTier;
-
-      return matchesSearch && matchesCategory && matchesTier;
+      return matchesCategory && matchesTier;
     });
-  }, [searchQuery, selectedCategory, selectedTier]);
+  }, [selectedCategory, selectedTier, isServerSearch]);
+
+  // Merge: use server results when searching, client filtering otherwise
+  const displayTools = useMemo(() => {
+    if (isServerSearch && serverData) {
+      return serverData.items.map((item) => ({
+        id: item.slug,
+        name: item.name,
+        description: item.description,
+        category: '', // DB items don't have category name
+        tier: item.isPremium ? 'pro' as const : 'free' as const,
+        isNew: false,
+      }));
+    }
+    return clientFilteredTools;
+  }, [isServerSearch, serverData, clientFilteredTools]);
 
   // Pagination
-  const totalPages = Math.ceil(filteredTools.length / ITEMS_PER_PAGE);
+  const totalItems = isServerSearch ? (serverData?.totalCount ?? 0) : clientFilteredTools.length;
+  const totalPages = isServerSearch ? (serverData?.totalPages ?? 1) : Math.ceil(clientFilteredTools.length / ITEMS_PER_PAGE);
   const paginatedTools = useMemo(() => {
+    if (isServerSearch) return displayTools; // already paginated by server
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredTools.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredTools, currentPage]);
+    return displayTools.slice(start, start + ITEMS_PER_PAGE);
+  }, [displayTools, currentPage, isServerSearch]);
 
   // Reset page when filters change
   const handleFilterChange = (type: 'category' | 'tier' | 'search', value: string) => {
@@ -166,7 +181,11 @@ export default function AllToolsPage() {
 
             {/* Results Count */}
             <div className="ml-auto text-sm text-muted-foreground">
-              Showing {paginatedTools.length} of {filteredTools.length} tools
+              {searchLoading ? (
+                'Searching...'
+              ) : (
+                <>Showing {paginatedTools.length} of {totalItems} tools{isFetching ? ' ...' : ''}</>
+              )}
             </div>
           </div>
         </div>
@@ -175,7 +194,22 @@ export default function AllToolsPage() {
       {/* Tools Grid */}
       <section className="py-12">
         <div className="container mx-auto px-4">
-          {paginatedTools.length === 0 ? (
+          {searchLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="p-4 bg-card border border-border rounded-lg animate-pulse">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-muted rounded" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-muted rounded w-3/4" />
+                      <div className="h-3 bg-muted rounded w-full" />
+                      <div className="h-3 bg-muted rounded w-1/2" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : paginatedTools.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">🔍</div>
               <h3 className="text-xl font-semibold mb-2">No tools found</h3>
