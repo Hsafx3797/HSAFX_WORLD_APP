@@ -94,7 +94,7 @@
 |----------------------------|--------|------------------------------------------------------------------------------------------|
 | better-auth core           | ✅     | v1.4.14 in both apps, DB adapter, email+password                                         |
 | OAuth (Google, GitHub)     | ✅     | Configured in web app                                                                    |
-| Facebook OAuth             | ⚠️     | **Extra** — not in planning docs                                                         |
+| Facebook OAuth             | ✅     | Added to `15_SECURITY_MODEL.md` — was already in PRD (`00_PRODUCT_REQUIREMENTS.md`)     |
 | Session config (7d expiry) | ✅     | `expiresIn: 7 * 86400`, `updateAge: 86400`                                               |
 | Session cookie name        | ✅     | Renamed to `__hsafx.session_token` via `advanced.cookiePrefix: '__hsafx'`                |
 | Rolling sessions           | ✅     | `session.updateAge: 3600` (1h) — session refreshes on activity (P6-B)                   |
@@ -313,4 +313,4 @@
 
 ### **Weighted Overall: ~95%**
 
-Significant progress since last audit (~94%). **Phase 8 #43 complete** — All money columns migrated from `decimal(10,2)` to `bigint` cents: `plans.price_monthly_cents`/`price_yearly_cents`, `invoices.amount_cents`, `payments.amount_cents`. Coin columns upgraded from `integer` to `bigint`. DBML, seed data, admin UI, API routes, and shared billing types all updated. 02_DEVIATIONS M-17 resolved (47/57, 82%). TypeScript compiles clean (0 errors). Remaining work: Facebook OAuth resolution, ~3 DB tables, ~20 indexes, Docker/K8s testing.
+Significant progress since last audit (~94%). **Phase 8 #43 complete** — All money columns migrated from `decimal(10,2)` to `bigint` cents. **Phase 8 #44 complete** — Facebook OAuth resolved by updating `15_SECURITY_MODEL.md` to match PRD (already listed Meta as planned provider). 02_DEVIATIONS M-03 + M-17 resolved (48/57, 84%). TypeScript compiles clean (0 errors). Remaining work: ~3 DB tables, ~20 indexes, Docker/K8s testing.

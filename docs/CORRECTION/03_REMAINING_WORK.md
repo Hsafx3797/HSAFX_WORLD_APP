@@ -156,9 +156,8 @@
 ### P3-04: Login Reward System
 > **✅ COMPLETED** (Sprint P1-02) — Login reward service with 10 coins/reward, 50 coins/day cap.
 
-### P3-05: Remove Facebook OAuth (Not in Planning)
-- Or update planning docs if desired
-- **Effort:** ~0.5 hours
+### P3-05: Resolve Facebook OAuth Planning Inconsistency
+> **✅ COMPLETED** (Phase 8 #44) — Updated `15_SECURITY_MODEL.md` to include Facebook/Meta OAuth. Was already listed in `00_PRODUCT_REQUIREMENTS.md` ("Google, GitHub, Meta"). Feature flag `enable_oauth_facebook` defaults to disabled.
 
 ### P3-06: Coin Lock Lua Script (vs SQL FOR UPDATE)
 - Planning specifies Redis-based lock. Current SQL lock works but differs.
@@ -167,7 +166,7 @@
 ### P3-07: Docker/K8s End-to-End Testing
 - **Effort:** ~8 hours
 
-**P3 Remaining: ~15 hours** (was ~19, reduced by P3-02 completed)
+**P3 Remaining: ~14.5 hours** (was ~15, reduced by P3-05 completed)
 
 ---
 
@@ -178,8 +177,8 @@
 | **P0 — Blocking**         | 8      | ~28                    | ✅ ALL 8 DONE         |
 | **P1 — v1.0 Required**    | 15     | ~6 remaining             | 14.5/15 done          |
 | **P2 — Complete Product** | 14     | ~0 remaining             | 14/14 done (1 skipped) |
-| **P3 — Polish**           | 7      | ~15 remaining            | 4.5/7 done            |
-| **TOTAL**                 | **44** | **~21 hours remaining**  | **41/44 done**        |
+| **P3 — Polish**           | 7      | ~14.5 remaining          | 5.5/7 done            |
+| **TOTAL**                 | **44** | **~20.5 hours remaining** | **42/44 done**       |
 
 ### Progress
 - **Originally estimated:** ~254 hours total

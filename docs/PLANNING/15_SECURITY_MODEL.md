@@ -113,6 +113,7 @@
 | Email + Password | Primary | Better-Auth | Session cookie |
 | OAuth (Google) | Social login | Better-Auth | Session cookie |
 | OAuth (GitHub) | Social login | Better-Auth | Session cookie |
+| OAuth (Facebook) | Social login | Better-Auth | Session cookie |
 | API Key | REST API access | Custom | Opaque bearer token |
 | Service Token | Inter-service | Static secret → HMAC | Signed request |
 
@@ -624,7 +625,7 @@ async function validateFileUpload(file: File): Promise<void> {
 
 > **⚠️ Design Decision: OAuth Tokens Stored Plaintext (Encrypted at Rest by Neon)**  
 >
-> OAuth `access_token` and `refresh_token` from providers (Google, GitHub) are stored **as plaintext in the database** but protected by:
+> OAuth `access_token` and `refresh_token` from providers (Google, GitHub, Facebook) are stored **as plaintext in the database** but protected by:
 > 1. **Neon's automatic encryption at rest** (AES-256)
 > 2. **TLS 1.3 in transit** (database connections)
 > 3. **Database access controls** (service credentials only)
@@ -634,7 +635,7 @@ async function validateFileUpload(file: File): Promise<void> {
 > - Refresh tokens can be **revoked** by the provider at any time
 > - Application-level encryption adds **key management complexity** (where to store encryption keys?)
 > - If an attacker has database access, they likely have environment variable access too (where encryption keys would be stored)
-> - **Provider-level revocation** is the primary security mechanism (users can revoke app access from Google/GitHub settings)
+> - **Provider-level revocation** is the primary security mechanism (users can revoke app access from Google/GitHub/Facebook settings)
 >
 > **Security Measures:**
 > - Monitor for unusual OAuth token usage patterns

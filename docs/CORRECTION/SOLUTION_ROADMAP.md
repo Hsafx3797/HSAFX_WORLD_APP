@@ -3,7 +3,7 @@
 > **Date:** 2026-02-12
 > **Commit:** `b2c3e63` on `master`
 > **Based on:** CORRECTION docs 01–05
-> **Status:** Phases 1–7 COMPLETE, Phase 8 IN PROGRESS (#43 done)
+> **Status:** Phases 1–7 COMPLETE, Phase 8 IN PROGRESS (#43, #44 done)
 
 ---
 
@@ -11,7 +11,7 @@
 
 This roadmap translates the remaining work items (from [03_REMAINING_WORK.md](03_REMAINING_WORK.md)) into an actionable sequence. All 5 owner decisions are resolved. All 10 planning conflicts are locked.
 
-**Progress:** 41/44 items complete (~93% items, ~221 hours done). ~21 hours remaining.
+**Progress:** 42/44 items complete (~95% items, ~221.5 hours done). ~20.5 hours remaining.
 **No CRITICAL blockers remain** — staging deployment is safe. **Schema-complete milestone achieved. FTS search operational. Feature-complete for v1.0 achieved. Phase 6 Admin & Polish complete. Phase 7 #42 (remaining DB tables) complete.**
 
 ---
@@ -186,9 +186,9 @@ This roadmap translates the remaining work items (from [03_REMAINING_WORK.md](03
 
 **Completed:**
 - ✅ #43 — Money→cents migration: All money columns migrated from `decimal(10,2)` to `bigint` cents (`plans.price_monthly_cents`/`price_yearly_cents`, `invoices.amount_cents`, `payments.amount_cents`). Coin columns upgraded from `integer` to `bigint`. Shared billing types (`CoinPack.priceInCents`), admin UI (`formatPrice` cents→dollars), API routes, seed data, and DBML all updated. 02_DEVIATIONS M-17 resolved (47/57, 82%). Commit `b2c3e63`.
+- ✅ #44 — Facebook OAuth resolution: Updated `15_SECURITY_MODEL.md` to include Facebook/Meta OAuth (already in PRD `00_PRODUCT_REQUIREMENTS.md`). 02_DEVIATIONS M-03 resolved (48/57, 84%).
 
 **Remaining:**
-- #44 — Facebook OAuth resolution
 - #45 — Docker/K8s end-to-end testing
 
 ---

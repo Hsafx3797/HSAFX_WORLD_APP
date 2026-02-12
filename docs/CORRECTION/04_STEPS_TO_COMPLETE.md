@@ -169,12 +169,12 @@
 ---
 
 ## PHASE 8: FINAL POLISH (P3) — IN PROGRESS
-**Duration: ~12 hours remaining**
+**Duration: ~8 hours remaining**
 
 | #  | Task                                          | Ref   | Hours | Status |
 |----|-----------------------------------------------|-------|-------|--------|
 | 43 | Migrate money columns to integer cents        | P3-02 | 4     | ✅ Done (commit `b2c3e63`) |
-| 44 | Resolve Facebook OAuth (remove or doc-update) | P3-05 | 0.5   | Not started |
+| 44 | Resolve Facebook OAuth (doc-update) | P3-05 | 0.5   | ✅ Done (updated `15_SECURITY_MODEL.md`) |
 | 45 | Docker/K8s end-to-end testing                 | P3-07 | 8     | Not started |
 
 **#43 Implementation details:**

@@ -118,7 +118,8 @@
 
 ### M-01: Session Cookie Name — **✅ RESOLVED** (Sprint P6-B) — `advanced.cookiePrefix: '__hsafx'` → `__hsafx.session_token`
 ### M-02: No Rolling Sessions — **✅ RESOLVED** (Sprint P6-B) — `session.updateAge: 3600` (1h)
-### M-03: Facebook OAuth Added Without Planning — **OPEN**
+### M-03: Facebook OAuth Added Without Planning — **✅ RESOLVED** (Phase 8 #44)
+> Facebook OAuth was already listed in `00_PRODUCT_REQUIREMENTS.md` ("Google, GitHub, Meta"). Updated `15_SECURITY_MODEL.md` to include Facebook/Meta OAuth in the authentication methods table and token storage references, resolving the docs inconsistency.
 ### M-04: tRPC Router Structure Differs — **OPEN** (but ads router removed, rewards router added)
 ### M-05: Table Name — `plans` vs `subscription_plans` — **✅ RESOLVED** (Phase 7 #38) — DBML renamed `subscription_plans` → `plans`, all FK refs updated
 ### M-06: Table Name — `oauth_connections` vs `social_auths` — **✅ RESOLVED** (Phase 7 #38) — DBML renamed `social_auths` → `oauth_connections`, column `provider_id` → `provider_user_id`
@@ -141,7 +142,7 @@
 ### M-20: Missing Unique Constraints On Join Tables — **✅ RESOLVED** (Phase 3)
 > 7 unique constraints: `planLimits(planId,limitKey)`, `planFeatures(planId,featureKey)`, `planCoinRules(planId,toolClass)`, `userPermissionOverrides(userId,permissionId)`, `userRoles`, `rolePermissions`, `favorites`.
 
-**MEDIUM SUMMARY: 16/20 resolved (M-01, M-02, M-05–M-15, M-17, M-18, M-20). 4/20 open (M-03 Facebook OAuth, M-04 tRPC structure, M-16 rate limits keying, M-19 roles columns).**
+**MEDIUM SUMMARY: 17/20 resolved (M-01, M-02, M-03, M-05–M-15, M-17, M-18, M-20). 3/20 open (M-04 tRPC structure, M-16 rate limits keying, M-19 roles columns).**
 
 ---
 
@@ -170,9 +171,9 @@
 |----------|-------|----------|---------|------|
 | CRITICAL | 12 | 10 | 2 | 0 |
 | HIGH | 15 | 15 | 0 | 0 |
-| MEDIUM | 20 | 16 | 0 | 4 |
+| MEDIUM | 20 | 17 | 0 | 3 |
 | LOW | 10 | 6 | 1 | 3 |
-| **TOTAL** | **57** | **47** | **3** | **7** |
+| **TOTAL** | **57** | **48** | **3** | **6** |
 
 ### Progress: 47 fully resolved + 3 partially = **82% fully resolved, 5% partial**
 ### Remaining: 7 open deviations (0 CRITICAL, 0 HIGH, 4 MEDIUM, 3 LOW)
