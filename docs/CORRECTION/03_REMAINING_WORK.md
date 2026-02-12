@@ -178,14 +178,14 @@
 |---------------------------|--------|--------------------------|-----------------------|
 | **P0 — Blocking**         | 8      | ~28                    | ✅ ALL 8 DONE         |
 | **P1 — v1.0 Required**    | 15     | ~6 remaining             | 14.5/15 done          |
-| **P2 — Complete Product** | 14     | ~12 remaining            | 12/14 done (1 skipped) |
+| **P2 — Complete Product** | 14     | ~8 remaining             | 13/14 done (1 skipped) |
 | **P3 — Polish**           | 7      | ~19 remaining            | 3.5/7 done            |
-| **TOTAL**                 | **44** | **~37 hours remaining**  | **38/44 done**        |
+| **TOTAL**                 | **44** | **~33 hours remaining**  | **39/44 done**        |
 
 ### Progress
 - **Originally estimated:** ~254 hours total
-- **Completed:** ~217 hours of work (P0 + P1 + P2 partial + P3 partial + P4-A + P4-B + P5 + P6-B + P7 partial)
-- **Remaining:** ~37 hours
+- **Completed:** ~221 hours of work (P0 + P1 + P2 partial + P3 partial + P4-A + P4-B + P5 + P6-B + P7 partial)
+- **Remaining:** ~33 hours
 - **No CRITICAL items remain** — system is deployment-safe for staging
 - **Schema 13/13 enums DONE, 5/25+ indexes DONE + GIN FTS index, 7/7 unique constraints DONE**
 - **Frontend: 6/6 stores DONE, 6/6 missing components DONE, FTS search DONE**
@@ -193,3 +193,4 @@
 - **Tool Execution: ALL 16 stubs resolved, FastAPI job processing enabled, Redis extended**
 - **Phase 6 Sprint B: UI migration to `@hsafx/ui`, Redis session caching, rolling sessions, cookie rename, CSRF Referer fallback, Retry-After header**
 - **Phase 7 #42: 11 new DB tables added across 5 schema files (toolClassPolicy, usageCoinFallbacks, invoicePayments, paymentMethods, coinPurchasePayments, planMetadata, planUpgradeRules, planAuditLogs, auditLogs, permissionGroups, emailUsageTracking)**
+- **Phase 7 #38: DBML naming alignment — 3 table renames, 15+ column renames, enum rename, all FK refs updated. 02_DEVIATIONS: 46/57 resolved (81%)**
