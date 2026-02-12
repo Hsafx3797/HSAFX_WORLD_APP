@@ -1,7 +1,7 @@
 # 04 — STEPS TO COMPLETE (Sprint Execution Plan)
 
 > **Last updated:** 2026-02-12
-> **Commit:** `71ebaec` on `master`
+> **Commit:** `d92267a` on `master`
 > **Based on:** Doc 03 remaining work items
 > **Philosophy:** P0 first → P1 next → P2/P3 after
 
@@ -91,19 +91,19 @@
 
 ---
 
-## PHASE 4B: SEARCH + BILLING API (NEXT)
-**Duration: ~12 hours**
+## ✅ PHASE 4B: SEARCH + BILLING API — COMPLETED
+**Commit:** `d92267a` — FTS search + billing REST. Build passes (5/5).
 
-| # | Task | Ref | Hours |
-|---|------|-----|-------|
-| 25 | Add tsvector column + GIN index to tools table | P1-07 | 3 |
-| 26 | Create search API route with `plainto_tsquery` | P1-07 | 3 |
-| 27 | Replace client-side tool filtering with search API | P1-07 | 2 |
-| 28 | Add billing REST endpoints for B2B | P1-11 | 4 |
+| # | Task | Ref | Status |
+|---|------|-----|--------|
+| 25 | Add GIN expression index on tools (name/description/tags tsvector) | P1-07 | ✅ Done |
+| 26 | Fix `tools.list` tRPC with `plainto_tsquery` search + filters | P1-07 | ✅ Done |
+| 27 | Create `useToolSearch` hook + hybrid server/client search UI | P1-07 | ✅ Done |
+| 28 | Add billing REST endpoints (`balance`, `transactions`, `subscription`) | P1-11 | ✅ Done |
 
 ---
 
-## PHASE 5: TOOL EXECUTION COMPLETION
+## PHASE 5: TOOL EXECUTION COMPLETION (NEXT)
 **Duration: ~15 hours**
 
 | # | Task | Ref | Hours |
@@ -169,8 +169,8 @@
 | 2 | Schema + Logging | 30 | 58 | ✅ DONE |
 | 3 | Schema Completion + API Keys | 12 | 70 | ✅ DONE |
 | 4A | Frontend Stores + Components | 22 | 92 | ✅ DONE |
-| 4B | Search + Billing API | 12 | 104 | **NEXT** |
-| 5 | Tool Execution Completion | 15 | 119 | Not started |
+| 4B | Search + Billing API | 12 | 104 | ✅ DONE |
+| 5 | Tool Execution Completion | 15 | 119 | **NEXT** |
 | 6 | Admin Features + Polish | 50 | 169 | Not started |
 | 7 | Naming + Remaining | 26 | 195 | Not started |
 | 8 | Final Polish | 16 | 211 | Not started |

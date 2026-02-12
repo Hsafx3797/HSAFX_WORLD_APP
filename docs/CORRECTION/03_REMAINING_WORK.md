@@ -1,7 +1,7 @@
 # 03 — REMAINING WORK
 
 > **Last audited:** 2026-02-12
-> **Current state:** ~82% overall completion
+> **Current state:** ~84% overall completion
 > **Methodology:** Every gap from doc 01 and 02 mapped to actionable work items
 
 ---
@@ -60,9 +60,7 @@
 > **✅ COMPLETED** (Sprint P4-A) — All 6 components built with Skeleton loading variants: ExecutionPanel, UsageCard, BillingCard, TransactionList, ActivityFeed, NotificationBell. Barrel-exported from `components/index.ts`.
 
 ### P1-07: Implement Search (PostgreSQL FTS Minimum)
-- **Gap:** H-01
-- **Work:** Add tsvector column to `tools` table + GIN index. Create search API route with `plainto_tsquery`. Replace client-side filtering.
-- **Effort:** ~8 hours
+> **✅ COMPLETED** (Sprint P4-B) — GIN expression index on tools `to_tsvector('english', name || description || tags)`. Rewrote `tools.list` tRPC with `plainto_tsquery` search + categoryId/group filters. Created `useToolSearch` hook with 300ms debounce. Hybrid server/client search in `/tools/all` page.
 
 ### P1-08: Add Missing Unique Constraints on Join Tables
 > **✅ COMPLETED** (Sprint P2-04) — 4 new unique constraints added (`planLimits`, `planFeatures`, `planCoinRules`, `userPermissionOverrides`) + 3 pre-existing (`userRoles`, `rolePermissions`, `favorites`) = 7 total.
@@ -74,9 +72,7 @@
 > **✅ COMPLETED** (pre-existing) — Column already exists as `scopes: text('scopes').array().default([])` in apiKeys schema.
 
 ### P1-11: Add Billing REST Endpoints
-- **Gap:** H-10
-- **Work:** REST wrappers for: `/api/v1/billing/balance`, `/api/v1/billing/transactions`, `/api/v1/billing/subscription`
-- **Effort:** ~4 hours
+> **✅ COMPLETED** (Sprint P4-B) — 3 B2B REST routes: `GET /api/v1/billing/balance` (coin wallet), `GET /api/v1/billing/transactions` (paginated history with type filter), `GET /api/v1/billing/subscription` (current plan). All use `authenticateApiKey` + `requireScope('billing:read')`.
 
 ### P1-12: Add Impersonation `reason` Field
 - **Gap:** H-05
@@ -96,7 +92,7 @@
 - **Work:** Uncomment `process_job` in `jobs.py`, implement job completion callback
 - **Effort:** ~3 hours
 
-**P1 Remaining: ~38 hours** (was ~60, reduced by P1-05 and P1-06 completion)
+**P1 Remaining: ~26 hours** (was ~38, reduced by P1-07 and P1-11 completion)
 
 ---
 
@@ -198,15 +194,16 @@
 | Priority | Items | Hours | Completed |
 |----------|-------|-------|-----------|
 | **P0 — Blocking** | 8 | ~28 | ✅ ALL 8 DONE |
-| **P1 — v1.0 Required** | 15 | ~38 remaining | 9/15 done |
+| **P1 — v1.0 Required** | 15 | ~26 remaining | 11/15 done |
 | **P2 — Complete Product** | 14 | ~74 remaining | 3/14 done (1 skipped) |
 | **P3 — Polish** | 7 | ~25 remaining | 2/7 done |
-| **TOTAL** | **44** | **~137 hours remaining** | **22/44 done** |
+| **TOTAL** | **44** | **~125 hours remaining** | **24/44 done** |
 
 ### Progress
 - **Originally estimated:** ~254 hours total
-- **Completed:** ~117 hours of work (P0 + partial P1/P2/P3 + P4-A stores/components)
-- **Remaining:** ~137 hours
+- **Completed:** ~129 hours of work (P0 + partial P1/P2/P3 + P4-A stores/components + P4-B search/billing)
+- **Remaining:** ~125 hours
 - **No CRITICAL items remain** — system is deployment-safe for staging
-- **Schema 13/13 enums DONE, 5/25+ indexes DONE, 7/7 unique constraints DONE**
-- **Frontend: 6/6 stores DONE, 6/6 missing components DONE**
+- **Schema 13/13 enums DONE, 5/25+ indexes DONE + GIN FTS index, 7/7 unique constraints DONE**
+- **Frontend: 6/6 stores DONE, 6/6 missing components DONE, FTS search DONE**
+- **Billing: B2B REST endpoints DONE (balance, transactions, subscription)**

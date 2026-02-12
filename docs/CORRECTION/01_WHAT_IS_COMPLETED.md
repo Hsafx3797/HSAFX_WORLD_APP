@@ -1,7 +1,7 @@
 # 01 — WHAT IS ACTUALLY COMPLETED
 
-> **Last audited:** 2026-02-12 — Post Sprint P0-01..P0-08, P1-01..P1-07, P2-01..P2-05, P4-A
-> **Commit:** `71ebaec` on `master`
+> **Last audited:** 2026-02-12 — Post Sprint P0-01..P0-08, P1-01..P1-07, P2-01..P2-05, P4-A, P4-B
+> **Commit:** `d92267a` on `master`
 > **Methodology:** Every planning doc (01–74) compared against actual source files
 
 ---
@@ -46,7 +46,7 @@
 | Schema files exist (6 files) | ✅ | `users.ts`, `auth.ts`, `billing.ts`, `tools.ts`, `misc.ts`, `audit.ts` |
 | Table count | ⚠️ | **~50 tables exist** vs **60+ planned** — gap narrowing (added `processed_webhooks`, `login_reward_claims`) |
 | PostgreSQL enums | ⚠️ | **4 enums defined** (`subscription_status`, `coin_transaction_type`, `invoice_status`, `payment_status`) — 9 remaining |
-| Database indexes | ⚠️ | Some indexes added (`async_jobs.user_id`, `async_jobs.status`) — bulk planned indexes still missing |
+| Database indexes | ⚠️ | Some indexes added (`async_jobs.user_id`, `async_jobs.status`) + GIN expression index on tools FTS — bulk planned indexes still missing |
 | Column naming alignment | 🟡 | **30+ column name mismatches** vs planning DBML (see doc 02) |
 | `subscriptions.status` stored | ✅ | Conflict #9 resolved — status stored as column (DBML is correct) |
 | Provider: Polar + Stripe | ✅ | Conflict #10 resolved — dual provider: Polar subscriptions, Stripe coin packs |
@@ -77,7 +77,7 @@
 
 > **Note:** `ad_reward_transactions` and `user_ad_daily_caps` **REMOVED** — ad system replaced by login rewards.
 
-**Database score: ~62%** — 4 enums added, 2 new tables, ad tables removed. Bulk indexes and remaining tables still needed.
+**Database score: ~64%** — 4 enums added, 2 new tables, ad tables removed, GIN FTS index added. Bulk indexes and remaining tables still needed.
 
 ---
 
@@ -149,10 +149,10 @@
 | Stripe webhook — dispute/failed | ✅ | **Stub handlers with structured logging** (P1-06 completed) |
 | Polar webhook — full lifecycle | ✅ | create, update, cancel |
 | Webhook idempotency | ✅ | **`processed_webhooks` table + provider/eventId check on ALL events** (P0-05 completed) |
-| Billing REST endpoints | ❌ | No `/api/v1/billing/*` REST routes for B2B |
+| Billing REST endpoints | ✅ | **3 B2B billing routes added:** `/api/v1/billing/balance`, `/transactions`, `/subscription` (P4-B) |
 | Wallet reconciliation cron | ✅ | Exists |
 
-**Billing score: ~85%** — All critical billing flows fixed. B2B REST billing endpoints still missing.
+**Billing score: ~90%** — All critical billing flows fixed. B2B REST billing endpoints added (balance, transactions, subscription).
 
 ---
 
@@ -178,7 +178,7 @@
 | Next.js app structure | ✅ | App Router, pages, layouts |
 | Tool pages + execution UI | ✅ | Per-type layouts work |
 | Plan access context | ✅ | `PlanAccessProvider` wired to live `getMyPlan` query |
-| Search | ⚠️ | **Client-side `String.includes()` only** — no tsvector |
+| Search | ✅ | **PostgreSQL FTS** — GIN expression index on tools, `plainto_tsquery` in tRPC `tools.list`, `useToolSearch` hook with debounce, hybrid server/client search (P4-B) |
 
 ### Planned Components (10)
 
@@ -210,7 +210,7 @@
 
 **4/6 complete. 2/6 partial. 0 missing.**
 
-**Frontend score: ~60%**
+**Frontend score: ~65%** — Search now server-side via PostgreSQL FTS.
 
 ---
 
@@ -296,14 +296,14 @@
 | Database Schema | 78% | ~20 remaining indexes, ~10 missing tables |
 | Auth & Authorization | 78% | Session config |
 | Security | 82% | CSRF Referer fallback, Retry-After header, impersonation reason |
-| Billing System | 85% | B2B billing REST endpoints |
+| Billing System | 90% | Wallet reconciliation edge cases |
 | Tool Execution | 65% | ~15 stubs, FastAPI job processing disabled |
-| Frontend (Web) | 60% | Search, partial ToolCard/ToolGrid/ResultDisplay |
+| Frontend (Web) | 65% | Partial ToolCard/ToolGrid/ResultDisplay |
 | Frontend (Admin) | 60% | No analytics, billing admin, audit viewer |
 | FastAPI Backend | 80% | Job processing disabled |
 | Shared Packages | 88% | UI package is theme-only |
 | Redis & Caching | 70% | No session cache, no pub/sub |
 
-### **Weighted Overall: ~82%**
+### **Weighted Overall: ~84%**
 
-Significant progress since last audit (~78%). **Phase 4A complete** — all 6 missing UI components built with Skeleton variants, all 3 missing Zustand stores created. Barrel exports updated. Build passes (5/5). Remaining work: search (FTS), billing REST API, tool stubs, admin features, polish.
+Significant progress since last audit (~82%). **Phase 4B complete** — PostgreSQL FTS search with GIN index, fixed `tools.list` tRPC filters, hybrid server/client search UI, 3 B2B billing REST endpoints. Build passes (5/5). Remaining work: tool stubs, FastAPI job processing, admin features, polish.

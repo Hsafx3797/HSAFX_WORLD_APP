@@ -1,9 +1,9 @@
 # SOLUTION ROADMAP — HSAFX WORLD APP
 
 > **Date:** 2026-02-12
-> **Commit:** `71ebaec` on `master`
+> **Commit:** `d92267a` on `master`
 > **Based on:** CORRECTION docs 01–05
-> **Status:** Phases 1–4A COMPLETE, entering Phase 4B
+> **Status:** Phases 1–4B COMPLETE, entering Phase 5
 
 ---
 
@@ -11,8 +11,8 @@
 
 This roadmap translates the remaining work items (from [03_REMAINING_WORK.md](03_REMAINING_WORK.md)) into an actionable sequence. All 5 owner decisions are resolved. All 10 planning conflicts are locked.
 
-**Progress:** 22/44 items complete (~50% items, ~117 hours done). ~137 hours remaining.
-**No CRITICAL blockers remain** — staging deployment is safe. **Schema-complete milestone achieved.**
+**Progress:** 24/44 items complete (~55% items, ~129 hours done). ~125 hours remaining.
+**No CRITICAL blockers remain** — staging deployment is safe. **Schema-complete milestone achieved. FTS search operational.**
 
 ---
 
@@ -112,18 +112,22 @@ This roadmap translates the remaining work items (from [03_REMAINING_WORK.md](03
 
 ---
 
-### Phase 4B — Search + Billing API (NEXT)
+### ✅ Phase 4B — Search + Billing API — COMPLETE
+> Commit `d92267a`
 
-**What:** Build search with PostgreSQL FTS and B2B billing API.
+**Completed:**
+- ✅ GIN expression index on tools table (`to_tsvector('english', name || description || tags)`)
+- ✅ Rewrote `tools.list` tRPC — working `plainto_tsquery` search + `categoryId` + `group` filters + pagination count
+- ✅ `useToolSearch` hook — debounced (300ms) server-side FTS via tRPC, `placeholderData: keepPreviousData`
+- ✅ Hybrid server/client search in `/tools/all` — server FTS when query present, client registry otherwise, loading skeletons
+- ✅ 3 B2B billing REST endpoints: `GET /api/v1/billing/balance`, `/transactions` (paginated, type filter), `/subscription`
+- ✅ All endpoints use `authenticateApiKey` + `requireScope('billing:read')`
 
-- PostgreSQL FTS: tsvector + GIN index on tools table, search API, replace client-side filtering
-- Billing REST endpoints for B2B
-
-**Exit Criteria:** FTS search works. B2B billing endpoints available.
+**Exit Criteria:** ✅ FTS search works. B2B billing endpoints available. Build passes (5/5).
 
 ---
 
-### Phase 5 — Tool Execution Completion
+### Phase 5 — Tool Execution Completion (NEXT)
 
 **What:** Complete stub tool handlers and enable FastAPI processing.
 
@@ -177,13 +181,13 @@ This roadmap translates the remaining work items (from [03_REMAINING_WORK.md](03
 | 2. Schema & Logging | 30h | 58h | ✅ DONE |
 | 3. Schema Completion | 12h | 70h | ✅ DONE |
 | 4A. Frontend Stores+Components | 22h | 92h | ✅ DONE |
-| 4B. Search + Billing API | 12h | 104h | **NEXT** |
-| 5. Tool Execution | 15h | 119h | Not started |
+| 4B. Search + Billing API | 12h | 104h | ✅ DONE |
+| 5. Tool Execution | 15h | 119h | **NEXT** |
 | 6. Admin & Polish | 50h | 169h | Not started |
 | 7. Alignment + Remaining | 26h | 195h | Not started |
 | 8. Final Polish | 16h | 211h | Not started |
 
-**Total remaining: ~119 hours** (from original ~254)
+**Total remaining: ~107 hours** (from original ~254)
 
 ---
 
