@@ -11,7 +11,7 @@ export const COIN_PACKS: CoinPack[] = [
     id: 'starter',
     name: 'Starter Pack',
     coins: 100,
-    price: 4.99,
+    priceInCents: 499,
     bonusCoins: 0,
     isPopular: false,
   },
@@ -19,7 +19,7 @@ export const COIN_PACKS: CoinPack[] = [
     id: 'basic',
     name: 'Basic Pack',
     coins: 300,
-    price: 9.99,
+    priceInCents: 999,
     bonusCoins: 30,
     isPopular: false,
   },
@@ -27,7 +27,7 @@ export const COIN_PACKS: CoinPack[] = [
     id: 'popular',
     name: 'Popular Pack',
     coins: 700,
-    price: 19.99,
+    priceInCents: 1999,
     bonusCoins: 100,
     isPopular: true,
   },
@@ -35,7 +35,7 @@ export const COIN_PACKS: CoinPack[] = [
     id: 'value',
     name: 'Value Pack',
     coins: 1500,
-    price: 39.99,
+    priceInCents: 3999,
     bonusCoins: 300,
     isPopular: false,
     discount: 10,
@@ -44,7 +44,7 @@ export const COIN_PACKS: CoinPack[] = [
     id: 'premium',
     name: 'Premium Pack',
     coins: 4000,
-    price: 99.99,
+    priceInCents: 9999,
     bonusCoins: 1000,
     isPopular: false,
     discount: 20,
@@ -53,7 +53,7 @@ export const COIN_PACKS: CoinPack[] = [
     id: 'ultimate',
     name: 'Ultimate Pack',
     coins: 10000,
-    price: 199.99,
+    priceInCents: 19999,
     bonusCoins: 3000,
     isPopular: false,
     discount: 30,
@@ -70,10 +70,10 @@ export function getEffectiveCoins(pack: CoinPack): number {
   return pack.coins + pack.bonusCoins;
 }
 
-// Calculate cost per coin
+// Calculate cost per coin (in cents)
 export function getCostPerCoin(pack: CoinPack): number {
   const totalCoins = getEffectiveCoins(pack);
-  return pack.price / totalCoins;
+  return pack.priceInCents / totalCoins;
 }
 
 // Get best value pack

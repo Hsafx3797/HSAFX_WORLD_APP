@@ -47,8 +47,8 @@ export async function GET(request: NextRequest) {
         planName: plans.name,
         status: subscriptions.status,
         billingCycle: subscriptions.billingCycle,
-        priceMonthly: plans.priceMonthly,
-        priceYearly: plans.priceYearly,
+        priceMonthlyCents: plans.priceMonthlyCents,
+        priceYearlyCents: plans.priceYearlyCents,
         provider: sql<string>`'polar'`, // Default provider
         providerId: subscriptions.polarSubscriptionId,
         currentPeriodStart: subscriptions.currentPeriodStart,
@@ -95,8 +95,8 @@ export async function GET(request: NextRequest) {
       status: sub.status,
       billingCycle: sub.billingCycle,
       amount: sub.billingCycle === 'yearly' 
-        ? Number(sub.priceYearly) || 0
-        : Number(sub.priceMonthly) || 0,
+        ? sub.priceYearlyCents || 0
+        : sub.priceMonthlyCents || 0,
       provider: sub.provider,
       providerId: sub.providerId,
       currentPeriodStart: sub.currentPeriodStart?.toISOString(),

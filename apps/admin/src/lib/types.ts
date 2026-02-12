@@ -480,8 +480,8 @@ export interface Plan {
   name: string;
   slug: string;
   description?: string;
-  priceMonthly?: string;
-  priceYearly?: string;
+  priceMonthlyCents?: number;
+  priceYearlyCents?: number;
   coinGrant: number;
   isActive: boolean;
   polarProductId?: string;

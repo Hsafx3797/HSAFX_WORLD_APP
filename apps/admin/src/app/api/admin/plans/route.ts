@@ -36,7 +36,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, slug, description, priceMonthly, priceYearly, coinGrant, polarProductId, isActive } = body;
+    const { name, slug, description, priceMonthlyCents, priceYearlyCents, coinGrant, polarProductId, isActive } = body;
 
     if (!name || !slug) {
       return NextResponse.json({ success: false, error: { code: 'VALIDATION', message: 'Name and slug are required' } }, { status: 400 });
@@ -48,8 +48,8 @@ export async function POST(request: NextRequest) {
         name,
         slug,
         description: description ?? null,
-        priceMonthly: priceMonthly ?? '0.00',
-        priceYearly: priceYearly ?? '0.00',
+        priceMonthlyCents: priceMonthlyCents ?? 0,
+        priceYearlyCents: priceYearlyCents ?? 0,
         coinGrant: coinGrant ?? 0,
         polarProductId: polarProductId ?? null,
         isActive: isActive ?? true,

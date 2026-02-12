@@ -135,24 +135,24 @@ async function seed() {
       name: 'Free',
       slug: 'free',
       description: 'Basic access with daily coin grant',
-      priceMonthly: '0.00',
-      priceYearly: '0.00',
+      priceMonthlyCents: 0,
+      priceYearlyCents: 0,
       coinGrant: 50, // 50 coins/month
     },
     {
       name: 'Pro',
       slug: 'pro',
       description: 'Professional tier with 20% discount on tool costs',
-      priceMonthly: '9.99',
-      priceYearly: '99.99',
+      priceMonthlyCents: 999,
+      priceYearlyCents: 9999,
       coinGrant: 500, // 500 coins/month
     },
     {
       name: 'Advance',
       slug: 'advance',
       description: 'Enterprise-grade with priority execution and 40% discount',
-      priceMonthly: '29.99',
-      priceYearly: '299.99',
+      priceMonthlyCents: 2999,
+      priceYearlyCents: 29999,
       coinGrant: 2000, // 2000 coins/month
     },
   ];

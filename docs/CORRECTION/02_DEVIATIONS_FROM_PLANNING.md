@@ -132,7 +132,8 @@
 ### M-14: Column — `api_keys.rate_limit_tier` (text) vs `rate_limit_per_hour` (integer) — **✅ RESOLVED** (Phase 7 #38) — DBML replaced `rate_limit_per_hour int` with `rate_limit_tier text [default: 'standard']`
 ### M-15: Column — `admin_settings.key/value` vs `setting_key/setting_value` — **✅ RESOLVED** (Phase 7 #38) — DBML renamed `setting_key`→`key`, `setting_value`→`value` (jsonb), `setting_group`→`category`, added `updated_by`
 ### M-16: `api_rate_limits` Keyed Differently — **OPEN**
-### M-17: Money Stored as `decimal(10,2)` Not `bigint` Cents — **OPEN**
+### M-17: Money Stored as `decimal(10,2)` Not `bigint` Cents — **✅ RESOLVED** (Phase 8 #43)
+> Migrated all money columns to `bigint` cents: `plans.price_monthly_cents`/`price_yearly_cents`, `invoices.amount_cents`, `payments.amount_cents`. Coin columns upgraded from `integer` to `bigint`. DBML, seed data, admin UI, and API routes all updated.
 ### M-18: `async_jobs` Still Has `inngest_job_id` Column
 > **✅ RESOLVED** (Sprint P1-05) — Column renamed from `inngest_job_id` to `external_job_id` (simple queue reference).
 
@@ -140,7 +141,7 @@
 ### M-20: Missing Unique Constraints On Join Tables — **✅ RESOLVED** (Phase 3)
 > 7 unique constraints: `planLimits(planId,limitKey)`, `planFeatures(planId,featureKey)`, `planCoinRules(planId,toolClass)`, `userPermissionOverrides(userId,permissionId)`, `userRoles`, `rolePermissions`, `favorites`.
 
-**MEDIUM SUMMARY: 15/20 resolved (M-01, M-02, M-05–M-15, M-18, M-20). 5/20 open (M-03 Facebook OAuth, M-04 tRPC structure, M-16 rate limits keying, M-17 money type, M-19 roles columns).**
+**MEDIUM SUMMARY: 16/20 resolved (M-01, M-02, M-05–M-15, M-17, M-18, M-20). 4/20 open (M-03 Facebook OAuth, M-04 tRPC structure, M-16 rate limits keying, M-19 roles columns).**
 
 ---
 
@@ -169,9 +170,9 @@
 |----------|-------|----------|---------|------|
 | CRITICAL | 12 | 10 | 2 | 0 |
 | HIGH | 15 | 15 | 0 | 0 |
-| MEDIUM | 20 | 15 | 0 | 5 |
+| MEDIUM | 20 | 16 | 0 | 4 |
 | LOW | 10 | 6 | 1 | 3 |
-| **TOTAL** | **57** | **46** | **3** | **8** |
+| **TOTAL** | **57** | **47** | **3** | **7** |
 
-### Progress: 46 fully resolved + 3 partially = **81% fully resolved, 5% partial**
-### Remaining: 8 open deviations (0 CRITICAL, 0 HIGH, 5 MEDIUM, 3 LOW)
+### Progress: 47 fully resolved + 3 partially = **82% fully resolved, 5% partial**
+### Remaining: 7 open deviations (0 CRITICAL, 0 HIGH, 4 MEDIUM, 3 LOW)

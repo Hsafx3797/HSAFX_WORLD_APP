@@ -51,7 +51,7 @@ export interface CoinPack {
   id: string;
   name: string;
   coins: number;
-  price: number;            // USD
+  priceInCents: number;     // Price in cents (e.g. 499 = $4.99)
   bonusCoins: number;       // Extra coins included
   isPopular: boolean;
   discount?: number;        // Percentage discount

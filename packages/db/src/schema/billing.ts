@@ -62,8 +62,8 @@ export const plans = pgTable('plans', {
   name: text('name').notNull().unique(), // 'Free', 'Pro', 'Advance'
   slug: text('slug').notNull().unique(), // 'free', 'pro', 'advance'
   description: text('description'),
-  priceMonthly: decimal('price_monthly', { precision: 10, scale: 2 }),
-  priceYearly: decimal('price_yearly', { precision: 10, scale: 2 }),
+  priceMonthlyCents: bigint('price_monthly_cents', { mode: 'number' }),
+  priceYearlyCents: bigint('price_yearly_cents', { mode: 'number' }),
   coinGrant: integer('coin_grant').notNull().default(0), // Coins granted per billing cycle
   isActive: boolean('is_active').notNull().default(true),
   polarProductId: text('polar_product_id').unique(), // Polar product mapping
@@ -127,12 +127,12 @@ export const coinTransactions = pgTable('coin_transactions', {
   userId: uuid('user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
-  amount: integer('amount').notNull(), // Positive for credit, negative for debit
+  amount: bigint('amount', { mode: 'number' }).notNull(), // Positive for credit, negative for debit
   type: coinTransactionTypeEnum('type').notNull(),
   reason: text('reason').notNull(), // Human-readable reason
   resourceType: text('resource_type'), // 'tool', 'api', 'subscription', 'coin_pack'
   resourceId: uuid('resource_id'), // ID of related resource
-  balanceAfter: integer('balance_after').notNull(), // Snapshot balance after tx
+  balanceAfter: bigint('balance_after', { mode: 'number' }).notNull(), // Snapshot balance after tx
   metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 }, (t) => [
@@ -153,7 +153,7 @@ export const invoices = pgTable('invoices', {
   subscriptionId: uuid('subscription_id').references(() => subscriptions.id),
   invoiceNumber: text('invoice_number').notNull().unique(),
   status: invoiceStatusEnum('status').notNull(),
-  amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
+  amountCents: bigint('amount_cents', { mode: 'number' }).notNull(),
   currency: text('currency').notNull().default('USD'),
   dueDate: timestamp('due_date'),
   paidAt: timestamp('paid_at'),
@@ -176,7 +176,7 @@ export const payments = pgTable('payments', {
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
   invoiceId: uuid('invoice_id').references(() => invoices.id),
-  amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
+  amountCents: bigint('amount_cents', { mode: 'number' }).notNull(),
   currency: text('currency').notNull().default('USD'),
   status: paymentStatusEnum('status').notNull(),
   paymentMethod: text('payment_method').notNull(), // 'card', 'bank_transfer', 'coins'
@@ -200,9 +200,9 @@ export const userCoinWallets = pgTable('user_coin_wallets', {
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' })
     .unique(),
-  balance: integer('balance').notNull().default(0),
-  lifetimeEarned: integer('lifetime_earned').notNull().default(0),
-  lifetimeSpent: integer('lifetime_spent').notNull().default(0),
+  balance: bigint('balance', { mode: 'number' }).notNull().default(0),
+  lifetimeEarned: bigint('lifetime_earned', { mode: 'number' }).notNull().default(0),
+  lifetimeSpent: bigint('lifetime_spent', { mode: 'number' }).notNull().default(0),
   lastRecalculatedAt: timestamp('last_recalculated_at'),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
@@ -215,7 +215,7 @@ export const coinPacks = pgTable('coin_packs', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: varchar('name', { length: 100 }).notNull(),
   coins: integer('coins').notNull(),
-  priceInCents: integer('price_in_cents').notNull(),
+  priceInCents: bigint('price_in_cents', { mode: 'number' }).notNull(),
   bonusCoins: integer('bonus_coins').notNull().default(0),
   isActive: boolean('is_active').notNull().default(true),
   sortOrder: integer('sort_order').notNull().default(0),

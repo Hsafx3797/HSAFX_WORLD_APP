@@ -16,8 +16,8 @@ const emptyForm = {
   name: '',
   slug: '',
   description: '',
-  priceMonthly: '0.00',
-  priceYearly: '0.00',
+  priceMonthlyCents: 0,
+  priceYearlyCents: 0,
   coinGrant: 0,
   polarProductId: '',
   isActive: true,
@@ -42,8 +42,8 @@ export default function PlansPage() {
       name: plan.name,
       slug: plan.slug,
       description: plan.description ?? '',
-      priceMonthly: plan.priceMonthly ?? '0.00',
-      priceYearly: plan.priceYearly ?? '0.00',
+      priceMonthlyCents: plan.priceMonthlyCents ?? 0,
+      priceYearlyCents: plan.priceYearlyCents ?? 0,
       coinGrant: plan.coinGrant,
       polarProductId: plan.polarProductId ?? '',
       isActive: plan.isActive,
@@ -67,9 +67,9 @@ export default function PlansPage() {
     }
   }, [editingPlan, form, mutations, refresh]);
 
-  const formatPrice = (price?: string) => {
-    if (!price) return '$0.00';
-    return `$${parseFloat(price).toFixed(2)}`;
+  const formatPrice = (cents?: number) => {
+    if (!cents) return '$0.00';
+    return `$${(cents / 100).toFixed(2)}`;
   };
 
   return (
@@ -107,9 +107,9 @@ export default function PlansPage() {
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 text-sm">
                     <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    <span>{formatPrice(plan.priceMonthly)}/mo</span>
+                    <span>{formatPrice(plan.priceMonthlyCents)}/mo</span>
                     <span className="text-muted-foreground">·</span>
-                    <span>{formatPrice(plan.priceYearly)}/yr</span>
+                    <span>{formatPrice(plan.priceYearlyCents)}/yr</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <Coins className="h-4 w-4 text-muted-foreground" />
@@ -158,10 +158,10 @@ export default function PlansPage() {
             </FormGroup>
             <div className="grid grid-cols-2 gap-4">
               <FormGroup>
-                <Input label="Monthly Price ($)" value={form.priceMonthly} onChange={(e) => setForm({ ...form, priceMonthly: e.target.value })} type="number" />
+                <Input label="Monthly Price (cents)" value={String(form.priceMonthlyCents)} onChange={(e) => setForm({ ...form, priceMonthlyCents: parseInt(e.target.value) || 0 })} type="number" />
               </FormGroup>
               <FormGroup>
-                <Input label="Yearly Price ($)" value={form.priceYearly} onChange={(e) => setForm({ ...form, priceYearly: e.target.value })} type="number" />
+                <Input label="Yearly Price (cents)" value={String(form.priceYearlyCents)} onChange={(e) => setForm({ ...form, priceYearlyCents: parseInt(e.target.value) || 0 })} type="number" />
               </FormGroup>
             </div>
             <FormGroup>
