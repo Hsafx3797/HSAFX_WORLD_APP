@@ -18,28 +18,28 @@ This roadmap translates the remaining work items (from [03_REMAINING_WORK.md](03
 
 ## DECISION GATES — ALL RESOLVED ✅
 
-| # | Decision | Answer | Locked |
-|---|----------|--------|--------|
-| D-01 | Deployment strategy | Self-hosted VPS | ✅ |
-| D-02 | Background jobs | Simple queue (no BullMQ) | ✅ |
-| D-03 | Email provider | Resend + Self SMTP dual | ✅ |
-| D-04 | Search engine | Skip Meilisearch for MVP (PostgreSQL FTS) | ✅ |
-| D-05 | Admin real-time | Both WebSocket + SSE | ✅ |
+| #    | Decision            | Answer                                    | Locked |
+|------|---------------------|-------------------------------------------|--------|
+| D-01 | Deployment strategy | Self-hosted VPS                           | ✅     |
+| D-02 | Background jobs     | Simple queue (no BullMQ)                  | ✅     |
+| D-03 | Email provider      | Resend + Self SMTP dual                   | ✅     |
+| D-04 | Search engine       | Skip Meilisearch for MVP (PostgreSQL FTS) | ✅     |
+| D-05 | Admin real-time     | Both WebSocket + SSE                      | ✅     |
 
 ### Planning Conflicts — ALL LOCKED ✅
 
-| # | Conflict | Decision |
-|---|----------|----------|
-| #1 | Starter plan price | $4.99 |
-| #2 | Ad system vs login rewards | Login rewards (ads removed) |
-| #3 | Daily coin cap | 50 coins/day |
-| #4 | API key limit | Max 5 per user |
-| #5 | Rate limits | Free=100, Pro=500 req/hr |
-| #6 | Pro plan price | $10/mo |
-| #7 | Over-limit error code | HTTP 402 with B001 |
-| #8 | Coins per reward | 10 coins |
-| #9 | Status column type | varchar (not pgEnum) |
-| #10 | Payment provider | Polar(subs) + Stripe(coins) dual |
+| #   | Conflict                   | Decision                         |
+|-----|----------------------------|----------------------------------|
+| #1  | Starter plan price         | $4.99                            |
+| #2  | Ad system vs login rewards | Login rewards (ads removed)      |
+| #3  | Daily coin cap             | 50 coins/day                     |
+| #4  | API key limit              | Max 5 per user                   |
+| #5  | Rate limits                | Free=100, Pro=500 req/hr         |
+| #6  | Pro plan price             | $10/mo                           |
+| #7  | Over-limit error code      | HTTP 402 with B001               |
+| #8  | Coins per reward           | 10 coins                         |
+| #9  | Status column type         | varchar (not pgEnum)             |
+| #10 | Payment provider           | Polar(subs) + Stripe(coins) dual |
 
 ---
 
@@ -175,17 +175,17 @@ This roadmap translates the remaining work items (from [03_REMAINING_WORK.md](03
 
 ## TIMELINE SUMMARY
 
-| Phase | Focus | Hours | Cumulative | Status |
-|-------|-------|-------|------------|--------|
-| 1. Security & Billing | 28h | 28h | ✅ DONE |
-| 2. Schema & Logging | 30h | 58h | ✅ DONE |
-| 3. Schema Completion | 12h | 70h | ✅ DONE |
-| 4A. Frontend Stores+Components | 22h | 92h | ✅ DONE |
-| 4B. Search + Billing API | 12h | 104h | ✅ DONE |
-| 5. Tool Execution | 15h | 119h | **NEXT** |
-| 6. Admin & Polish | 50h | 169h | Not started |
-| 7. Alignment + Remaining | 26h | 195h | Not started |
-| 8. Final Polish | 16h | 211h | Not started |
+| Phase                          | Focus | Hours | Cumulative | Status |
+|--------------------------------|-------|-------|------------|--------|
+| 1. Security & Billing          | 28h   | 28h   | ✅ DONE             |
+| 2. Schema & Logging            | 30h   | 58h   | ✅ DONE             |
+| 3. Schema Completion           | 12h   | 70h   | ✅ DONE             |
+| 4A. Frontend Stores+Components | 22h   | 92h   | ✅ DONE             |
+| 4B. Search + Billing API       | 12h   | 104h  | ✅ DONE             |
+| 5. Tool Execution              | 15h   | 119h  | **NEXT**            |
+| 6. Admin & Polish              | 50h   | 169h  | Not started         |
+| 7. Alignment + Remaining       | 26h   | 195h  | Not started         |
+| 8. Final Polish                | 16h   | 211h  | Not started         |
 
 **Total remaining: ~107 hours** (from original ~254)
 
@@ -193,10 +193,10 @@ This roadmap translates the remaining work items (from [03_REMAINING_WORK.md](03
 
 ## RISK REGISTER
 
-| Risk | Likelihood | Mitigation |
-|------|-----------|------------|
-| Schema migration breaks existing data | Low | Take DB snapshot before migration batch |
-| Frontend rebuild exceeds estimates | Medium | Prioritize tool execution page; defer search |
-| Stub tool implementation quality | Medium | Start with simpler tools, iterate |
-| ~~Planning doc conflicts cause rework~~ | ~~High~~ | ✅ All 10 conflicts resolved and locked |
-| ~~Decision gates block progress~~ | ~~High~~ | ✅ All 5 decisions resolved |
+| Risk                                    | Likelihood | Mitigation                                   |
+|-----------------------------------------|------------|----------------------------------------------|
+| Schema migration breaks existing data   | Low        | Take DB snapshot before migration batch      |
+| Frontend rebuild exceeds estimates      | Medium     | Prioritize tool execution page; defer search |
+| Stub tool implementation quality        | Medium     | Start with simpler tools, iterate            |
+| ~~Planning doc conflicts cause rework~~ | ~~High~~   | ✅ All 10 conflicts resolved and locked      |
+| ~~Decision gates block progress~~       | ~~High~~   | ✅ All 5 decisions resolved                  |

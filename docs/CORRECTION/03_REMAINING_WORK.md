@@ -21,16 +21,16 @@
 
 > ### ✅ ALL P0 ITEMS COMPLETED
 >
-> | # | Task | Sprint | Status |
-> |---|------|--------|--------|
-> | P0-01 | Wire coin deduction into B2B REST route | P0-01 | ✅ Done |
-> | P0-02 | Call `confirmReservation()` after async job | P0-02 | ✅ Done |
-> | P0-03 | Wire CASL into web app + API middleware | P1-07/P0-03 | ✅ Done |
-> | P0-04 | Implement Stripe refund coin clawback | P0-04 | ✅ Done |
-> | P0-05 | Add `processed_webhooks` table + idempotency | P0-05 | ✅ Done |
-> | P0-06 | Invoke session rate limit in middleware | P0-06 | ✅ Done |
-> | P0-07 | Server-enforce admin 2FA in middleware | P0-07 | ✅ Done |
-> | P0-08 | Add impersonation scoped-action middleware | P0-08 | ✅ Done |
+> | #     | Task                                         | Sprint      | Status  |
+> |-------|----------------------------------------------|-------------|---------|
+> | P0-01 | Wire coin deduction into B2B REST route      | P0-01       | ✅ Done |
+> | P0-02 | Call `confirmReservation()` after async job  | P0-02       | ✅ Done |
+> | P0-03 | Wire CASL into web app + API middleware      | P1-07/P0-03 | ✅ Done |
+> | P0-04 | Implement Stripe refund coin clawback        | P0-04       | ✅ Done |
+> | P0-05 | Add `processed_webhooks` table + idempotency | P0-05       | ✅ Done |
+> | P0-06 | Invoke session rate limit in middleware      | P0-06       | ✅ Done |
+> | P0-07 | Server-enforce admin 2FA in middleware       | P0-07       | ✅ Done |
+> | P0-08 | Add impersonation scoped-action middleware   | P0-08       | ✅ Done |
 
 ---
 
@@ -191,13 +191,13 @@
 
 ## EFFORT SUMMARY
 
-| Priority | Items | Hours | Completed |
-|----------|-------|-------|-----------|
-| **P0 — Blocking** | 8 | ~28 | ✅ ALL 8 DONE |
-| **P1 — v1.0 Required** | 15 | ~26 remaining | 11/15 done |
-| **P2 — Complete Product** | 14 | ~74 remaining | 3/14 done (1 skipped) |
-| **P3 — Polish** | 7 | ~25 remaining | 2/7 done |
-| **TOTAL** | **44** | **~125 hours remaining** | **24/44 done** |
+| Priority                  | Items  | Hours                    | Completed             |
+|---------------------------|--------|--------------------------|-----------------------|
+| **P0 — Blocking**         | 8      | ~28                      | ✅ ALL 8 DONE         |
+| **P1 — v1.0 Required**    | 15     | ~26 remaining            | 11/15 done            |
+| **P2 — Complete Product** | 14     | ~74 remaining            | 3/14 done (1 skipped) |
+| **P3 — Polish**           | 7      | ~25 remaining            | 2/7 done              |
+| **TOTAL**                 | **44** | **~125 hours remaining** | **24/44 done**        |
 
 ### Progress
 - **Originally estimated:** ~254 hours total

@@ -65,16 +65,16 @@ HSAFX World App is a **454+ tool SaaS platform** built as a Turborepo monorepo. 
 
 These 8 items must be fixed before ANY staging deployment:
 
-| # | Issue | Risk | Fix Hours |
-|---|-------|------|-----------|
-| 1 | B2B REST route bypasses coin deduction | Revenue loss | 2h |
-| 2 | Coin reservations never confirmed | Wallet corruption | 2h |
-| 3 | CASL not wired — no plan-based access control | All tools free | 8h |
-| 4 | Refund webhook doesn't claw back coins | Revenue loss | 3h |
-| 5 | No webhook idempotency for non-coin events | Duplicate processing | 4h |
-| 6 | Session rate limit not invoked | DoS vulnerability | 1h |
-| 7 | Admin 2FA not server-enforced | Security bypass | 4h |
-| 8 | No impersonation action restrictions | Privilege escalation | 4h |
+| # | Issue                                         | Risk                 | Fix Hours |
+|---|-----------------------------------------------|----------------------|-----------|
+| 1 | B2B REST route bypasses coin deduction        | Revenue loss         | 2h        |
+| 2 | Coin reservations never confirmed             | Wallet corruption    | 2h        |
+| 3 | CASL not wired — no plan-based access control | All tools free       | 8h        |
+| 4 | Refund webhook doesn't claw back coins        | Revenue loss         | 3h        |
+| 5 | No webhook idempotency for non-coin events    | Duplicate processing | 4h        |
+| 6 | Session rate limit not invoked                | DoS vulnerability    | 1h        |
+| 7 | Admin 2FA not server-enforced                 | Security bypass      | 4h        |
+| 8 | No impersonation action restrictions          | Privilege escalation | 4h        |
 
 **Total: ~28 hours to be deployment-safe.**
 
@@ -82,19 +82,19 @@ These 8 items must be fixed before ANY staging deployment:
 
 ## AREA-BY-AREA SCORES
 
-| Area | Score | Status |
-|------|-------|--------|
-| Infrastructure & DevOps | 85% | ✅ Solid |
-| Database Schema | 55% | ⚠️ Missing enums, indexes, 13 tables |
-| Auth & Authorization | 50% | 🔴 CASL unwired |
-| Security | 60% | 🔴 Session rate limit, no TS logging |
-| Billing System | 50% | 🔴 B2B bypass, reservation lifecycle broken |
-| Tool Execution | 65% | ⚠️ ~15 stubs, no BullMQ |
-| Frontend (Web) | 40% | 🔴 6/10 components, 3/6 stores missing |
-| Frontend (Admin) | 60% | ⚠️ No analytics/audit viewer |
-| FastAPI Backend | 80% | ✅ Job processing disabled |
-| Shared Packages | 80% | ✅ UI package thin |
-| Redis & Caching | 55% | ⚠️ No BullMQ queues |
+| Area                    | Score | Status                                      |
+|-------------------------|-------|---------------------------------------------|
+| Infrastructure & DevOps | 85%   | ✅ Solid                                    |
+| Database Schema         | 55%   | ⚠️ Missing enums, indexes, 13 tables        |
+| Auth & Authorization    | 50%   | 🔴 CASL unwired                             |
+| Security                | 60%   | 🔴 Session rate limit, no TS logging        |
+| Billing System          | 50%   | 🔴 B2B bypass, reservation lifecycle broken |
+| Tool Execution          | 65%   | ⚠️ ~15 stubs, no BullMQ                     |
+| Frontend (Web)          | 40%   | 🔴 6/10 components, 3/6 stores missing      |
+| Frontend (Admin)        | 60%   | ⚠️ No analytics/audit viewer                |
+| FastAPI Backend         | 80%   | ✅ Job processing disabled                  |
+| Shared Packages         | 80%   | ✅ UI package thin                          |
+| Redis & Caching         | 55%   | ⚠️ No BullMQ queues                         |
 
 **Weighted Overall: ~58%**
 
@@ -102,14 +102,14 @@ These 8 items must be fixed before ANY staging deployment:
 
 ## DOCUMENT INDEX
 
-| Doc | Contents |
-|-----|----------|
-| [01_WHAT_IS_COMPLETED.md](01_WHAT_IS_COMPLETED.md) | Area-by-area completion status with honest scoring |
-| [02_DEVIATIONS_FROM_PLANNING.md](02_DEVIATIONS_FROM_PLANNING.md) | 57 deviations ranked: 12 critical, 15 high, 20 medium, 10 low |
-| [03_REMAINING_WORK.md](03_REMAINING_WORK.md) | 44 work items: P0 (28h), P1 (88h), P2 (110h), P3 (28h) = ~254 total |
-| [04_STEPS_TO_COMPLETE.md](04_STEPS_TO_COMPLETE.md) | Sprint 6–12 execution plan with exit criteria |
+| Doc                                                                    | Contents                                                             |
+|------------------------------------------------------------------------|----------------------------------------------------------------------|
+| [01_WHAT_IS_COMPLETED.md](01_WHAT_IS_COMPLETED.md)                     | Area-by-area completion status with honest scoring                   |
+| [02_DEVIATIONS_FROM_PLANNING.md](02_DEVIATIONS_FROM_PLANNING.md)       | 57 deviations ranked: 12 critical, 15 high, 20 medium, 10 low        |
+| [03_REMAINING_WORK.md](03_REMAINING_WORK.md)                           | 44 work items: P0 (28h), P1 (88h), P2 (110h), P3 (28h) = ~254 total  |
+| [04_STEPS_TO_COMPLETE.md](04_STEPS_TO_COMPLETE.md)                     | Sprint 6–12 execution plan with exit criteria                        |
 | [05_PLANNING_DOCUMENT_CONFLICTS.md](05_PLANNING_DOCUMENT_CONFLICTS.md) | 10 contradictions between planning docs — must resolve before coding |
-| [RECONCILIATION_REQUIREMENTS.md](RECONCILIATION_REQUIREMENTS.md) | Extracted requirements from all planning docs |
+| [RECONCILIATION_REQUIREMENTS.md](RECONCILIATION_REQUIREMENTS.md)       | Extracted requirements from all planning docs                        |
 
 ---
 
