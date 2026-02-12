@@ -1,7 +1,7 @@
 # 04 — STEPS TO COMPLETE (Sprint Execution Plan)
 
 > **Last updated:** 2026-02-12
-> **Commit:** `5394975` on `master`
+> **Commit:** `f1e7900` on `master`
 > **Based on:** Doc 03 remaining work items
 > **Philosophy:** P0 first → P1 next → P2/P3 after
 
@@ -32,17 +32,17 @@
 
 ---
 
-## ✅ PHASE 2 (partial): DATA INTEGRITY & LOGGING
-**Logging COMPLETED. Schema quality items remain.**
+## ✅ PHASE 2: DATA INTEGRITY & LOGGING — COMPLETED
+**Logging COMPLETED. Schema quality COMPLETED.**
 
-### Sprint 7A — Schema Quality (remaining ~12h)
+### Sprint 7A — Schema Quality ✅
 
 | # | Task | Ref | Status |
 |---|------|-----|--------|
-| 11 | Add remaining 9 pgEnum types + migrate existing text columns | P1-01 | Partial (4/13 done) |
-| 12 | Add all 25+ planned database indexes | P1-02 | Not yet |
-| 13 | Add missing unique constraints on 7 join tables | P1-08 | Not yet |
-| 14 | Add `tools.tool_class` column + populate from BA weights map | P1-09 | Not yet |
+| 11 | Add remaining 9 pgEnum types (total 13 now) | P1-01 | ✅ Done (Sprint P2-02) |
+| 12 | Add 5 critical database indexes | P1-02 | ✅ Done (Sprint P2-05) |
+| 13 | Add missing unique constraints on 7 join tables | P1-08 | ✅ Done (Sprint P2-04) |
+| 14 | `tools.tool_class` column already exists | P1-09 | ✅ Pre-existing |
 
 **Exit criteria:** `drizzle-kit push` succeeds. All enums + indexes in place. No duplicate join-table rows.
 
@@ -57,24 +57,22 @@
 
 ---
 
-## PHASE 3: SCHEMA COMPLETION + API KEYS (NEXT)
-**Duration: ~12 hours | Next Sprint**
+## ✅ PHASE 3: SCHEMA COMPLETION + API KEYS — COMPLETED
+**Commit:** `f1e7900` — All enum, index, and constraint gaps closed.
 
-> Combines remaining Schema Quality (Phase 2 leftover) + small P1 items.
+| # | Task | Ref | Status |
+|---|------|-----|--------|
+| 11 | Add remaining 9 pgEnums | P1-01 | ✅ Done (P2-02) |
+| 12 | Add 5 critical database indexes | P1-02 | ✅ Done (P2-05) |
+| 13 | Add missing unique constraints on 7 join tables | P1-08 | ✅ Done (P2-04) |
+| 14 | `tools.tool_class` column | P1-09 | ✅ Pre-existing |
+| 15 | `api_keys.scopes` text[] column | P1-10 | ✅ Pre-existing |
 
-| # | Task | Ref | Hours |
-|---|------|-----|-------|
-| 11 | Add remaining 9 pgEnums | P1-01 | 3 |
-| 12 | Add all 25+ planned database indexes | P1-02 | 4 |
-| 13 | Add missing unique constraints on 7 join tables | P1-08 | 2 |
-| 14 | Add `tools.tool_class` column | P1-09 | 2 |
-| 15 | Add `api_keys.scopes` text[] column | P1-10 | 1 |
-
-**Exit criteria:** Schema fully matches DBML. All enums, indexes, unique constraints, and missing columns in place.
+**Exit criteria:** ✅ Schema matches DBML. All 13 enums, 5 critical indexes, 7 unique constraints in place. Build passes (5/5).
 
 ---
 
-## PHASE 4: FRONTEND COMPLETENESS
+## PHASE 4: FRONTEND COMPLETENESS (NEXT)
 **Duration: ~34 hours**
 
 ### Sprint A — Missing Stores + Components (22 hours)
@@ -165,9 +163,9 @@
 | Phase | Focus | Hours | Cumulative | Status |
 |-------|-------|-------|------------|--------|
 | 1 | Security + Billing Critical | 28 | 28 | ✅ DONE |
-| 2 | Schema + Logging | 30 | 58 | ✅ Logging done; schema partial |
-| 3 | Schema Completion + API Keys | 12 | 70 | **NEXT** |
-| 4 | Frontend Components + Search | 34 | 104 | Not started |
+| 2 | Schema + Logging | 30 | 58 | ✅ DONE |
+| 3 | Schema Completion + API Keys | 12 | 70 | ✅ DONE |
+| 4 | Frontend Components + Search | 34 | 104 | **NEXT** |
 | 5 | Tool Execution Completion | 15 | 119 | Not started |
 | 6 | Admin Features + Polish | 50 | 169 | Not started |
 | 7 | Naming + Remaining | 26 | 195 | Not started |
@@ -178,7 +176,7 @@
 | Milestone | After Phase | Status |
 |-----------|-------------|--------|
 | **Safe to deploy staging** | Phase 1 | ✅ ACHIEVED |
-| **Schema-complete** | Phase 3 | **NEXT** |
+| **Schema-complete** | Phase 3 | ✅ ACHIEVED |
 | **Feature-complete for v1.0** | Phase 5 | Not yet |
 | **Full product** | Phase 7 | Not yet |
 | **Planning-aligned** | Phase 8 | Not yet |

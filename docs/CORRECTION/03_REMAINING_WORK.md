@@ -1,7 +1,7 @@
 # 03 — REMAINING WORK
 
 > **Last audited:** 2026-02-12
-> **Current state:** ~72% overall completion
+> **Current state:** ~78% overall completion
 > **Methodology:** Every gap from doc 01 and 02 mapped to actionable work items
 
 ---
@@ -36,15 +36,14 @@
 
 ## P1 — REQUIRED FOR v1.0
 
-### P1-01: Add Remaining PostgreSQL Enums _(partial — 4/13 done)_
-- **Done:** `subscription_status`, `coin_transaction_type`, `invoice_status`, `payment_status`
-- **Remaining:** 9 enums: `billing_interval`, `audit_action`, `permission_target`, `admin_role_type`, `plan_change_type`, `plan_limit_type`, `reset_period`, `identifier_type`, `email_provider`
-- **Effort:** ~3 hours (reduced — 4 already done)
+### P1-01: Add All PostgreSQL Enums
+> **✅ COMPLETED** (Sprint P2-02) — All 13 pgEnums now defined: `subscription_status`, `coin_transaction_type`, `invoice_status` (+ `partially_paid`), `payment_status`, `billing_interval`, `plan_limit_type`, `reset_period`, `plan_change_type`, `audit_action`, `permission_target`, `admin_role_type`, `identifier_type`, `email_provider`.
 
-### P1-02: Add Database Indexes
-- **Gap:** C-05 — Only a few indexes exist, bulk planned indexes missing
-- **Work:** Add all 25+ planned indexes including partial unique, composite
-- **Effort:** ~4 hours
+### P1-02: Add Database Indexes _(partial — 5 critical indexes added)_
+- **Gap:** C-05 — Bulk planned indexes were missing
+- **Done:** 5 critical indexes added (Sprint P2-05): `apiRequestLogs(userId)`, `apiRequestLogs(createdAt)`, `permissionAuditLogs(actorId)`, `permissionAuditLogs(createdAt)`, `usageCounters(userId,resourceType,periodStart)` unique
+- **Remaining:** ~20 additional indexes from DBML Section 16 (GIN, partial, composite)
+- **Effort:** ~3 hours remaining
 
 ### P1-03: Install Structured Logger for TypeScript
 > **✅ COMPLETED** (Sprint P2-01) — pino-backed `createLogger()` in `@hsafx/shared/logger`. ~75+ calls migrated.
@@ -70,19 +69,13 @@
 - **Effort:** ~8 hours
 
 ### P1-08: Add Missing Unique Constraints on Join Tables
-- **Gap:** M-20
-- **Work:** Add unique constraints on 7 join tables
-- **Effort:** ~2 hours
+> **✅ COMPLETED** (Sprint P2-04) — 4 new unique constraints added (`planLimits`, `planFeatures`, `planCoinRules`, `userPermissionOverrides`) + 3 pre-existing (`userRoles`, `rolePermissions`, `favorites`) = 7 total.
 
 ### P1-09: Add `tools.tool_class` Column
-- **Gap:** H-15
-- **Work:** Add column, populate from `DEFAULT_BA_WEIGHTS` map, update `coin-service.ts` to read from DB
-- **Effort:** ~3 hours
+> **✅ COMPLETED** (pre-existing) — Column already exists as `toolClass: varchar('tool_class', { length: 50 })` in tools schema.
 
 ### P1-10: Add `api_keys.scopes` Column
-- **Gap:** H-11
-- **Work:** Add `text[]` column, migrate from metadata JSONB, update `hasScope()` to read from column
-- **Effort:** ~2 hours
+> **✅ COMPLETED** (pre-existing) — Column already exists as `scopes: text('scopes').array().default([])` in apiKeys schema.
 
 ### P1-11: Add Billing REST Endpoints
 - **Gap:** H-10
@@ -107,7 +100,7 @@
 - **Work:** Uncomment `process_job` in `jobs.py`, implement job completion callback
 - **Effort:** ~3 hours
 
-**P1 Remaining: ~70 hours** (was ~88, reduced by completed items)
+**P1 Remaining: ~60 hours** (was ~70, reduced by P1-01, P1-08, P1-09, P1-10 completion + P1-02 partial)
 
 ---
 
@@ -209,13 +202,14 @@
 | Priority | Items | Hours | Completed |
 |----------|-------|-------|-----------|
 | **P0 — Blocking** | 8 | ~28 | ✅ ALL 8 DONE |
-| **P1 — v1.0 Required** | 15 | ~70 remaining | 3/15 done |
+| **P1 — v1.0 Required** | 15 | ~60 remaining | 7/15 done |
 | **P2 — Complete Product** | 14 | ~74 remaining | 3/14 done (1 skipped) |
 | **P3 — Polish** | 7 | ~25 remaining | 2/7 done |
-| **TOTAL** | **44** | **~169 hours remaining** | **16/44 done** |
+| **TOTAL** | **44** | **~159 hours remaining** | **20/44 done** |
 
 ### Progress
 - **Originally estimated:** ~254 hours total
-- **Completed:** ~85 hours of work (P0 + partial P1/P2/P3)
-- **Remaining:** ~169 hours
+- **Completed:** ~95 hours of work (P0 + partial P1/P2/P3)
+- **Remaining:** ~159 hours
 - **No CRITICAL items remain** — system is deployment-safe for staging
+- **Schema 13/13 enums DONE, 5/25+ indexes DONE, 7/7 unique constraints DONE**

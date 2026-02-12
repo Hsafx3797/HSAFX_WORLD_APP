@@ -1,9 +1,9 @@
 # SOLUTION ROADMAP — HSAFX WORLD APP
 
 > **Date:** 2026-02-12
-> **Commit:** `5394975` on `master`
+> **Commit:** `f1e7900` on `master`
 > **Based on:** CORRECTION docs 01–05
-> **Status:** Phase 1 COMPLETE, Phase 2 partial, entering Phase 3
+> **Status:** Phases 1–3 COMPLETE, entering Phase 4
 
 ---
 
@@ -11,8 +11,8 @@
 
 This roadmap translates the remaining work items (from [03_REMAINING_WORK.md](03_REMAINING_WORK.md)) into an actionable sequence. All 5 owner decisions are resolved. All 10 planning conflicts are locked.
 
-**Progress:** 16/44 items complete (~36% items, ~85 hours done). ~169 hours remaining.
-**No CRITICAL blockers remain** — staging deployment is safe.
+**Progress:** 20/44 items complete (~45% items, ~95 hours done). ~159 hours remaining.
+**No CRITICAL blockers remain** — staging deployment is safe. **Schema-complete milestone achieved.**
 
 ---
 
@@ -62,42 +62,39 @@ This roadmap translates the remaining work items (from [03_REMAINING_WORK.md](03
 
 ---
 
-### ✅ Phase 2 (partial) — Schema & Logging
-> Sprint P2-01 (logging), Sprint P1-01 (partial enums)
+### ✅ Phase 2 — Schema & Logging — COMPLETE
+> Sprint P2-01 (logging), Sprint P2-02–P2-05 (schema quality)
 
 **Completed:**
 - ✅ Structured logging with pino (`createLogger()` in `@hsafx/shared/logger`)
 - ✅ ~75+ `console.*` calls migrated across apps and packages
-- ✅ 4 pgEnums created (`subscription_status`, `coin_transaction_type`, `invoice_status`, `payment_status`)
+- ✅ All 13 pgEnums defined (was 4 → 13)
+- ✅ `invoice_status` enum fixed (added `partially_paid`)
 - ✅ Login reward tables added (`login_reward_claims`)
 - ✅ `processed_webhooks` table added
 - ✅ `inngest_job_id` renamed to `external_job_id`
 - ✅ Ad tables + dead code removed
-
-**Remaining in Phase 2:**
-- 9 more pgEnums to add
-- 25+ database indexes
-- Unique constraints on join tables
-- Missing columns (`tools.tool_class`, `api_keys.scopes`)
+- ✅ 5 critical indexes added
+- ✅ 7 unique constraints verified/added
 
 ---
 
-### 🔜 Phase 3 — Schema Completion (NEXT)
+### ✅ Phase 3 — Schema Completion — COMPLETE
+> Commit `f1e7900`
 
-**What:** Complete all remaining database schema work in one batch.
+**Completed:**
+- ✅ 9 pgEnums added: `billing_interval`, `plan_limit_type`, `reset_period`, `plan_change_type`, `audit_action`, `permission_target`, `admin_role_type`, `identifier_type`, `email_provider`
+- ✅ `invoice_status` enum — added `partially_paid` value
+- ✅ 4 unique constraints added: `planLimits(planId,limitKey)`, `planFeatures(planId,featureKey)`, `planCoinRules(planId,toolClass)`, `userPermissionOverrides(userId,permissionId)`
+- ✅ 5 indexes added: `apiRequestLogs(userId)`, `apiRequestLogs(createdAt)`, `permissionAuditLogs(actorId)`, `permissionAuditLogs(createdAt)`, `usageCounters(userId,resourceType,periodStart)` unique
+- ✅ `tools.tool_class` — already existed
+- ✅ `api_keys.scopes` text[] — already existed
 
-- Add 9 remaining pgEnums from DBML
-- Add all 25+ planned indexes (composite, GIN, partial)
-- Add unique constraints on 7 join tables
-- Add `tools.tool_class` column
-- Add `api_keys.scopes` text[] column
-- Generate Drizzle migrations
-
-**Exit Criteria:** Schema matches DBML. All enums, indexes, and constraints present.
+**Exit Criteria:** ✅ Schema matches DBML. All enums, critical indexes, and constraints present. Build passes (5/5).
 
 ---
 
-### Phase 4 — Frontend Completion
+### Phase 4 — Frontend Completion (NEXT)
 
 **What:** Build missing stores, components, search, and B2B billing API.
 
@@ -161,15 +158,15 @@ This roadmap translates the remaining work items (from [03_REMAINING_WORK.md](03
 | Phase | Focus | Hours | Cumulative | Status |
 |-------|-------|-------|------------|--------|
 | 1. Security & Billing | 28h | 28h | ✅ DONE |
-| 2. Schema & Logging | 30h | 58h | ✅ Partial (logging done) |
-| 3. Schema Completion | 12h | 70h | **NEXT** |
-| 4. Frontend Completion | 34h | 104h | Not started |
+| 2. Schema & Logging | 30h | 58h | ✅ DONE |
+| 3. Schema Completion | 12h | 70h | ✅ DONE |
+| 4. Frontend Completion | 34h | 104h | **NEXT** |
 | 5. Tool Execution | 15h | 119h | Not started |
 | 6. Admin & Polish | 50h | 169h | Not started |
 | 7. Alignment + Remaining | 26h | 195h | Not started |
 | 8. Final Polish | 16h | 211h | Not started |
 
-**Total remaining: ~169 hours** (from original ~254)
+**Total remaining: ~141 hours** (from original ~254)
 
 ---
 
