@@ -1,7 +1,7 @@
 # 03 — REMAINING WORK
 
 > **Last audited:** 2026-02-12
-> **Current state:** ~91% overall completion
+> **Current state:** ~94% overall completion
 > **Methodology:** Every gap from doc 01 and 02 mapped to actionable work items
 
 ---
@@ -184,11 +184,12 @@
 
 ### Progress
 - **Originally estimated:** ~254 hours total
-- **Completed:** ~206 hours of work (P0 + P1 + P2 partial + P3 partial + P4-A + P4-B + P5 + P6-B)
-- **Remaining:** ~48 hours
+- **Completed:** ~217 hours of work (P0 + P1 + P2 partial + P3 partial + P4-A + P4-B + P5 + P6-B + P7 partial)
+- **Remaining:** ~37 hours
 - **No CRITICAL items remain** — system is deployment-safe for staging
 - **Schema 13/13 enums DONE, 5/25+ indexes DONE + GIN FTS index, 7/7 unique constraints DONE**
 - **Frontend: 6/6 stores DONE, 6/6 missing components DONE, FTS search DONE**
 - **Billing: B2B REST endpoints DONE (balance, transactions, subscription)**
 - **Tool Execution: ALL 16 stubs resolved, FastAPI job processing enabled, Redis extended**
 - **Phase 6 Sprint B: UI migration to `@hsafx/ui`, Redis session caching, rolling sessions, cookie rename, CSRF Referer fallback, Retry-After header**
+- **Phase 7 #42: 11 new DB tables added across 5 schema files (toolClassPolicy, usageCoinFallbacks, invoicePayments, paymentMethods, coinPurchasePayments, planMetadata, planUpgradeRules, planAuditLogs, auditLogs, permissionGroups, emailUsageTracking)**

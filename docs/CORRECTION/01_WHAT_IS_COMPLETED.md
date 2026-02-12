@@ -1,7 +1,7 @@
 # 01 — WHAT IS ACTUALLY COMPLETED
 
-> **Last audited:** 2026-02-12 — Post Sprint P0-01..P0-08, P1-01..P1-07, P2-01..P2-05, P4-A, P4-B, P5, P6-B
-> **Commit:** `ccfc034` on `master`
+> **Last audited:** 2026-02-12 — Post Sprint P0-01..P0-08, P1-01..P1-07, P2-01..P2-05, P4-A, P4-B, P5, P6-B, P7-partial
+> **Commit:** `93846cc` on `master`
 > **Methodology:** Every planning doc (01–74) compared against actual source files
 
 ---
@@ -45,7 +45,7 @@
 |-------------------------------|--------|-----------------------------------------------------------------------------------------------------------------------------------------|
 | Schema files exist (6 files)  | ✅     | `users.ts`, `auth.ts`, `billing.ts`, `tools.ts`, `misc.ts`, `audit.ts`                                                                  |
 | Table count                   | ✅     | **~61 tables exist** vs **60+ planned** — gap closed (11 new tables added in Phase 7)                                                    |
-| PostgreSQL enums              | ⚠️     | **4 enums defined** (`subscription_status`, `coin_transaction_type`, `invoice_status`, `payment_status`) — 9 remaining                  |
+| PostgreSQL enums              | ✅     | **13 enums defined** — all aligned with DBML (4 original + 9 added in Phase 3)                                                          |
 | Database indexes              | ⚠️     | Some indexes added (`async_jobs.user_id`, `async_jobs.status`) + GIN expression index on tools FTS — bulk planned indexes still missing |
 | Column naming alignment       | 🟡     | **30+ column name mismatches** vs planning DBML (see doc 02)                                                                            |
 | `subscriptions.status` stored | ✅     | Conflict #9 resolved — status stored as column (DBML is correct)                                                                        |
@@ -109,8 +109,8 @@
 | CASL wired into React      | ✅     | `PlanAccessProvider` → `trpc.user.getMyPlan.useQuery()` → live plan context              |
 | Admin RBAC (custom)        | ✅     | Full `useRBAC`, `Can`/`Cannot`, `PermissionGuard`, `RoleGate`                            |
 | API key format             | ✅     | `hsafx_{env}_{random}`, SHA-256 hashed                                                   |
-| API key scope enforcement  | ⚠️     | `hasScope()` exists but `scopes` column missing from DB                                  |
-| API key full middleware    | ⚠️     | Hash→context pipeline works; scope enforcement partial                                   |
+| API key scope enforcement  | ✅     | `hasScope()` exists, `scopes` text[] column present in DB (P1-10 pre-existing)           |
+| API key full middleware    | ✅     | Hash→context pipeline works; `scopes` column + `hasScope()` operational                  |
 
 **Auth score: ~90%** — CASL fully wired end-to-end. 2FA server-enforced. API key scopes column exists. Sessions: rolling (1h updateAge), Redis-cached, max lifetime enforced.
 

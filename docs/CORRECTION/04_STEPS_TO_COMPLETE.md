@@ -1,7 +1,7 @@
 # 04 — STEPS TO COMPLETE (Sprint Execution Plan)
 
 > **Last updated:** 2026-02-12
-> **Commit:** `ccfc034` on `master`
+> **Commit:** `93846cc` on `master`
 > **Based on:** Doc 03 remaining work items
 > **Philosophy:** P0 first → P1 next → P2/P3 after
 
@@ -155,8 +155,8 @@
 
 ---
 
-## PHASE 7: NAMING ALIGNMENT + REMAINING (P2 + P3) — NEXT
-**Duration: ~13 hours** (#39, #40 already pre-existing)
+## PHASE 7: NAMING ALIGNMENT + REMAINING (P2 + P3) — IN PROGRESS
+**Duration: ~12 hours remaining** (#39, #40 pre-existing; #42 done)
 
 | #  | Task                                                            | Ref   | Hours | Status                           |
 |----|-----------------------------------------------------------------|-------|-------|----------------------------------|
@@ -164,7 +164,7 @@
 | 39 | Add admin billing management                                    | P2-10 | 12    | ✅ Pre-existing (~300-line page) |
 | 40 | Add impersonation `reason` field                                | P1-12 | 1     | ✅ Pre-existing (min 10 chars, audit logged) |
 | 41 | Add pub/sub channels                                            | P2-12 | 8     |                                  |
-| 42 | Add remaining ~7 DB tables                                      | P3-01 | 8     |                                  |
+| 42 | Add remaining ~7 DB tables                                      | P3-01 | 8     | ✅ Done (11 tables across 5 schema files) |
 
 ---
 
