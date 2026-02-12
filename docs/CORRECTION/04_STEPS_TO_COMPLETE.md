@@ -1,7 +1,7 @@
 # 04 — STEPS TO COMPLETE (Sprint Execution Plan)
 
 > **Last updated:** 2026-02-12
-> **Commit:** `d92267a` on `master`
+> **Commit:** `c0c1541` on `master`
 > **Based on:** Doc 03 remaining work items
 > **Philosophy:** P0 first → P1 next → P2/P3 after
 
@@ -103,19 +103,26 @@
 
 ---
 
-## PHASE 5: TOOL EXECUTION COMPLETION (NEXT)
-**Duration: ~15 hours**
+## ✅ PHASE 5: TOOL EXECUTION COMPLETION — COMPLETED
+**Commit:** `c0c1541` — All stubs resolved + job processing enabled. Build passes (5/5).
 
-| #  | Task                            | Ref   | Hours |
-|----|---------------------------------|-------|-------|
-| 29 | Complete ~15 stub tool handlers | P1-14 | 12    |
-| 30 | Enable FastAPI job processing   | P1-15 | 3     |
+| #  | Task                            | Ref   | Status  |
+|----|---------------------------------|-------|---------|
+| 29 | Complete ~15 stub tool handlers | P1-14 | ✅ Done |
+| 30 | Enable FastAPI job processing   | P1-15 | ✅ Done |
 
-**Exit criteria:** All tools execute (no stubs). FastAPI processes Python jobs.
+**Implementation details:**
+- 11 JS converters in `packages/tools/src/data-converters/specialized.ts` (~750 lines)
+- 3 new FastAPI binary handlers (BSON, MessagePack, Protobuf) in `python_tools.py`
+- 5 text-input tools reclassified from server→client in registry
+- `process_job` with 5-min timeout, webhook notification, coin refund
+- Redis extended with `zadd`/`zrank`/`zrem`/`sadd`/`smembers`/`lpush`
+
+**Exit criteria:** ✅ All tools execute (zero stubs). FastAPI processes Python jobs.
 
 ---
 
-## PHASE 6: ADMIN & POLISH (P2)
+## PHASE 6: ADMIN & POLISH (P2) — NEXT
 **Duration: ~50 hours**
 
 ### Sprint A — Admin Features (28 hours)
@@ -170,8 +177,8 @@
 | 3     | Schema Completion + API Keys | 12    | 70         | ✅ DONE     |
 | 4A    | Frontend Stores + Components | 22    | 92         | ✅ DONE     |
 | 4B    | Search + Billing API         | 12    | 104        | ✅ DONE     |
-| 5     | Tool Execution Completion    | 15    | 119        | **NEXT**    |
-| 6     | Admin Features + Polish      | 50    | 169        | Not started |
+| 5     | Tool Execution Completion    | 15    | 119        | ✅ DONE     |
+| 6     | Admin Features + Polish      | 50    | 169        | **NEXT**    |
 | 7     | Naming + Remaining           | 26    | 195        | Not started |
 | 8     | Final Polish                 | 16    | 211        | Not started |
 
@@ -181,7 +188,7 @@
 |-------------------------------|-------------|-------------|
 | **Safe to deploy staging**    | Phase 1     | ✅ ACHIEVED |
 | **Schema-complete**           | Phase 3     | ✅ ACHIEVED |
-| **Feature-complete for v1.0** | Phase 5     | Not yet     |
+| **Feature-complete for v1.0** | Phase 5     | ✅ ACHIEVED |
 | **Full product**              | Phase 7     | Not yet     |
 | **Planning-aligned**          | Phase 8     | Not yet     |
 

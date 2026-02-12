@@ -1,7 +1,7 @@
 # 01 — WHAT IS ACTUALLY COMPLETED
 
-> **Last audited:** 2026-02-12 — Post Sprint P0-01..P0-08, P1-01..P1-07, P2-01..P2-05, P4-A, P4-B
-> **Commit:** `d92267a` on `master`
+> **Last audited:** 2026-02-12 — Post Sprint P0-01..P0-08, P1-01..P1-07, P2-01..P2-05, P4-A, P4-B, P5
+> **Commit:** `c0c1541` on `master`
 > **Methodology:** Every planning doc (01–74) compared against actual source files
 
 ---
@@ -160,14 +160,14 @@
 
 | Item                     | Status | Gap Detail                                                              |
 |--------------------------|--------|-------------------------------------------------------------------------|
-| WASM execution (client)  | ✅     | `wasm-loader.ts` with JS fallback, ~154 exports                         |
-| Node.js inline execution | ⚠️     | **~15 tools return stub/placeholder text**                              |
-| FastAPI native execution | ✅     | 121 tools across 9 handler classes                                      |
-| Async job system         | ⚠️     | `job-manager.ts` + `job-worker.ts` — simple queue (decision: no BullMQ) |
-| FastAPI job processing   | ❌     | `process_job` in `jobs.py` commented out                                |
-| Tool metadata registry   | ✅     | 454+ tools defined                                                      |
+| WASM execution (client)  | ✅     | `wasm-loader.ts` with JS fallback, ~154 exports                                                       |
+| Node.js inline execution | ✅     | **All 16 stubs implemented** — 11 JS converters in `specialized.ts`, 5 server tools reclassified (P5) |
+| FastAPI native execution | ✅     | 121+ tools across 9 handler classes + 3 new binary handlers (BSON, MessagePack, Protobuf)             |
+| Async job system         | ✅     | `job-manager.ts` + `job-worker.ts` — simple queue (decision: no BullMQ) + `process_job` implemented   |
+| FastAPI job processing   | ✅     | **`process_job` implemented** — 5-min timeout, webhook notification, coin refund on cancel (P5)       |
+| Tool metadata registry   | ✅     | 454+ tools defined                                                                                    |
 
-**Execution score: ~65%**
+**Execution score: ~95%**
 
 ---
 
@@ -245,9 +245,9 @@
 | Rate limiting middleware  | ✅               |
 | Auth middleware           | ✅               |
 | Structured logging        | ✅               |
-| Job processing            | ❌ Commented out |
+| Job processing            | ✅               |
 
-**FastAPI score: ~80%**
+**FastAPI score: ~90%**
 
 ---
 
@@ -297,13 +297,13 @@
 | Auth & Authorization    | 78%   | Session config                                                  |
 | Security                | 82%   | CSRF Referer fallback, Retry-After header, impersonation reason |
 | Billing System          | 90%   | Wallet reconciliation edge cases                                |
-| Tool Execution          | 65%   | ~15 stubs, FastAPI job processing disabled                      |
+| Tool Execution          | 95%   | All stubs implemented, job processing enabled                   |
 | Frontend (Web)          | 65%   | Partial ToolCard/ToolGrid/ResultDisplay                         |
 | Frontend (Admin)        | 60%   | No analytics, billing admin, audit viewer                       |
-| FastAPI Backend         | 80%   | Job processing disabled                                         |
+| FastAPI Backend         | 90%   | Job processing enabled                                          |
 | Shared Packages         | 88%   | UI package is theme-only                                        |
 | Redis & Caching         | 70%   | No session cache, no pub/sub                                    |
 
-### **Weighted Overall: ~84%**
+### **Weighted Overall: ~88%**
 
-Significant progress since last audit (~82%). **Phase 4B complete** — PostgreSQL FTS search with GIN index, fixed `tools.list` tRPC filters, hybrid server/client search UI, 3 B2B billing REST endpoints. Build passes (5/5). Remaining work: tool stubs, FastAPI job processing, admin features, polish.
+Significant progress since last audit (~84%). **Phase 5 complete** — All 16 stub tools implemented (11 JS converters in `specialized.ts`, 3 FastAPI binary handlers, 2 already-implemented stubs removed), FastAPI job processing enabled with timeout/webhook/refund logic, Redis extended with sorted set/set/list operations. Build passes (5/5). Remaining work: admin features, session polish, naming alignment.

@@ -1,7 +1,7 @@
 # 03 — REMAINING WORK
 
 > **Last audited:** 2026-02-12
-> **Current state:** ~84% overall completion
+> **Current state:** ~88% overall completion
 > **Methodology:** Every gap from doc 01 and 02 mapped to actionable work items
 
 ---
@@ -83,16 +83,12 @@
 > **✅ COMPLETED** (Sprint P1-02) — Replaced with login reward system using `FOR UPDATE` locking.
 
 ### P1-14: Complete ~15 Stub Tool Handlers
-- **Gap:** H-08
-- **Work:** Implement actual logic for BSON, MessagePack, Avro, Protobuf, Parquet, etc. tools
-- **Effort:** ~12 hours
+> **✅ COMPLETED** (Sprint P5) — All 16 stubs resolved: 11 JS converters in `specialized.ts` (Avro→JSON Schema, OpenAPI 2→3, OpenAPI→TS, OpenAPI→GraphQL, GraphQL→OpenAPI, GraphQL→TS, Helm→K8s, Terraform→CF, Terraform→Pulumi, Dart→JS, ReasonML→JS), 3 new FastAPI binary handlers (BSON, MessagePack, Protobuf), 2 dead stubs removed (Avro/Parquet already had server handlers).
 
 ### P1-15: Enable FastAPI Job Processing
-- **Gap:** H-09
-- **Work:** Uncomment `process_job` in `jobs.py`, implement job completion callback
-- **Effort:** ~3 hours
+> **✅ COMPLETED** (Sprint P5) — `process_job` implemented in `jobs.py` with 5-minute `asyncio.wait_for` timeout, status tracking (queued→running→completed/failed/timeout), webhook notification via httpx, coin refund on cancellation via Redis list, execution time measurement.
 
-**P1 Remaining: ~26 hours** (was ~38, reduced by P1-07 and P1-11 completion)
+**P1 Remaining: ~11 hours** (was ~26, reduced by P1-14 and P1-15 completion)
 
 ---
 
@@ -193,17 +189,18 @@
 
 | Priority                  | Items  | Hours                    | Completed             |
 |---------------------------|--------|--------------------------|-----------------------|
-| **P0 — Blocking**         | 8      | ~28                      | ✅ ALL 8 DONE         |
-| **P1 — v1.0 Required**    | 15     | ~26 remaining            | 11/15 done            |
+| **P0 — Blocking**         | 8      | ~28                    | ✅ ALL 8 DONE         |
+| **P1 — v1.0 Required**    | 15     | ~11 remaining            | 13/15 done            |
 | **P2 — Complete Product** | 14     | ~74 remaining            | 3/14 done (1 skipped) |
 | **P3 — Polish**           | 7      | ~25 remaining            | 2/7 done              |
-| **TOTAL**                 | **44** | **~125 hours remaining** | **24/44 done**        |
+| **TOTAL**                 | **44** | **~110 hours remaining** | **26/44 done**        |
 
 ### Progress
 - **Originally estimated:** ~254 hours total
-- **Completed:** ~129 hours of work (P0 + partial P1/P2/P3 + P4-A stores/components + P4-B search/billing)
-- **Remaining:** ~125 hours
+- **Completed:** ~144 hours of work (P0 + partial P1/P2/P3 + P4-A stores/components + P4-B search/billing + P5 tool execution/jobs)
+- **Remaining:** ~110 hours
 - **No CRITICAL items remain** — system is deployment-safe for staging
 - **Schema 13/13 enums DONE, 5/25+ indexes DONE + GIN FTS index, 7/7 unique constraints DONE**
 - **Frontend: 6/6 stores DONE, 6/6 missing components DONE, FTS search DONE**
 - **Billing: B2B REST endpoints DONE (balance, transactions, subscription)**
+- **Tool Execution: ALL 16 stubs resolved, FastAPI job processing enabled, Redis extended**
