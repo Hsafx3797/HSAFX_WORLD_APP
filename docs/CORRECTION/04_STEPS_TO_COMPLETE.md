@@ -1,7 +1,7 @@
 # 04 — STEPS TO COMPLETE (Sprint Execution Plan)
 
 > **Last updated:** 2026-02-12
-> **Commit:** `c0c1541` on `master`
+> **Commit:** `ccfc034` on `master`
 > **Based on:** Doc 03 remaining work items
 > **Philosophy:** P0 first → P1 next → P2/P3 after
 
@@ -122,8 +122,9 @@
 
 ---
 
-## PHASE 6: ADMIN & POLISH (P2) — NEXT
-**Duration: ~22 hours** (Sprint A already complete — admin features discovered as pre-existing)
+## ✅ PHASE 6: ADMIN & POLISH (P2) — COMPLETED
+**Commit:** `ccfc034` — Sprint A pre-existing + Sprint B security/UI polish. Build passes (5/5).
+**Duration: ~22 hours**
 
 ### Sprint A — Admin Features ✅ ALREADY COMPLETE
 
@@ -132,19 +133,29 @@
 | 31 | Admin analytics dashboard | P2-03 | 20    | ✅ Pre-existing (310-line page)  |
 | 32 | Admin audit log viewer    | P2-04 | 8     | ✅ Pre-existing (~300-line page) |
 
-### Sprint B — Infrastructure Polish (22 hours)
+### Sprint B — Infrastructure Polish (22 hours) ✅
 
-| #  | Task                                           | Ref          | Hours |
-|----|------------------------------------------------|--------------|-------|
-| 33 | Move shared UI components to `@hsafx/ui`       | P2-02        | 12    |
-| 34 | Add Redis session caching                      | P2-05        | 4     |
-| 35 | Configure rolling sessions + absolute timeout  | P2-06        | 1     |
-| 36 | Rename session cookie to `__hsafx_session`     | P2-07        | 2     |
-| 37 | Add CSRF Referer fallback + Retry-After header | P2-13, P2-14 | 3     |
+| #  | Task                                           | Ref          | Hours | Status  |
+|----|------------------------------------------------|--------------|-------|---------|
+| 33 | Move shared UI components to `@hsafx/ui`       | P2-02        | 12    | ✅ Done |
+| 34 | Add Redis session caching                      | P2-05        | 4     | ✅ Done |
+| 35 | Configure rolling sessions + absolute timeout  | P2-06        | 1     | ✅ Done |
+| 36 | Rename session cookie to `__hsafx_session`     | P2-07        | 2     | ✅ Done |
+| 37 | Add CSRF Referer fallback + Retry-After header | P2-13, P2-14 | 3     | ✅ Done |
+
+**Implementation details:**
+- 16 Shadcn components migrated to `packages/ui/src/components/` (alert, badge, button, card, checkbox, dialog, dropdown-menu, input, label, progress, select, skeleton, switch, tabs, textarea, tooltip)
+- Web app UI files converted to thin re-exports from `@hsafx/ui` — zero import-path changes needed
+- Better-Auth `secondaryStorage` via Upstash Redis for session caching
+- `session.updateAge: 3600` (1h rolling), `advanced.cookiePrefix: '__hsafx'`
+- CSRF: Origin → Referer fallback → reject in both web + admin middleware
+- Rate limit 429 responses include `Retry-After` header
+
+**Exit criteria:** ✅ All Phase 6 items resolved. Build passes (5/5).
 
 ---
 
-## PHASE 7: NAMING ALIGNMENT + REMAINING (P2 + P3)
+## PHASE 7: NAMING ALIGNMENT + REMAINING (P2 + P3) — NEXT
 **Duration: ~14 hours** (#39 already complete)
 
 | #  | Task                                                            | Ref   | Hours | Status                           |
@@ -178,8 +189,8 @@
 | 4A    | Frontend Stores + Components | 22    | 92         | ✅ DONE     |
 | 4B    | Search + Billing API         | 12    | 104        | ✅ DONE     |
 | 5     | Tool Execution Completion    | 15    | 119        | ✅ DONE     |
-| 6     | Admin Features + Polish      | 22    | 141        | **NEXT**    |
-| 7     | Naming + Remaining           | 14    | 155        | Not started |
+| 6     | Admin Features + Polish      | 22    | 141        | ✅ DONE     |
+| 7     | Naming + Remaining           | 14    | 155        | **NEXT**    |
 | 8     | Final Polish                 | 16    | 171        | Not started |
 
 ### Critical Milestones

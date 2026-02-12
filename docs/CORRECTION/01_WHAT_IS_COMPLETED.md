@@ -1,7 +1,7 @@
 # 01 — WHAT IS ACTUALLY COMPLETED
 
-> **Last audited:** 2026-02-12 — Post Sprint P0-01..P0-08, P1-01..P1-07, P2-01..P2-05, P4-A, P4-B, P5
-> **Commit:** `c0c1541` on `master`
+> **Last audited:** 2026-02-12 — Post Sprint P0-01..P0-08, P1-01..P1-07, P2-01..P2-05, P4-A, P4-B, P5, P6-B
+> **Commit:** `ccfc034` on `master`
 > **Methodology:** Every planning doc (01–74) compared against actual source files
 
 ---
@@ -90,9 +90,9 @@
 | Facebook OAuth             | ⚠️     | **Extra** — not in planning docs                                                         |
 | Session config (7d expiry) | ✅     | `expiresIn: 7 * 86400`, `updateAge: 86400`                                               |
 | Session cookie name        | ✅     | Renamed to `__hsafx.session_token` via `advanced.cookiePrefix: '__hsafx'`                |
-| Rolling sessions           | ❌     | No `rolling: true` configured                                                            |
-| Absolute session timeout   | ❌     | No `absoluteTimeout` configured                                                          |
-| Redis session storage      | ❌     | Uses DB-backed sessions only                                                             |
+| Rolling sessions           | ✅     | `session.updateAge: 3600` (1h) — session refreshes on activity (P6-B)                   |
+| Absolute session timeout   | ✅     | `session.expiresIn: 7*86400` (web) / `24*3600` (admin) — max lifetime enforced           |
+| Redis session storage      | ✅     | Better-Auth `secondaryStorage` via Upstash Redis — DB fallback retained (P6-B)           |
 | Admin session (24h)        | ✅     | Configured correctly                                                                     |
 | 2FA (TOTP)                 | ⚠️     | Custom `otpauth` + `qrcode` — works but NOT using Better-Auth `twoFactor` plugin         |
 | Admin 2FA enforcement      | ✅     | **Server-enforced in middleware** (P0-07 completed)                                      |
@@ -105,7 +105,7 @@
 | API key scope enforcement  | ⚠️     | `hasScope()` exists but `scopes` column missing from DB                                  |
 | API key full middleware    | ⚠️     | Hash→context pipeline works; scope enforcement partial                                   |
 
-**Auth score: ~78%** — CASL fully wired end-to-end. 2FA server-enforced. API key scopes column exists. Session config remains.
+**Auth score: ~90%** — CASL fully wired end-to-end. 2FA server-enforced. API key scopes column exists. Sessions: rolling (1h updateAge), Redis-cached, max lifetime enforced.
 
 ---
 
@@ -115,12 +115,12 @@
 |------------------------------------|--------|---------------------------------------------------------------------------------------------------------------------------------|
 | Security headers (HSTS, CSP, etc.) | ✅     | Full set in both `next.config.js`                                                                                               |
 | CSRF protection (Origin check)     | ✅     | Middleware validates Origin on state-changing requests                                                                          |
-| CSRF Referer fallback              | ❌     | Only checks `Origin`                                                                                                            |
+| CSRF Referer fallback              | ✅     | Origin → Referer fallback → reject chain in both web + admin middleware (P6-B)                                                  |
 | Rate limiting — IP layer           | ✅     | 100/min via Upstash sliding window                                                                                              |
 | Rate limiting — Auth layer         | ✅     | 10/15min on auth endpoints                                                                                                      |
 | Rate limiting — API key layer      | ✅     | Per-key limits                                                                                                                  |
 | Rate limiting — Session layer      | ✅     | `checkUserRateLimit()` invoked in middleware (P0-06 completed)                                                                  |
-| `Retry-After` header               | ❌     | Not included in rate limit responses                                                                                            |
+| `Retry-After` header               | ✅     | Included in rate limit 429 responses with seconds-until-reset (P6-B)                                                            |
 | Structured logging (TypeScript)    | ✅     | **pino-backed `createLogger()` in `@hsafx/shared/logger`** — ~75+ calls migrated across ~28 server-side files (P2-01 completed) |
 | Structured logging (Python)        | ✅     | `structlog` throughout FastAPI                                                                                                  |
 | Impersonation — core flow          | ✅     | Admin-only, 2FA-gated, 1hr TTL, HMAC-signed                                                                                     |
@@ -128,7 +128,7 @@
 | Impersonation — scoped actions     | ✅     | **Middleware blocks billing, password, 2FA, API key, account deletion during impersonation** (P0-08 completed)                  |
 | Impersonation — banner             | ✅     | Fixed amber banner with stop button                                                                                             |
 
-**Security score: ~82%** — All rate limit layers active. Structured logging done. Impersonation scoped. Minor items remain (CSRF Referer, Retry-After, reason field).
+**Security score: ~90%** — All rate limit layers active. Structured logging done. Impersonation scoped. CSRF Referer fallback + Retry-After done. Only impersonation `reason` field remains.
 
 ---
 
@@ -260,12 +260,12 @@
 | `@hsafx/schemas`          | ✅     | Zod schemas                                                                                              |
 | `@hsafx/shared`           | ✅     | Permissions (CASL), flags, storage, email, rate-limit, **pino logger**, billing, rewards                 |
 | `@hsafx/theme`            | ✅     | Full CSS theme system                                                                                    |
-| `@hsafx/ui`               | ⚠️     | Theme-only — no shared UI components                                                                     |
+| `@hsafx/ui`               | ✅     | 16 shared UI components (alert, badge, button, card, checkbox, dialog, dropdown-menu, input, label, progress, select, skeleton, switch, tabs, textarea, tooltip) + `cn()` utility (P6-B) |
 | `@hsafx/api`              | ✅     | tRPC routers (user, billing, tools, admin, **rewards**) — ads router removed                             |
 | `@hsafx/tool-definitions` | ✅     | 454+ tools                                                                                               |
 | `@hsafx/tools`            | ✅     | Registry + WASM bindings                                                                                 |
 
-**Packages score: ~85%**
+**Packages score: ~92%**
 
 ---
 
@@ -280,11 +280,11 @@
 | Anonymous usage tracking      | ✅                                           |
 | Feature flag caching          | ✅                                           |
 | Simple job queue              | ✅ Decision: no BullMQ — custom simple queue |
-| Session caching               | ❌                                           |
+| Session caching               | ✅ Better-Auth `secondaryStorage` via Upstash Redis (P6-B) |
 | Pub/sub channels              | ❌                                           |
 | Coin lock (SQL FOR UPDATE)    | ✅ Works correctly — Lua script unnecessary  |
 
-**Redis score: ~70%**
+**Redis score: ~80%**
 
 ---
 
@@ -294,16 +294,16 @@
 |-------------------------|-------|-----------------------------------------------------------------|
 | Infrastructure & DevOps | 85%   | Docker/K8s untested                                             |
 | Database Schema         | 78%   | ~20 remaining indexes, ~10 missing tables                       |
-| Auth & Authorization    | 78%   | Session config                                                  |
-| Security                | 82%   | CSRF Referer fallback, Retry-After header, impersonation reason |
+| Auth & Authorization    | 90%   | Impersonation reason field                                      |
+| Security                | 90%   | Impersonation reason field                                      |
 | Billing System          | 90%   | Wallet reconciliation edge cases                                |
 | Tool Execution          | 95%   | All stubs implemented, job processing enabled                   |
 | Frontend (Web)          | 65%   | Partial ToolCard/ToolGrid/ResultDisplay                         |
 | Frontend (Admin)        | 85%   | All pages built — remaining: UI package migration               |
 | FastAPI Backend         | 90%   | Job processing enabled                                          |
-| Shared Packages         | 88%   | UI package is theme-only                                        |
-| Redis & Caching         | 70%   | No session cache, no pub/sub                                    |
+| Shared Packages         | 92%   | All key packages populated                                      |
+| Redis & Caching         | 80%   | No pub/sub                                                      |
 
-### **Weighted Overall: ~91%**
+### **Weighted Overall: ~93%**
 
-Significant progress since last audit (~88%). **Phase 5 complete** — All 16 stub tools implemented (11 JS converters in `specialized.ts`, 3 FastAPI binary handlers, 2 already-implemented stubs removed), FastAPI job processing enabled with timeout/webhook/refund logic, Redis extended with sorted set/set/list operations. Build passes (5/5). **Admin features discovery** — Analytics dashboard (#31), audit log viewer (#32), and billing admin (#39) were already fully implemented but previously marked missing. Remaining work: UI package migration, session polish, naming alignment.
+Significant progress since last audit (~91%). **Phase 6 Sprint B complete** — 16 shared UI components migrated to `@hsafx/ui`, Redis session caching via Better-Auth `secondaryStorage`, rolling sessions (1h `updateAge`), session cookie renamed to `__hsafx.session_token`, CSRF Origin→Referer fallback in both apps, Retry-After header on rate limit 429 responses. Build passes (5/5). Remaining work: impersonation reason field, naming alignment, pub/sub, remaining DB tables, money column migration.

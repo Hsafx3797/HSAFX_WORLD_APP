@@ -98,9 +98,7 @@
 > **✅ COMPLETED** — pino logger installed, ~75+ console.* calls migrated.
 
 ### P2-02: Move UI Components to `@hsafx/ui` (Shared)
-- **Gap:** H-04
-- **Work:** Migrate reusable components from `apps/web/src/components/` to `packages/ui/src/`
-- **Effort:** ~12 hours
+> **✅ COMPLETED** (Sprint P6-B) — 16 shared Shadcn components migrated to `packages/ui/src/components/` (alert, badge, button, card, checkbox, dialog, dropdown-menu, input, label, progress, select, skeleton, switch, tabs, textarea, tooltip). Web app files converted to thin re-exports from `@hsafx/ui`. `cn()` utility in `packages/ui/src/lib/utils.ts`.
 
 ### P2-03: Add Admin Analytics Dashboard
 > **✅ COMPLETED** (pre-existing) — Full dashboard page with 4 StatCards, 6 secondary metrics, 4 Recharts charts (user growth, execution trend, revenue, user breakdown), top tools, recent errors, quick actions, skeleton loading. 5 API routes + 5 SWR hooks.
@@ -109,19 +107,13 @@
 > **✅ COMPLETED** (pre-existing) — Full audit page with DataTable, 6 action category filters, search, date range, admin ID filter, CSV export, details modal with JSON viewer. API route + SWR hook.
 
 ### P2-05: Add Redis Session Caching
-- **Gap:** H-14
-- **Work:** Configure Better-Auth to use Redis as session cache layer
-- **Effort:** ~4 hours
+> **✅ COMPLETED** (Sprint P6-B) — Better-Auth `secondaryStorage` configured with Upstash Redis. DB fallback retained for resilience.
 
 ### P2-06: Configure Rolling Sessions + Absolute Timeout
-- **Gap:** M-02
-- **Work:** Add `rolling: true` and `absoluteTimeout` to Better-Auth config
-- **Effort:** ~1 hour
+> **✅ COMPLETED** (Sprint P6-B) — `session.updateAge: 3600` (1h rolling). `session.expiresIn: 7*86400` (web) / `24*3600` (admin) for max lifetime.
 
 ### P2-07: Rename Session Cookie
-- **Gap:** M-01
-- **Work:** Set `cookie.name: '__hsafx_session'` in Better-Auth config + update all cookie references
-- **Effort:** ~2 hours
+> **✅ COMPLETED** (Sprint P6-B) — `advanced.cookiePrefix: '__hsafx'` in both apps → cookie `__hsafx.session_token`. All middleware cookie references updated.
 
 ### P2-08: Resolve Table/Column Naming Mismatches
 - **Gap:** M-05 through M-15
@@ -141,12 +133,12 @@
 - **Effort:** ~8 hours
 
 ### P2-13: Add CSRF Referer Fallback
-- **Effort:** ~2 hours
+> **✅ COMPLETED** (Sprint P6-B) — Origin → Referer fallback → reject chain in both web and admin middleware.
 
 ### P2-14: Add `Retry-After` Header to Rate Limit Responses
-- **Effort:** ~1 hour
+> **✅ COMPLETED** (Sprint P6-B) — Rate limit 429 responses include `Retry-After` header with seconds-until-reset.
 
-**P2 Remaining: ~34 hours** (was ~74, reduced by P2-03, P2-04, P2-10 discovery as pre-existing)
+**P2 Remaining: ~12 hours** (was ~34, reduced by P2-02, P2-05, P2-06, P2-07, P2-13, P2-14 completion in Sprint P6-B)
 
 ---
 
@@ -187,16 +179,17 @@
 |---------------------------|--------|--------------------------|-----------------------|
 | **P0 — Blocking**         | 8      | ~28                    | ✅ ALL 8 DONE         |
 | **P1 — v1.0 Required**    | 15     | ~11 remaining            | 13/15 done            |
-| **P2 — Complete Product** | 14     | ~34 remaining            | 6/14 done (1 skipped) |
+| **P2 — Complete Product** | 14     | ~12 remaining            | 12/14 done (1 skipped) |
 | **P3 — Polish**           | 7      | ~25 remaining            | 2/7 done              |
-| **TOTAL**                 | **44** | **~70 hours remaining**  | **29/44 done**        |
+| **TOTAL**                 | **44** | **~48 hours remaining**  | **35/44 done**        |
 
 ### Progress
 - **Originally estimated:** ~254 hours total
-- **Completed:** ~184 hours of work (P0 + partial P1/P2/P3 + P4-A stores/components + P4-B search/billing + P5 tool execution/jobs + admin features discovered)
-- **Remaining:** ~70 hours
+- **Completed:** ~206 hours of work (P0 + P1 + P2 partial + P3 partial + P4-A + P4-B + P5 + P6-B)
+- **Remaining:** ~48 hours
 - **No CRITICAL items remain** — system is deployment-safe for staging
 - **Schema 13/13 enums DONE, 5/25+ indexes DONE + GIN FTS index, 7/7 unique constraints DONE**
 - **Frontend: 6/6 stores DONE, 6/6 missing components DONE, FTS search DONE**
 - **Billing: B2B REST endpoints DONE (balance, transactions, subscription)**
 - **Tool Execution: ALL 16 stubs resolved, FastAPI job processing enabled, Redis extended**
+- **Phase 6 Sprint B: UI migration to `@hsafx/ui`, Redis session caching, rolling sessions, cookie rename, CSRF Referer fallback, Retry-After header**

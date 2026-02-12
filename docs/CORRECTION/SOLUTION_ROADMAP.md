@@ -1,9 +1,9 @@
 # SOLUTION ROADMAP — HSAFX WORLD APP
 
 > **Date:** 2026-02-12
-> **Commit:** `c0c1541` on `master`
+> **Commit:** `ccfc034` on `master`
 > **Based on:** CORRECTION docs 01–05
-> **Status:** Phases 1–5 COMPLETE, entering Phase 6
+> **Status:** Phases 1–6 COMPLETE, entering Phase 7
 
 ---
 
@@ -11,8 +11,8 @@
 
 This roadmap translates the remaining work items (from [03_REMAINING_WORK.md](03_REMAINING_WORK.md)) into an actionable sequence. All 5 owner decisions are resolved. All 10 planning conflicts are locked.
 
-**Progress:** 26/44 items complete (~59% items, ~144 hours done). ~110 hours remaining.
-**No CRITICAL blockers remain** — staging deployment is safe. **Schema-complete milestone achieved. FTS search operational. Feature-complete for v1.0 achieved.**
+**Progress:** 35/44 items complete (~80% items, ~206 hours done). ~48 hours remaining.
+**No CRITICAL blockers remain** — staging deployment is safe. **Schema-complete milestone achieved. FTS search operational. Feature-complete for v1.0 achieved. Phase 6 Admin & Polish complete.**
 
 ---
 
@@ -143,28 +143,29 @@ This roadmap translates the remaining work items (from [03_REMAINING_WORK.md](03
 
 ---
 
-### Phase 6 — Admin & Polish (NEXT)
+### ✅ Phase 6 — Admin & Polish — COMPLETE
+> Commit `ccfc034`
 
-**What:** Admin panel features and session/infrastructure improvements.
+**Sprint A — Admin Features:** Already pre-existing (discovered during Phase 6 planning)
+- ✅ Admin analytics dashboard (4 StatCards, 6 metrics, 4 Recharts charts, skeleton loading)
+- ✅ Admin audit log viewer (DataTable, 6 action filters, date range, CSV export, details modal)
 
-- Admin analytics dashboard (charts, metrics)
-- Admin audit log viewer (filterable)
-- Move shared UI components to `@hsafx/ui`
-- Redis session caching
-- Rolling sessions + absolute timeout
-- Session cookie rename
-- CSRF + Retry-After improvements
+**Sprint B — Infrastructure Polish:**
+- ✅ 16 shared UI components migrated to `@hsafx/ui` (alert, badge, button, card, checkbox, dialog, dropdown-menu, input, label, progress, select, skeleton, switch, tabs, textarea, tooltip)
+- ✅ Web app UI files converted to thin re-exports from `@hsafx/ui`
+- ✅ Redis session caching via Better-Auth `secondaryStorage` (Upstash Redis)
+- ✅ Rolling sessions (`session.updateAge: 3600` — 1h refresh interval)
+- ✅ Session cookie renamed to `__hsafx.session_token` via `advanced.cookiePrefix: '__hsafx'`
+- ✅ CSRF Origin → Referer fallback → reject in both web + admin middleware
+- ✅ Rate limit 429 responses include `Retry-After` header
+
+**Exit Criteria:** ✅ All Phase 6 items resolved. Build passes (5/5).
 
 ---
 
-### Phase 7 — Alignment & Remaining
+### Phase 7 — Alignment & Remaining (NEXT)
 
-**What:** Naming alignment, admin billing, pub/sub, remaining DB tables.
-
-- Update planning docs to match code table/column naming
-- Admin billing management
-- Pub/sub channels
-- Remaining ~7 DB tables
+**What:** Naming alignment, impersonation reason, pub/sub, remaining DB tables.
 
 ---
 
@@ -188,11 +189,11 @@ This roadmap translates the remaining work items (from [03_REMAINING_WORK.md](03
 | 4A. Frontend Stores+Components | 22h   | 92h   | ✅ DONE             |
 | 4B. Search + Billing API       | 12h   | 104h  | ✅ DONE             |
 | 5. Tool Execution              | 15h   | 119h  | ✅ DONE             |
-| 6. Admin & Polish              | 50h   | 169h  | **NEXT**            |
-| 7. Alignment + Remaining       | 26h   | 195h  | Not started         |
-| 8. Final Polish                | 16h   | 211h  | Not started         |
+| 6. Admin & Polish              | 22h   | 141h  | ✅ DONE             |
+| 7. Alignment + Remaining       | 14h   | 155h  | **NEXT**            |
+| 8. Final Polish                | 16h   | 171h  | Not started         |
 
-**Total remaining: ~92 hours** (from original ~254)
+**Total remaining: ~48 hours** (from original ~254)
 
 ---
 
@@ -202,6 +203,6 @@ This roadmap translates the remaining work items (from [03_REMAINING_WORK.md](03
 |-----------------------------------------|------------|----------------------------------------------|
 | Schema migration breaks existing data   | Low        | Take DB snapshot before migration batch      |
 | Frontend rebuild exceeds estimates      | Medium     | Prioritize tool execution page; defer search |
-| Stub tool implementation quality        | ~~Medium~~ | ✅ All 16 stubs resolved (Phase 5)            |
+| Stub tool implementation quality        | ~~Medium~~ | ✅ All 16 stubs resolved (Phase 5)           |
 | ~~Planning doc conflicts cause rework~~ | ~~High~~   | ✅ All 10 conflicts resolved and locked      |
 | ~~Decision gates block progress~~       | ~~High~~   | ✅ All 5 decisions resolved                  |
