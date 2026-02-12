@@ -8,6 +8,7 @@ import {
   integer,
   boolean,
   jsonb,
+  decimal,
   index,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
@@ -209,6 +210,22 @@ export const apiRateLimits = pgTable('api_rate_limits', {
   burstPerMinute: integer('burst_per_minute').notNull(),
 });
 
+/**
+ * Tool Class Policy - Billing behavior and execution requirements per tool class
+ * Reference: 13_DATABASE_SCHEMA.dbml Section "tool_class_policy"
+ *
+ * Primary key is tool_class (varchar) — one policy row per tool class.
+ * Determines BA weight multiplier and sync/async execution mode.
+ */
+export const toolClassPolicy = pgTable('tool_class_policy', {
+  toolClass: varchar('tool_class', { length: 100 }).primaryKey(),
+  baWeight: decimal('ba_weight', { precision: 5, scale: 2 }).notNull().default('1.0'),
+  executionMode: varchar('execution_mode', { length: 20 }).notNull().default('sync'),
+  asyncRequired: boolean('async_required').notNull().default(false),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
 // Types inferred from tables using InferSelectModel and InferInsertModel for better compatibility
 export type ToolCategory = InferSelectModel<typeof toolCategories>;
 export type NewToolCategory = InferInsertModel<typeof toolCategories>;
@@ -228,6 +245,8 @@ export type AnonymousUsage = InferSelectModel<typeof anonymousUsage>;
 export type NewAnonymousUsage = InferInsertModel<typeof anonymousUsage>;
 export type ApiRateLimit = InferSelectModel<typeof apiRateLimits>;
 export type NewApiRateLimit = InferInsertModel<typeof apiRateLimits>;
+export type ToolClassPolicyRow = InferSelectModel<typeof toolClassPolicy>;
+export type NewToolClassPolicyRow = InferInsertModel<typeof toolClassPolicy>;
 
 // Zod schemas - use 'as unknown as' for drizzle-zod compatibility
 export const insertToolCategorySchema = createInsertSchema(toolCategories) as unknown as z.ZodType<NewToolCategory>;
@@ -239,3 +258,4 @@ export const insertToolExecutionSchema = createInsertSchema(toolExecutions) as u
 export const insertApiKeySchema = createInsertSchema(apiKeys) as unknown as z.ZodType<NewApiKey>;
 export const insertAnonymousUsageSchema = createInsertSchema(anonymousUsage) as unknown as z.ZodType<NewAnonymousUsage>;
 export const insertApiRateLimitSchema = createInsertSchema(apiRateLimits) as unknown as z.ZodType<NewApiRateLimit>;
+export const insertToolClassPolicySchema = createInsertSchema(toolClassPolicy) as unknown as z.ZodType<NewToolClassPolicyRow>;

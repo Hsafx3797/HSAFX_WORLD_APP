@@ -44,7 +44,7 @@
 | Item                          | Status | Gap Detail                                                                                                                              |
 |-------------------------------|--------|-----------------------------------------------------------------------------------------------------------------------------------------|
 | Schema files exist (6 files)  | ✅     | `users.ts`, `auth.ts`, `billing.ts`, `tools.ts`, `misc.ts`, `audit.ts`                                                                  |
-| Table count                   | ⚠️     | **~50 tables exist** vs **60+ planned** — gap narrowing (added `processed_webhooks`, `login_reward_claims`)                             |
+| Table count                   | ✅     | **~61 tables exist** vs **60+ planned** — gap closed (11 new tables added in Phase 7)                                                    |
 | PostgreSQL enums              | ⚠️     | **4 enums defined** (`subscription_status`, `coin_transaction_type`, `invoice_status`, `payment_status`) — 9 remaining                  |
 | Database indexes              | ⚠️     | Some indexes added (`async_jobs.user_id`, `async_jobs.status`) + GIN expression index on tools FTS — bulk planned indexes still missing |
 | Column naming alignment       | 🟡     | **30+ column name mismatches** vs planning DBML (see doc 02)                                                                            |
@@ -52,24 +52,31 @@
 | Provider: Polar + Stripe      | ✅     | Conflict #10 resolved — dual provider: Polar subscriptions, Stripe coin packs                                                           |
 | Money columns                 | 🟡     | Planning says `bigint` cents; code uses `decimal(10,2)` or `integer`                                                                    |
 
-### Missing Tables (reduced from 13 → ~10)
+### Missing Tables (reduced from 14 → 3)
 
 | #  | Table                    | Why It Matters                             | Status       |
 |----|--------------------------|--------------------------------------------|--------------|
 | 1  | `processed_webhooks`     | Webhook idempotency                        | ✅ **ADDED** |
 | 2  | `login_reward_claims`    | Login reward tracking                      | ✅ **ADDED** |
-| 3  | `tool_class_policy`      | 🔴 Core billing: BA weights per tool class | Not started  |
-| 4  | `usage_coin_fallbacks`   | 🟠 Over-limit fallback discount rates      | Not started  |
+| 3  | `tool_class_policy`      | 🔴 Core billing: BA weights per tool class | ✅ **ADDED** (Phase 7) |
+| 4  | `usage_coin_fallbacks`   | 🟠 Over-limit fallback discount rates      | ✅ **ADDED** (Phase 7) |
 | 5  | `billable_action_logs`   | 🟠 Granular billing audit trail            | Not started  |
 | 6  | `plan_permissions`       | 🟠 Plan→permission mapping for CASL        | Not started  |
 | 7  | `plan_theme_access`      | 🟡 Per-plan theme presets                  | Not started  |
-| 8  | `permission_groups`      | 🟡 Permission categorization               | Not started  |
-| 9  | `invoice_payments`       | 🟡 Supports partial payments               | Not started  |
-| 10 | `payment_methods`        | 🟡 Stored payment methods                  | Not started  |
-| 11 | `coin_purchase_payments` | 🟡 Coin pack→payment linkage               | Not started  |
-| 12 | `plan_metadata`          | 🟡 Extensible plan properties              | Not started  |
-| 13 | `plan_upgrade_rules`     | 🟡 Auto-upgrade logic                      | Not started  |
-| 14 | `plan_audit_logs`        | 🟡 Plan change history                     | Not started  |
+| 8  | `permission_groups`      | 🟡 Permission categorization               | ✅ **ADDED** (Phase 7) |
+| 9  | `invoice_payments`       | 🟡 Supports partial payments               | ✅ **ADDED** (Phase 7) |
+| 10 | `payment_methods`        | 🟡 Stored payment methods                  | ✅ **ADDED** (Phase 7) |
+| 11 | `coin_purchase_payments` | 🟡 Coin pack→payment linkage               | ✅ **ADDED** (Phase 7) |
+| 12 | `plan_metadata`          | 🟡 Extensible plan properties              | ✅ **ADDED** (Phase 7) |
+| 13 | `plan_upgrade_rules`     | 🟡 Auto-upgrade logic                      | ✅ **ADDED** (Phase 7) |
+| 14 | `plan_audit_logs`        | 🟡 Plan change history                     | ✅ **ADDED** (Phase 7) |
+
+### Additional Tables Added (Phase 7)
+
+| Table                    | File      | Purpose                                                    |
+|--------------------------|-----------|------------------------------------------------------------|
+| `audit_logs`             | audit.ts  | System-wide audit trail (impersonation, role changes, etc) |
+| `email_usage_tracking`   | misc.ts   | Email volume tracking per provider/period                  |
 
 ### Extra Tables (12 — ad tables removed, reward tables added)
 
@@ -77,7 +84,7 @@
 
 > **Note:** `ad_reward_transactions` and `user_ad_daily_caps` **REMOVED** — ad system replaced by login rewards.
 
-**Database score: ~64%** — 4 enums added, 2 new tables, ad tables removed, GIN FTS index added. Bulk indexes and remaining tables still needed.
+**Database score: ~82%** — 13 enums, 11 new tables (Phase 7), GIN FTS index, 5 critical indexes, 7 unique constraints. ~3 tables + ~20 indexes remaining.
 
 ---
 
@@ -128,7 +135,7 @@
 | Impersonation — scoped actions     | ✅     | **Middleware blocks billing, password, 2FA, API key, account deletion during impersonation** (P0-08 completed)                  |
 | Impersonation — banner             | ✅     | Fixed amber banner with stop button                                                                                             |
 
-**Security score: ~90%** — All rate limit layers active. Structured logging done. Impersonation scoped. CSRF Referer fallback + Retry-After done. Only impersonation `reason` field remains.
+**Security score: ~92%** — All rate limit layers active. Structured logging done. Impersonation fully scoped with mandatory reason. CSRF Referer fallback + Retry-After done.
 
 ---
 
@@ -256,7 +263,7 @@
 | Package                   | Status | Notes                                                                                                    |
 |---------------------------|--------|----------------------------------------------------------------------------------------------------------|
 | `@hsafx/config`           | ✅     | ESLint + TS configs                                                                                      |
-| `@hsafx/db`               | ✅     | 13 pgEnums, 7 unique constraints, 5 critical indexes added. Bulk indexes + remaining tables still needed |
+| @hsafx/db               | ✅     | 13 pgEnums, 7 unique constraints, 5 critical indexes, 11 new tables (Phase 7). ~3 tables + bulk indexes remaining |
 | `@hsafx/schemas`          | ✅     | Zod schemas                                                                                              |
 | `@hsafx/shared`           | ✅     | Permissions (CASL), flags, storage, email, rate-limit, **pino logger**, billing, rewards                 |
 | `@hsafx/theme`            | ✅     | Full CSS theme system                                                                                    |
@@ -293,9 +300,9 @@
 | Area                    | Score | Critical Gaps                                                   |
 |-------------------------|-------|-----------------------------------------------------------------|
 | Infrastructure & DevOps | 85%   | Docker/K8s untested                                             |
-| Database Schema         | 78%   | ~20 remaining indexes, ~10 missing tables                       |
-| Auth & Authorization    | 90%   | Impersonation reason field                                      |
-| Security                | 90%   | Impersonation reason field                                      |
+| Database Schema         | 82%   | ~20 remaining indexes, ~3 missing tables                        |
+| Auth & Authorization    | 92%   | 2FA not using Better-Auth plugin                                |
+| Security                | 92%   | No remaining critical gaps                                      |
 | Billing System          | 90%   | Wallet reconciliation edge cases                                |
 | Tool Execution          | 95%   | All stubs implemented, job processing enabled                   |
 | Frontend (Web)          | 65%   | Partial ToolCard/ToolGrid/ResultDisplay                         |
@@ -304,6 +311,6 @@
 | Shared Packages         | 92%   | All key packages populated                                      |
 | Redis & Caching         | 80%   | No pub/sub                                                      |
 
-### **Weighted Overall: ~93%**
+### **Weighted Overall: ~94%**
 
-Significant progress since last audit (~91%). **Phase 6 Sprint B complete** — 16 shared UI components migrated to `@hsafx/ui`, Redis session caching via Better-Auth `secondaryStorage`, rolling sessions (1h `updateAge`), session cookie renamed to `__hsafx.session_token`, CSRF Origin→Referer fallback in both apps, Retry-After header on rate limit 429 responses. Build passes (5/5). Remaining work: impersonation reason field, naming alignment, pub/sub, remaining DB tables, money column migration.
+Significant progress since last audit (~93%). **Phase 7 #42 complete** — 11 new DB tables added across 5 schema files (toolClassPolicy, usageCoinFallbacks, invoicePayments, paymentMethods, coinPurchasePayments, planMetadata, planUpgradeRules, planAuditLogs, auditLogs, permissionGroups, emailUsageTracking). Table count now ~61 vs 60+ planned — gap closed. TypeScript compiles clean (0 errors). Remaining work: naming alignment, pub/sub, ~3 DB tables, ~20 indexes, money column migration.

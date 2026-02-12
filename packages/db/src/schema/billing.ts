@@ -9,6 +9,7 @@ import {
   decimal,
   boolean,
   jsonb,
+  bigint,
   index,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
@@ -316,6 +317,143 @@ export const processedWebhooks = pgTable('processed_webhooks', {
   index('pw_provider_idx').on(t.provider),
 ]);
 
+/**
+ * Usage Coin Fallbacks - Over-limit fallback discount rates per plan/tool class
+ * Reference: 13_DATABASE_SCHEMA.dbml Section "usage_coin_fallbacks"
+ *
+ * When a user exceeds their plan limit, they can still use tools by paying coins
+ * at a (less favorable) fallback discount rate.
+ * Formula: coins = ceil(ba_charged × (1 - discount/100))
+ */
+export const usageCoinFallbacks = pgTable('usage_coin_fallbacks', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  planId: uuid('plan_id')
+    .notNull()
+    .references(() => plans.id, { onDelete: 'cascade' }),
+  toolClass: varchar('tool_class', { length: 100 }).notNull(),
+  coinDiscountPercent: decimal('coin_discount_percent', { precision: 5, scale: 2 }).notNull().default('0'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('ucf_plan_class_idx').on(t.planId, t.toolClass),
+]);
+
+/**
+ * Invoice Payments - Links payments to invoices (supports partial payments)
+ * Reference: 13_DATABASE_SCHEMA.dbml Section "invoice_payments"
+ */
+export const invoicePayments = pgTable('invoice_payments', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  invoiceId: uuid('invoice_id')
+    .notNull()
+    .references(() => invoices.id, { onDelete: 'cascade' }),
+  paymentId: uuid('payment_id')
+    .notNull()
+    .references(() => payments.id, { onDelete: 'cascade' }),
+  amountCents: bigint('amount_cents', { mode: 'number' }).notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (t) => [
+  index('ip_invoice_id_idx').on(t.invoiceId),
+  index('ip_payment_id_idx').on(t.paymentId),
+]);
+
+/**
+ * Payment Methods - Stored payment methods for recurring billing
+ * Reference: 13_DATABASE_SCHEMA.dbml Section "payment_methods"
+ *
+ * Security: provider_method_id is a tokenized reference from the payment provider.
+ */
+export const paymentMethods = pgTable('payment_methods', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  provider: text('provider').notNull(), // 'stripe', 'paypal'
+  providerMethodId: text('provider_method_id').notNull(),
+  type: text('type').notNull(), // 'card', 'bank_account'
+  last4: text('last4'),
+  brand: text('brand'), // 'visa', 'mastercard', etc.
+  expiryMonth: text('expiry_month'),
+  expiryYear: text('expiry_year'),
+  isDefault: boolean('is_default').notNull().default(false),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  deletedAt: timestamp('deleted_at'),
+}, (t) => [
+  index('pm_user_id_idx').on(t.userId),
+  index('pm_user_default_idx').on(t.userId, t.isDefault),
+]);
+
+/**
+ * Coin Purchase Payments - Maps successful payments to coin credits
+ * Reference: 13_DATABASE_SCHEMA.dbml Section "coin_purchase_payments"
+ */
+export const coinPurchasePayments = pgTable('coin_purchase_payments', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  paymentId: uuid('payment_id')
+    .notNull()
+    .references(() => payments.id, { onDelete: 'cascade' }),
+  coinPackId: uuid('coin_pack_id')
+    .notNull()
+    .references(() => coinPacks.id),
+  coinsCredited: bigint('coins_credited', { mode: 'number' }).notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+/**
+ * Plan Metadata - Extensible key-value storage for plan configuration
+ * Reference: 13_DATABASE_SCHEMA.dbml Section "plan_metadata"
+ */
+export const planMetadata = pgTable('plan_metadata', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  planId: uuid('plan_id')
+    .notNull()
+    .references(() => plans.id, { onDelete: 'cascade' }),
+  metaKey: text('meta_key').notNull(),
+  metaValue: jsonb('meta_value').$type<unknown>(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('pmd_plan_key_idx').on(t.planId, t.metaKey),
+]);
+
+/**
+ * Plan Upgrade Rules - Automated plan upgrade conditions
+ * Reference: 13_DATABASE_SCHEMA.dbml Section "plan_upgrade_rules"
+ */
+export const planUpgradeRules = pgTable('plan_upgrade_rules', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  fromPlanId: uuid('from_plan_id')
+    .notNull()
+    .references(() => plans.id, { onDelete: 'cascade' }),
+  toPlanId: uuid('to_plan_id')
+    .notNull()
+    .references(() => plans.id, { onDelete: 'cascade' }),
+  autoUpgrade: boolean('auto_upgrade').notNull().default(false),
+  conditions: jsonb('conditions').$type<Record<string, unknown>>().default({}),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+/**
+ * Plan Audit Logs - Tracks plan configuration changes
+ * Reference: 13_DATABASE_SCHEMA.dbml Section "plan_audit_logs"
+ */
+export const planAuditLogs = pgTable('plan_audit_logs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  planId: uuid('plan_id')
+    .notNull()
+    .references(() => plans.id, { onDelete: 'cascade' }),
+  changedBy: uuid('changed_by')
+    .notNull()
+    .references(() => users.id, { onDelete: 'set null' }),
+  changeType: planChangeTypeEnum('change_type').notNull(),
+  changes: jsonb('changes').$type<Record<string, unknown>>().notNull(),
+  reason: text('reason'),
+  ipAddress: varchar('ip_address', { length: 45 }),
+  userAgent: text('user_agent'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
 // Types inferred from tables using InferSelectModel and InferInsertModel
 export type Plan = InferSelectModel<typeof plans>;
 export type NewPlan = InferInsertModel<typeof plans>;
@@ -345,6 +483,20 @@ export type UserDailyRewardCap = InferSelectModel<typeof userDailyRewardCaps>;
 export type NewUserDailyRewardCap = InferInsertModel<typeof userDailyRewardCaps>;
 export type ProcessedWebhook = InferSelectModel<typeof processedWebhooks>;
 export type NewProcessedWebhook = InferInsertModel<typeof processedWebhooks>;
+export type UsageCoinFallback = InferSelectModel<typeof usageCoinFallbacks>;
+export type NewUsageCoinFallback = InferInsertModel<typeof usageCoinFallbacks>;
+export type InvoicePayment = InferSelectModel<typeof invoicePayments>;
+export type NewInvoicePayment = InferInsertModel<typeof invoicePayments>;
+export type PaymentMethod = InferSelectModel<typeof paymentMethods>;
+export type NewPaymentMethod = InferInsertModel<typeof paymentMethods>;
+export type CoinPurchasePayment = InferSelectModel<typeof coinPurchasePayments>;
+export type NewCoinPurchasePayment = InferInsertModel<typeof coinPurchasePayments>;
+export type PlanMetadataRow = InferSelectModel<typeof planMetadata>;
+export type NewPlanMetadataRow = InferInsertModel<typeof planMetadata>;
+export type PlanUpgradeRule = InferSelectModel<typeof planUpgradeRules>;
+export type NewPlanUpgradeRule = InferInsertModel<typeof planUpgradeRules>;
+export type PlanAuditLog = InferSelectModel<typeof planAuditLogs>;
+export type NewPlanAuditLog = InferInsertModel<typeof planAuditLogs>;
 
 // Zod schemas - use 'as unknown as' for drizzle-zod compatibility
 export const insertPlanSchema = createInsertSchema(plans) as unknown as z.ZodType<NewPlan>;
@@ -361,3 +513,10 @@ export const insertPlanCoinRuleSchema = createInsertSchema(planCoinRules) as unk
 export const insertLoginRewardClaimSchema = createInsertSchema(loginRewardClaims) as unknown as z.ZodType<NewLoginRewardClaim>;
 export const insertUserDailyRewardCapSchema = createInsertSchema(userDailyRewardCaps) as unknown as z.ZodType<NewUserDailyRewardCap>;
 export const insertProcessedWebhookSchema = createInsertSchema(processedWebhooks) as unknown as z.ZodType<NewProcessedWebhook>;
+export const insertUsageCoinFallbackSchema = createInsertSchema(usageCoinFallbacks) as unknown as z.ZodType<NewUsageCoinFallback>;
+export const insertInvoicePaymentSchema = createInsertSchema(invoicePayments) as unknown as z.ZodType<NewInvoicePayment>;
+export const insertPaymentMethodSchema = createInsertSchema(paymentMethods) as unknown as z.ZodType<NewPaymentMethod>;
+export const insertCoinPurchasePaymentSchema = createInsertSchema(coinPurchasePayments) as unknown as z.ZodType<NewCoinPurchasePayment>;
+export const insertPlanMetadataSchema = createInsertSchema(planMetadata) as unknown as z.ZodType<NewPlanMetadataRow>;
+export const insertPlanUpgradeRuleSchema = createInsertSchema(planUpgradeRules) as unknown as z.ZodType<NewPlanUpgradeRule>;
+export const insertPlanAuditLogSchema = createInsertSchema(planAuditLogs) as unknown as z.ZodType<NewPlanAuditLog>;

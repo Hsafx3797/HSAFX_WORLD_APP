@@ -203,6 +203,19 @@ export const userPermissionOverrides = pgTable('user_permission_overrides', {
   uniqueIndex('upo_user_perm_idx').on(t.userId, t.permissionId),
 ]);
 
+/**
+ * Permission Groups - Logical grouping of permissions for admin UI
+ * Reference: 13_DATABASE_SCHEMA.dbml Section "permission_groups"
+ */
+export const permissionGroups = pgTable('permission_groups', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  key: text('key').notNull().unique(),
+  name: text('name').notNull(),
+  description: text('description'),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
 // Types inferred from tables using InferSelectModel and InferInsertModel
 export type Session = InferSelectModel<typeof sessions>;
 export type NewSession = InferInsertModel<typeof sessions>;
@@ -222,6 +235,8 @@ export type RefreshToken = InferSelectModel<typeof refreshTokens>;
 export type NewRefreshToken = InferInsertModel<typeof refreshTokens>;
 export type UserPermissionOverride = InferSelectModel<typeof userPermissionOverrides>;
 export type NewUserPermissionOverride = InferInsertModel<typeof userPermissionOverrides>;
+export type PermissionGroup = InferSelectModel<typeof permissionGroups>;
+export type NewPermissionGroup = InferInsertModel<typeof permissionGroups>;
 
 // Zod schemas - use 'as unknown as' for drizzle-zod compatibility
 export const insertSessionSchema = createInsertSchema(sessions) as unknown as z.ZodType<NewSession>;
@@ -233,3 +248,4 @@ export const insertPasswordResetTokenSchema = createInsertSchema(passwordResetTo
 export const insertEmailVerificationTokenSchema = createInsertSchema(emailVerificationTokens) as unknown as z.ZodType<NewEmailVerificationToken>;
 export const insertRefreshTokenSchema = createInsertSchema(refreshTokens) as unknown as z.ZodType<NewRefreshToken>;
 export const insertUserPermissionOverrideSchema = createInsertSchema(userPermissionOverrides) as unknown as z.ZodType<NewUserPermissionOverride>;
+export const insertPermissionGroupSchema = createInsertSchema(permissionGroups) as unknown as z.ZodType<NewPermissionGroup>;

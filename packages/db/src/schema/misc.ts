@@ -190,6 +190,27 @@ export const adminSettings = pgTable('admin_settings', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
+/**
+ * Email Usage Tracking - Tracks email volume per provider/period
+ * Reference: 13_DATABASE_SCHEMA.dbml Section "email_usage_tracking"
+ *
+ * Monitors email send/fail counts to enforce provider rate limits and
+ * enable automatic failover between Resend and self-hosted SMTP.
+ */
+export const emailUsageTracking = pgTable('email_usage_tracking', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  provider: emailProviderEnum('provider').notNull(),
+  periodType: varchar('period_type', { length: 20 }).notNull(), // 'daily', 'monthly'
+  periodStart: timestamp('period_start').notNull(),
+  periodEnd: timestamp('period_end').notNull(),
+  emailsSent: integer('emails_sent').notNull().default(0),
+  emailsFailed: integer('emails_failed').notNull().default(0),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (t) => [
+  index('eut_provider_period_idx').on(t.provider, t.periodStart),
+]);
+
 // Types inferred from tables using InferSelectModel and InferInsertModel
 export type FileUpload = InferSelectModel<typeof fileUploads>;
 export type NewFileUpload = InferInsertModel<typeof fileUploads>;
@@ -209,6 +230,8 @@ export type EmailLog = InferSelectModel<typeof emailLogs>;
 export type NewEmailLog = InferInsertModel<typeof emailLogs>;
 export type AdminSetting = InferSelectModel<typeof adminSettings>;
 export type NewAdminSetting = InferInsertModel<typeof adminSettings>;
+export type EmailUsageTracking = InferSelectModel<typeof emailUsageTracking>;
+export type NewEmailUsageTracking = InferInsertModel<typeof emailUsageTracking>;
 
 // Zod schemas - use 'as unknown as' for drizzle-zod compatibility
 export const insertFileUploadSchema = createInsertSchema(fileUploads) as unknown as z.ZodType<NewFileUpload>;
@@ -220,3 +243,4 @@ export const insertEmailProviderConfigSchema = createInsertSchema(emailProviderC
 export const insertEmailTemplateSchema = createInsertSchema(emailTemplates) as unknown as z.ZodType<NewEmailTemplate>;
 export const insertEmailLogSchema = createInsertSchema(emailLogs) as unknown as z.ZodType<NewEmailLog>;
 export const insertAdminSettingSchema = createInsertSchema(adminSettings) as unknown as z.ZodType<NewAdminSetting>;
+export const insertEmailUsageTrackingSchema = createInsertSchema(emailUsageTracking) as unknown as z.ZodType<NewEmailUsageTracking>;

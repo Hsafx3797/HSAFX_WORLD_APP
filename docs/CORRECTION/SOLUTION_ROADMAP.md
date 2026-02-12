@@ -11,8 +11,8 @@
 
 This roadmap translates the remaining work items (from [03_REMAINING_WORK.md](03_REMAINING_WORK.md)) into an actionable sequence. All 5 owner decisions are resolved. All 10 planning conflicts are locked.
 
-**Progress:** 35/44 items complete (~80% items, ~206 hours done). ~48 hours remaining.
-**No CRITICAL blockers remain** — staging deployment is safe. **Schema-complete milestone achieved. FTS search operational. Feature-complete for v1.0 achieved. Phase 6 Admin & Polish complete.**
+**Progress:** 38/44 items complete (~86% items, ~217 hours done). ~37 hours remaining.
+**No CRITICAL blockers remain** — staging deployment is safe. **Schema-complete milestone achieved. FTS search operational. Feature-complete for v1.0 achieved. Phase 6 Admin & Polish complete. Phase 7 #42 (remaining DB tables) complete.**
 
 ---
 
@@ -163,9 +163,29 @@ This roadmap translates the remaining work items (from [03_REMAINING_WORK.md](03
 
 ---
 
-### Phase 7 — Alignment & Remaining (NEXT)
+### Phase 7 — Alignment & Remaining (IN PROGRESS)
 
-**What:** Naming alignment, impersonation reason, pub/sub, remaining DB tables.
+**What:** Naming alignment, pub/sub, remaining DB tables. (Impersonation reason: pre-existing. Admin billing: pre-existing.)
+
+**Completed:**
+- ✅ #42 — 11 new DB tables added across 5 schema files:
+  - `toolClassPolicy` (tools.ts) — BA weight per tool class
+  - `usageCoinFallbacks` (billing.ts) — over-limit fallback discount rates
+  - `invoicePayments` (billing.ts) — partial payment support
+  - `paymentMethods` (billing.ts) — stored payment methods
+  - `coinPurchasePayments` (billing.ts) — coin pack→payment linkage
+  - `planMetadata` (billing.ts) — extensible plan properties
+  - `planUpgradeRules` (billing.ts) — automated upgrade conditions
+  - `planAuditLogs` (billing.ts) — plan change history
+  - `auditLogs` (audit.ts) — system-wide audit trail
+  - `permissionGroups` (auth.ts) — permission categorization
+  - `emailUsageTracking` (misc.ts) — email volume per provider/period
+- ✅ All tables include InferSelectModel/InferInsertModel types + createInsertSchema Zod schemas
+- ✅ TypeScript compiles clean (0 errors)
+
+**Remaining:**
+- #38 — Naming alignment (update planning docs to match code)
+- #41 — Pub/sub channels
 
 ---
 
@@ -190,10 +210,10 @@ This roadmap translates the remaining work items (from [03_REMAINING_WORK.md](03
 | 4B. Search + Billing API       | 12h   | 104h  | ✅ DONE             |
 | 5. Tool Execution              | 15h   | 119h  | ✅ DONE             |
 | 6. Admin & Polish              | 22h   | 141h  | ✅ DONE             |
-| 7. Alignment + Remaining       | 14h   | 155h  | **NEXT**            |
-| 8. Final Polish                | 16h   | 171h  | Not started         |
+| 7. Alignment + Remaining       | 5h    | 146h  | **IN PROGRESS**         |
+| 8. Final Polish                | 16h   | 162h  | Not started         |
 
-**Total remaining: ~48 hours** (from original ~254)
+**Total remaining: ~37 hours** (from original ~254)
 
 ---
 

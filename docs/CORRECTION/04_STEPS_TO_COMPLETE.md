@@ -27,7 +27,7 @@
 | 6  | Invoke `checkUserRateLimit()` in web middleware                                       | P0-06 | ✅ Done |
 | 7  | Server-enforce admin 2FA in middleware                                                | P0-07 | ✅ Done |
 | 8  | Add impersonation scoped-action middleware                                            | P0-08 | ✅ Done |
-| 9  | Add impersonation `reason` field                                                      | P1-12 | Not yet |
+| 9  | Add impersonation `reason` field                                                      | P1-12 | ✅ Pre-existing |
 | 10 | Wire CASL into web app — `@casl/ability`, `PlanAccessProvider`, `withPlan` middleware | P0-03 | ✅ Done |
 
 ---
@@ -156,13 +156,13 @@
 ---
 
 ## PHASE 7: NAMING ALIGNMENT + REMAINING (P2 + P3) — NEXT
-**Duration: ~14 hours** (#39 already complete)
+**Duration: ~13 hours** (#39, #40 already pre-existing)
 
 | #  | Task                                                            | Ref   | Hours | Status                           |
 |----|-----------------------------------------------------------------|-------|-------|----------------------------------|
 | 38 | Resolve table/column naming: update planning docs to match code | P2-08 | 4     |                                  |
 | 39 | Add admin billing management                                    | P2-10 | 12    | ✅ Pre-existing (~300-line page) |
-| 40 | Add impersonation `reason` field                                | P1-12 | 1     |                                  |
+| 40 | Add impersonation `reason` field                                | P1-12 | 1     | ✅ Pre-existing (min 10 chars, audit logged) |
 | 41 | Add pub/sub channels                                            | P2-12 | 8     |                                  |
 | 42 | Add remaining ~7 DB tables                                      | P3-01 | 8     |                                  |
 
@@ -190,8 +190,8 @@
 | 4B    | Search + Billing API         | 12    | 104        | ✅ DONE     |
 | 5     | Tool Execution Completion    | 15    | 119        | ✅ DONE     |
 | 6     | Admin Features + Polish      | 22    | 141        | ✅ DONE     |
-| 7     | Naming + Remaining           | 14    | 155        | **NEXT**    |
-| 8     | Final Polish                 | 16    | 171        | Not started |
+| 7     | Naming + Remaining           | 5     | 146        | **IN PROGRESS** |
+| 8     | Final Polish                 | 16    | 162        | Not started |
 
 ### Critical Milestones
 

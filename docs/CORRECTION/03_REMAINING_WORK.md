@@ -49,9 +49,9 @@
 > **✅ COMPLETED** (Sprint P2-01) — pino-backed `createLogger()` in `@hsafx/shared/logger`. ~75+ calls migrated.
 
 ### P1-04: Implement Missing ~10 Database Tables
-- **Done:** `processed_webhooks`, `login_reward_claims`
-- **Remaining:** `tool_class_policy`, `plan_permissions`, `usage_coin_fallbacks`, `billable_action_logs`, `permission_groups` + others
-- **Effort:** ~6 hours (reduced)
+> **✅ MOSTLY COMPLETED** (Phase 7 #42) — 11 tables added across 5 schema files: `tool_class_policy` (tools.ts), `usage_coin_fallbacks`, `invoice_payments`, `payment_methods`, `coin_purchase_payments`, `plan_metadata`, `plan_upgrade_rules`, `plan_audit_logs` (billing.ts), `audit_logs` (audit.ts), `permission_groups` (auth.ts), `email_usage_tracking` (misc.ts). All with types + Zod schemas. TypeScript compiles clean.
+- **Still missing:** `plan_permissions`, `billable_action_logs` (~2 tables)
+- **Effort:** ~2 hours remaining
 
 ### P1-05: Complete Missing Zustand Stores
 > **✅ COMPLETED** (Sprint P4-A) — Created `useBillingStore`, `useNotificationStore`, `useExecutionStore`. 6 total stores now (3 existing + 3 new).
@@ -75,9 +75,7 @@
 > **✅ COMPLETED** (Sprint P4-B) — 3 B2B REST routes: `GET /api/v1/billing/balance` (coin wallet), `GET /api/v1/billing/transactions` (paginated history with type filter), `GET /api/v1/billing/subscription` (current plan). All use `authenticateApiKey` + `requireScope('billing:read')`.
 
 ### P1-12: Add Impersonation `reason` Field
-- **Gap:** H-05
-- **Work:** Require `reason` in POST body, store in audit log
-- **Effort:** ~1 hour
+> **✅ COMPLETED** (pre-existing) — POST body already requires `reason` (string, min 10 chars), validated inline, stored in audit log metadata as `{ adminRole, targetEmail, targetName, reason }`. Route: `apps/admin/src/app/api/admin/impersonate/route.ts`.
 
 ### P1-13: Fix Daily Bonus Race Condition
 > **✅ COMPLETED** (Sprint P1-02) — Replaced with login reward system using `FOR UPDATE` locking.
@@ -88,7 +86,7 @@
 ### P1-15: Enable FastAPI Job Processing
 > **✅ COMPLETED** (Sprint P5) — `process_job` implemented in `jobs.py` with 5-minute `asyncio.wait_for` timeout, status tracking (queued→running→completed/failed/timeout), webhook notification via httpx, coin refund on cancellation via Redis list, execution time measurement.
 
-**P1 Remaining: ~11 hours** (was ~26, reduced by P1-14 and P1-15 completion)
+**P1 Remaining: ~6 hours** (was ~10, reduced by P1-04 mostly completed)
 
 ---
 
@@ -145,8 +143,9 @@
 ## P3 — NICE TO HAVE
 
 ### P3-01: Remaining ~7 Missing DB Tables
-`plan_theme_access`, `invoice_payments`, `payment_methods`, `coin_purchase_payments`, `plan_metadata`, `plan_upgrade_rules`, `plan_audit_logs`
-- **Effort:** ~8 hours
+> **✅ MOSTLY COMPLETED** (Phase 7 #42) — 6/7 added: `invoice_payments`, `payment_methods`, `coin_purchase_payments`, `plan_metadata`, `plan_upgrade_rules`, `plan_audit_logs`.
+- **Still missing:** `plan_theme_access`
+- **Effort:** ~2 hours remaining
 
 ### P3-02: Money Columns — Integer Cents vs Decimal
 - Migrate `decimal(10,2)` to `bigint` cents where planning requires
@@ -169,7 +168,7 @@
 ### P3-07: Docker/K8s End-to-End Testing
 - **Effort:** ~8 hours
 
-**P3 Remaining: ~25 hours** (was ~28, reduced by completed items)
+**P3 Remaining: ~19 hours** (was ~25, reduced by P3-01 mostly completed)
 
 ---
 
@@ -178,10 +177,10 @@
 | Priority                  | Items  | Hours                    | Completed             |
 |---------------------------|--------|--------------------------|-----------------------|
 | **P0 — Blocking**         | 8      | ~28                    | ✅ ALL 8 DONE         |
-| **P1 — v1.0 Required**    | 15     | ~11 remaining            | 13/15 done            |
+| **P1 — v1.0 Required**    | 15     | ~6 remaining             | 14.5/15 done          |
 | **P2 — Complete Product** | 14     | ~12 remaining            | 12/14 done (1 skipped) |
-| **P3 — Polish**           | 7      | ~25 remaining            | 2/7 done              |
-| **TOTAL**                 | **44** | **~48 hours remaining**  | **35/44 done**        |
+| **P3 — Polish**           | 7      | ~19 remaining            | 3.5/7 done            |
+| **TOTAL**                 | **44** | **~37 hours remaining**  | **38/44 done**        |
 
 ### Progress
 - **Originally estimated:** ~254 hours total

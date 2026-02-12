@@ -64,12 +64,40 @@ export const permissionAuditLogs = pgTable('permission_audit_logs', {
   index('pal_created_at_idx').on(t.createdAt),
 ]);
 
+/**
+ * Audit Logs - System-wide audit trail for sensitive operations
+ * Reference: 13_DATABASE_SCHEMA.dbml Section "audit_logs"
+ *
+ * Used for impersonation, role changes, plan changes, etc.
+ * The impersonation route already writes to this table via raw SQL.
+ */
+export const auditLogs = pgTable('audit_logs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  targetUserId: uuid('target_user_id').references(() => users.id, { onDelete: 'set null' }),
+  action: auditActionEnum('action').notNull(),
+  actionDetail: text('action_detail'),
+  resource: text('resource'), // 'user', 'plan', 'tool', 'subscription', etc.
+  resourceId: uuid('resource_id'),
+  changes: jsonb('changes').$type<Record<string, unknown>>(),
+  ipAddress: varchar('ip_address', { length: 45 }),
+  userAgent: text('user_agent'),
+  metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (t) => [
+  index('al_user_id_idx').on(t.userId),
+  index('al_created_at_idx').on(t.createdAt),
+]);
+
 // Types inferred from tables using InferSelectModel and InferInsertModel
 export type ApiRequestLog = InferSelectModel<typeof apiRequestLogs>;
 export type NewApiRequestLog = InferInsertModel<typeof apiRequestLogs>;
 export type PermissionAuditLog = InferSelectModel<typeof permissionAuditLogs>;
 export type NewPermissionAuditLog = InferInsertModel<typeof permissionAuditLogs>;
+export type AuditLog = InferSelectModel<typeof auditLogs>;
+export type NewAuditLog = InferInsertModel<typeof auditLogs>;
 
 // Zod schemas - use 'as unknown as' for drizzle-zod compatibility
 export const insertApiRequestLogSchema = createInsertSchema(apiRequestLogs) as unknown as z.ZodType<NewApiRequestLog>;
 export const insertPermissionAuditLogSchema = createInsertSchema(permissionAuditLogs) as unknown as z.ZodType<NewPermissionAuditLog>;
+export const insertAuditLogSchema = createInsertSchema(auditLogs) as unknown as z.ZodType<NewAuditLog>;
