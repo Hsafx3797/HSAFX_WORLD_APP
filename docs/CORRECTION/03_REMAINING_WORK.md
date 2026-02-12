@@ -1,7 +1,7 @@
 # 03 — REMAINING WORK
 
 > **Last audited:** 2026-02-12
-> **Current state:** ~94% overall completion
+> **Current state:** ~95% overall completion
 > **Methodology:** Every gap from doc 01 and 02 mapped to actionable work items
 
 ---
@@ -128,7 +128,7 @@
 > **✅ COMPLETED** (Sprint P1-06) — Stub handlers with structured logging added.
 
 ### P2-12: Add Pub/Sub Channels
-- **Effort:** ~8 hours
+> **✅ COMPLETED** (Phase 7 #41) — In-process EventEmitter event bus in `packages/shared/src/pubsub/` with 8 typed channels (admin:errors, admin:alerts, admin:metrics, admin:jobs, admin:webhooks, cache:invalidation, job:progress). SSE endpoint upgraded to hybrid event-bus push + DB health poll. Centralized 10s metrics collector replaces per-connection polling. Publishers wired into `captureException()` (all errors), impersonation routes (security alerts), config route (maintenance alerts). Client hook updated with 7 event types, smart job merging, capped lists.
 
 ### P2-13: Add CSRF Referer Fallback
 > **✅ COMPLETED** (Sprint P6-B) — Origin → Referer fallback → reject chain in both web and admin middleware.
@@ -136,7 +136,7 @@
 ### P2-14: Add `Retry-After` Header to Rate Limit Responses
 > **✅ COMPLETED** (Sprint P6-B) — Rate limit 429 responses include `Retry-After` header with seconds-until-reset.
 
-**P2 Remaining: ~12 hours** (was ~34, reduced by P2-02, P2-05, P2-06, P2-07, P2-13, P2-14 completion in Sprint P6-B)
+**P2 Remaining: ~0 hours** (all complete or skipped)
 
 ---
 
@@ -178,14 +178,14 @@
 |---------------------------|--------|--------------------------|-----------------------|
 | **P0 — Blocking**         | 8      | ~28                    | ✅ ALL 8 DONE         |
 | **P1 — v1.0 Required**    | 15     | ~6 remaining             | 14.5/15 done          |
-| **P2 — Complete Product** | 14     | ~8 remaining             | 13/14 done (1 skipped) |
+| **P2 — Complete Product** | 14     | ~0 remaining             | 14/14 done (1 skipped) |
 | **P3 — Polish**           | 7      | ~19 remaining            | 3.5/7 done            |
-| **TOTAL**                 | **44** | **~33 hours remaining**  | **39/44 done**        |
+| **TOTAL**                 | **44** | **~25 hours remaining**  | **40/44 done**        |
 
 ### Progress
 - **Originally estimated:** ~254 hours total
-- **Completed:** ~221 hours of work (P0 + P1 + P2 partial + P3 partial + P4-A + P4-B + P5 + P6-B + P7 partial)
-- **Remaining:** ~33 hours
+- **Completed:** ~229 hours of work (P0 + P1 + P2 partial + P3 partial + P4-A + P4-B + P5 + P6-B + P7 partial)
+- **Remaining:** ~25 hours
 - **No CRITICAL items remain** — system is deployment-safe for staging
 - **Schema 13/13 enums DONE, 5/25+ indexes DONE + GIN FTS index, 7/7 unique constraints DONE**
 - **Frontend: 6/6 stores DONE, 6/6 missing components DONE, FTS search DONE**
@@ -193,4 +193,5 @@
 - **Tool Execution: ALL 16 stubs resolved, FastAPI job processing enabled, Redis extended**
 - **Phase 6 Sprint B: UI migration to `@hsafx/ui`, Redis session caching, rolling sessions, cookie rename, CSRF Referer fallback, Retry-After header**
 - **Phase 7 #42: 11 new DB tables added across 5 schema files (toolClassPolicy, usageCoinFallbacks, invoicePayments, paymentMethods, coinPurchasePayments, planMetadata, planUpgradeRules, planAuditLogs, auditLogs, permissionGroups, emailUsageTracking)**
+- **Phase 7 #41: Pub/sub event system — in-process EventBus (8 channels), SSE hybrid upgrade, metrics collector, publisher wiring (errors, impersonation, config). Commit `f79c2f5`**
 - **Phase 7 #38: DBML naming alignment — 3 table renames, 15+ column renames, enum rename, all FK refs updated. 02_DEVIATIONS: 46/57 resolved (81%)**

@@ -1,7 +1,7 @@
 # 04 — STEPS TO COMPLETE (Sprint Execution Plan)
 
 > **Last updated:** 2026-02-12
-> **Commit:** `65b1488` on `master`
+> **Commit:** `f79c2f5` on `master`
 > **Based on:** Doc 03 remaining work items
 > **Philosophy:** P0 first → P1 next → P2/P3 after
 
@@ -156,14 +156,14 @@
 ---
 
 ## PHASE 7: NAMING ALIGNMENT + REMAINING (P2 + P3) — IN PROGRESS
-**Duration: ~8 hours remaining** (#38, #39, #40, #42 done; #41 remaining)
+**Duration: ~0 hours remaining** (#38, #39, #40, #41, #42 done)
 
 | #  | Task                                                            | Ref   | Hours | Status                           |
 |----|-----------------------------------------------------------------|-------|-------|----------------------------------|
 | 38 | Resolve table/column naming: update planning docs to match code | P2-08 | 4     | ✅ Done (DBML aligned, 15 deviations resolved) |
 | 39 | Add admin billing management                                    | P2-10 | 12    | ✅ Pre-existing (~300-line page) |
 | 40 | Add impersonation `reason` field                                | P1-12 | 1     | ✅ Pre-existing (min 10 chars, audit logged) |
-| 41 | Add pub/sub channels                                            | P2-12 | 8     |                                  |
+| 41 | Add pub/sub channels                                            | P2-12 | 8     | ✅ Done (event bus + SSE upgrade + publisher wiring) |
 | 42 | Add remaining ~7 DB tables                                      | P3-01 | 8     | ✅ Done (11 tables across 5 schema files) |
 
 ---
@@ -190,7 +190,7 @@
 | 4B    | Search + Billing API         | 12    | 104        | ✅ DONE     |
 | 5     | Tool Execution Completion    | 15    | 119        | ✅ DONE     |
 | 6     | Admin Features + Polish      | 22    | 141        | ✅ DONE     |
-| 7     | Naming + Remaining           | 9     | 150        | **IN PROGRESS** |
+| 7     | Naming + Remaining           | 1     | 150        | **IN PROGRESS** |
 | 8     | Final Polish                 | 16    | 162        | Not started |
 
 ### Critical Milestones

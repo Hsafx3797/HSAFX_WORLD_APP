@@ -1,7 +1,7 @@
 # 01 — WHAT IS ACTUALLY COMPLETED
 
 > **Last audited:** 2026-02-12 — Post Sprint P0-01..P0-08, P1-01..P1-07, P2-01..P2-05, P4-A, P4-B, P5, P6-B, P7-partial
-> **Commit:** `65b1488` on `master`
+> **Commit:** `f79c2f5` on `master`
 > **Methodology:** Every planning doc (01–74) compared against actual source files
 
 ---
