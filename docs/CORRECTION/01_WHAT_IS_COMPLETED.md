@@ -1,7 +1,7 @@
 # 01 — WHAT IS ACTUALLY COMPLETED
 
-> **Last audited:** 2026-02-12 — Post Sprint P0-01..P0-08, P1-01..P1-07, P2-01..P2-05, P4-A, P4-B, P5, P6-B, P7-partial
-> **Commit:** `f79c2f5` on `master`
+> **Last audited:** 2026-02-12 — Post Sprint P0-01..P0-08, P1-01..P1-07, P2-01..P2-05, P4-A, P4-B, P5, P6-B, P7, P8 #43
+> **Commit:** `b2c3e63` on `master`
 > **Methodology:** Every planning doc (01–74) compared against actual source files
 
 ---
@@ -50,7 +50,7 @@
 | Column naming alignment       | 🟡     | **30+ column name mismatches** vs planning DBML (see doc 02)                                                                            |
 | `subscriptions.status` stored | ✅     | Conflict #9 resolved — status stored as column (DBML is correct)                                                                        |
 | Provider: Polar + Stripe      | ✅     | Conflict #10 resolved — dual provider: Polar subscriptions, Stripe coin packs                                                           |
-| Money columns                 | 🟡     | Planning says `bigint` cents; code uses `decimal(10,2)` or `integer`                                                                    |
+| Money columns                 | ✅     | All money columns migrated to `bigint` cents (Phase 8 #43): plans, invoices, payments. Coin columns upgraded from `integer` to `bigint` |
 
 ### Missing Tables (reduced from 14 → 3)
 
@@ -84,7 +84,7 @@
 
 > **Note:** `ad_reward_transactions` and `user_ad_daily_caps` **REMOVED** — ad system replaced by login rewards.
 
-**Database score: ~82%** — 13 enums, 11 new tables (Phase 7), GIN FTS index, 5 critical indexes, 7 unique constraints. ~3 tables + ~20 indexes remaining.
+**Database score: ~85%** — 13 enums, 11 new tables (Phase 7), GIN FTS index, 5 critical indexes, 7 unique constraints, money→cents migration (Phase 8 #43). ~3 tables + ~20 indexes remaining.
 
 ---
 
@@ -309,8 +309,8 @@
 | Frontend (Admin)        | 85%   | All pages built — remaining: UI package migration               |
 | FastAPI Backend         | 90%   | Job processing enabled                                          |
 | Shared Packages         | 92%   | All key packages populated                                      |
-| Redis & Caching         | 80%   | No pub/sub                                                      |
+| Redis & Caching         | 80%   | Pub/sub done (Phase 7 #41)                                   |
 
-### **Weighted Overall: ~94%**
+### **Weighted Overall: ~95%**
 
-Significant progress since last audit (~93%). **Phase 7 #42 complete** — 11 new DB tables added across 5 schema files (toolClassPolicy, usageCoinFallbacks, invoicePayments, paymentMethods, coinPurchasePayments, planMetadata, planUpgradeRules, planAuditLogs, auditLogs, permissionGroups, emailUsageTracking). Table count now ~61 vs 60+ planned — gap closed. TypeScript compiles clean (0 errors). Remaining work: naming alignment, pub/sub, ~3 DB tables, ~20 indexes, money column migration.
+Significant progress since last audit (~94%). **Phase 8 #43 complete** — All money columns migrated from `decimal(10,2)` to `bigint` cents: `plans.price_monthly_cents`/`price_yearly_cents`, `invoices.amount_cents`, `payments.amount_cents`. Coin columns upgraded from `integer` to `bigint`. DBML, seed data, admin UI, API routes, and shared billing types all updated. 02_DEVIATIONS M-17 resolved (47/57, 82%). TypeScript compiles clean (0 errors). Remaining work: Facebook OAuth resolution, ~3 DB tables, ~20 indexes, Docker/K8s testing.

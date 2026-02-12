@@ -1,7 +1,7 @@
 # 04 — STEPS TO COMPLETE (Sprint Execution Plan)
 
 > **Last updated:** 2026-02-12
-> **Commit:** `f79c2f5` on `master`
+> **Commit:** `b2c3e63` on `master`
 > **Based on:** Doc 03 remaining work items
 > **Philosophy:** P0 first → P1 next → P2/P3 after
 
@@ -155,7 +155,7 @@
 
 ---
 
-## PHASE 7: NAMING ALIGNMENT + REMAINING (P2 + P3) — IN PROGRESS
+## ✅ PHASE 7: NAMING ALIGNMENT + REMAINING (P2 + P3) — COMPLETED
 **Duration: ~0 hours remaining** (#38, #39, #40, #41, #42 done)
 
 | #  | Task                                                            | Ref   | Hours | Status                           |
@@ -168,14 +168,23 @@
 
 ---
 
-## PHASE 8: FINAL POLISH (P3)
-**Duration: ~16 hours**
+## PHASE 8: FINAL POLISH (P3) — IN PROGRESS
+**Duration: ~12 hours remaining**
 
-| #  | Task                                          | Ref   | Hours |
-|----|-----------------------------------------------|-------|-------|
-| 43 | Migrate money columns to integer cents        | P3-02 | 4     |
-| 44 | Resolve Facebook OAuth (remove or doc-update) | P3-05 | 0.5   |
-| 45 | Docker/K8s end-to-end testing                 | P3-07 | 8     |
+| #  | Task                                          | Ref   | Hours | Status |
+|----|-----------------------------------------------|-------|-------|--------|
+| 43 | Migrate money columns to integer cents        | P3-02 | 4     | ✅ Done (commit `b2c3e63`) |
+| 44 | Resolve Facebook OAuth (remove or doc-update) | P3-05 | 0.5   | Not started |
+| 45 | Docker/K8s end-to-end testing                 | P3-07 | 8     | Not started |
+
+**#43 Implementation details:**
+- Schema: `decimal(10,2)` → `bigint` cents for plans, invoices, payments
+- Schema: `integer` → `bigint` for coin_transactions, user_coin_wallets, coin_packs
+- Shared: `CoinPack.price` (USD float) → `priceInCents` (integer cents)
+- Admin: Plan types updated, formatPrice converts cents→dollars for display
+- API routes: plans + subscriptions routes updated
+- Seed data: plan prices as integer cents
+- DBML + 02_DEVIATIONS M-17 resolved
 
 ---
 

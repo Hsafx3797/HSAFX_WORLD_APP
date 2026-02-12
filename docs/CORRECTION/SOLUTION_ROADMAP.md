@@ -1,9 +1,9 @@
 # SOLUTION ROADMAP — HSAFX WORLD APP
 
 > **Date:** 2026-02-12
-> **Commit:** `f79c2f5` on `master`
+> **Commit:** `b2c3e63` on `master`
 > **Based on:** CORRECTION docs 01–05
-> **Status:** Phases 1–7 nearly COMPLETE (P7 #41 done), entering Phase 8
+> **Status:** Phases 1–7 COMPLETE, Phase 8 IN PROGRESS (#43 done)
 
 ---
 
@@ -11,7 +11,7 @@
 
 This roadmap translates the remaining work items (from [03_REMAINING_WORK.md](03_REMAINING_WORK.md)) into an actionable sequence. All 5 owner decisions are resolved. All 10 planning conflicts are locked.
 
-**Progress:** 38/44 items complete (~86% items, ~217 hours done). ~37 hours remaining.
+**Progress:** 41/44 items complete (~93% items, ~221 hours done). ~21 hours remaining.
 **No CRITICAL blockers remain** — staging deployment is safe. **Schema-complete milestone achieved. FTS search operational. Feature-complete for v1.0 achieved. Phase 6 Admin & Polish complete. Phase 7 #42 (remaining DB tables) complete.**
 
 ---
@@ -163,39 +163,33 @@ This roadmap translates the remaining work items (from [03_REMAINING_WORK.md](03
 
 ---
 
-### Phase 7 — Alignment & Remaining (IN PROGRESS)
+### ✅ Phase 7 — Alignment & Remaining — COMPLETE
 
 **What:** Naming alignment, pub/sub, remaining DB tables. (Impersonation reason: pre-existing. Admin billing: pre-existing.)
 
 **Completed:**
-- ✅ #42 — 11 new DB tables added across 5 schema files:
-  - `toolClassPolicy` (tools.ts) — BA weight per tool class
-  - `usageCoinFallbacks` (billing.ts) — over-limit fallback discount rates
-  - `invoicePayments` (billing.ts) — partial payment support
-  - `paymentMethods` (billing.ts) — stored payment methods
-  - `coinPurchasePayments` (billing.ts) — coin pack→payment linkage
-  - `planMetadata` (billing.ts) — extensible plan properties
-  - `planUpgradeRules` (billing.ts) — automated upgrade conditions
-  - `planAuditLogs` (billing.ts) — plan change history
-  - `auditLogs` (audit.ts) — system-wide audit trail
-  - `permissionGroups` (auth.ts) — permission categorization
-  - `emailUsageTracking` (misc.ts) — email volume per provider/period
-- ✅ All tables include InferSelectModel/InferInsertModel types + createInsertSchema Zod schemas
+- ✅ #38 — DBML naming alignment: 3 table renames, 15+ column renames, enum rename, all FK refs updated. 02_DEVIATIONS: 15 resolved
+- ✅ #39 — Admin billing management (pre-existing)
+- ✅ #40 — Impersonation `reason` field (pre-existing)
+- ✅ #41 — Pub/sub event system: In-process EventBus (8 channels), SSE hybrid upgrade, metrics collector, publisher wiring. Commit `f79c2f5`
+- ✅ #42 — 11 new DB tables added across 5 schema files (toolClassPolicy, usageCoinFallbacks, invoicePayments, paymentMethods, coinPurchasePayments, planMetadata, planUpgradeRules, planAuditLogs, auditLogs, permissionGroups, emailUsageTracking)
+- ✅ All tables include InferSelectModel/InserModel types + createInsertSchema Zod schemas
 - ✅ TypeScript compiles clean (0 errors)
 
-**Remaining:**
-- #38 — Naming alignment (update planning docs to match code)
-- #41 — Pub/sub channels
+**Exit Criteria:** ✅ All Phase 7 items resolved. Build passes.
 
 ---
 
-### Phase 8 — Final Polish (P3)
+### Phase 8 — Final Polish (P3) — IN PROGRESS
 
 **What:** Money column migration, E2E testing, cleanup.
 
-- Money columns to integer cents
-- Facebook OAuth resolution
-- Docker/K8s end-to-end testing
+**Completed:**
+- ✅ #43 — Money→cents migration: All money columns migrated from `decimal(10,2)` to `bigint` cents (`plans.price_monthly_cents`/`price_yearly_cents`, `invoices.amount_cents`, `payments.amount_cents`). Coin columns upgraded from `integer` to `bigint`. Shared billing types (`CoinPack.priceInCents`), admin UI (`formatPrice` cents→dollars), API routes, seed data, and DBML all updated. 02_DEVIATIONS M-17 resolved (47/57, 82%). Commit `b2c3e63`.
+
+**Remaining:**
+- #44 — Facebook OAuth resolution
+- #45 — Docker/K8s end-to-end testing
 
 ---
 
@@ -210,10 +204,10 @@ This roadmap translates the remaining work items (from [03_REMAINING_WORK.md](03
 | 4B. Search + Billing API       | 12h   | 104h  | ✅ DONE             |
 | 5. Tool Execution              | 15h   | 119h  | ✅ DONE             |
 | 6. Admin & Polish              | 22h   | 141h  | ✅ DONE             |
-| 7. Alignment + Remaining       | 5h    | 146h  | **IN PROGRESS**         |
-| 8. Final Polish                | 16h   | 162h  | Not started         |
+| 7. Alignment + Remaining       | 5h    | 146h  | ✅ DONE                 |
+| 8. Final Polish                | 16h   | 162h  | **IN PROGRESS** (#43 done) |
 
-**Total remaining: ~37 hours** (from original ~254)
+**Total remaining: ~21 hours** (from original ~254)
 
 ---
 

@@ -148,8 +148,7 @@
 - **Effort:** ~2 hours remaining
 
 ### P3-02: Money Columns — Integer Cents vs Decimal
-- Migrate `decimal(10,2)` to `bigint` cents where planning requires
-- **Effort:** ~4 hours
+> **✅ COMPLETED** (Phase 8 #43) — All money columns migrated to `bigint` cents: `plans.price_monthly_cents`/`price_yearly_cents`, `invoices.amount_cents`, `payments.amount_cents`. Coin columns (`coin_transactions.amount/balance_after`, `user_coin_wallets.balance/lifetime_earned/lifetime_spent`, `coin_packs.price_in_cents`) upgraded from `integer` to `bigint`. Shared billing types, admin UI, API routes, seed data, and DBML all updated. Commit `b2c3e63`.
 
 ### P3-03: Remove `inngest_job_id` Column
 > **✅ COMPLETED** (Sprint P1-05) — Renamed to `external_job_id`.
@@ -168,7 +167,7 @@
 ### P3-07: Docker/K8s End-to-End Testing
 - **Effort:** ~8 hours
 
-**P3 Remaining: ~19 hours** (was ~25, reduced by P3-01 mostly completed)
+**P3 Remaining: ~15 hours** (was ~19, reduced by P3-02 completed)
 
 ---
 
@@ -179,8 +178,8 @@
 | **P0 — Blocking**         | 8      | ~28                    | ✅ ALL 8 DONE         |
 | **P1 — v1.0 Required**    | 15     | ~6 remaining             | 14.5/15 done          |
 | **P2 — Complete Product** | 14     | ~0 remaining             | 14/14 done (1 skipped) |
-| **P3 — Polish**           | 7      | ~19 remaining            | 3.5/7 done            |
-| **TOTAL**                 | **44** | **~25 hours remaining**  | **40/44 done**        |
+| **P3 — Polish**           | 7      | ~15 remaining            | 4.5/7 done            |
+| **TOTAL**                 | **44** | **~21 hours remaining**  | **41/44 done**        |
 
 ### Progress
 - **Originally estimated:** ~254 hours total
@@ -195,3 +194,4 @@
 - **Phase 7 #42: 11 new DB tables added across 5 schema files (toolClassPolicy, usageCoinFallbacks, invoicePayments, paymentMethods, coinPurchasePayments, planMetadata, planUpgradeRules, planAuditLogs, auditLogs, permissionGroups, emailUsageTracking)**
 - **Phase 7 #41: Pub/sub event system — in-process EventBus (8 channels), SSE hybrid upgrade, metrics collector, publisher wiring (errors, impersonation, config). Commit `f79c2f5`**
 - **Phase 7 #38: DBML naming alignment — 3 table renames, 15+ column renames, enum rename, all FK refs updated. 02_DEVIATIONS: 46/57 resolved (81%)**
+- **Phase 8 #43: Money→cents migration — all money columns to `bigint` cents, coin columns `integer`→`bigint`. Shared types, admin UI, API routes, seed, DBML updated. 02_DEVIATIONS M-17 resolved (47/57, 82%). Commit `b2c3e63`**
