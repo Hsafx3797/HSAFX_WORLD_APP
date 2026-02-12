@@ -3,7 +3,17 @@
  * GET /api/admin/stream
  *
  * Server-Sent Events stream for real-time admin dashboard updates.
- * Streams: system metrics, active user count, error events, revenue ticks.
+ * Hybrid approach: event-bus driven (instant push) + periodic health poll (5s).
+ *
+ * Event channels relayed:
+ * - admin:errors   → SSE event 'admin-error'
+ * - admin:alerts   → SSE event 'admin-alert'
+ * - admin:metrics  → SSE event 'metrics'       (also pushed by periodic poll)
+ * - admin:jobs     → SSE event 'admin-job'
+ * - admin:webhooks → SSE event 'admin-webhook'
+ *
+ * Periodic (5s):
+ * - active-users, system-health, heartbeat
  *
  * Requires valid admin session. Auto-reconnects via EventSource on client.
  */
@@ -12,6 +22,17 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
 import { db, sql } from '@hsafx/db';
+import {
+  getEventBus,
+  PubSubChannels,
+  type PubSubEvent,
+  type AdminErrorEvent,
+  type AdminAlertEvent,
+  type AdminMetricsEvent,
+  type AdminJobEvent,
+  type AdminWebhookEvent,
+} from '@hsafx/shared';
+import { startMetricsCollector } from '@/lib/metrics-collector';
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -19,9 +40,12 @@ type SSEEventType =
   | 'connected'
   | 'heartbeat'
   | 'active-users'
-  | 'recent-errors'
-  | 'revenue-tick'
-  | 'system-health';
+  | 'system-health'
+  | 'admin-error'
+  | 'admin-alert'
+  | 'metrics'
+  | 'admin-job'
+  | 'admin-webhook';
 
 interface SSEMessage {
   event: SSEEventType;
@@ -50,26 +74,6 @@ async function fetchActiveUserCount(): Promise<number> {
     return Number(rows[0]?.count ?? 0);
   } catch {
     return 0;
-  }
-}
-
-async function fetchRecentErrors(): Promise<Array<{ message: string; timestamp: string }>> {
-  try {
-    // Uses audit_logs if it exists, otherwise returns empty
-    const result = await db.execute<{ action: string; createdAt: string }>(
-      sql`SELECT "action", "createdAt"
-          FROM "audit_logs"
-          WHERE "action" LIKE '%error%'
-          ORDER BY "createdAt" DESC
-          LIMIT 5`
-    );
-    const rows = Array.isArray(result) ? result : result.rows ?? [];
-    return rows.map((r) => ({
-      message: r.action,
-      timestamp: r.createdAt,
-    }));
-  } catch {
-    return [];
   }
 }
 
@@ -110,6 +114,9 @@ function encodeSSE(msg: SSEMessage): string {
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+// Start the centralized metrics collector (idempotent)
+startMetricsCollector();
+
 export async function GET(_request: NextRequest) {
   // Auth check
   const headersList = await headers();
@@ -121,64 +128,70 @@ export async function GET(_request: NextRequest) {
 
   let intervalId: ReturnType<typeof setInterval> | undefined;
   let controllerRef: ReadableStreamDefaultController | undefined;
+  const unsubscribers: Array<() => void> = [];
 
   const stream = new ReadableStream({
     start(controller) {
       controllerRef = controller;
       activeConnections.add(controller);
 
-      // Send initial connected event
       const encoder = new TextEncoder();
-      controller.enqueue(
-        encoder.encode(
-          encodeSSE({
-            event: 'connected',
-            data: { userId: session.user.id, timestamp: new Date().toISOString() },
-            id: '0',
-          })
-        )
-      );
-
       let msgId = 1;
 
-      // Send updates every 5 seconds
+      function send(event: SSEEventType, data: unknown): void {
+        try {
+          controller.enqueue(
+            encoder.encode(encodeSSE({ event, data, id: String(msgId++) }))
+          );
+        } catch {
+          cleanup();
+        }
+      }
+
+      // Send initial connected event
+      send('connected', {
+        userId: session.user.id,
+        timestamp: new Date().toISOString(),
+      });
+
+      // ── Event bus subscriptions (instant push) ──────────
+
+      const bus = getEventBus();
+
+      unsubscribers.push(
+        bus.subscribe(PubSubChannels.ADMIN_ERRORS, (e: PubSubEvent<AdminErrorEvent>) => {
+          send('admin-error', e.data);
+        }),
+        bus.subscribe(PubSubChannels.ADMIN_ALERTS, (e: PubSubEvent<AdminAlertEvent>) => {
+          send('admin-alert', e.data);
+        }),
+        bus.subscribe(PubSubChannels.ADMIN_METRICS, (e: PubSubEvent<AdminMetricsEvent>) => {
+          send('metrics', e.data);
+        }),
+        bus.subscribe(PubSubChannels.ADMIN_JOBS, (e: PubSubEvent<AdminJobEvent>) => {
+          send('admin-job', e.data);
+        }),
+        bus.subscribe(PubSubChannels.ADMIN_WEBHOOKS, (e: PubSubEvent<AdminWebhookEvent>) => {
+          send('admin-webhook', e.data);
+        }),
+      );
+
+      // ── Periodic health poll (5s fallback) ─────────────
+
       intervalId = setInterval(async () => {
         try {
-          const [activeUsers, recentErrors, health] =
-            await Promise.all([
-              fetchActiveUserCount(),
-              fetchRecentErrors(),
-              fetchSystemHealth(),
-            ]);
+          const [activeUsers, health] = await Promise.all([
+            fetchActiveUserCount(),
+            fetchSystemHealth(),
+          ]);
 
-          const messages: SSEMessage[] = [
-            {
-              event: 'active-users',
-              data: { count: activeUsers, connections: getActiveConnectionCount() },
-              id: String(msgId++),
-            },
-            {
-              event: 'recent-errors',
-              data: { errors: recentErrors },
-              id: String(msgId++),
-            },
-            {
-              event: 'system-health',
-              data: health,
-              id: String(msgId++),
-            },
-            {
-              event: 'heartbeat',
-              data: { ts: Date.now() },
-              id: String(msgId++),
-            },
-          ];
-
-          for (const msg of messages) {
-            controller.enqueue(encoder.encode(encodeSSE(msg)));
-          }
+          send('active-users', {
+            count: activeUsers,
+            connections: getActiveConnectionCount(),
+          });
+          send('system-health', health);
+          send('heartbeat', { ts: Date.now() });
         } catch {
-          // Client disconnected or error, will be cleaned up
           cleanup();
         }
       }, 5000);
@@ -191,6 +204,8 @@ export async function GET(_request: NextRequest) {
 
   function cleanup() {
     if (intervalId) clearInterval(intervalId);
+    for (const unsub of unsubscribers) unsub();
+    unsubscribers.length = 0;
     if (controllerRef) activeConnections.delete(controllerRef);
   }
 
@@ -199,7 +214,7 @@ export async function GET(_request: NextRequest) {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache, no-transform',
       Connection: 'keep-alive',
-      'X-Accel-Buffering': 'no', // Disable nginx buffering
+      'X-Accel-Buffering': 'no',
     },
   });
 }

@@ -113,3 +113,28 @@ export {
   type FlagContext,
   type FlagEvaluationResult,
 } from './flags';
+
+// Pub/Sub event system
+export {
+  PubSubChannels,
+  jobProgressChannel,
+  type PubSubChannel,
+  getEventBus,
+  EventBus,
+  publishAdminError,
+  publishAdminAlert,
+  publishAdminMetrics,
+  publishAdminJob,
+  publishAdminWebhook,
+  publishCacheInvalidation,
+  publishJobProgress,
+  type PubSubEvent,
+  type ChannelEventMap,
+  type AdminErrorEvent,
+  type AdminAlertEvent,
+  type AdminMetricsEvent,
+  type AdminJobEvent,
+  type AdminWebhookEvent,
+  type CacheInvalidationEvent,
+  type JobProgressEvent,
+} from './pubsub';

@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, plans, planLimits, featureFlags, eq } from '@hsafx/db';
 import { createLogger } from '@hsafx/shared/logger';
+import { publishAdminAlert } from '@hsafx/shared';
 
 const log = createLogger('admin-config');
 
@@ -170,6 +171,17 @@ export async function PATCH(request: NextRequest) {
           },
         } as typeof featureFlags.$inferInsert);
       }
+    }
+
+    // Publish real-time alert for maintenance mode changes
+    if (maintenance !== undefined) {
+      publishAdminAlert({
+        alertId: `alert_config_${Date.now()}`,
+        type: maintenance.enabled ? 'warning' : 'success',
+        title: maintenance.enabled ? 'Maintenance Mode Enabled' : 'Maintenance Mode Disabled',
+        message: maintenance.message || undefined,
+        severity: maintenance.enabled ? 'high' : 'medium',
+      });
     }
 
     return NextResponse.json({ message: 'Config updated successfully' });

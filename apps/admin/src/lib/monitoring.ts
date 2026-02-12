@@ -12,6 +12,7 @@
  */
 
 import { createLogger } from '@hsafx/shared/logger';
+import { publishAdminError } from '@hsafx/shared';
 
 const log = createLogger('admin-monitoring');
 
@@ -84,6 +85,20 @@ export async function captureException(
 ): Promise<void> {
   const err = error instanceof Error ? error : new Error(String(error));
   log.error(err.message, { extra: context?.extra });
+
+  // Publish to admin event bus for real-time SSE relay
+  const severity = context?.level === 'fatal' ? 'critical'
+    : context?.level === 'error' ? 'high'
+    : context?.level === 'warning' ? 'medium'
+    : 'low';
+  publishAdminError({
+    errorId: `err_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    message: err.message,
+    severity: severity as 'low' | 'medium' | 'high' | 'critical',
+    module: context?.tags?.module ?? context?.tags?.category ?? 'admin',
+    stack: err.stack,
+    metadata: context?.extra,
+  });
 
   const Sentry = await getSentry();
   if (Sentry) {

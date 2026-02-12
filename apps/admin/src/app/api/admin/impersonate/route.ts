@@ -16,6 +16,7 @@ import { auth } from '@/lib/auth';
 import { db, users, roles, userRoles, eq, sql } from '@hsafx/db';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { createLogger } from '@hsafx/shared/logger';
+import { publishAdminAlert } from '@hsafx/shared';
 
 const log = createLogger('admin-impersonate');
 
@@ -277,6 +278,15 @@ export async function POST(request: NextRequest) {
       reason: reason.trim(),
     });
 
+    // 11. Publish security alert for real-time dashboard
+    publishAdminAlert({
+      alertId: `alert_imp_${Date.now()}`,
+      type: 'warning',
+      title: 'User Impersonation Started',
+      message: `Admin ${session.user.email} started impersonating ${displayName} (${targetRows[0]!.email}). Reason: ${reason.trim()}`,
+      severity: 'high',
+    });
+
     return response;
   } catch (error) {
     log.error('POST error', { error });
@@ -316,6 +326,15 @@ export async function DELETE() {
 
     // Audit log
     await logAuditEvent(session.user.id, 'impersonation:stop', targetUserId);
+
+    // Publish security alert
+    publishAdminAlert({
+      alertId: `alert_imp_stop_${Date.now()}`,
+      type: 'info',
+      title: 'User Impersonation Ended',
+      message: `Admin ${session.user.email} stopped impersonating user ${targetUserId}`,
+      severity: 'medium',
+    });
 
     return response;
   } catch (error) {
