@@ -12,6 +12,9 @@ import { auth } from '@/lib/auth';
 import { db, users, roles, userRoles, eq, and, sql } from '@hsafx/db';
 import type { AdminRole, AdminSession } from '@/lib/types';
 import { createHmac } from 'crypto';
+import { createLogger } from '@hsafx/shared/logger';
+
+const log = createLogger('admin-session');
 
 /** Map DB role names → admin panel roles. Extend as roles are seeded. */
 const ADMIN_ROLE_MAP: Record<string, AdminRole> = {
@@ -113,7 +116,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ session: adminSession });
   } catch (error) {
-    console.error('[Admin Session] Error:', error);
+    log.error('Session error', { error: String(error) });
     return NextResponse.json({ session: null, error: 'Internal error' }, { status: 500 });
   }
 }

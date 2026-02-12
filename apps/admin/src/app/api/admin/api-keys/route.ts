@@ -6,6 +6,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db, apiKeys, users, eq, desc, sql } from '@hsafx/db';
+import { createLogger } from '@hsafx/shared/logger';
+
+const log = createLogger('admin-api-keys');
 
 export async function GET(request: NextRequest) {
   try {
@@ -65,7 +68,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('[API Keys] GET error:', error);
+    log.error('GET error', { error: String(error) });
     return NextResponse.json({ success: false, error: { code: 'INTERNAL', message: 'Failed to fetch API keys' } }, { status: 500 });
   }
 }
@@ -101,7 +104,7 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({ success: true, data: updated });
   } catch (error) {
-    console.error('[API Keys] PATCH error:', error);
+    log.error('PATCH error', { error: String(error) });
     return NextResponse.json({ success: false, error: { code: 'INTERNAL', message: 'Failed to update API key' } }, { status: 500 });
   }
 }

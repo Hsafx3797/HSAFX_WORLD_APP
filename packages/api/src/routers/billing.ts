@@ -19,6 +19,9 @@ import {
 import { TRPCError } from '@trpc/server';
 import { getPolar } from '../lib/polar';
 import { getStripe } from '../lib/stripe';
+import { createLogger } from '@hsafx/shared/logger';
+
+const log = createLogger('billing');
 
 export const billingRouter = router({
   // ─── Plans ────────────────────────────────────────────────
@@ -152,7 +155,7 @@ export const billingRouter = router({
 
         return { checkoutUrl: checkout.url };
       } catch (err) {
-        console.error('[billing.createCheckout] Polar checkout failed:', err);
+        log.error('Polar checkout failed', { planSlug: input.planSlug, error: String(err) });
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to create checkout session. Please try again.',
@@ -195,7 +198,7 @@ export const billingRouter = router({
           },
         });
       } catch (err) {
-        console.error('[billing.cancelSubscription] Polar cancel failed:', err);
+        log.error('Polar cancel failed', { subscriptionId: subscription.id, error: String(err) });
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to cancel subscription with payment provider. Please try again.',
@@ -362,7 +365,7 @@ export const billingRouter = router({
           checkoutUrl: session.url,
         };
       } catch (err) {
-        console.error('[billing.purchaseCoinPack] Stripe checkout failed:', err);
+        log.error('Stripe checkout failed', { packId: input.packId, error: String(err) });
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to create checkout session. Please try again.',
@@ -601,70 +604,69 @@ export const billingRouter = router({
 
   claimDailyBonus: protectedProcedure.mutation(async ({ ctx }) => {
     const userId = ctx.user!.id;
-
-    // Check if user already claimed today (UTC day boundary)
-    const todayStart = new Date();
-    todayStart.setUTCHours(0, 0, 0, 0);
-
-    const [existing] = await ctx.db
-      .select({ id: coinTransactions.id })
-      .from(coinTransactions)
-      .where(
-        and(
-          eq(coinTransactions.userId, userId),
-          eq(coinTransactions.type, 'grant'),
-          eq(coinTransactions.reason, 'daily_bonus'),
-          gte(coinTransactions.createdAt, todayStart),
-        ),
-      )
-      .limit(1);
-
-    if (existing) {
-      throw new TRPCError({
-        code: 'TOO_MANY_REQUESTS',
-        message: 'Daily bonus already claimed today. Come back tomorrow!',
-      });
-    }
-
-    // Daily bonus amount (configurable later via system config)
     const DAILY_BONUS_AMOUNT = 10;
 
-    // Get or create wallet
-    let [wallet] = await ctx.db
-      .select()
-      .from(userCoinWallets)
-      .where(eq(userCoinWallets.userId, userId))
-      .limit(1);
+    return await ctx.db.transaction(async (tx) => {
+      // Lock the wallet row first to serialize concurrent claims
+      let [wallet] = await tx
+        .select()
+        .from(userCoinWallets)
+        .where(eq(userCoinWallets.userId, userId))
+        .for('update')
+        .limit(1);
 
-    if (!wallet) {
-      [wallet] = await ctx.db
-        .insert(userCoinWallets)
-        .values({ userId, balance: 0, lifetimeEarned: 0, lifetimeSpent: 0 })
-        .returning();
-    }
+      if (!wallet) {
+        [wallet] = await tx
+          .insert(userCoinWallets)
+          .values({ userId, balance: 0, lifetimeEarned: 0, lifetimeSpent: 0 })
+          .returning();
+      }
 
-    const newBalance = wallet!.balance + DAILY_BONUS_AMOUNT;
+      // Check if user already claimed today (UTC day boundary)
+      const todayStart = new Date();
+      todayStart.setUTCHours(0, 0, 0, 0);
 
-    // Insert transaction
-    await ctx.db.insert(coinTransactions).values({
-      userId,
-      amount: DAILY_BONUS_AMOUNT,
-      type: 'grant',
-      reason: 'daily_bonus',
-      balanceAfter: newBalance,
-      metadata: { source: 'daily_bonus' },
+      const [existing] = await tx
+        .select({ id: coinTransactions.id })
+        .from(coinTransactions)
+        .where(
+          and(
+            eq(coinTransactions.userId, userId),
+            eq(coinTransactions.type, 'grant'),
+            eq(coinTransactions.reason, 'daily_bonus'),
+            gte(coinTransactions.createdAt, todayStart),
+          ),
+        )
+        .limit(1);
+
+      if (existing) {
+        throw new TRPCError({
+          code: 'TOO_MANY_REQUESTS',
+          message: 'Daily bonus already claimed today. Come back tomorrow!',
+        });
+      }
+
+      const newBalance = wallet!.balance + DAILY_BONUS_AMOUNT;
+
+      await tx.insert(coinTransactions).values({
+        userId,
+        amount: DAILY_BONUS_AMOUNT,
+        type: 'grant',
+        reason: 'daily_bonus',
+        balanceAfter: newBalance,
+        metadata: { source: 'daily_bonus' },
+      });
+
+      await tx
+        .update(userCoinWallets)
+        .set({
+          balance: newBalance,
+          lifetimeEarned: wallet!.lifetimeEarned + DAILY_BONUS_AMOUNT,
+          updatedAt: new Date(),
+        })
+        .where(eq(userCoinWallets.userId, userId));
+
+      return { claimed: true, amount: DAILY_BONUS_AMOUNT, newBalance };
     });
-
-    // Update wallet
-    await ctx.db
-      .update(userCoinWallets)
-      .set({
-        balance: newBalance,
-        lifetimeEarned: wallet!.lifetimeEarned + DAILY_BONUS_AMOUNT,
-        updatedAt: new Date(),
-      })
-      .where(eq(userCoinWallets.userId, userId));
-
-    return { claimed: true, amount: DAILY_BONUS_AMOUNT, newBalance };
   }),
 });

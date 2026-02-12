@@ -21,6 +21,9 @@
 import { db, anonymousUsage, eq, and, sql } from '@hsafx/db';
 import { getRedis, keys, TTL } from '@/lib/redis';
 import { createHash } from 'crypto';
+import { createLogger } from '@hsafx/shared/logger';
+
+const log = createLogger('anon-usage');
 
 // ─── Tool Class Configuration ─────────────────────────────────
 
@@ -170,7 +173,7 @@ async function recordUsage(
     });
   } catch {
     // DB write failure is non-critical — Redis is source of truth for limits
-    console.warn('[anon-usage] Failed to persist usage to DB');
+    log.warn('Failed to persist usage to DB', { fingerprint, toolId });
   }
 
   return newCount;

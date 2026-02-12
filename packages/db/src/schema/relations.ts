@@ -27,8 +27,9 @@ import {
   toolCoinCosts,
   planFeatures,
   planCoinRules,
-  adRewardTransactions,
-  userAdDailyCaps,
+  loginRewardClaims,
+  userDailyRewardCaps,
+  processedWebhooks,
 } from './billing';
 import {
   toolCategories,
@@ -91,8 +92,8 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   coinTransactions: many(coinTransactions),
   invoices: many(invoices),
   payments: many(payments),
-  adRewardTransactions: many(adRewardTransactions),
-  userAdDailyCaps: many(userAdDailyCaps),
+  loginRewardClaims: many(loginRewardClaims),
+  userDailyRewardCaps: many(userDailyRewardCaps),
 
   // 1:M tools
   toolExecutions: many(toolExecutions),
@@ -289,16 +290,20 @@ export const toolCoinCostsRelations = relations(toolCoinCosts, ({ one }) => ({
   }),
 }));
 
-export const adRewardTransactionsRelations = relations(adRewardTransactions, ({ one }) => ({
+export const loginRewardClaimsRelations = relations(loginRewardClaims, ({ one }) => ({
   user: one(users, {
-    fields: [adRewardTransactions.userId],
+    fields: [loginRewardClaims.userId],
     references: [users.id],
+  }),
+  coinTransaction: one(coinTransactions, {
+    fields: [loginRewardClaims.coinTransactionId],
+    references: [coinTransactions.id],
   }),
 }));
 
-export const userAdDailyCapsRelations = relations(userAdDailyCaps, ({ one }) => ({
+export const userDailyRewardCapsRelations = relations(userDailyRewardCaps, ({ one }) => ({
   user: one(users, {
-    fields: [userAdDailyCaps.userId],
+    fields: [userDailyRewardCaps.userId],
     references: [users.id],
   }),
 }));

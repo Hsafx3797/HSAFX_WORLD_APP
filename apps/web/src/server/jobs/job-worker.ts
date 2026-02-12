@@ -6,10 +6,16 @@
  *   - WASM / Node.js tools → @hsafx/tool-execution (inline)
  *   - Native tools (media)  → FastAPI /internal/execute (async)
  *   - Python tools (scraper) → FastAPI /internal/execute (async)
+ *
+ * Billing: Calls confirmReservation on success, releaseReservation on failure.
  */
 
 import { updateJob, setJobResult } from './job-manager';
 import type { Job, JobResult } from './types';
+import {
+  confirmReservation,
+  releaseReservation,
+} from '../limits/coin-service';
 
 // ─── Types ─────────────────────────────────────────────────────
 
@@ -60,7 +66,13 @@ export async function processJob(job: Job): Promise<void> {
       completedAt: new Date().toISOString(),
     });
 
-    // 5. Update DB execution record (fire-and-forget)
+    // 5. Confirm coin reservation (coins are now permanently deducted)
+    const reservationId = job.options?.reservationId as string | undefined;
+    if (reservationId) {
+      await confirmReservation(reservationId);
+    }
+
+    // 6. Update DB execution record (fire-and-forget)
     const { db, sql } = await import('@hsafx/db');
     const executionTime = Date.now() - startTime;
     db.execute(
@@ -75,6 +87,12 @@ export async function processJob(job: Job): Promise<void> {
   } catch (err) {
     const errorMessage =
       err instanceof Error ? err.message : 'Unknown execution error';
+
+    // Release coin reservation so user is not charged for a failed job
+    const failedReservationId = job.options?.reservationId as string | undefined;
+    if (failedReservationId) {
+      await releaseReservation(failedReservationId).catch(() => {});
+    }
 
     await updateJob(job.id, {
       status: 'failed',

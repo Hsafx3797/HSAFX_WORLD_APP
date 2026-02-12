@@ -38,7 +38,7 @@ export function validatePositiveAmount(amount: number): BillingResult {
 export function validateTransactionType(type: string): type is TransactionType {
   const validTypes: TransactionType[] = [
     'grant', 'purchase', 'spend', 'refund', 
-    'adjustment', 'ad_reward', 'daily_reward', 'referral'
+    'adjustment', 'reward', 'referral'
   ];
   return validTypes.includes(type as TransactionType);
 }

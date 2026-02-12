@@ -11,8 +11,7 @@ export type {
   ToolCostConfig,
   CoinPack,
   BillingResult,
-  AdRewardConfig,
-  DailyRewardConfig,
+  LoginRewardConfig,
   UsageRecord,
 } from './types';
 
@@ -28,14 +27,11 @@ export {
 // Coin packs
 export {
   COIN_PACKS,
-  AD_REWARD_CONFIG,
-  DAILY_REWARD_CONFIG,
+  LOGIN_REWARD_CONFIG,
   getCoinPack,
   getEffectiveCoins,
   getCostPerCoin,
   getBestValuePack,
-  calculateDailyReward,
-  canWatchAd,
 } from './coin-packs';
 
 // Validation

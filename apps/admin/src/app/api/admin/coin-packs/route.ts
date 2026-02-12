@@ -8,6 +8,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db, coinPacks, eq } from '@hsafx/db';
+import { createLogger } from '@hsafx/shared/logger';
+
+const log = createLogger('admin-coin-packs');
 
 export async function GET() {
   try {
@@ -18,7 +21,7 @@ export async function GET() {
 
     return NextResponse.json({ success: true, data: packs });
   } catch (error) {
-    console.error('[CoinPacks API] GET error:', error);
+    log.error('GET error', { error: String(error) });
     return NextResponse.json({ success: false, error: { code: 'INTERNAL', message: 'Failed to fetch coin packs' } }, { status: 500 });
   }
 }
@@ -46,7 +49,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, data: pack }, { status: 201 });
   } catch (error) {
-    console.error('[CoinPacks API] POST error:', error);
+    log.error('POST error', { error: String(error) });
     return NextResponse.json({ success: false, error: { code: 'INTERNAL', message: 'Failed to create coin pack' } }, { status: 500 });
   }
 }
@@ -72,7 +75,7 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({ success: true, data: updated });
   } catch (error) {
-    console.error('[CoinPacks API] PATCH error:', error);
+    log.error('PATCH error', { error: String(error) });
     return NextResponse.json({ success: false, error: { code: 'INTERNAL', message: 'Failed to update coin pack' } }, { status: 500 });
   }
 }
@@ -90,7 +93,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('[CoinPacks API] DELETE error:', error);
+    log.error('DELETE error', { error: String(error) });
     return NextResponse.json({ success: false, error: { code: 'INTERNAL', message: 'Failed to delete coin pack' } }, { status: 500 });
   }
 }

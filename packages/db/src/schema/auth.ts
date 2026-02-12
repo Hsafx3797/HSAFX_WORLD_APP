@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, varchar, timestamp, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, varchar, timestamp, boolean, integer, index, uniqueIndex } from 'drizzle-orm/pg-core';
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
@@ -18,7 +18,10 @@ export const sessions = pgTable('sessions', {
   ipAddress: text('ip_address'),
   userAgent: text('user_agent'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-});
+}, (t) => [
+  index('sess_user_id_idx').on(t.userId),
+  index('sess_expires_idx').on(t.expiresAt),
+]);
 
 /**
  * OAuth Connections - External provider links
@@ -36,7 +39,10 @@ export const oauthConnections = pgTable('oauth_connections', {
   expiresAt: timestamp('expires_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
-});
+}, (t) => [
+  uniqueIndex('oauth_user_provider_idx').on(t.userId, t.provider),
+  uniqueIndex('oauth_provider_uid_idx').on(t.provider, t.providerUserId),
+]);
 
 /**
  * Roles Table - RBAC role definitions
@@ -46,7 +52,13 @@ export const roles = pgTable('roles', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: text('name').notNull().unique(), // 'admin', 'moderator', 'user', 'guest'
   description: text('description'),
+  roleType: varchar('role_type', { length: 20 }).notNull().default('custom'), // 'system' | 'custom'
+  isDefault: boolean('is_default').notNull().default(false),
+  isActive: boolean('is_active').notNull().default(true),
+  sortOrder: integer('sort_order').notNull().default(0),
   createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  deletedAt: timestamp('deleted_at'),
 });
 
 /**
@@ -62,7 +74,9 @@ export const userRoles = pgTable('user_roles', {
     .notNull()
     .references(() => roles.id, { onDelete: 'cascade' }),
   assignedAt: timestamp('assigned_at').notNull().defaultNow(),
-});
+}, (t) => [
+  uniqueIndex('ur_user_role_idx').on(t.userId, t.roleId),
+]);
 
 /**
  * Permissions Table - Granular permission definitions
@@ -89,7 +103,9 @@ export const rolePermissions = pgTable('role_permissions', {
     .notNull()
     .references(() => permissions.id, { onDelete: 'cascade' }),
   grantedAt: timestamp('granted_at').notNull().defaultNow(),
-});
+}, (t) => [
+  uniqueIndex('rp_role_perm_idx').on(t.roleId, t.permissionId),
+]);
 
 /**
  * Activity Logs - Audit trail
@@ -105,7 +121,11 @@ export const activityLogs = pgTable('activity_logs', {
   ipAddress: text('ip_address'),
   userAgent: text('user_agent'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-});
+}, (t) => [
+  index('al_user_id_idx').on(t.userId),
+  index('al_action_idx').on(t.action),
+  index('al_created_at_idx').on(t.createdAt),
+]);
 
 /**
  * Password Reset Tokens - Time-limited tokens for password recovery

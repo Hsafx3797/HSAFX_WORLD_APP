@@ -7,6 +7,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db, users, coinTransactions, tools, eq, and, or, sql, desc, asc } from '@hsafx/db';
+import { createLogger } from '@hsafx/shared/logger';
+
+const log = createLogger('admin-billing-transactions');
 
 export async function GET(request: NextRequest) {
   try {
@@ -24,7 +27,7 @@ export async function GET(request: NextRequest) {
     
     // Type filter
     if (type) {
-      conditions.push(eq(coinTransactions.type, type));
+      conditions.push(eq(coinTransactions.type, type as typeof coinTransactions.type.enumValues[number]));
     }
 
     // Build where clause
@@ -129,7 +132,7 @@ export async function GET(request: NextRequest) {
       totalPages,
     });
   } catch (error) {
-    console.error('Failed to fetch transactions:', error);
+    log.error('Failed to fetch transactions', { error: String(error) });
     return NextResponse.json(
       { code: 'FETCH_ERROR', message: 'Failed to fetch transactions' },
       { status: 500 }

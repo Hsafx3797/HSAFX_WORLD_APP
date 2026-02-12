@@ -8,6 +8,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db, plans, planLimits, featureFlags, eq } from '@hsafx/db';
+import { createLogger } from '@hsafx/shared/logger';
+
+const log = createLogger('admin-config');
 
 interface SystemConfig {
   maintenance: {
@@ -121,7 +124,7 @@ export async function GET() {
 
     return NextResponse.json(config);
   } catch (error) {
-    console.error('Failed to fetch config:', error);
+    log.error('Failed to fetch config', { error: String(error) });
     return NextResponse.json(
       { code: 'FETCH_ERROR', message: 'Failed to fetch config' },
       { status: 500 }
@@ -171,7 +174,7 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({ message: 'Config updated successfully' });
   } catch (error) {
-    console.error('Failed to update config:', error);
+    log.error('Failed to update config', { error: String(error) });
     return NextResponse.json(
       { code: 'UPDATE_ERROR', message: 'Failed to update config' },
       { status: 500 }

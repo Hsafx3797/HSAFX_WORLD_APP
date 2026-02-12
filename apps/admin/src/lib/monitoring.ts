@@ -11,6 +11,10 @@
  * Falls back to console logging when Sentry is not configured.
  */
 
+import { createLogger } from '@hsafx/shared/logger';
+
+const log = createLogger('admin-monitoring');
+
 // ─── Types ──────────────────────────────────────────────────
 
 type SeverityLevel = 'fatal' | 'error' | 'warning' | 'info' | 'debug';
@@ -44,13 +48,13 @@ export async function initMonitoring(): Promise<void> {
 
   const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
   if (!dsn) {
-    console.info('[admin-monitoring] Sentry DSN not configured — using console fallback');
+    log.info('Sentry DSN not configured — using console fallback');
     return;
   }
 
   const Sentry = await getSentry();
   if (!Sentry) {
-    console.warn('[admin-monitoring] @sentry/nextjs not installed — using console fallback');
+    log.warn('@sentry/nextjs not installed — using console fallback');
     return;
   }
 
@@ -69,7 +73,7 @@ export async function initMonitoring(): Promise<void> {
     ],
   });
 
-  console.info('[admin-monitoring] Sentry initialized');
+  log.info('Sentry initialized');
 }
 
 // ─── Error Capture ──────────────────────────────────────────
@@ -79,7 +83,7 @@ export async function captureException(
   context?: ErrorContext,
 ): Promise<void> {
   const err = error instanceof Error ? error : new Error(String(error));
-  console.error('[admin-monitoring]', err.message, context?.extra ?? '');
+  log.error(err.message, { extra: context?.extra });
 
   const Sentry = await getSentry();
   if (Sentry) {
@@ -104,10 +108,13 @@ export async function captureMessage(
   context?: ErrorContext,
 ): Promise<void> {
   const level = context?.level ?? 'info';
-  const logFn = level === 'error' || level === 'fatal' ? console.error
-    : level === 'warning' ? console.warn
-    : console.info;
-  logFn(`[admin-monitoring] ${message}`, context?.extra ?? '');
+  if (level === 'error' || level === 'fatal') {
+    log.error(message, { extra: context?.extra });
+  } else if (level === 'warning') {
+    log.warn(message, { extra: context?.extra });
+  } else {
+    log.info(message, { extra: context?.extra });
+  }
 
   const Sentry = await getSentry();
   if (Sentry) {
@@ -133,7 +140,7 @@ export async function logAdminAction(
   action: string,
   details: Record<string, unknown>,
 ): Promise<void> {
-  console.info(`[admin-action] ${action}`, details);
+  log.info(`Admin action: ${action}`, details);
 
   await captureMessage(`Admin action: ${action}`, {
     level: 'info',

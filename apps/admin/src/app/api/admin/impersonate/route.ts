@@ -15,12 +15,32 @@ import { headers, cookies } from 'next/headers';
 import { auth } from '@/lib/auth';
 import { db, users, roles, userRoles, eq, sql } from '@hsafx/db';
 import { createHmac, timingSafeEqual } from 'crypto';
+import { createLogger } from '@hsafx/shared/logger';
+
+const log = createLogger('admin-impersonate');
 
 // ── Constants ──────────────────────────────────────────────
 
 const IMPERSONATION_COOKIE = 'admin_impersonation';
 const IMPERSONATION_TTL_SECONDS = 3600; // 1 hour
 const ALLOWED_ROLES = new Set(['super_admin', 'admin']);
+
+/**
+ * Actions blocked during impersonation sessions (H-06).
+ * Admin API routes should call `getImpersonationGuard()` and check
+ * if the current action is restricted.
+ */
+const RESTRICTED_ACTIONS = new Set([
+  'change_password',
+  'change_email',
+  'delete_account',
+  'purchase_coins',
+  'create_refund',
+  'modify_subscription',
+  'update_billing',
+  'manage_api_keys',
+  'impersonate', // cannot nest impersonation
+]);
 
 // ── Helpers ────────────────────────────────────────────────
 
@@ -119,8 +139,36 @@ async function logAuditEvent(
     );
   } catch {
     // Audit table may not exist yet; silently skip
-    console.warn('[impersonate] Failed to write audit log');
+    log.warn('Failed to write audit log');
   }
+}
+
+/**
+ * Check if the current request is an impersonation session and whether
+ * a given action is restricted. Returns null if not impersonating or
+ * if the action is allowed. Returns a NextResponse 403 if blocked.
+ */
+async function getImpersonationGuard(
+  request: NextRequest,
+  action: string,
+): Promise<NextResponse | null> {
+  const cookieValue = request.cookies.get(IMPERSONATION_COOKIE)?.value;
+  if (!cookieValue) return null; // Not impersonating — no restriction
+
+  const parsed = parseImpersonationToken(cookieValue);
+  if (!parsed) return null; // Invalid cookie — treat as not impersonating
+
+  if (RESTRICTED_ACTIONS.has(action)) {
+    return NextResponse.json(
+      {
+        error: `Action '${action}' is not allowed during impersonation sessions`,
+        code: 'IMPERSONATION_RESTRICTED',
+      },
+      { status: 403 },
+    );
+  }
+
+  return null; // Action is allowed during impersonation
 }
 
 // ── POST: Start Impersonation ──────────────────────────────
@@ -151,13 +199,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. Parse target user
+    // 4. Parse target user and reason
     const body = await request.json().catch(() => ({}));
     const targetUserId = (body as Record<string, unknown>).userId as string | undefined;
+    const reason = (body as Record<string, unknown>).reason as string | undefined;
 
     if (!targetUserId || typeof targetUserId !== 'string') {
       return NextResponse.json(
         { error: 'Missing userId in request body' },
+        { status: 400 }
+      );
+    }
+
+    if (!reason || typeof reason !== 'string' || reason.trim().length < 10) {
+      return NextResponse.json(
+        { error: 'A reason (min 10 characters) is required for impersonation' },
         { status: 400 }
       );
     }
@@ -213,16 +269,17 @@ export async function POST(request: NextRequest) {
       path: '/',
     });
 
-    // 10. Audit log
+    // 10. Audit log (includes mandatory reason)
     await logAuditEvent(session.user.id, 'impersonation:start', targetUserId, {
       adminRole: role,
       targetEmail: targetRows[0]!.email,
       targetName: displayName,
+      reason: reason.trim(),
     });
 
     return response;
   } catch (error) {
-    console.error('[impersonate] POST error:', error);
+    log.error('POST error', { error });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -262,7 +319,7 @@ export async function DELETE() {
 
     return response;
   } catch (error) {
-    console.error('[impersonate] DELETE error:', error);
+    log.error('DELETE error', { error });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -311,7 +368,7 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error('[impersonate] GET error:', error);
+    log.error('GET error', { error });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -577,15 +577,15 @@ If Custom:
 
 Items to work on after initial production launch:
 
-| Priority | Item | Effort |
-|----------|------|--------|
-| P1 | WASM coverage expansion (50+ more text tools) | 40-60h |
-| P2 | Full observability pipeline (Grafana/Datadog) | 20-30h |
-| P3 | gRPC enterprise API | 30-40h |
-| P4 | LibreOffice in Docker for Office formats | 4-6h |
-| P5 | OpenAPI auto-generation | 4-8h |
-| P6 | Advanced Monaco features (diff, AST) | 20-30h |
-| P7 | IP whitelist for admin | 4-8h |
+| Priority | Item                                          | Effort |
+|----------|-----------------------------------------------|--------|
+| P1       | WASM coverage expansion (50+ more text tools) | 40-60h |
+| P2       | Full observability pipeline (Grafana/Datadog) | 20-30h |
+| P3       | gRPC enterprise API                           | 30-40h |
+| P4       | LibreOffice in Docker for Office formats      | 4-6h   |
+| P5       | OpenAPI auto-generation                       | 4-8h   |
+| P6       | Advanced Monaco features (diff, AST)          | 20-30h |
+| P7       | IP whitelist for admin                        | 4-8h   |
 
 ---
 
@@ -593,13 +593,13 @@ Items to work on after initial production launch:
 
 These decisions should be made before starting the relevant sprint:
 
-| Decision | Options | Deadline | Recommendation |
-|----------|---------|----------|----------------|
-| **Deployment platform** | A: Kubernetes / B: Vercel+Railway | Before Sprint 2 | **B** — faster, cheaper for initial launch |
-| **Background jobs** | A: Inngest / B: Custom | Before Sprint 4 | **A** if complex workflows needed; **B** if current jobs are simple |
-| **Email provider** | Resend / SendGrid / SES | Before Sprint 5 | **Resend** — simplest, React Email support |
-| **Search engine** | Meilisearch / Algolia / Typesense | Before Sprint 4 | **Meilisearch** — matches planning, self-hostable |
-| **Admin real-time** | WebSocket / SSE | Before Sprint 5 | **SSE** — simpler, sufficient for one-way data |
+| Decision                | Options                           | Deadline        | Recommendation                                                      |
+|-------------------------|-----------------------------------|-----------------|---------------------------------------------------------------------|
+| **Deployment platform** | A: Kubernetes / B: Vercel+Railway | Before Sprint 2 | **B** — faster, cheaper for initial launch                          |
+| **Background jobs**     | A: Inngest / B: Custom            | Before Sprint 4 | **A** if complex workflows needed; **B** if current jobs are simple |
+| **Email provider**      | Resend / SendGrid / SES           | Before Sprint 5 | **Resend** — simplest, React Email support                          |
+| **Search engine**       | Meilisearch / Algolia / Typesense | Before Sprint 4 | **Meilisearch** — matches planning, self-hostable                   |
+| **Admin real-time**     | WebSocket / SSE                   | Before Sprint 5 | **SSE** — simpler, sufficient for one-way data                      |
 
 ---
 
@@ -616,13 +616,13 @@ Each sprint is considered complete when:
 
 ### Phase Completion Milestones
 
-| Milestone | After Sprint | Meaning |
-|-----------|-------------|---------|
-| **Alpha** | Sprint 0 | Code in version control, CI running |
-| **Closed Beta** | Sprint 3 | Core flows work E2E in staging |
-| **Open Beta** | Sprint 5 | All features implemented |
-| **Release Candidate** | Sprint 6 | Testing complete, quality verified |
-| **v1.0.0** | Sprint 7 | Production launch |
+| Milestone             | After Sprint | Meaning                             |
+|-----------------------|--------------|-------------------------------------|
+| **Alpha**             | Sprint 0     | Code in version control, CI running |
+| **Closed Beta**       | Sprint 3     | Core flows work E2E in staging      |
+| **Open Beta**         | Sprint 5     | All features implemented            |
+| **Release Candidate** | Sprint 6     | Testing complete, quality verified  |
+| **v1.0.0**            | Sprint 7     | Production launch                   |
 
 ---
 

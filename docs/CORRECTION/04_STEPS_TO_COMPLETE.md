@@ -102,15 +102,15 @@
 | 32 | Complete ~15 stub tool handlers | P1-14 | 12 |
 | 33 | Enable FastAPI job processing (uncomment + wire) | P1-15 | 3 |
 
-### Sprint 9B — BullMQ Queue (16 hours)
+### Sprint 9B — Simple Job Queue (16 hours)
 
 | # | Task | Ref | Hours |
 |---|------|-----|-------|
-| 34 | Install BullMQ + create queue infrastructure | P2-01 | 8 |
+| 34 | Create simple Redis-backed job queue with priority support | P2-01 | 8 |
 | 35 | Migrate inline job processing to queue-based | P2-01 | 4 |
-| 36 | Add dead-letter queue + retry logic | P2-01 | 4 |
+| 36 | Add dead-letter handling + retry logic | P2-01 | 4 |
 
-**Exit criteria:** All tools execute (no stubs). FastAPI processes Python jobs. BullMQ handles async dispatch.
+**Exit criteria:** All tools execute (no stubs). FastAPI processes Python jobs. Simple queue handles async dispatch with retries.
 
 ---
 
@@ -137,15 +137,15 @@
 ---
 
 ## PHASE 6: TABLE/NAMING ALIGNMENT + REMAINING (P2 + P3)
-**Duration: ~38 hours | Sprint 11**
+**Duration: ~26 hours | Sprint 11**
 
 | # | Task | Ref | Hours |
 |---|------|-----|-------|
-| 44 | Resolve table/column naming: update planning OR migrate code | P2-08 | 8 |
-| 45 | Add Meilisearch for fuzzy search | P2-09 | 12 |
+| 44 | Resolve table/column naming: update planning docs to match code | P2-08 | 4 |
+| 45 | ~~Add Meilisearch for fuzzy search~~ **SKIPPED** (D-04: too expensive for MVP) | P2-09 | 0 |
 | 46 | Add admin billing management | P2-10 | 12 |
 | 47 | Stripe dispute + payment failed handlers | P2-11 | 4 |
-| 48 | Remove `inngest_job_id`, add missing `roles` columns | P3-03, P3-04 | 2 |
+| 48 | Remove `inngest_job_id`, add missing `roles` columns, build login reward system | P3-03, P3-04 | 6 |
 
 ---
 
@@ -183,25 +183,21 @@
 
 ---
 
-## DECISION POINTS NEEDED
+## DECISION POINTS — ALL RESOLVED
 
-### D-01: Table/Column Naming
-**Question:** Update planning docs to match current code names, OR rename tables/columns in code to match planning DBML?
-- Option A: Update docs (4 hours, no migration risk)
-- Option B: Rename in code (8+ hours, requires data migration)
+### D-01: Deployment Strategy ✅
+**Decision:** Self-hosted VPS. Single VPS initially, split to separate VPS per app (web, admin, API) later as needed.
 
-### D-02: Provider — Polar vs Stripe
-**Question:** Planning says Stripe. Code uses Polar. Which is the intended payment provider going forward?
-- If Polar: Update planning docs
-- If Stripe: Rewrite payment integration
+### D-02: Background Jobs ✅
+**Decision:** Simple queue system. No BullMQ, no Inngest. Custom lightweight queue with Redis.
+**Impact:** Sprint 9B (BullMQ) replaced with simple queue implementation. Dead-letter + retry logic stays but uses simple custom approach.
 
-### D-03: Facebook OAuth
-**Question:** Keep or remove? Not in planning but already configured.
+### D-03: Email Provider ✅
+**Decision:** Resend + Self SMTP dual provider. Admin-configurable from panel (NOT hardcoded). Provider switching without code changes.
 
-### D-04: Money Storage
-**Question:** Keep `decimal(10,2)` or migrate to `bigint` cents per planning?
-- Decimal is simpler but riskier for math
-- Bigint cents is planning standard
+### D-04: Search Engine ✅
+**Decision:** Skip for MVP (too expensive). No Meilisearch, no Algolia. PostgreSQL `tsvector` for basic FTS is sufficient for now.
+**Impact:** Phase 6 task 45 (Meilisearch) removed. Phase 3 Sprint 8B task 28-30 (PostgreSQL FTS) still applies.
 
-### D-05: Session Cookie
-**Question:** When to rename `better-auth.session_token` → `__hsafx_session`? This will log out ALL users.
+### D-05: Admin Real-time ✅
+**Decision:** Both WebSocket AND SSE depending on situation. SSE for dashboard metrics/notifications, WebSocket for bidirectional admin-to-user communication.

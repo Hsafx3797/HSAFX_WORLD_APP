@@ -10,6 +10,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db, featureFlags, eq, asc } from '@hsafx/db';
+import { createLogger } from '@hsafx/shared/logger';
+
+const log = createLogger('admin-feature-flags');
 
 export async function GET() {
   try {
@@ -48,7 +51,7 @@ export async function GET() {
 
     return NextResponse.json(formattedFlags);
   } catch (error) {
-    console.error('Failed to fetch feature flags:', error);
+    log.error('Failed to fetch feature flags', { error: String(error) });
     return NextResponse.json(
       { code: 'FETCH_ERROR', message: 'Failed to fetch feature flags' },
       { status: 500 }
@@ -110,7 +113,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error('Failed to create feature flag:', error);
+    log.error('Failed to create feature flag', { error: String(error) });
     return NextResponse.json(
       { code: 'CREATE_ERROR', message: 'Failed to create feature flag' },
       { status: 500 }
@@ -179,7 +182,7 @@ export async function PATCH(request: NextRequest) {
       updatedAt: updated.updatedAt?.toISOString(),
     });
   } catch (error) {
-    console.error('Failed to update feature flag:', error);
+    log.error('Failed to update feature flag', { error: String(error) });
     return NextResponse.json(
       { code: 'UPDATE_ERROR', message: 'Failed to update feature flag' },
       { status: 500 }
@@ -219,7 +222,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true, id: deleted[0].id, key: deleted[0].name });
   } catch (error) {
-    console.error('Failed to delete feature flag:', error);
+    log.error('Failed to delete feature flag', { error: String(error) });
     return NextResponse.json(
       { code: 'DELETE_ERROR', message: 'Failed to delete feature flag' },
       { status: 500 }

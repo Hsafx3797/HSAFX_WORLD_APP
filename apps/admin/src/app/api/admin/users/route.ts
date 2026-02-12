@@ -9,6 +9,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db, users, subscriptions, plans, coinTransactions, toolExecutions, activityLogs, eq, and, or, sql, desc, asc } from '@hsafx/db';
+import { createLogger } from '@hsafx/shared/logger';
+
+const log = createLogger('admin-users');
 
 export async function GET(request: NextRequest) {
   try {
@@ -142,7 +145,7 @@ export async function GET(request: NextRequest) {
       totalPages,
     });
   } catch (error) {
-    console.error('Failed to fetch users:', error);
+    log.error('Failed to fetch users', { error: String(error) });
     return NextResponse.json(
       { code: 'FETCH_ERROR', message: 'Failed to fetch users' },
       { status: 500 }
@@ -219,7 +222,7 @@ export async function PATCH(request: NextRequest) {
       updatedAt: updated.updatedAt?.toISOString(),
     });
   } catch (error) {
-    console.error('Failed to update user:', error);
+    log.error('Failed to update user', { error: String(error) });
     return NextResponse.json(
       { code: 'UPDATE_ERROR', message: 'Failed to update user' },
       { status: 500 }
@@ -267,7 +270,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true, id: deleted.id });
   } catch (error) {
-    console.error('Failed to delete user:', error);
+    log.error('Failed to delete user', { error: String(error) });
     return NextResponse.json(
       { code: 'DELETE_ERROR', message: 'Failed to delete user' },
       { status: 500 }

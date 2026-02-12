@@ -140,7 +140,7 @@ export interface SubscriptionFilters {
 
 // ==================== BILLING ====================
 
-export type TransactionType = 'purchase' | 'ad_reward' | 'deduction' | 'refund' | 'adjustment' | 'bonus' | 'usage' | 'reward';
+export type TransactionType = 'purchase' | 'reward' | 'deduction' | 'refund' | 'adjustment' | 'bonus' | 'usage';
 
 export interface CoinTransaction {
   id: string;
@@ -388,12 +388,10 @@ export interface SystemConfig {
   adminEmail?: string;
   maintenanceMode?: boolean;
   maintenanceMessage?: string;
-  adReward: {
-    coinsPerAd: number;
-    dailyAdsCap: number;
-    dailyCoinsCap: number;
-    ipRateLimit: number;
-    captchaThreshold: number;
+  loginReward: {
+    coinsPerReward: number;
+    dailyCoinCap: number;
+    hourlyCooldownMinutes: number;
   };
   anonymousLimits: {
     textTools: number;

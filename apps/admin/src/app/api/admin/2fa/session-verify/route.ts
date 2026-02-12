@@ -17,6 +17,9 @@ import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import * as OTPAuth from 'otpauth';
 import { createHmac, randomBytes } from 'crypto';
+import { createLogger } from '@hsafx/shared/logger';
+
+const log = createLogger('admin-2fa-session-verify');
 
 /** Cookie name for per-session 2FA verification */
 const COOKIE_NAME = 'admin_2fa_session';
@@ -131,7 +134,7 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error('[2FA Session Verify] Error:', error);
+    log.error('Session verify error', { error: String(error) });
     return NextResponse.json(
       { code: 'INTERNAL', message: 'Internal server error' },
       { status: 500 }
@@ -176,7 +179,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ verified, twoFactorEnabled: true });
   } catch (error) {
-    console.error('[2FA Session Check] Error:', error);
+    log.error('Session check error', { error: String(error) });
     return NextResponse.json({ verified: false }, { status: 500 });
   }
 }

@@ -4,12 +4,19 @@ import { promisify } from 'node:util';
 import { router, protectedProcedure, adminProcedure } from '../trpc';
 import { users, userPreferences, userSettings, sessions, eq, and } from '@hsafx/db/schema';
 import { TRPCError } from '@trpc/server';
+import { getUserPlan } from '../helpers/get-user-plan';
 
 const scryptAsync = promisify(scrypt);
 
 export const userRouter = router({
   me: protectedProcedure.query(async ({ ctx }) => {
     return ctx.user;
+  }),
+
+  /** Returns the caller's current plan slug (resolved from active subscription). */
+  getMyPlan: protectedProcedure.query(async ({ ctx }) => {
+    const plan = await getUserPlan(ctx.user!.id);
+    return { plan };
   }),
 
   getProfile: protectedProcedure.query(async ({ ctx }) => {

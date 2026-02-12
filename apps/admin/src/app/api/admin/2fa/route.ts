@@ -11,6 +11,9 @@ import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import * as OTPAuth from 'otpauth';
 import QRCode from 'qrcode';
+import { createLogger } from '@hsafx/shared/logger';
+
+const log = createLogger('admin-2fa');
 
 // Ensure the admin_totp_secrets table exists
 let tableEnsured = false;
@@ -194,7 +197,7 @@ export async function POST(request: NextRequest) {
         );
     }
   } catch (error) {
-    console.error('[2FA API] Error:', error);
+    log.error('2FA API error', { error: String(error) });
     return NextResponse.json(
       { code: 'INTERNAL', message: 'Internal server error' },
       { status: 500 }

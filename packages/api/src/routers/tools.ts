@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { router, publicProcedure, protectedProcedure, adminProcedure } from '../trpc';
+import { router, publicProcedure, protectedProcedure, adminProcedure, planGatedProcedure } from '../trpc';
 import {
   tools,
   toolCategories,
@@ -14,6 +14,8 @@ import {
   sql,
 } from '@hsafx/db/schema';
 import { TRPCError } from '@trpc/server';
+import { isPlanAtLeast } from '@hsafx/shared/permissions';
+import type { UserPlan } from '@hsafx/shared/permissions';
 
 // Lazy import for server execution layer (only in Next.js runtime)
 type ExecuteToolInput = {
@@ -124,7 +126,7 @@ export const toolsRouter = router({
       return { tool, category, limits };
     }),
 
-  execute: protectedProcedure
+  execute: planGatedProcedure
     .input(z.object({
       toolId: z.string().uuid(),
       inputs: z.record(z.unknown()),
@@ -143,6 +145,14 @@ export const toolsRouter = router({
 
       if (!tool.isActive) {
         throw new TRPCError({ code: 'BAD_REQUEST', message: 'Tool is disabled' });
+      }
+
+      // Plan-based access check: premium tools require 'pro' or higher
+      if (tool.isPremium && !isPlanAtLeast(ctx.plan as UserPlan, 'pro')) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'This tool requires a Pro or Advance subscription',
+        });
       }
 
       try {

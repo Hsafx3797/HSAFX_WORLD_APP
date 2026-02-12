@@ -3,8 +3,8 @@
  *
  * Protects all admin routes by verifying session cookies.
  * Unauthenticated users are redirected to /login.
- * Users with 2FA enabled must verify TOTP before accessing admin routes.
- * The /login and /verify-2fa pages have special access rules.
+ * Authenticated users without a valid 2FA session cookie are
+ * redirected to /verify-2fa (server-enforced, not client-cooperative).
  */
 
 import { NextResponse, type NextRequest } from 'next/server';
@@ -21,6 +21,50 @@ const ALLOWED_ORIGINS = new Set([
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 const CSRF_EXEMPT_PREFIXES = ['/api/auth/']; // better-auth manages its own CSRF
+
+// ─── 2FA cookie verification (Edge-compatible Web Crypto) ────────────────────
+
+const TFA_COOKIE_NAME = 'admin_2fa_session';
+const TFA_COOKIE_MAX_AGE_MS = 60 * 60 * 24 * 1000; // 24 hours
+
+/**
+ * Verify the signed 2FA cookie using Web Crypto API (Edge-compatible).
+ * Token format: `userId:timestamp:hmacHex`
+ * Returns userId if valid, null otherwise.
+ */
+async function verifyTfaCookie(token: string): Promise<string | null> {
+  const secret = process.env.AUTH_SECRET || process.env.BETTER_AUTH_SECRET || '';
+  if (!secret) return null;
+
+  const parts = token.split(':');
+  if (parts.length !== 3) return null;
+
+  const [userId, timestamp, sig] = parts;
+  if (!userId || !timestamp || !sig) return null;
+
+  // Check expiry
+  const age = Date.now() - parseInt(timestamp, 10);
+  if (isNaN(age) || age > TFA_COOKIE_MAX_AGE_MS) return null;
+
+  // Verify HMAC-SHA256 signature using Web Crypto
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  const payload = `${userId}:${timestamp}`;
+  const signatureBytes = await crypto.subtle.sign('HMAC', key, encoder.encode(payload));
+  const expectedSig = Array.from(new Uint8Array(signatureBytes))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+
+  if (sig !== expectedSig) return null;
+
+  return userId;
+}
 
 // ─── Path classification ─────────────────────────────────────────────────────
 
@@ -50,7 +94,7 @@ function isAuthOnlyPath(pathname: string): boolean {
   return false;
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Skip middleware for static files and Next.js internals
@@ -97,11 +141,20 @@ export function middleware(request: NextRequest) {
   }
 
   // For authenticated users on protected (non-auth-only) routes,
-  // check the 2FA session cookie. If absent and they're not on an
-  // auth-only or public path, the client-side RBAC provider will
-  // handle the redirect after checking /api/admin/session.
-  // We can't definitively check 2FA status here (would need a DB call),
-  // so we rely on the session API + client cooperation.
+  // verify the signed 2FA session cookie server-side.
+  if (isAuthenticated && !isPublic && !isAuthOnly) {
+    const tfaCookie = request.cookies.get(TFA_COOKIE_NAME)?.value;
+    if (!tfaCookie) {
+      return NextResponse.redirect(new URL('/verify-2fa', request.url));
+    }
+    const verifiedUserId = await verifyTfaCookie(tfaCookie);
+    if (!verifiedUserId) {
+      // Invalid or expired 2FA cookie — force re-verification
+      const response = NextResponse.redirect(new URL('/verify-2fa', request.url));
+      response.cookies.delete(TFA_COOKIE_NAME);
+      return response;
+    }
+  }
 
   // Add security headers
   const response = NextResponse.next();

@@ -8,6 +8,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { updateJob, setJobResult } from '@/server/jobs/job-manager';
+import { createLogger } from '@hsafx/shared/logger';
+
+const log = createLogger('job-complete');
 
 interface JobCompletePayload {
   jobId: string;
@@ -75,7 +78,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, jobId: body.jobId });
   } catch (err) {
-    console.error('[job-complete] Failed to update job:', err);
+    log.error('Failed to update job', { error: err });
     return NextResponse.json(
       { error: 'Failed to update job' },
       { status: 500 },

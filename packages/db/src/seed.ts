@@ -251,7 +251,7 @@ async function seed() {
     { name: 'kill_signups', description: 'Emergency: disable new user registration', flagType: 'kill_switch', isEnabled: false },
     { name: 'kill_file_uploads', description: 'Emergency: disable file upload processing', flagType: 'kill_switch', isEnabled: false },
     // Toggles
-    { name: 'enable_ad_rewards', description: 'Allow users to earn coins by watching ads', flagType: 'toggle', isEnabled: true },
+    { name: 'enable_login_rewards', description: 'Allow users to earn coins via daily/hourly login rewards', flagType: 'toggle', isEnabled: true },
     { name: 'enable_oauth_google', description: 'Google OAuth login', flagType: 'toggle', isEnabled: true },
     { name: 'enable_oauth_github', description: 'GitHub OAuth login', flagType: 'toggle', isEnabled: true },
     { name: 'enable_oauth_facebook', description: 'Facebook OAuth login', flagType: 'toggle', isEnabled: false },

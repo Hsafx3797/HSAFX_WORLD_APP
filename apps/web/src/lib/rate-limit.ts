@@ -49,12 +49,12 @@ function getIpLimiter(): Ratelimit {
 
 /**
  * Session-based rate limiter — applies to authenticated users.
- * Limits vary by plan tier.
+ * Limits vary by plan tier (per hour, matching user decisions).
  */
-function getUserLimiter(requestsPerMinute: number): Ratelimit {
+function getUserLimiter(requestsPerHour: number): Ratelimit {
   return new Ratelimit({
     redis: getEdgeRedis(),
-    limiter: Ratelimit.slidingWindow(requestsPerMinute, '1 m'),
+    limiter: Ratelimit.slidingWindow(requestsPerHour, '1 h'),
     prefix: 'rl:user',
     analytics: false,
   });
@@ -98,13 +98,16 @@ function getApiKeyLimiter(): Ratelimit {
 
 // ─── Plan tier limits ─────────────────────────────────────────
 
-/** Requests per minute by plan slug */
+/** Requests per hour by plan slug (user decisions: Free=100, Pro=500) */
 const PLAN_RATE_LIMITS: Record<string, number> = {
-  guest: 100, // Same as IP limit (anonymous)
-  free: 300,
-  pro: 1000,
-  advance: 5000,
+  guest: 50,    // Anonymous edge limit
+  free: 100,    // Free tier: 100 req/hr
+  pro: 500,     // Pro tier: 500 req/hr
+  advance: 2000,
 };
+
+/** Default edge-level session limit (generous — exact plan limits at tRPC layer) */
+const EDGE_SESSION_LIMIT = 500;
 
 // ─── Public API ───────────────────────────────────────────────
 
@@ -135,12 +138,16 @@ export async function checkIpRateLimit(ip: string): Promise<RateLimitResult> {
 /**
  * Check session-based rate limit (Layer 2).
  * Applied to authenticated users based on their plan tier.
+ * When called from Edge middleware (no DB access), pass sessionToken as userId
+ * and omit planSlug to use the generous edge default.
  */
 export async function checkUserRateLimit(
   userId: string,
   planSlug?: string,
 ): Promise<RateLimitResult> {
-  const limit = PLAN_RATE_LIMITS[planSlug ?? 'free'] ?? PLAN_RATE_LIMITS.free!;
+  const limit = planSlug
+    ? (PLAN_RATE_LIMITS[planSlug] ?? PLAN_RATE_LIMITS.free!)
+    : EDGE_SESSION_LIMIT;
   const limiter = getUserLimiter(limit);
   const result = await limiter.limit(userId);
   return {

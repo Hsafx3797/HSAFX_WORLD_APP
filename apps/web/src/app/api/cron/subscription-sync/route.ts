@@ -101,7 +101,8 @@ export async function GET(req: NextRequest) {
             await db
               .update(subscriptions)
               .set({
-                status: 'expired' as string,
+                status: 'canceled',
+                canceledAt: new Date(),
                 updatedAt: new Date(),
                 metadata: sql`${subscriptions.metadata} || ${JSON.stringify({
                   expiredByCron: true,

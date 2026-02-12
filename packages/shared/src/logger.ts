@@ -1,10 +1,11 @@
 /**
  * Structured Logger for HSAFX World App
  *
+ * Powered by pino — fast, JSON-native structured logging.
+ *
  * Features:
- * - JSON output in production, pretty-print in development
+ * - JSON output in production, pretty-print in development (via pino-pretty)
  * - PII redaction (email, tokens, IP addresses)
- * - Request-ID correlation
  * - Child logger support for domain-scoped logging
  *
  * Usage:
@@ -13,6 +14,8 @@
  *   const child = logger.child({ module: 'billing' });
  *   child.warn('Low balance', { userId: 'abc', balance: 5 });
  */
+
+import pino from 'pino';
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'fatal';
 
@@ -49,20 +52,15 @@ function redactEmail(email: string): string {
 }
 
 function redactValue(key: string, value: unknown, isProduction: boolean): unknown {
-  // Redact known sensitive keys
   if (TOKEN_KEYS.has(key)) {
     return '[REDACTED]';
   }
 
   if (typeof value === 'string') {
-    // Redact emails
     let result = value.replace(EMAIL_RE, (match) => redactEmail(match));
-
-    // Redact IP addresses in production only
     if (isProduction) {
       result = result.replace(IP_RE, '[REDACTED_IP]');
     }
-
     return result;
   }
 
@@ -81,72 +79,36 @@ function redactObject(obj: Record<string, unknown>, isProduction: boolean): Reco
   return result;
 }
 
-// ─── Logger Implementation ────────────────────────────────────────────────────
-
-const LOG_LEVELS: Record<LogLevel, number> = {
-  debug: 10,
-  info: 20,
-  warn: 30,
-  error: 40,
-  fatal: 50,
-};
-
-function getMinLevel(): LogLevel {
-  const env = typeof process !== 'undefined' ? process.env.LOG_LEVEL : undefined;
-  if (env && env in LOG_LEVELS) return env as LogLevel;
-  return isProduction() ? 'info' : 'debug';
+/** Sanitize an object for safe logging (PII redaction). */
+export function sanitizeForLogging(obj: Record<string, unknown>): Record<string, unknown> {
+  return redactObject(obj, true);
 }
 
-function isProduction(): boolean {
-  if (typeof process === 'undefined') return false;
-  return process.env.NODE_ENV === 'production';
-}
+// ─── Pino instance ────────────────────────────────────────────────────────────
 
-function createLoggerImpl(bindings: Record<string, unknown> = {}): Logger {
-  const minLevel = LOG_LEVELS[getMinLevel()];
-  const prod = isProduction();
+const isProd = process.env.NODE_ENV === 'production';
 
+const pinoLogger = pino({
+  level: process.env.LOG_LEVEL ?? (isProd ? 'info' : 'debug'),
+  ...(isProd
+    ? {}
+    : {
+        transport: {
+          target: 'pino-pretty',
+          options: { colorize: true, translateTime: 'SYS:standard' },
+        },
+      }),
+});
+
+// ─── Wrapper (preserves PII redaction + stable public API) ────────────────────
+
+function wrapPino(p: pino.Logger): Logger {
   function log(level: LogLevel, msg: string, data?: Record<string, unknown>): void {
-    if (LOG_LEVELS[level] < minLevel) return;
-
-    const entry: LogEntry = {
-      level,
-      msg,
-      timestamp: new Date().toISOString(),
-      ...bindings,
-      ...(data ? redactObject(data, prod) : {}),
-    };
-
-    if (prod) {
-      // JSON output for production (machine-parseable)
-      const output = JSON.stringify(entry);
-      if (level === 'error' || level === 'fatal') {
-        console.error(output);
-      } else if (level === 'warn') {
-        console.warn(output);
-      } else {
-        console.log(output);
-      }
+    const cleaned = data ? redactObject(data, isProd) : undefined;
+    if (cleaned) {
+      p[level](cleaned, msg);
     } else {
-      // Pretty output for development
-      const prefix = `[${level.toUpperCase().padEnd(5)}]`;
-      const bindingsStr = Object.keys(bindings).length > 0
-        ? ` (${Object.entries(bindings).map(([k, v]) => `${k}=${v}`).join(', ')})`
-        : '';
-      const dataStr = data && Object.keys(data).length > 0
-        ? ` ${JSON.stringify(redactObject(data, prod), null, 0)}`
-        : '';
-
-      const output = `${prefix}${bindingsStr} ${msg}${dataStr}`;
-      if (level === 'error' || level === 'fatal') {
-        console.error(output);
-      } else if (level === 'warn') {
-        console.warn(output);
-      } else if (level === 'debug') {
-        console.debug(output);
-      } else {
-        console.log(output);
-      }
+      p[level](msg);
     }
   }
 
@@ -156,12 +118,12 @@ function createLoggerImpl(bindings: Record<string, unknown> = {}): Logger {
     warn: (msg, data) => log('warn', msg, data),
     error: (msg, data) => log('error', msg, data),
     fatal: (msg, data) => log('fatal', msg, data),
-    child: (childBindings) => createLoggerImpl({ ...bindings, ...childBindings }),
+    child: (bindings) => wrapPino(p.child(bindings)),
   };
 }
 
 /** Root logger instance */
-export const logger = createLoggerImpl();
+export const logger: Logger = wrapPino(pinoLogger);
 
 /** Create a module-scoped logger */
 export function createLogger(module: string): Logger {

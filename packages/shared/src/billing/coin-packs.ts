@@ -3,7 +3,7 @@
  * HSAFX WORLD - Available coin packages for purchase
  */
 
-import type { CoinPack, AdRewardConfig, DailyRewardConfig } from './types';
+import type { CoinPack, LoginRewardConfig } from './types';
 
 // Available coin packs
 export const COIN_PACKS: CoinPack[] = [
@@ -92,54 +92,9 @@ export function getBestValuePack(): CoinPack {
   return bestPack;
 }
 
-// Ad reward configuration
-export const AD_REWARD_CONFIG: AdRewardConfig = {
-  rewardAmount: 5,        // 5 coins per ad
-  dailyLimit: 10,         // Max 10 ads per day (50 coins max)
-  cooldownMinutes: 5,     // 5 minute cooldown between ads
+// Login reward configuration
+export const LOGIN_REWARD_CONFIG: LoginRewardConfig = {
+  coinsPerReward: 10,          // 10 coins per login reward
+  dailyCoinCap: 50,            // 50 coins per day max
+  hourlyCooldownMinutes: 60,   // 1 hour cooldown between hourly claims
 };
-
-// Daily reward configuration
-export const DAILY_REWARD_CONFIG: DailyRewardConfig = {
-  baseAmount: 10,         // 10 coins base
-  streakBonus: 2,         // +2 per day streak
-  maxStreakDays: 7,       // Max 7 day streak (10 + 14 = 24 coins max)
-};
-
-// Calculate daily reward based on streak
-export function calculateDailyReward(streakDays: number): number {
-  const clampedStreak = Math.min(streakDays, DAILY_REWARD_CONFIG.maxStreakDays);
-  return DAILY_REWARD_CONFIG.baseAmount + (clampedStreak * DAILY_REWARD_CONFIG.streakBonus);
-}
-
-// Check if user can watch ad
-export function canWatchAd(
-  lastAdAt: Date | null, 
-  adsWatchedToday: number
-): { canWatch: boolean; reason?: string; waitMinutes?: number } {
-  // Check daily limit
-  if (adsWatchedToday >= AD_REWARD_CONFIG.dailyLimit) {
-    return {
-      canWatch: false,
-      reason: 'Daily ad limit reached',
-    };
-  }
-  
-  // Check cooldown
-  if (lastAdAt) {
-    const cooldownEnd = new Date(lastAdAt.getTime() + AD_REWARD_CONFIG.cooldownMinutes * 60 * 1000);
-    const now = new Date();
-    
-    if (now < cooldownEnd) {
-      const waitMs = cooldownEnd.getTime() - now.getTime();
-      const waitMinutes = Math.ceil(waitMs / 60000);
-      return {
-        canWatch: false,
-        reason: 'Cooldown active',
-        waitMinutes,
-      };
-    }
-  }
-  
-  return { canWatch: true };
-}

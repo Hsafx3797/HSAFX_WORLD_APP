@@ -14,6 +14,7 @@ import {
   checkIpRateLimit,
   checkAuthRateLimit,
   checkApiKeyRateLimit,
+  checkUserRateLimit,
   rateLimitHeaders,
 } from '@/lib/rate-limit';
 
@@ -117,6 +118,24 @@ async function handleRateLimit(
           headers: rateLimitHeaders(ipResult),
         },
       );
+    }
+
+    // ── Session-based rate limit (500 req / hr for authenticated users) ──
+    const sessionToken = request.cookies.get(SESSION_COOKIE)?.value;
+    if (sessionToken) {
+      const userResult = await checkUserRateLimit(sessionToken);
+      if (!userResult.allowed) {
+        return NextResponse.json(
+          {
+            error: 'Session rate limit exceeded. Please try again later.',
+            retryAfter: Math.ceil((userResult.reset - Date.now()) / 1000),
+          },
+          {
+            status: 429,
+            headers: rateLimitHeaders(userResult),
+          },
+        );
+      }
     }
   } catch {
     // Rate limit check failed — fail open in development, closed in production

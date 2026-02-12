@@ -1,5 +1,6 @@
 import {
   pgTable,
+  pgEnum,
   uuid,
   text,
   varchar,
@@ -8,12 +9,32 @@ import {
   decimal,
   boolean,
   jsonb,
+  index,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 import { users } from './users';
 import { tools } from './tools';
+
+// ─── Enums ────────────────────────────────────────────────────
+
+export const subscriptionStatusEnum = pgEnum('subscription_status', [
+  'active', 'canceled', 'past_due', 'trialing', 'incomplete', 'paused',
+]);
+
+export const coinTransactionTypeEnum = pgEnum('coin_transaction_type', [
+  'grant', 'purchase', 'spend', 'refund', 'adjustment', 'reward',
+]);
+
+export const invoiceStatusEnum = pgEnum('invoice_status', [
+  'draft', 'open', 'paid', 'void', 'uncollectible',
+]);
+
+export const paymentStatusEnum = pgEnum('payment_status', [
+  'pending', 'succeeded', 'failed', 'refunded',
+]);
 
 /**
  * Plans Table - Subscription tier definitions
@@ -61,7 +82,7 @@ export const subscriptions = pgTable('subscriptions', {
   planId: uuid('plan_id')
     .notNull()
     .references(() => plans.id),
-  status: text('status').notNull(), // 'active', 'canceled', 'past_due', 'trialing'
+  status: subscriptionStatusEnum('status').notNull(),
   billingCycle: text('billing_cycle').notNull(), // 'monthly', 'yearly'
   currentPeriodStart: timestamp('current_period_start').notNull(),
   currentPeriodEnd: timestamp('current_period_end').notNull(),
@@ -73,7 +94,10 @@ export const subscriptions = pgTable('subscriptions', {
   metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
-});
+}, (t) => [
+  index('sub_user_id_idx').on(t.userId),
+  index('sub_status_idx').on(t.status),
+]);
 
 /**
  * Coin Transactions - Immutable ledger for coin movements
@@ -85,14 +109,18 @@ export const coinTransactions = pgTable('coin_transactions', {
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
   amount: integer('amount').notNull(), // Positive for credit, negative for debit
-  type: text('type').notNull(), // 'grant', 'purchase', 'spend', 'refund', 'adjustment'
+  type: coinTransactionTypeEnum('type').notNull(),
   reason: text('reason').notNull(), // Human-readable reason
-  resourceType: text('resource_type'), // 'tool', 'api', 'subscription'
+  resourceType: text('resource_type'), // 'tool', 'api', 'subscription', 'coin_pack'
   resourceId: uuid('resource_id'), // ID of related resource
   balanceAfter: integer('balance_after').notNull(), // Snapshot balance after tx
   metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-});
+}, (t) => [
+  index('coin_tx_user_id_idx').on(t.userId),
+  index('coin_tx_type_idx').on(t.type),
+  index('coin_tx_created_idx').on(t.createdAt),
+]);
 
 /**
  * Invoices Table - Billing invoices
@@ -105,7 +133,7 @@ export const invoices = pgTable('invoices', {
     .references(() => users.id, { onDelete: 'cascade' }),
   subscriptionId: uuid('subscription_id').references(() => subscriptions.id),
   invoiceNumber: text('invoice_number').notNull().unique(),
-  status: text('status').notNull(), // 'draft', 'open', 'paid', 'void', 'uncollectible'
+  status: invoiceStatusEnum('status').notNull(),
   amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
   currency: text('currency').notNull().default('USD'),
   dueDate: timestamp('due_date'),
@@ -114,7 +142,10 @@ export const invoices = pgTable('invoices', {
   metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
-});
+}, (t) => [
+  index('inv_user_id_idx').on(t.userId),
+  index('inv_status_idx').on(t.status),
+]);
 
 /**
  * Payments Table - Payment transaction records
@@ -128,14 +159,17 @@ export const payments = pgTable('payments', {
   invoiceId: uuid('invoice_id').references(() => invoices.id),
   amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
   currency: text('currency').notNull().default('USD'),
-  status: text('status').notNull(), // 'pending', 'succeeded', 'failed', 'refunded'
+  status: paymentStatusEnum('status').notNull(),
   paymentMethod: text('payment_method').notNull(), // 'card', 'bank_transfer', 'coins'
   stripePaymentIntentId: text('stripe_payment_intent_id').unique(),
   failureReason: text('failure_reason'),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
-});
+}, (t) => [
+  index('pay_user_id_idx').on(t.userId),
+  index('pay_status_idx').on(t.status),
+]);
 
 /**
  * User Coin Wallets - Cached balance derived from coin_transactions
@@ -211,43 +245,54 @@ export const planCoinRules = pgTable('plan_coin_rules', {
 });
 
 /**
- * Ad Reward Transactions - Track every ad watch attempt (immutable audit log)
- * Reference: 20_BILLING_SYSTEM.md Section 8, SOLUTION_ROADMAP Task 4.9
+ * Login Reward Claims - Immutable log of every claimed login reward
+ * Reference: 20_BILLING_SYSTEM.md Section 8 (replaced ad rewards)
  */
-export const adRewardTransactions = pgTable('ad_reward_transactions', {
+export const loginRewardClaims = pgTable('login_reward_claims', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
-  adProvider: varchar('ad_provider', { length: 50 }).notNull().default('google_adsense'),
-  adUnitId: text('ad_unit_id'), // Provider ad unit identifier
-  coinsAwarded: integer('coins_awarded').notNull().default(0),
-  watchDurationMs: integer('watch_duration_ms'), // Actual watch time in ms
-  validationStatus: varchar('validation_status', { length: 20 }).notNull().default('pending'),
-  // 'pending', 'verified', 'expired', 'fraud'
-  ipAddress: varchar('ip_address', { length: 45 }).notNull(),
-  fingerprint: varchar('fingerprint', { length: 64 }),
-  expiresAt: timestamp('expires_at').notNull(), // Verification window (5 min)
-  verifiedAt: timestamp('verified_at'),
-  metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-});
+  rewardType: varchar('reward_type', { length: 20 }).notNull(), // 'daily' | 'hourly'
+  coinsAwarded: integer('coins_awarded').notNull(),
+  coinTransactionId: uuid('coin_transaction_id').references(() => coinTransactions.id),
+  claimedAt: timestamp('claimed_at').notNull().defaultNow(),
+}, (t) => [
+  index('lrc_user_id_idx').on(t.userId),
+  index('lrc_claimed_at_idx').on(t.claimedAt),
+  index('lrc_reward_type_idx').on(t.rewardType),
+]);
 
 /**
- * User Ad Daily Caps - Single row per user per day, reset daily at midnight UTC
- * Reference: 20_BILLING_SYSTEM.md Section 8.5
+ * User Daily Reward Caps - Single row per user per day, reset daily at midnight UTC
+ * Reference: 20_BILLING_SYSTEM.md Section 8.5 (replaced ad daily caps)
  */
-export const userAdDailyCaps = pgTable('user_ad_daily_caps', {
+export const userDailyRewardCaps = pgTable('user_daily_reward_caps', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
   date: timestamp('date').notNull(), // Date at midnight UTC
-  adsWatched: integer('ads_watched').notNull().default(0),
-  coinsEarned: integer('coins_earned').notNull().default(0),
-  fraudAttempts: integer('fraud_attempts').notNull().default(0),
+  totalCoinsEarned: integer('total_coins_earned').notNull().default(0),
+  claimsCount: integer('claims_count').notNull().default(0),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
-});
+}, (t) => [
+  uniqueIndex('udrc_user_date_idx').on(t.userId, t.date),
+]);
+
+/**
+ * Processed Webhooks - Idempotency tracking for Stripe/Polar webhooks (C-11)
+ * Reference: 15_SECURITY_MODEL.md, 24_ERROR_HANDLING.md
+ */
+export const processedWebhooks = pgTable('processed_webhooks', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  eventId: varchar('event_id', { length: 255 }).notNull().unique(),
+  provider: varchar('provider', { length: 20 }).notNull(), // 'stripe' | 'polar'
+  eventType: varchar('event_type', { length: 100 }),
+  processedAt: timestamp('processed_at').notNull().defaultNow(),
+}, (t) => [
+  index('pw_provider_idx').on(t.provider),
+]);
 
 // Types inferred from tables using InferSelectModel and InferInsertModel
 export type Plan = InferSelectModel<typeof plans>;
@@ -272,10 +317,12 @@ export type PlanFeature = InferSelectModel<typeof planFeatures>;
 export type NewPlanFeature = InferInsertModel<typeof planFeatures>;
 export type PlanCoinRule = InferSelectModel<typeof planCoinRules>;
 export type NewPlanCoinRule = InferInsertModel<typeof planCoinRules>;
-export type AdRewardTransaction = InferSelectModel<typeof adRewardTransactions>;
-export type NewAdRewardTransaction = InferInsertModel<typeof adRewardTransactions>;
-export type UserAdDailyCap = InferSelectModel<typeof userAdDailyCaps>;
-export type NewUserAdDailyCap = InferInsertModel<typeof userAdDailyCaps>;
+export type LoginRewardClaim = InferSelectModel<typeof loginRewardClaims>;
+export type NewLoginRewardClaim = InferInsertModel<typeof loginRewardClaims>;
+export type UserDailyRewardCap = InferSelectModel<typeof userDailyRewardCaps>;
+export type NewUserDailyRewardCap = InferInsertModel<typeof userDailyRewardCaps>;
+export type ProcessedWebhook = InferSelectModel<typeof processedWebhooks>;
+export type NewProcessedWebhook = InferInsertModel<typeof processedWebhooks>;
 
 // Zod schemas - use 'as unknown as' for drizzle-zod compatibility
 export const insertPlanSchema = createInsertSchema(plans) as unknown as z.ZodType<NewPlan>;
@@ -289,5 +336,6 @@ export const insertCoinPackSchema = createInsertSchema(coinPacks) as unknown as 
 export const insertToolCoinCostSchema = createInsertSchema(toolCoinCosts) as unknown as z.ZodType<NewToolCoinCost>;
 export const insertPlanFeatureSchema = createInsertSchema(planFeatures) as unknown as z.ZodType<NewPlanFeature>;
 export const insertPlanCoinRuleSchema = createInsertSchema(planCoinRules) as unknown as z.ZodType<NewPlanCoinRule>;
-export const insertAdRewardTransactionSchema = createInsertSchema(adRewardTransactions) as unknown as z.ZodType<NewAdRewardTransaction>;
-export const insertUserAdDailyCapSchema = createInsertSchema(userAdDailyCaps) as unknown as z.ZodType<NewUserAdDailyCap>;
+export const insertLoginRewardClaimSchema = createInsertSchema(loginRewardClaims) as unknown as z.ZodType<NewLoginRewardClaim>;
+export const insertUserDailyRewardCapSchema = createInsertSchema(userDailyRewardCaps) as unknown as z.ZodType<NewUserDailyRewardCap>;
+export const insertProcessedWebhookSchema = createInsertSchema(processedWebhooks) as unknown as z.ZodType<NewProcessedWebhook>;

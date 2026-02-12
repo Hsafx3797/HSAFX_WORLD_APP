@@ -10,6 +10,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db, toolCategories, tools, eq, sql, asc } from '@hsafx/db';
+import { createLogger } from '@hsafx/shared/logger';
+
+const log = createLogger('admin-categories');
 
 export async function GET() {
   try {
@@ -48,7 +51,7 @@ export async function GET() {
 
     return NextResponse.json(formattedCategories);
   } catch (error) {
-    console.error('Failed to fetch categories:', error);
+    log.error('Failed to fetch categories', { error: String(error) });
     return NextResponse.json(
       { code: 'FETCH_ERROR', message: 'Failed to fetch categories' },
       { status: 500 }
@@ -110,7 +113,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error('Failed to create category:', error);
+    log.error('Failed to create category', { error: String(error) });
     return NextResponse.json(
       { code: 'CREATE_ERROR', message: 'Failed to create category' },
       { status: 500 }
@@ -193,7 +196,7 @@ export async function PATCH(request: NextRequest) {
       updatedAt: updated.updatedAt?.toISOString(),
     });
   } catch (error) {
-    console.error('Failed to update category:', error);
+    log.error('Failed to update category', { error: String(error) });
     return NextResponse.json(
       { code: 'UPDATE_ERROR', message: 'Failed to update category' },
       { status: 500 }
@@ -246,7 +249,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true, id: deleted[0].id });
   } catch (error) {
-    console.error('Failed to delete category:', error);
+    log.error('Failed to delete category', { error: String(error) });
     return NextResponse.json(
       { code: 'DELETE_ERROR', message: 'Failed to delete category' },
       { status: 500 }

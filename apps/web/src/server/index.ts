@@ -8,7 +8,7 @@
  * Phase 4 deliverables:
  * - tool-execution/   Server execution layer (coin reservation, sync/async routing)
  * - limits/           CoinService (atomic wallet ops) + anonymous usage tracking
- * - ads/              Ad reward service (watch, verify, credit coins)
+ * - ads/              Login reward service (daily/hourly login rewards)
  */
 
 // ─── Job System (Phase 3) ─────────────────────────────────────
@@ -52,11 +52,10 @@ export {
   type AnonUsageCheckResult,
 } from './limits/anon-usage-service';
 
-// ─── Ad Rewards (Phase 4) ────────────────────────────────────
+// ─── Login Rewards (Phase 4) ─────────────────────────────────
 export {
-  initiateAdWatch,
-  completeAdWatch,
-  getAdWatchStats,
-} from './ads/ad-reward-service';
-export { AdRewardError } from './ads/types';
-export type { AdWatchInitResult, AdWatchCompleteResult } from './ads/types';
+  claimLoginReward,
+  getLoginRewardStats,
+} from './rewards/login-reward-service';
+export { LoginRewardError } from './rewards/types';
+export type { ClaimRewardResult, RewardStats } from './rewards/types';

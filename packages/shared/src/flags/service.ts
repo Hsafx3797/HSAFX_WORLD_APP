@@ -16,6 +16,10 @@
  *   await flags.activateKillSwitch('payment_processing');
  */
 
+import { createLogger } from '../logger';
+
+const log = createLogger('flags');
+
 // ─── Types ──────────────────────────────────────────────────
 
 export type FlagType = 'toggle' | 'kill_switch' | 'experiment' | 'rollout';
@@ -198,7 +202,7 @@ export class FlagService {
       };
     } catch (error) {
       // Fail open for feature flags, fail closed for kill switches
-      console.error(`[FlagService] evaluate error for ${flagName}:`, error);
+      log.error('Flag evaluation error', { flagName, error: String(error) });
       return { flagName, enabled: false, reason: 'evaluation_error' };
     }
   }
@@ -228,10 +232,10 @@ export class FlagService {
       // Invalidate Redis cache immediately
       await this.redis.del(`${FLAG_CACHE_PREFIX}${flagName}`, ALL_FLAGS_KEY);
 
-      console.info(`[FlagService] Kill switch ACTIVATED: ${flagName}`);
+      log.info('Kill switch activated', { flagName });
       return true;
     } catch (error) {
-      console.error(`[FlagService] Failed to activate kill switch: ${flagName}`, error);
+      log.error('Failed to activate kill switch', { flagName, error: String(error) });
       return false;
     }
   }
@@ -253,10 +257,10 @@ export class FlagService {
       // Invalidate cache
       await this.redis.del(`${FLAG_CACHE_PREFIX}${flagName}`, ALL_FLAGS_KEY);
 
-      console.info(`[FlagService] Kill switch DEACTIVATED: ${flagName}`);
+      log.info('Kill switch deactivated', { flagName });
       return true;
     } catch (error) {
-      console.error(`[FlagService] Failed to deactivate kill switch: ${flagName}`, error);
+      log.error('Failed to deactivate kill switch', { flagName, error: String(error) });
       return false;
     }
   }
@@ -316,7 +320,7 @@ export class FlagService {
 
       return flag;
     } catch (error) {
-      console.error(`[FlagService] DB fetch error for ${flagName}:`, error);
+      log.error('Flag DB fetch error', { flagName, error: String(error) });
       return null;
     }
   }
@@ -366,7 +370,7 @@ export class FlagService {
 
       return flags;
     } catch (error) {
-      console.error('[FlagService] getAllFlags error:', error);
+      log.error('getAllFlags error', { error: String(error) });
       return [];
     }
   }

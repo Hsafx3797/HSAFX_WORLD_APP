@@ -7,6 +7,8 @@ import {
   integer,
   boolean,
   jsonb,
+  index,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { createInsertSchema } from 'drizzle-zod';
@@ -44,6 +46,7 @@ export const tools = pgTable('tools', {
   description: text('description').notNull(),
   longDescription: text('long_description'),
   toolGroup: integer('tool_group').notNull(), // 1-5 per 30_TOOLS_CATALOG.md
+  toolClass: varchar('tool_class', { length: 50 }), // Derived class for billing rules
   runtime: text('runtime').notNull(), // 'wasm', 'node', 'python', 'browser'
   executionMode: text('execution_mode').notNull(), // 'client', 'server', 'hybrid'
   coinCost: integer('coin_cost').notNull().default(0),
@@ -56,7 +59,11 @@ export const tools = pgTable('tools', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
   deletedAt: timestamp('deleted_at'),
-});
+}, (t) => [
+  index('tools_category_id_idx').on(t.categoryId),
+  index('tools_tool_group_idx').on(t.toolGroup),
+  index('tools_is_active_idx').on(t.isActive),
+]);
 
 /**
  * Tool Limits - Usage limits per tool
@@ -129,7 +136,11 @@ export const toolExecutions = pgTable('tool_executions', {
   metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   completedAt: timestamp('completed_at'),
-});
+}, (t) => [
+  index('te_user_id_idx').on(t.userId),
+  index('te_tool_id_idx').on(t.toolId),
+  index('te_created_at_idx').on(t.createdAt),
+]);
 
 /**
  * API Keys - User-generated API keys for programmatic access
@@ -143,6 +154,7 @@ export const apiKeys = pgTable('api_keys', {
   name: text('name').notNull(),
   keyHash: text('key_hash').notNull().unique(),
   keyPrefix: text('key_prefix').notNull(), // First 8 chars for UI display
+  scopes: text('scopes').array().default([]), // Allowed tool slugs or '*' for all
   lastUsed: timestamp('last_used'),
   expiresAt: timestamp('expires_at'),
   isActive: boolean('is_active').notNull().default(true),
@@ -150,7 +162,10 @@ export const apiKeys = pgTable('api_keys', {
   metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   revokedAt: timestamp('revoked_at'),
-});
+}, (t) => [
+  index('ak_user_id_idx').on(t.userId),
+  index('ak_is_active_idx').on(t.isActive),
+]);
 
 /**
  * Anonymous Usage - Track guest/unauthenticated tool usage

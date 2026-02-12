@@ -15,11 +15,8 @@ import {
   getEffectiveCoins,
   getCostPerCoin,
   getBestValuePack,
-  calculateDailyReward,
-  canWatchAd,
   COIN_PACKS,
-  AD_REWARD_CONFIG,
-  DAILY_REWARD_CONFIG,
+  LOGIN_REWARD_CONFIG,
 } from '../billing/coin-packs';
 import {
   validateSufficientBalance,
@@ -171,47 +168,11 @@ describe('getBestValuePack', () => {
   });
 });
 
-describe('calculateDailyReward', () => {
-  it('should return base amount for day 0 streak', () => {
-    expect(calculateDailyReward(0)).toBe(DAILY_REWARD_CONFIG.baseAmount);
-  });
-
-  it('should increase with streak', () => {
-    expect(calculateDailyReward(3)).toBe(
-      DAILY_REWARD_CONFIG.baseAmount + 3 * DAILY_REWARD_CONFIG.streakBonus
-    );
-  });
-
-  it('should cap at max streak days', () => {
-    const maxReward = calculateDailyReward(DAILY_REWARD_CONFIG.maxStreakDays);
-    expect(calculateDailyReward(100)).toBe(maxReward);
-  });
-});
-
-describe('canWatchAd', () => {
-  it('should allow watching when under limit', () => {
-    const result = canWatchAd(null, 0);
-    expect(result.canWatch).toBe(true);
-  });
-
-  it('should disallow when daily limit reached', () => {
-    const result = canWatchAd(null, AD_REWARD_CONFIG.dailyLimit);
-    expect(result.canWatch).toBe(false);
-    expect(result.reason).toContain('limit');
-  });
-
-  it('should enforce cooldown', () => {
-    const justNow = new Date(); // ad watched right now
-    const result = canWatchAd(justNow, 1);
-    expect(result.canWatch).toBe(false);
-    expect(result.reason).toContain('Cooldown');
-    expect(result.waitMinutes).toBeGreaterThan(0);
-  });
-
-  it('should allow after cooldown expires', () => {
-    const longAgo = new Date(Date.now() - 10 * 60 * 1000); // 10 min ago
-    const result = canWatchAd(longAgo, 1);
-    expect(result.canWatch).toBe(true);
+describe('LOGIN_REWARD_CONFIG', () => {
+  it('should have correct reward values per user decisions', () => {
+    expect(LOGIN_REWARD_CONFIG.coinsPerReward).toBe(10);
+    expect(LOGIN_REWARD_CONFIG.dailyCoinCap).toBe(50);
+    expect(LOGIN_REWARD_CONFIG.hourlyCooldownMinutes).toBe(60);
   });
 });
 
@@ -255,7 +216,7 @@ describe('validateTransactionType', () => {
     expect(validateTransactionType('grant')).toBe(true);
     expect(validateTransactionType('purchase')).toBe(true);
     expect(validateTransactionType('spend')).toBe(true);
-    expect(validateTransactionType('ad_reward')).toBe(true);
+    expect(validateTransactionType('reward')).toBe(true);
   });
 
   it('should reject invalid types', () => {

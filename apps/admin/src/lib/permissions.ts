@@ -83,7 +83,7 @@ export const ROUTE_PERMISSIONS: Record<string, Permission> = {
   '/feature-flags': 'system.config',
   '/settings': 'system.config',
   '/settings/rate-limits': 'system.config',
-  '/settings/ad-rewards': 'system.config',
+  '/settings/login-rewards': 'system.config',
   '/activity': 'audit.view',
   '/admins': 'admin.view',
 };

@@ -9,6 +9,9 @@
 import { redis, keys, TTL, generateInputHash } from '@/lib/redis';
 import { db, toolExecutions } from '@hsafx/db';
 import type { Job, JobResult, CreateJobInput, JobStatus } from './types';
+import { createLogger } from '@hsafx/shared/logger';
+
+const log = createLogger('job-manager');
 
 // Re-export types so existing consumers don't break
 export type { Job, JobResult, CreateJobInput, JobStatus } from './types';
@@ -63,12 +66,12 @@ export async function createJob(input: CreateJobInput): Promise<Job> {
       },
     })
     .catch((err: unknown) =>
-      console.error('[job-manager] Failed to create DB audit record:', err),
+      log.error('Failed to create DB audit record', { jobId: id, error: String(err) }),
     );
 
   // Dispatch to worker (imported lazily to avoid circular deps)
   dispatchJob(job).catch((err: unknown) =>
-    console.error('[job-manager] Failed to dispatch job:', err),
+    log.error('Failed to dispatch job', { jobId: id, error: String(err) }),
   );
 
   return job;
@@ -153,7 +156,7 @@ async function dispatchJob(job: Job): Promise<void> {
   const { processJob } = await import('./job-worker') as { processJob: (job: Job) => Promise<void> };
   // Process asynchronously (don't block job creation)
   processJob(job).catch((err: unknown) => {
-    console.error(`[job-manager] Job ${job.id} failed:`, err);
+    log.error('Job failed', { jobId: job.id, error: String(err) });
     updateJob(job.id, {
       status: 'failed',
       error: err instanceof Error ? err.message : 'Unknown error',

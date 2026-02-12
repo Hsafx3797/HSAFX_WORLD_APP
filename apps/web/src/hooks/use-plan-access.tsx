@@ -2,16 +2,16 @@
  * Plan Access Hook
  * HSAFX WORLD - Check user's plan-based feature access
  *
- * PHASE 0: Replaced next-auth/react with better-auth.
- * Plan derivation uses better-auth session; tier will be accurate
- * once Phase 4 wires subscription data via tRPC.
+ * Plan tier is resolved server-side from the user's active subscription
+ * via the user.getMyPlan tRPC query.
  */
 
 import * as React from 'react';
-import { useAuth, type PlanTier } from './use-auth';
+import { useAuth } from './use-auth';
+import { trpc } from '@/lib/trpc';
 
-// Re-export for consumers
-export type UserPlan = PlanTier;
+// Plan tiers
+export type UserPlan = 'guest' | 'free' | 'pro' | 'advance';
 // Feature keys that can be checked
 export type FeatureKey =
   | 'file_upload'
@@ -110,19 +110,29 @@ interface PlanAccessProviderProps {
  * Plan Access Provider
  */
 export function PlanAccessProvider({ children }: PlanAccessProviderProps) {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
+  const isAuthenticated = !!user;
+
+  // Fetch real plan from server; only fires when authenticated
+  const { data: planData, isLoading: planLoading } = trpc.user.getMyPlan.useQuery(
+    undefined,
+    { enabled: isAuthenticated },
+  );
+
+  const isLoading = authLoading || (isAuthenticated && planLoading);
   
   const plan: UserPlan = React.useMemo(() => {
-    if (isLoading) return 'guest';
+    if (authLoading) return 'guest';
     if (!user) return 'guest';
     
-    // Plan tier comes from the auth session (populated by Phase 4 subscription lookup)
-    const userPlan = user.tier;
-    if (userPlan === 'pro' || userPlan === 'advance') {
-      return userPlan;
+    // Use server-derived plan from tRPC query
+    const serverPlan = planData?.plan;
+    if (serverPlan === 'pro' || serverPlan === 'advance') {
+      return serverPlan;
     }
-    return 'free';
-  }, [user, isLoading]);
+    // Authenticated but no active paid subscription → 'free'
+    return serverPlan === 'free' ? 'free' : (isAuthenticated ? 'free' : 'guest');
+  }, [user, authLoading, planData, isAuthenticated]);
   
   const value = React.useMemo<PlanAccessContextValue>(() => ({
     plan,

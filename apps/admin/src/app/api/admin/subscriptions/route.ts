@@ -8,6 +8,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db, users, subscriptions, plans, activityLogs, eq, and, or, sql, desc, asc } from '@hsafx/db';
+import { createLogger } from '@hsafx/shared/logger';
+
+const log = createLogger('admin-subscriptions');
 
 export async function GET(request: NextRequest) {
   try {
@@ -26,7 +29,7 @@ export async function GET(request: NextRequest) {
     
     // Status filter
     if (status) {
-      conditions.push(eq(subscriptions.status, status));
+      conditions.push(eq(subscriptions.status, status as typeof subscriptions.status.enumValues[number]));
     }
 
     // Build where clause
@@ -131,7 +134,7 @@ export async function GET(request: NextRequest) {
       totalPages,
     });
   } catch (error) {
-    console.error('Failed to fetch subscriptions:', error);
+    log.error('Failed to fetch subscriptions', { error: String(error) });
     return NextResponse.json(
       { code: 'FETCH_ERROR', message: 'Failed to fetch subscriptions' },
       { status: 500 }
@@ -235,7 +238,7 @@ export async function PATCH(request: NextRequest) {
       updatedAt: updated.updatedAt?.toISOString(),
     });
   } catch (error) {
-    console.error('Failed to update subscription:', error);
+    log.error('Failed to update subscription', { error: String(error) });
     return NextResponse.json(
       { code: 'UPDATE_ERROR', message: 'Failed to update subscription' },
       { status: 500 }

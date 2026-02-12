@@ -11,7 +11,7 @@
  * - subscription.canceled → mark cancellation date, no immediate revoke
  * - checkout.completed → log subscription purchase
  *
- * Idempotency: event.id stored in metadata to prevent double processing.
+ * Idempotency: uses processedWebhooks table (C-11).
  * Signature: Svix webhook standard via webhook-id, webhook-timestamp, webhook-signature headers.
  */
 
@@ -27,6 +27,13 @@ import {
   and,
   sql,
 } from '@hsafx/db';
+import {
+  isWebhookProcessed,
+  markWebhookProcessed,
+} from '@/server/webhooks/idempotency';
+import { createLogger } from '@hsafx/shared/logger';
+
+const log = createLogger('polar-webhook');
 
 // ─── Svix signature verification ────────────────────────────
 
@@ -59,21 +66,9 @@ function verifyPolarSignature(
     if (!verified.id || !verified.type) return null;
     return verified;
   } catch (err) {
-    console.error('[polar-webhook] Signature verification failed:', err instanceof Error ? err.message : err);
+    log.error('Signature verification failed', { error: err instanceof Error ? err.message : String(err) });
     return null;
   }
-}
-
-// ─── Idempotency check ───────────────────────────────────────
-
-async function isEventProcessed(eventId: string): Promise<boolean> {
-  const [existing] = await db
-    .select({ id: coinTransactions.id })
-    .from(coinTransactions)
-    .where(sql`${coinTransactions.metadata}->>'polarEventId' = ${eventId}`)
-    .limit(1);
-
-  return !!existing;
 }
 
 // ─── Webhook route ────────────────────────────────────────────
@@ -83,7 +78,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const webhookSecret = process.env.POLAR_WEBHOOK_SECRET;
 
   if (!webhookSecret) {
-    console.error('[polar-webhook] POLAR_WEBHOOK_SECRET not configured');
+    log.error('POLAR_WEBHOOK_SECRET not configured');
     return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 });
   }
 
@@ -92,8 +87,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
   }
 
-  // Idempotency
-  if (await isEventProcessed(event.id)) {
+  // Idempotency via processedWebhooks table
+  if (await isWebhookProcessed(event.id)) {
     return NextResponse.json({ received: true, duplicate: true });
   }
 
@@ -119,9 +114,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         break;
     }
 
+    // Mark event as processed
+    await markWebhookProcessed(event.id, 'polar', event.type);
+
     return NextResponse.json({ received: true });
   } catch (err: unknown) {
-    console.error(`[polar-webhook] Error processing ${event.type}:`, err);
+    log.error('Webhook processing error', { eventType: event.type, error: String(err) });
     return NextResponse.json(
       { error: 'Webhook processing failed' },
       { status: 500 },
@@ -147,7 +145,7 @@ async function handleSubscriptionCreated(
   const userId = (data.metadata as Record<string, string>)?.userId;
 
   if (!userId) {
-    console.warn('[polar-webhook] subscription.created missing userId in metadata');
+    log.warn('subscription.created missing userId in metadata');
     return;
   }
 
@@ -159,7 +157,7 @@ async function handleSubscriptionCreated(
     .limit(1);
 
   if (!plan) {
-    console.warn(`[polar-webhook] No plan found for polar product: ${polarProductId}`);
+    log.warn('No plan found for polar product', { polarProductId });
     return;
   }
 
@@ -258,7 +256,7 @@ async function handleSubscriptionUpdated(
   const userId = (data.metadata as Record<string, string>)?.userId;
 
   if (!userId) {
-    console.warn('[polar-webhook] subscription.updated missing userId');
+    log.warn('subscription.updated missing userId');
     return;
   }
 
@@ -372,7 +370,7 @@ async function handleSubscriptionCanceled(
   const userId = (data.metadata as Record<string, string>)?.userId;
 
   if (!userId) {
-    console.warn('[polar-webhook] subscription.canceled missing userId');
+    log.warn('subscription.canceled missing userId');
     return;
   }
 
@@ -403,8 +401,6 @@ async function handleCheckoutCompleted(
   const totalAmount = data.total_amount as number | undefined;
   const currency = data.currency as string | undefined;
 
-  console.info(
-    `[polar-webhook] Checkout completed for user ${userId ?? 'unknown'}: ${totalAmount} ${currency}`,
-  );
+  log.info('Checkout completed', { userId: userId ?? 'unknown', totalAmount, currency });
   // Subscription activation is handled by subscription.created
 }

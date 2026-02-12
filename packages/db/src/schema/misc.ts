@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, varchar, timestamp, integer, boolean, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, varchar, timestamp, integer, boolean, jsonb, index, uniqueIndex } from 'drizzle-orm/pg-core';
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
@@ -40,12 +40,15 @@ export const asyncJobs = pgTable('async_jobs', {
   progress: integer('progress').notNull().default(0), // 0-100%
   result: jsonb('result').$type<Record<string, unknown>>(),
   errorMessage: text('error_message'),
-  inngestJobId: text('inngest_job_id'),
+  externalJobId: text('external_job_id'), // Simple queue job reference
   metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   startedAt: timestamp('started_at'),
   completedAt: timestamp('completed_at'),
-});
+}, (t) => [
+  index('aj_user_id_idx').on(t.userId),
+  index('aj_status_idx').on(t.status),
+]);
 
 /**
  * Notifications - User notification queue
@@ -65,7 +68,10 @@ export const notifications = pgTable('notifications', {
   metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   expiresAt: timestamp('expires_at'),
-});
+}, (t) => [
+  index('notif_user_id_idx').on(t.userId),
+  index('notif_is_read_idx').on(t.userId, t.isRead),
+]);
 
 /**
  * Favorites - User bookmarked tools
@@ -80,7 +86,9 @@ export const favorites = pgTable('favorites', {
   resourceId: uuid('resource_id').notNull(),
   sortOrder: integer('sort_order').notNull().default(0),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-});
+}, (t) => [
+  uniqueIndex('fav_user_resource_idx').on(t.userId, t.resourceType, t.resourceId),
+]);
 
 /**
  * Feature Flags - Dynamic feature toggling & kill switches
@@ -156,7 +164,10 @@ export const emailLogs = pgTable('email_logs', {
   sentAt: timestamp('sent_at'),
   deliveredAt: timestamp('delivered_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-});
+}, (t) => [
+  index('el_user_id_idx').on(t.userId),
+  index('el_status_idx').on(t.status),
+]);
 
 /**
  * Admin Settings - Key-value configuration store for admin panel

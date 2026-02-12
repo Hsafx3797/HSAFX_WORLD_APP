@@ -7,6 +7,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db, activityLogs, users, roles, userRoles, eq, and, sql, desc, asc } from '@hsafx/db';
+import { createLogger } from '@hsafx/shared/logger';
+
+const log = createLogger('admin-audit');
 
 export async function GET(request: NextRequest) {
   try {
@@ -116,7 +119,7 @@ export async function GET(request: NextRequest) {
       totalPages,
     });
   } catch (error) {
-    console.error('Failed to fetch audit logs:', error);
+    log.error('Failed to fetch audit logs', { error: String(error) });
     return NextResponse.json(
       { code: 'FETCH_ERROR', message: 'Failed to fetch audit logs' },
       { status: 500 }

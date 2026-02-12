@@ -1,8 +1,7 @@
 /**
- * Ad Reward System Exports
+ * Login Reward System Exports
  * HSAFX WORLD
  */
 
 export * from './types';
 export * from './validation';
-export * from './service';

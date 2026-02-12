@@ -10,6 +10,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db, tools, toolCategories, toolExecutions, activityLogs, eq, and, or, sql, desc, asc } from '@hsafx/db';
+import { createLogger } from '@hsafx/shared/logger';
+
+const log = createLogger('admin-tools');
 
 export async function GET(request: NextRequest) {
   try {
@@ -187,7 +190,7 @@ export async function GET(request: NextRequest) {
       totalPages,
     });
   } catch (error) {
-    console.error('Failed to fetch tools:', error);
+    log.error('Failed to fetch tools', { error: String(error) });
     return NextResponse.json(
       { code: 'FETCH_ERROR', message: 'Failed to fetch tools' },
       { status: 500 }
@@ -268,7 +271,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error('Failed to create tool:', error);
+    log.error('Failed to create tool', { error: String(error) });
     return NextResponse.json(
       { code: 'CREATE_ERROR', message: 'Failed to create tool' },
       { status: 500 }
@@ -349,7 +352,7 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json(updated);
   } catch (error) {
-    console.error('Failed to update tool:', error);
+    log.error('Failed to update tool', { error: String(error) });
     return NextResponse.json(
       { code: 'UPDATE_ERROR', message: 'Failed to update tool' },
       { status: 500 }
@@ -398,7 +401,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true, id: deleted.id });
   } catch (error) {
-    console.error('Failed to delete tool:', error);
+    log.error('Failed to delete tool', { error: String(error) });
     return NextResponse.json(
       { code: 'DELETE_ERROR', message: 'Failed to delete tool' },
       { status: 500 }

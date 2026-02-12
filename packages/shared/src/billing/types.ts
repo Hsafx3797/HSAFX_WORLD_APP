@@ -10,8 +10,7 @@ export type TransactionType =
   | 'spend'        // Coins spent on tool execution
   | 'refund'       // Coins refunded
   | 'adjustment'   // Manual admin adjustment
-  | 'ad_reward'    // Earned from watching ads
-  | 'daily_reward' // Daily login bonus
+  | 'reward'       // Earned from login rewards (daily/hourly)
   | 'referral';    // Referral bonus
 
 // Coin transaction record
@@ -67,18 +66,11 @@ export interface BillingResult {
   errorCode?: string;
 }
 
-// Ad reward configuration
-export interface AdRewardConfig {
-  rewardAmount: number;     // Coins per ad watch
-  dailyLimit: number;       // Max ads per day
-  cooldownMinutes: number;  // Time between ads
-}
-
-// Daily reward configuration
-export interface DailyRewardConfig {
-  baseAmount: number;       // Base daily coins
-  streakBonus: number;      // Extra per consecutive day
-  maxStreakDays: number;    // Max streak multiplier
+// Login reward configuration (re-exported from @hsafx/shared/rewards)
+export interface LoginRewardConfig {
+  coinsPerReward: number;       // Coins per login reward
+  dailyCoinCap: number;         // Max coins per day
+  hourlyCooldownMinutes: number; // Cooldown between hourly claims
 }
 
 // Usage tracking
