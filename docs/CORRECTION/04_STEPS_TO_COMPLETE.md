@@ -1,7 +1,7 @@
 # 04 — STEPS TO COMPLETE (Sprint Execution Plan)
 
 > **Last updated:** 2026-02-12
-> **Commit:** `f1e7900` on `master`
+> **Commit:** `71ebaec` on `master`
 > **Based on:** Doc 03 remaining work items
 > **Philosophy:** P0 first → P1 next → P2/P3 after
 
@@ -72,24 +72,27 @@
 
 ---
 
-## PHASE 4: FRONTEND COMPLETENESS (NEXT)
-**Duration: ~34 hours**
+## ✅ PHASE 4A: FRONTEND STORES + COMPONENTS — COMPLETED
+**Commit:** `71ebaec` — 3 stores + 6 components + barrel exports. Build passes (5/5).
 
-### Sprint A — Missing Stores + Components (22 hours)
+### Sprint A — Missing Stores + Components ✅
 
-| # | Task | Ref | Hours |
-|---|------|-----|-------|
-| 16 | Build `useBillingStore` | P1-05 | 3 |
-| 17 | Build `useNotificationStore` | P1-05 | 2 |
-| 18 | Separate execution state into `useExecutionStore` | P1-05 | 1 |
-| 19 | Build `ExecutionPanel` component | P1-06 | 4 |
-| 20 | Build `UsageCard` component | P1-06 | 2 |
-| 21 | Build `BillingCard` component | P1-06 | 3 |
-| 22 | Build `TransactionList` component | P1-06 | 3 |
-| 23 | Build `ActivityFeed` component | P1-06 | 2 |
-| 24 | Build `NotificationBell` component | P1-06 | 2 |
+| # | Task | Ref | Status |
+|---|------|-----|--------|
+| 16 | Build `useBillingStore` | P1-05 | ✅ Done |
+| 17 | Build `useNotificationStore` | P1-05 | ✅ Done |
+| 18 | Separate execution state into `useExecutionStore` | P1-05 | ✅ Done |
+| 19 | Build `ExecutionPanel` component | P1-06 | ✅ Done |
+| 20 | Build `UsageCard` component | P1-06 | ✅ Done |
+| 21 | Build `BillingCard` component | P1-06 | ✅ Done |
+| 22 | Build `TransactionList` component | P1-06 | ✅ Done |
+| 23 | Build `ActivityFeed` component | P1-06 | ✅ Done |
+| 24 | Build `NotificationBell` component | P1-06 | ✅ Done |
 
-### Sprint B — Search + APIs (12 hours)
+---
+
+## PHASE 4B: SEARCH + BILLING API (NEXT)
+**Duration: ~12 hours**
 
 | # | Task | Ref | Hours |
 |---|------|-----|-------|
@@ -165,7 +168,8 @@
 | 1 | Security + Billing Critical | 28 | 28 | ✅ DONE |
 | 2 | Schema + Logging | 30 | 58 | ✅ DONE |
 | 3 | Schema Completion + API Keys | 12 | 70 | ✅ DONE |
-| 4 | Frontend Components + Search | 34 | 104 | **NEXT** |
+| 4A | Frontend Stores + Components | 22 | 92 | ✅ DONE |
+| 4B | Search + Billing API | 12 | 104 | **NEXT** |
 | 5 | Tool Execution Completion | 15 | 119 | Not started |
 | 6 | Admin Features + Polish | 50 | 169 | Not started |
 | 7 | Naming + Remaining | 26 | 195 | Not started |

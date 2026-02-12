@@ -1,9 +1,9 @@
 # SOLUTION ROADMAP — HSAFX WORLD APP
 
 > **Date:** 2026-02-12
-> **Commit:** `f1e7900` on `master`
+> **Commit:** `71ebaec` on `master`
 > **Based on:** CORRECTION docs 01–05
-> **Status:** Phases 1–3 COMPLETE, entering Phase 4
+> **Status:** Phases 1–4A COMPLETE, entering Phase 4B
 
 ---
 
@@ -11,7 +11,7 @@
 
 This roadmap translates the remaining work items (from [03_REMAINING_WORK.md](03_REMAINING_WORK.md)) into an actionable sequence. All 5 owner decisions are resolved. All 10 planning conflicts are locked.
 
-**Progress:** 20/44 items complete (~45% items, ~95 hours done). ~159 hours remaining.
+**Progress:** 22/44 items complete (~50% items, ~117 hours done). ~137 hours remaining.
 **No CRITICAL blockers remain** — staging deployment is safe. **Schema-complete milestone achieved.**
 
 ---
@@ -94,16 +94,32 @@ This roadmap translates the remaining work items (from [03_REMAINING_WORK.md](03
 
 ---
 
-### Phase 4 — Frontend Completion (NEXT)
+### ✅ Phase 4A — Frontend Stores + Components — COMPLETE
+> Commit `71ebaec`
 
-**What:** Build missing stores, components, search, and B2B billing API.
+**Completed:**
+- ✅ `useBillingStore` — checkout flow, plan selection, coin purchase UI state
+- ✅ `useNotificationStore` — notification list, unread count, bell state
+- ✅ `useExecutionStore` — execution lifecycle, history (50/tool), undo/redo
+- ✅ `ExecutionPanel` — status badges, output display, copy/download, history
+- ✅ `UsageCard` — monthly executions, coins spent, balance with progress
+- ✅ `BillingCard` — current plan, subscription status, upgrade CTA
+- ✅ `TransactionList` — grouped by date, type icons, +/- coin coloring
+- ✅ `ActivityFeed` — timeline with status dots, duration, coin badges
+- ✅ `NotificationBell` — bell icon with unread badge, dropdown list
+- ✅ All components include Skeleton loading variants
+- ✅ Barrel exports updated in `components/index.ts`
 
-- Zustand stores: `useBillingStore`, `useNotificationStore`, `useExecutionStore`
-- UI components: ExecutionPanel, UsageCard, BillingCard, TransactionList, ActivityFeed, NotificationBell
+---
+
+### Phase 4B — Search + Billing API (NEXT)
+
+**What:** Build search with PostgreSQL FTS and B2B billing API.
+
 - PostgreSQL FTS: tsvector + GIN index on tools table, search API, replace client-side filtering
 - Billing REST endpoints for B2B
 
-**Exit Criteria:** User can discover → execute → view results → check billing. FTS search works.
+**Exit Criteria:** FTS search works. B2B billing endpoints available.
 
 ---
 
@@ -160,13 +176,14 @@ This roadmap translates the remaining work items (from [03_REMAINING_WORK.md](03
 | 1. Security & Billing | 28h | 28h | ✅ DONE |
 | 2. Schema & Logging | 30h | 58h | ✅ DONE |
 | 3. Schema Completion | 12h | 70h | ✅ DONE |
-| 4. Frontend Completion | 34h | 104h | **NEXT** |
+| 4A. Frontend Stores+Components | 22h | 92h | ✅ DONE |
+| 4B. Search + Billing API | 12h | 104h | **NEXT** |
 | 5. Tool Execution | 15h | 119h | Not started |
 | 6. Admin & Polish | 50h | 169h | Not started |
 | 7. Alignment + Remaining | 26h | 195h | Not started |
 | 8. Final Polish | 16h | 211h | Not started |
 
-**Total remaining: ~141 hours** (from original ~254)
+**Total remaining: ~119 hours** (from original ~254)
 
 ---
 

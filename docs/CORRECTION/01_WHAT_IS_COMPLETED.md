@@ -1,7 +1,7 @@
 # 01 — WHAT IS ACTUALLY COMPLETED
 
-> **Last audited:** 2026-02-12 — Post Sprint P0-01..P0-08, P1-01..P1-07, P2-01..P2-05
-> **Commit:** `f1e7900` on `master`
+> **Last audited:** 2026-02-12 — Post Sprint P0-01..P0-08, P1-01..P1-07, P2-01..P2-05, P4-A
+> **Commit:** `71ebaec` on `master`
 > **Methodology:** Every planning doc (01–74) compared against actual source files
 
 ---
@@ -187,30 +187,30 @@
 | ToolCard | ⚠️ Partial — missing `isFavorite`, `executionCount`, `onFavoriteToggle` |
 | ToolGrid | ⚠️ Partial — dumb wrapper, no `tools`/`isLoading`/`emptyState` |
 | ToolFilterBar | ⚠️ Partial — split into separate SearchBar/FilterPills/SortDropdown |
-| ExecutionPanel | ❌ Missing |
-| ResultDisplay | ⚠️ Partial — local-only, wrong interface |
-| UsageCard | ❌ Missing |
-| BillingCard | ❌ Missing |
-| TransactionList | ❌ Missing |
-| ActivityFeed | ❌ Missing |
-| NotificationBell | ❌ Missing |
+| ExecutionPanel | ✅ Built | Status badges, output display, copy/download, history, skeleton |
+| ResultDisplay | ⚠️ Partial | local-only, wrong interface |
+| UsageCard | ✅ Built | Monthly executions, coins spent, balance with progress, skeleton |
+| BillingCard | ✅ Built | Current plan, subscription status, upgrade CTA, skeleton |
+| TransactionList | ✅ Built | Grouped by date, type icons, +/- coin coloring, skeleton |
+| ActivityFeed | ✅ Built | Timeline with status dots, duration, coin badges, skeleton |
+| NotificationBell | ✅ Built | Bell icon with unread badge, dropdown list |
 
-**0/10 fully implemented. 4 partial. 6 missing.**
+**6/10 fully implemented. 4 partial. 0 missing.**
 
 ### Zustand Stores (6 planned)
 
 | Store | Status |
 |-------|--------|
 | useToolStore | ⚠️ Execution-focused, merged with useExecutionStore |
-| useExecutionStore | ⚠️ Merged into useToolStore |
-| useBillingStore | ❌ Missing |
+| useExecutionStore | ✅ Built | Execution lifecycle, history (50/tool), undo/redo |
+| useBillingStore | ✅ Built | Checkout flow, plan selection, coin purchase UI state |
 | useUIStore | ✅ Mostly complete |
-| useNotificationStore | ❌ Missing |
+| useNotificationStore | ✅ Built | Notification list, unread count, bell state |
 | useUserStore | ⚠️ Partial — missing preferences/sessions |
 
-**1/6 complete. 2/6 merged/partial. 3/6 missing.**
+**4/6 complete. 2/6 partial. 0 missing.**
 
-**Frontend score: ~40%**
+**Frontend score: ~60%**
 
 ---
 
@@ -298,12 +298,12 @@
 | Security | 82% | CSRF Referer fallback, Retry-After header, impersonation reason |
 | Billing System | 85% | B2B billing REST endpoints |
 | Tool Execution | 65% | ~15 stubs, FastAPI job processing disabled |
-| Frontend (Web) | 40% | 6/10 components missing, 3/6 stores missing, no search |
+| Frontend (Web) | 60% | Search, partial ToolCard/ToolGrid/ResultDisplay |
 | Frontend (Admin) | 60% | No analytics, billing admin, audit viewer |
 | FastAPI Backend | 80% | Job processing disabled |
 | Shared Packages | 88% | UI package is theme-only |
 | Redis & Caching | 70% | No session cache, no pub/sub |
 
-### **Weighted Overall: ~78%**
+### **Weighted Overall: ~82%**
 
-Significant progress since last audit (~72%). **Schema-complete milestone achieved** — all 13 pgEnums, 7 unique constraints, 5 critical indexes in place. `tools.tool_class` and `api_keys.scopes` columns confirmed pre-existing. Remaining work is P1 (frontend, remaining indexes, tool stubs) and P2/P3 (admin features, polish).
+Significant progress since last audit (~78%). **Phase 4A complete** — all 6 missing UI components built with Skeleton variants, all 3 missing Zustand stores created. Barrel exports updated. Build passes (5/5). Remaining work: search (FTS), billing REST API, tool stubs, admin features, polish.

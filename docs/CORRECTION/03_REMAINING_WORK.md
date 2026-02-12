@@ -1,7 +1,7 @@
 # 03 — REMAINING WORK
 
 > **Last audited:** 2026-02-12
-> **Current state:** ~78% overall completion
+> **Current state:** ~82% overall completion
 > **Methodology:** Every gap from doc 01 and 02 mapped to actionable work items
 
 ---
@@ -54,14 +54,10 @@
 - **Effort:** ~6 hours (reduced)
 
 ### P1-05: Complete Missing Zustand Stores
-- **Gap:** H-03
-- **Work:** Create `useBillingStore`, `useNotificationStore`. Separate execution state from `useToolStore`.
-- **Effort:** ~6 hours
+> **✅ COMPLETED** (Sprint P4-A) — Created `useBillingStore`, `useNotificationStore`, `useExecutionStore`. 6 total stores now (3 existing + 3 new).
 
 ### P1-06: Build Missing UI Components (6)
-- **Gap:** H-02
-- **Work:** ExecutionPanel, UsageCard, BillingCard, TransactionList, ActivityFeed, NotificationBell
-- **Effort:** ~16 hours
+> **✅ COMPLETED** (Sprint P4-A) — All 6 components built with Skeleton loading variants: ExecutionPanel, UsageCard, BillingCard, TransactionList, ActivityFeed, NotificationBell. Barrel-exported from `components/index.ts`.
 
 ### P1-07: Implement Search (PostgreSQL FTS Minimum)
 - **Gap:** H-01
@@ -100,7 +96,7 @@
 - **Work:** Uncomment `process_job` in `jobs.py`, implement job completion callback
 - **Effort:** ~3 hours
 
-**P1 Remaining: ~60 hours** (was ~70, reduced by P1-01, P1-08, P1-09, P1-10 completion + P1-02 partial)
+**P1 Remaining: ~38 hours** (was ~60, reduced by P1-05 and P1-06 completion)
 
 ---
 
@@ -202,14 +198,15 @@
 | Priority | Items | Hours | Completed |
 |----------|-------|-------|-----------|
 | **P0 — Blocking** | 8 | ~28 | ✅ ALL 8 DONE |
-| **P1 — v1.0 Required** | 15 | ~60 remaining | 7/15 done |
+| **P1 — v1.0 Required** | 15 | ~38 remaining | 9/15 done |
 | **P2 — Complete Product** | 14 | ~74 remaining | 3/14 done (1 skipped) |
 | **P3 — Polish** | 7 | ~25 remaining | 2/7 done |
-| **TOTAL** | **44** | **~159 hours remaining** | **20/44 done** |
+| **TOTAL** | **44** | **~137 hours remaining** | **22/44 done** |
 
 ### Progress
 - **Originally estimated:** ~254 hours total
-- **Completed:** ~95 hours of work (P0 + partial P1/P2/P3)
-- **Remaining:** ~159 hours
+- **Completed:** ~117 hours of work (P0 + partial P1/P2/P3 + P4-A stores/components)
+- **Remaining:** ~137 hours
 - **No CRITICAL items remain** — system is deployment-safe for staging
 - **Schema 13/13 enums DONE, 5/25+ indexes DONE, 7/7 unique constraints DONE**
+- **Frontend: 6/6 stores DONE, 6/6 missing components DONE**
