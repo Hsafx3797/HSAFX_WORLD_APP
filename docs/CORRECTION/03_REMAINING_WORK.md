@@ -1,379 +1,283 @@
-# HSAFX World App — Remaining Work & Fixes
+# 03 — REMAINING WORK
 
-> **Date:** February 11, 2026
-> **Source:** Codebase audit vs `docs/PLANNING/` specifications
-> **Format:** Grouped by priority, each with planning reference, current state, and estimated effort
-
----
-
-## Table of Contents
-
-1. [Critical Blockers (Must Complete Before Production)](#1-critical-blockers)
-2. [High-Priority Gaps (Should Complete Before Beta)](#2-high-priority-gaps)
-3. [Medium-Priority Gaps (Complete Before GA)](#3-medium-priority-gaps)
-4. [Low-Priority / Nice-to-Have (Post-Launch)](#4-low-priority--nice-to-have)
-5. [Effort Summary](#5-effort-summary)
+> **Last audited:** 2025-07-15
+> **Current state:** ~58% overall completion
+> **Methodology:** Every gap from doc 01 and 02 mapped to actionable work items
 
 ---
 
-## 1. Critical Blockers
+## PRIORITY SYSTEM
 
-These items are **missing** from the codebase and **required** by the planning documents before any production deployment.
-
-### REM-001: Git Repository — Initial Commit
-- **Reference:** `44_IMPLEMENTATION_ROADMAP.md` Section 14
-- **Current State:** Zero commits. Entire codebase is uncommitted.
-- **Required:**
-  - [ ] Initialize git repository
-  - [ ] Create `.gitignore` (node_modules, .next, target, dist, .env*, etc.)
-  - [ ] Initial commit with entire codebase
-  - [ ] Create `main` and `develop` branches
-  - [ ] Tag as `v0.1.0-alpha`
-  - [ ] Push to GitHub remote
-- **Effort:** 1 hour
-- **Risk if skipped:** No version history, no rollback, no collaboration
-
-### REM-002: CI/CD Pipeline
-- **Reference:** `50_DEFINITION_OF_DONE.md`, `44_IMPLEMENTATION_ROADMAP.md`
-- **Current State:** No `.github/workflows/` directory. No automation at all.
-- **Required:**
-  - [ ] Create `ci.yml`: lint → typecheck → test → build on every PR
-  - [ ] Create `deploy-staging.yml`: auto-deploy to staging on merge to `develop`
-  - [ ] Create `deploy-production.yml`: manual trigger or tag-based deploy to prod
-  - [ ] Add status badges to `README.md`
-  - [ ] Configure branch protection rules on `main`
-- **Effort:** 8-12 hours
-- **Risk if skipped:** No quality gates, manual-only validation
-
-### REM-003: 2FA/TOTP for Admin Panel
-- **Reference:** `15_SECURITY_MODEL.md`, `26_ADMIN_PANEL_SPECIFICATION.md`
-- **Current State:** Auth exists. `TotpModal` UI component exists (shell only). No backend 2FA.
-- **Required:**
-  - [ ] Install `better-auth/plugins/two-factor` plugin
-  - [ ] Add TOTP generation endpoint (QR code + backup codes)
-  - [ ] Add TOTP verification endpoint
-  - [ ] Wire `TotpModal` to backend
-  - [ ] Enforce 2FA for destructive admin operations (delete user, adjust coins, change plans)
-  - [ ] Add 2FA setup flow to admin onboarding
-  - [ ] Store TOTP secrets encrypted in database
-- **Effort:** 16-24 hours
-- **Risk if skipped:** Admin panel completely unprotected for destructive operations
-
-### REM-004: Production Deployment Infrastructure
-- **Reference:** `49_DEPLOYMENT_GUIDE.md`
-- **Current State:** Docker Compose for local dev works. `infra/k8s/` is empty.
-- **Required (Choose ONE path):**
-  - **Option A — Kubernetes:**
-    - [ ] Create K8s namespace and service accounts
-    - [ ] Write Deployment manifests for: web, admin, fastapi
-    - [ ] Write Service and Ingress manifests
-    - [ ] Write ConfigMap and Secret manifests
-    - [ ] Create HPA (Horizontal Pod Autoscaler) config
-    - [ ] Set up Helm chart or Kustomize overlays (staging/prod)
-    - [ ] Write PDB (Pod Disruption Budget)
-    - [ ] Configure cert-manager for TLS
-    - Effort: 40-60 hours
-  - **Option B — Managed Platform (Simpler):**
-    - [ ] Deploy `apps/web` + `apps/admin` to **Vercel**
-    - [ ] Deploy `backend/fastapi` to **Railway** or **Fly.io**
-    - [ ] Configure environment variables
-    - [ ] Set up custom domains and TLS
-    - [ ] Configure health checks and auto-restarts
-    - Effort: 8-16 hours
-- **Risk if skipped:** No way to serve the application to users
+| Priority | Criteria |
+|----------|----------|
+| **P0** | Must fix before ANY deployment — security, data integrity, billing correctness |
+| **P1** | Required for v1.0 launch — core features users expect |
+| **P2** | Important for complete product — planned features |
+| **P3** | Nice to have — polish and optimization |
 
 ---
 
-## 2. High-Priority Gaps
+## P0 — BLOCKING (Must Fix Before Any Deployment)
 
-Required for beta-quality product per planning specifications.
+### P0-01: Wire Coin Deduction into B2B REST Route
+- **Gap:** C-01 — API key users execute tools for free
+- **Work:** Call `reserveCoins()`/`deductCoins()` in `/api/v1/tools/[toolKey]/execute/route.ts` before `createJob()`
+- **Files:** `apps/web/src/app/api/v1/tools/[toolKey]/execute/route.ts`
+- **Effort:** ~2 hours
 
-### REM-005: Security Headers Hardening
-- **Reference:** `15_SECURITY_MODEL.md`
-- **Current State:** Default Next.js headers only.
-- **Required:**
-  - [ ] Add `headers()` function to both `next.config.js` files
-  - [ ] Implement: `Strict-Transport-Security`, `Content-Security-Policy`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`
-  - [ ] Test CSP doesn't break tool execution (inline scripts, eval, WASM)
-  - [ ] Add FastAPI `CORSMiddleware` headers review
-- **Effort:** 4-6 hours
+### P0-02: Call `confirmReservation()` After Async Job Completion
+- **Gap:** C-02 — Reservations stay pending forever
+- **Work:** In `job-worker.ts`, after successful `processJob()`, call `confirmReservation()`. On failure, call `releaseReservation()`.
+- **Files:** `apps/web/src/server/jobs/job-worker.ts`
+- **Effort:** ~2 hours
 
-### REM-006: Structured Logging with PII Redaction
-- **Reference:** `15_SECURITY_MODEL.md` ("Zero PII in logs")
-- **Current State:** Console.log used throughout. No structured logger.
-- **Required:**
-  - [ ] Install `pino` or `winston`
-  - [ ] Create shared logger in `@hsafx/shared`
-  - [ ] Add PII redaction rules (email, phone, session tokens, IPs)
-  - [ ] Replace `console.log/warn/error` calls with structured logger
-  - [ ] Configure JSON output for production, pretty-print for dev
-  - [ ] Set log levels per environment
-- **Effort:** 8-12 hours
+### P0-03: Wire CASL Into Web App + API Middleware
+- **Gap:** C-03 — No plan-based access control
+- **Work:**
+  1. Install `@casl/react`
+  2. Create `CASLProvider` that builds ability from user's plan
+  3. Add tRPC middleware that calls `buildUserAbility()` and checks before tool execution
+  4. Add REST middleware equivalent for B2B routes
+- **Files:** `apps/web/src/providers/`, `packages/api/src/middleware/`, all tool execution routes
+- **Effort:** ~8 hours
 
-### REM-007: Cloudflare R2 File Storage
-- **Reference:** `10_SYSTEM_ARCHITECTURE.md`
-- **Current State:** `fileUploads` table has `storageKey`/`storageUrl` columns. No R2 SDK.
-- **Required:**
-  - [ ] Create Cloudflare R2 bucket (or S3-compatible alternative)
-  - [ ] Install `@aws-sdk/client-s3` (R2 is S3-compatible)
-  - [ ] Implement upload/download service in `@hsafx/shared`
-  - [ ] Wire FastAPI to upload processed files to R2
-  - [ ] Configure presigned URLs for client download
-  - [ ] Set retention/TTL policies (planning: 24h for temp files)
-  - [ ] Add cleanup cron job for expired uploads
-- **Effort:** 12-16 hours
+### P0-04: Implement Stripe Refund Coin Clawback
+- **Gap:** C-08 — Users keep coins after refund
+- **Work:** In `charge.refunded` handler, look up original coin transaction by `stripeEventId`, create negative coin transaction, deduct from wallet
+- **File:** `apps/web/src/app/api/webhooks/stripe/route.ts`
+- **Effort:** ~3 hours
 
-### REM-008: Full WASM Text Tool Coverage
-- **Reference:** `11_TECHNOLOGY_STACK.md`
-- **Current State:** ~19 WASM exports. TypeScript fallback handles the rest.
-- **Required:**
-  - [ ] Audit which of 191 text tools genuinely benefit from WASM (CPU-intensive: regex, encoding, hashing, diff)
-  - [ ] Implement ~30-40 additional Rust functions for compute-heavy tools
-  - [ ] Ensure `wasm-fallback.ts` cleanly handles tools that stay in TypeScript
-  - [ ] Benchmark WASM vs JS for borderline tools
-- **Effort:** 40-60 hours (can be deferred — JS fallback works)
+### P0-05: Add `processed_webhooks` Table + Idempotency
+- **Gap:** C-11 — Non-coin events reprocessed
+- **Work:**
+  1. Add `processed_webhooks` table to schema
+  2. Check `(provider, eventId)` before processing any webhook
+  3. Insert after successful processing
+- **Files:** `packages/db/src/schema/billing.ts`, both webhook routes
+- **Effort:** ~4 hours
 
-### REM-009: Tool Execution End-to-End Testing
-- **Reference:** `44_IMPLEMENTATION_ROADMAP.md`, `50_DEFINITION_OF_DONE.md`
-- **Current State:** 2,631 automated tests passing. Not all 446 tools have individual test coverage. Many share generic tests.
-- **Required:**
-  - [ ] Create test matrix: map each of 446 tool IDs to its test file(s)
-  - [ ] Identify tools with no dedicated test
-  - [ ] Write at least 3 test vectors per untested tool
-  - [ ] Add E2E tests for: tool UI → execute → get result → display output
-  - [ ] Add error-case tests: invalid input, rate limit exceeded, insufficient coins
-- **Effort:** 40-60 hours
+### P0-06: Invoke Session Rate Limit in Middleware
+- **Gap:** C-06 — Authenticated users have no rate limit
+- **Work:** Call `checkUserRateLimit()` in web middleware for authenticated non-API-key requests
+- **File:** `apps/web/src/middleware.ts`
+- **Effort:** ~1 hour
 
-### REM-010: Coin Deduction E2E Verification
-- **Reference:** `20_BILLING_SYSTEM.md`, `21_BILLING_LOGIC.md`
-- **Current State:** `coinService`, `toolCoinCosts` table, BA weight fields all exist. Whether the actual flow (user clicks Execute → check balance → deduct coins → log transaction → return result) is wired end-to-end is unverified.
-- **Required:**
-  - [ ] Write integration test: create user → grant coins → execute paid tool → verify balance decreased by correct BA weight
-  - [ ] Test all tier modifiers: free tier (1.0x), pro tier (0.8x), enterprise (0.5x)
-  - [ ] Test insufficient balance rejection
-  - [ ] Test free tool execution (0 cost, no deduction)
-  - [ ] Test concurrent executions (race condition on balance check)
-- **Effort:** 12-16 hours
+### P0-07: Server-Enforce Admin 2FA
+- **Gap:** C-12 — 2FA bypassable via crafted requests
+- **Work:** In admin middleware, make a DB/Redis call to verify `admin_2fa_session` cookie signature + recency. Deny state-changing requests without valid 2FA.
+- **File:** `apps/admin/src/middleware.ts`
+- **Effort:** ~4 hours
+
+### P0-08: Add Impersonation Scoped-Action Middleware
+- **Gap:** H-06 — All actions allowed during impersonation
+- **Work:** Create middleware that detects impersonation cookie and blocks: billing, password change, account deletion, 2FA changes, API key operations
+- **Files:** New middleware, wire into relevant routes
+- **Effort:** ~4 hours
+
+**P0 Total: ~28 hours**
 
 ---
 
-## 3. Medium-Priority Gaps
+## P1 — REQUIRED FOR v1.0
 
-Should be addressed before General Availability.
+### P1-01: Add PostgreSQL Enums
+- **Gap:** C-04 — Free text in enum columns
+- **Work:** Define all 13 planned pgEnums. Migrate existing text columns.
+- **Files:** `packages/db/src/schema/*.ts`, new migration
+- **Effort:** ~6 hours
 
-### REM-011: Meilisearch Integration
-- **Reference:** `10_SYSTEM_ARCHITECTURE.md`
-- **Current State:** No Meilisearch client or configuration.
-- **Required:**
-  - [ ] Set up Meilisearch instance (Docker or Meilisearch Cloud)
-  - [ ] Index all 446 tools (name, description, category, tags)
-  - [ ] Create search API endpoint using tRPC
-  - [ ] Replace client-side tool filtering with Meilisearch queries
-  - [ ] Add typo tolerance, faceted filtering by category
-- **Effort:** 16-20 hours
+### P1-02: Add Database Indexes
+- **Gap:** C-05 — Zero performance/integrity indexes
+- **Work:** Add all 25+ planned indexes including partial unique, composite
+- **Files:** `packages/db/src/schema/*.ts`, new migration
+- **Effort:** ~4 hours
 
-### REM-012: Inngest / Background Job Finalization
-- **Reference:** `10_SYSTEM_ARCHITECTURE.md`
-- **Current State:** Schema references `inngestJobId`. Custom `job-manager.ts` exists. Mixed state.
-- **Required (Choose ONE):**
-  - **Option A — Commit to Inngest:**
-    - [ ] Install `inngest` SDK
-    - [ ] Migrate job-manager logic to Inngest functions
-    - [ ] Set up Inngest Dev Server for local testing
-    - [ ] Wire `asyncJobs` table to Inngest events
-  - **Option B — Remove Inngest, keep custom:**
-    - [ ] Remove `inngestJobId` from schema
-    - [ ] Document custom job-manager retry/replay capabilities
-    - [ ] Add dead-letter queue for failed jobs
-- **Effort:** 12-20 hours
+### P1-03: Install Structured Logger for TypeScript
+- **Gap:** C-07 — All console.* usage
+- **Work:**
+  1. Create `@hsafx/logger` package (or add to `@hsafx/shared`) with pino
+  2. Add `sanitizeForLogging()` PII redactor
+  3. Replace all `console.*` calls across `apps/web/`, `apps/admin/`, `packages/`
+- **Effort:** ~12 hours (large surface area)
 
-### REM-013: Admin Real-Time WebSocket
-- **Reference:** `26_ADMIN_PANEL_SPECIFICATION.md` Section 12
-- **Current State:** No WebSocket implementation.
-- **Required:**
-  - [ ] Set up WebSocket server (or use SSE for simpler approach)
-  - [ ] Implement real-time streams for: error logs, active users, revenue tickers
-  - [ ] Add WebSocket authentication (reuse session token)
-  - [ ] Add reconnection logic on client
-- **Effort:** 16-24 hours
+### P1-04: Implement Missing 13 Database Tables
+- **Gap:** C-09
+- **Work:** Add tables incrementally:
+  - Immediate: `processed_webhooks` (P0-05), `tool_class_policy`, `plan_permissions`
+  - v1.0: `usage_coin_fallbacks`, `billable_action_logs`, `permission_groups`
+  - Later: remaining 7
+- **Effort:** ~8 hours
 
-### REM-014: Admin Role Seeding & Permission Matrix
-- **Reference:** `26_ADMIN_PANEL_SPECIFICATION.md` Section 3
-- **Current State:** RBAC infrastructure exists. 6 specific roles not seeded.
-- **Required:**
-  - [ ] Create seed script for 6 roles: Super Admin, Admin, Support, Developer, Analyst, Billing
-  - [ ] Define permission matrix per role (which pages, which actions)
-  - [ ] Wire permissions to admin sidebar and API route guards
-  - [ ] Create admin role management UI page
-- **Effort:** 8-12 hours
+### P1-05: Complete Missing Zustand Stores
+- **Gap:** H-03
+- **Work:** Create `useBillingStore`, `useNotificationStore`. Separate execution state from `useToolStore`.
+- **Effort:** ~6 hours
 
-### REM-015: Monaco Editor Advanced Features
-- **Reference:** `61_MONACO_EDITOR_SPEC.md`
-- **Current State:** Basic code editor exists.
-- **Required:**
-  - [ ] Implement dual editor (input/output side-by-side)
-  - [ ] Add diff viewer for code comparison tools
-  - [ ] Configure language support for all 106 code editor tool types
-  - [ ] Add minimap, search/replace, keyboard shortcuts
-  - [ ] Add code folding and bracket matching
-- **Effort:** 20-30 hours
+### P1-06: Build Missing UI Components (6)
+- **Gap:** H-02
+- **Work:** ExecutionPanel, UsageCard, BillingCard, TransactionList, ActivityFeed, NotificationBell
+- **Effort:** ~16 hours
 
-### REM-016: User Impersonation for Admin
-- **Reference:** `15_SECURITY_MODEL.md` Section 8
-- **Current State:** Not implemented.
-- **Required:**
-  - [ ] Create impersonation endpoint (admin only, 2FA required)
-  - [ ] Issue scoped session token (read-only, 1-hour limit)
-  - [ ] Add visual banner on user app when impersonated
-  - [ ] Log all impersonation actions to audit trail
-  - [ ] Add "end impersonation" button
-- **Effort:** 12-16 hours
+### P1-07: Implement Search (PostgreSQL FTS Minimum)
+- **Gap:** H-01
+- **Work:** Add tsvector column to `tools` table + GIN index. Create search API route with `plainto_tsquery`. Replace client-side filtering.
+- **Effort:** ~8 hours
 
-### REM-017: Email Template System
-- **Reference:** `26_ADMIN_PANEL_SPECIFICATION.md`
-- **Current State:** `emailTemplates` and `emailLogs` tables exist. Email sending implementation unclear.
-- **Required:**
-  - [ ] Integrate email provider (Resend, SendGrid, or SES)
-  - [ ] Create template engine (React Email or MJML)
-  - [ ] Wire: welcome email, password reset, coin purchase receipt, plan change
-  - [ ] Admin page to manage email templates
-  - [ ] Track delivery status in `emailLogs`
-- **Effort:** 16-24 hours
+### P1-08: Add Missing Unique Constraints on Join Tables
+- **Gap:** M-20
+- **Work:** Add unique constraints on 7 join tables
+- **Effort:** ~2 hours
 
-### REM-018: CSRF Origin/Referer Validation
-- **Reference:** `15_SECURITY_MODEL.md`
-- **Current State:** SameSite cookies provide partial protection. No explicit header checks.
-- **Required:**
-  - [ ] Add middleware to validate `Origin` and `Referer` headers on all POST/PUT/DELETE
-  - [ ] Whitelist known origins (`app.hsafx.com`, `admin.hsafx.com`)
-  - [ ] Reject requests with mismatched or missing origin headers
-- **Effort:** 2-4 hours
+### P1-09: Add `tools.tool_class` Column
+- **Gap:** H-15
+- **Work:** Add column, populate from `DEFAULT_BA_WEIGHTS` map, update `coin-service.ts` to read from DB
+- **Effort:** ~3 hours
 
-### REM-019: Session Configuration Alignment
-- **Reference:** `15_SECURITY_MODEL.md`
-- **Current State:** Admin session configured (24hr). User session settings unverified.
-- **Required:**
-  - [ ] Verify user session: 7-day rolling, 30-day absolute max
-  - [ ] Verify cookie name: `__hsafx_session`
-  - [ ] Verify session storage: Redis-backed
-  - [ ] Add session revocation API (logout all devices)
-- **Effort:** 2-4 hours
+### P1-10: Add `api_keys.scopes` Column
+- **Gap:** H-11
+- **Work:** Add `text[]` column, migrate from metadata JSONB, update `hasScope()` to read from column
+- **Effort:** ~2 hours
+
+### P1-11: Add Billing REST Endpoints
+- **Gap:** H-10
+- **Work:** REST wrappers for: `/api/v1/billing/balance`, `/api/v1/billing/transactions`, `/api/v1/billing/subscription`
+- **Effort:** ~4 hours
+
+### P1-12: Add Impersonation `reason` Field
+- **Gap:** H-05
+- **Work:** Require `reason` in POST body, store in audit log
+- **Effort:** ~1 hour
+
+### P1-13: Fix Daily Bonus Race Condition
+- **Gap:** H-07
+- **Work:** Add `FOR UPDATE` on wallet query in `claimDailyBonus`
+- **Effort:** ~1 hour
+
+### P1-14: Complete ~15 Stub Tool Handlers
+- **Gap:** H-08
+- **Work:** Implement actual logic for BSON, MessagePack, Avro, Protobuf, Parquet, etc. tools
+- **Effort:** ~12 hours
+
+### P1-15: Enable FastAPI Job Processing
+- **Gap:** H-09
+- **Work:** Uncomment `process_job` in `jobs.py`, implement job completion callback
+- **Effort:** ~3 hours
+
+**P1 Total: ~88 hours**
 
 ---
 
-## 4. Low-Priority / Nice-to-Have
+## P2 — IMPORTANT FOR COMPLETE PRODUCT
 
-Can be completed post-launch as enhancements.
+### P2-01: Install BullMQ + Job Queue Infrastructure
+- **Gap:** C-10
+- **Work:** Install BullMQ, create queue workers, set up 4 queues (default/priority/scheduled/dead-letter), add Redis connection for queue, migrate from inline to queue-based job processing
+- **Effort:** ~16 hours
 
-### REM-020: gRPC Enterprise API
-- **Reference:** `11_TECHNOLOGY_STACK.md` (marked "optional")
-- **Required:**
-  - [ ] Define `.proto` files for tool execution
-  - [ ] Implement gRPC server alongside REST
-  - [ ] Add API key authentication for B2B
-- **Effort:** 30-40 hours
+### P2-02: Move UI Components to `@hsafx/ui` (Shared)
+- **Gap:** H-04
+- **Work:** Migrate reusable components from `apps/web/src/components/` to `packages/ui/src/`
+- **Effort:** ~12 hours
 
-### REM-021: LibreOffice in Docker
-- **Reference:** `11_TECHNOLOGY_STACK.md`
-- **Required:**
-  - [ ] Add LibreOffice to FastAPI Docker image
-  - [ ] Wire DOCX/PPTX → PDF conversion tools
-- **Effort:** 4-6 hours
+### P2-03: Add Admin Analytics Dashboard
+- **Gap:** H-12
+- **Work:** API routes for usage metrics, revenue, user growth. Admin dashboard page with charts.
+- **Effort:** ~20 hours
 
-### REM-022: Full Observability Pipeline
-- **Reference:** `10_SYSTEM_ARCHITECTURE.md`
-- **Required:**
-  - [ ] Add metrics collection (Prometheus/Datadog)
-  - [ ] Create Grafana dashboards for: API latency, tool execution time, error rates
-  - [ ] Configure alerting rules
-- **Effort:** 20-30 hours
+### P2-04: Add Admin Audit Log Viewer
+- **Gap:** H-13
+- **Work:** Admin page with searchable/filterable audit log table. API route to query `activity_logs` + `permission_audit_logs`.
+- **Effort:** ~8 hours
 
-### REM-023: IP Whitelist for Admin
-- **Reference:** `26_ADMIN_PANEL_SPECIFICATION.md` (marked "optional")
-- **Required:**
-  - [ ] Add admin middleware for IP checking
-  - [ ] Create admin UI to manage whitelist
-  - [ ] Or: configure at CDN/proxy level (Cloudflare Access)
-- **Effort:** 4-8 hours
+### P2-05: Add Redis Session Caching
+- **Gap:** H-14
+- **Work:** Configure Better-Auth to use Redis as session cache layer
+- **Effort:** ~4 hours
 
-### REM-024: Load Testing
-- **Reference:** `50_DEFINITION_OF_DONE.md`
-- **Required:**
-  - [ ] Set up k6 or Locust
-  - [ ] Write load test scenarios: 100 concurrent tool executions, 500 concurrent users browsing
-  - [ ] Run tests, identify bottlenecks, optimize
-  - [ ] Document results and capacity planning
-- **Effort:** 16-24 hours
+### P2-06: Configure Rolling Sessions + Absolute Timeout
+- **Gap:** M-02
+- **Work:** Add `rolling: true` and `absoluteTimeout` to Better-Auth config
+- **Effort:** ~1 hour
 
-### REM-025: Security Audit
-- **Reference:** `50_DEFINITION_OF_DONE.md`
-- **Required:**
-  - [ ] Run OWASP ZAP scan against staging
-  - [ ] Run `npm audit` and fix critical vulnerabilities
-  - [ ] Run Snyk or similar dependency scanner
-  - [ ] Penetration test admin authentication flow
-  - [ ] Document and fix all findings
-- **Effort:** 16-24 hours
+### P2-07: Rename Session Cookie
+- **Gap:** M-01
+- **Work:** Set `cookie.name: '__hsafx_session'` in Better-Auth config + update all cookie references
+- **Effort:** ~2 hours
 
-### REM-026: Mobile Responsiveness Testing
-- **Reference:** `50_DEFINITION_OF_DONE.md`
-- **Required:**
-  - [ ] Test all tool pages on mobile viewports (320px, 375px, 414px)
-  - [ ] Test admin panel on tablet (768px, 1024px)
-  - [ ] Fix any layout breaks, touch targets, overflow issues
-  - [ ] Test touch interactions with file upload tools
-- **Effort:** 12-20 hours
+### P2-08: Resolve Table/Column Naming Mismatches
+- **Gap:** M-05 through M-15
+- **Decision needed:** Either update planning docs to match code OR rename in code. Requires migration.
+- **Effort:** ~8 hours (if code changes) or ~4 hours (if docs updated)
 
-### REM-027: Browser Compatibility Testing
-- **Reference:** `50_DEFINITION_OF_DONE.md`
-- **Required:**
-  - [ ] Test on Chrome, Firefox, Safari, Edge
-  - [ ] Test WASM functionality across browsers
-  - [ ] Test Monaco Editor across browsers
-  - [ ] Fix any polyfill or compatibility issues
-- **Effort:** 8-12 hours
+### P2-09: Add Meilisearch for Full Fuzzy Search
+- **Planning requires** Meilisearch (doc 11, 16). P1-07 does PostgreSQL FTS as minimum.
+- **Effort:** ~12 hours
 
-### REM-028: OpenAPI Auto-Generation
-- **Reference:** `14_API_CONTRACTS.md`
-- **Required:**
-  - [ ] Set up auto-generated OpenAPI spec from tRPC routes
-  - [ ] Deploy Swagger UI at `/api-docs`
-  - [ ] Ensure spec stays in sync with code changes
-- **Effort:** 4-8 hours
+### P2-10: Add Admin Billing Management
+- **Effort:** ~12 hours
 
-### REM-029: Database Backup Automation
-- **Reference:** `50_DEFINITION_OF_DONE.md`
-- **Required:**
-  - [ ] Configure automated Neon/PostgreSQL backups
-  - [ ] Set backup schedule (daily at minimum)
-  - [ ] Test backup restoration procedure
-  - [ ] Document disaster recovery runbook
-- **Effort:** 4-8 hours
+### P2-11: Add Stripe Dispute + Payment Failed Handlers
+- **Effort:** ~4 hours
+
+### P2-12: Add Pub/Sub Channels
+- **Effort:** ~8 hours
+
+### P2-13: Add CSRF Referer Fallback
+- **Effort:** ~2 hours
+
+### P2-14: Add `Retry-After` Header to Rate Limit Responses
+- **Effort:** ~1 hour
+
+**P2 Total: ~110 hours**
 
 ---
 
-## 5. Effort Summary
+## P3 — NICE TO HAVE
 
-| Priority | Items | Estimated Hours |
-|----------|-------|----------------|
-| **🔴 Critical Blockers** | 4 items | 69-103 hours (Option B) or 97-157 hours (Option A) |
-| **🟠 High Priority** | 6 items | 116-170 hours |
-| **🟡 Medium Priority** | 9 items | 90-134 hours |
-| **🟢 Low Priority** | 10 items | 119-180 hours |
-| **TOTAL** | **29 items** | **394-587 hours** |
+### P3-01: Remain 7 Missing DB Tables
+`plan_theme_access`, `invoice_payments`, `payment_methods`, `coin_purchase_payments`, `plan_metadata`, `plan_upgrade_rules`, `plan_audit_logs`
+- **Effort:** ~8 hours
 
-### With Option B (Managed Platform) for deployment:
-- **Minimum to Production:** 69-103 hours (Critical only)
-- **Beta-Ready:** 185-273 hours (Critical + High)
-- **GA-Ready:** 275-407 hours (Critical + High + Medium)
-- **Feature-Complete:** 394-587 hours (Everything)
+### P3-02: Money Columns — Integer Cents vs Decimal
+- Migrate `decimal(10,2)` to `bigint` cents where planning requires
+- **Effort:** ~4 hours
 
-### Time Estimates at 40hr/week:
-- Critical blockers: **2-3 weeks**
-- Through beta: **5-7 weeks**
-- Through GA: **7-10 weeks**
-- Feature-complete: **10-15 weeks**
+### P3-03: Remove `inngest_job_id` Column
+- Vestigial from Inngest replacement
+- **Effort:** ~1 hour
+
+### P3-04: Add Missing `roles` Table Columns
+- `role_type`, `is_default`, `is_active`, `sort_order`, `deleted_at`, `updated_at`
+- **Effort:** ~2 hours
+
+### P3-05: Remove Facebook OAuth (Not in Planning)
+- Or update planning docs if desired
+- **Effort:** ~0.5 hours
+
+### P3-06: Coin Lock Lua Script (vs SQL FOR UPDATE)
+- Planning specifies Redis-based lock. Current SQL lock works but differs.
+- **Effort:** ~4 hours
+
+### P3-07: Docker/K8s End-to-End Testing
+- **Effort:** ~8 hours
+
+**P3 Total: ~28 hours**
 
 ---
 
-*29 remaining items identified. 4 are must-fix production blockers. See `04_STEPS_TO_COMPLETE.md` for the recommended execution plan.*
+## EFFORT SUMMARY
+
+| Priority | Items | Hours |
+|----------|-------|-------|
+| **P0 — Blocking** | 8 | ~28 |
+| **P1 — v1.0 Required** | 15 | ~88 |
+| **P2 — Complete Product** | 14 | ~110 |
+| **P3 — Polish** | 7 | ~28 |
+| **TOTAL** | **44** | **~254 hours** |
+
+### Critical Path to MVP
+P0 items MUST be done first: **~28 hours of security + billing fixes** before any new features.
+
+Then P1 items bring the product to launchable state: **~88 more hours**.
+
+**Minimum viable deployment: P0 + P1 = ~116 hours of work.**

@@ -1,392 +1,305 @@
-# HSAFX World App — What Is Completed
+# 01 — WHAT IS ACTUALLY COMPLETED
 
-> **Date:** February 11, 2026
-> **Source of Truth:** Codebase audit vs `docs/PLANNING/` specifications
-> **Scope:** Every feature verified against planning documents
-
----
-
-## Table of Contents
-
-1. [Executive Summary](#1-executive-summary)
-2. [Phase 1 — Tools & API](#2-phase-1--tools--api)
-3. [Phase 2 — Database & Auth](#3-phase-2--database--auth)
-4. [Phase 3 — Admin Panel](#4-phase-3--admin-panel)
-5. [Phase 4 — User Frontend](#5-phase-4--user-frontend)
-6. [Phase 5 — Finalization](#6-phase-5--finalization)
-7. [Cross-Cutting Concerns](#7-cross-cutting-concerns)
-8. [Package Completion Status](#8-package-completion-status)
+> **Last audited:** 2025-07-15 — Comprehensive codebase-vs-planning reconciliation
+> **Commit:** `2234bb7` (Sprint 3-5 on master)
+> **Methodology:** Every planning doc (01–74) compared against actual source files
 
 ---
 
-## 1. Executive Summary
+## SCORING LEGEND
 
-| Area | Planning Target | Actual Status | Completion |
-|------|----------------|---------------|------------|
-| **Tool Metadata Registry** | 446 tools | 454 entries registered | ✅ 100%+ |
-| **Tool Logic (TypeScript)** | All 446 tools execute | ~40+ impl files across 9 categories | ✅ ~70% |
-| **WASM/Rust Text Tools** | 191 text tools | 12 Rust modules, WASM build configured | ✅ Implemented |
-| **FastAPI Backend** | Media/file processing | 10 tool handlers + scrapers + executor | ✅ Implemented |
-| **Database Schema** | ~25 planned tables | 44 Drizzle tables + migration | ✅ 100%+ |
-| **Authentication** | Email + 3 OAuth + 2FA | Email + Google/GitHub/Facebook, NO 2FA | ⚠️ 85% |
-| **Admin Panel** | Full CRUD + RBAC + audit | 14 pages + RBAC + audit | ✅ ~90% |
-| **Web App** | All tools + auth + billing UI | 24 pages + 6 executors + hooks | ✅ ~85% |
-| **Billing (Stripe)** | Coin pack purchases | SDK + webhooks + service | ✅ Implemented |
-| **Billing (Polar)** | Subscriptions | SDK + webhooks + service | ✅ Implemented |
-| **Coin System** | Wallets + TX + packs + ads | Full tables + services + hooks | ✅ Implemented |
-| **Theme System** | Intent-driven OKLCH | Full derivation engine + presets | ✅ 100% |
-| **Redis/Caching** | Upstash + rate limiting | Full implementation | ✅ 100% |
-| **Docker** | Local dev environment | PostgreSQL + Redis + FastAPI | ✅ Implemented |
-| **Testing** | 80% critical, 60% tools | 2,631 unit tests passing | ✅ Substantial |
-| **Linting** | Zero errors | 0 errors, 134 warnings | ✅ Implemented |
-| **Build** | Both apps compile | Web (30 routes) + Admin (38 routes) | ✅ Passing |
-| **CI/CD** | GitHub Actions | Not implemented | ❌ 0% |
-| **Kubernetes** | Production deploy | Empty directory | ❌ 0% |
-
----
-
-## 2. Phase 1 — Tools & API
-
-### 2.1 Tool Metadata Registry (✅ COMPLETE)
-
-All 446+ tools are registered in `packages/tool-definitions/src/registry/`:
-
-| Registry File | Tool Count | Status |
-|--------------|-----------|--------|
-| `text-tools.ts` | 191 tools | ✅ Complete — case (55), wrapper (35), unicode (30), encoding (18), cipher (23), manipulation (30) |
-| `data-tools.ts` | 106 tools | ✅ Complete — data conversion/formatting |
-| `media-tools.ts` | 83 tools | ✅ Complete — image, video, audio, document, PDF, archive, font |
-| `generator-tools.ts` | 38 tools | ✅ Complete — code/web generators |
-| `calculator-tools.ts` | 9 tools | ✅ Complete — health, financial, web, GPA |
-| `converter-tools.ts` | 23 tools | ✅ Complete — unit/format converters |
-| `specialized-tools.ts` | 4 tools | ✅ Complete — cheque gen, container validator, DB visualizer, file tree |
-| **TOTAL** | **454** | **✅ Exceeds 446 target** |
-
-Each tool entry includes: `id`, `slug`, `name`, `description`, `category`, `toolGroup`, `runtime`, `executionMode`, `coinCost`, `isPremium`, `tags`.
-
-### 2.2 Tool Logic — TypeScript (`packages/tools/src/`)
-
-| Category | Files | What's Implemented |
-|----------|-------|-------------------|
-| `text/` | `index.ts` + tests | Text transformations — case, encoding, manipulation |
-| `calculators/` | 9 files | Expression, financial, health, Islamic, math, units, web, GPA |
-| `converters/` | 4 files | Colors, datetime, numbers, units |
-| `data-converters/` | 11 files | CSV, JSON, XML, YAML, API, code, devops, schema, format, validate |
-| `encoders/` | 1 barrel file + tests | Encoding operations |
-| `formatters/` | 1 barrel file + tests | Formatting operations |
-| `generators/` | 6 files | CSS, SEO, web generators |
-| `specialized/` | 6 files | Cheque generator, container validator, DB visualizer, file tree, GPA, timezone |
-| `validators/` | 3 files + tests | Web validators |
-
-### 2.3 WASM/Rust Text Tools (✅ IMPLEMENTED)
-
-`backend/rust/text-tools/src/` — 12 Rust modules:
-
-| Module | Purpose |
+| Symbol | Meaning |
 |--------|---------|
-| `lib.rs` | Entry point — ~19 exported WASM functions |
-| `case.rs` | Core case converters (upper, lower, title, camel, snake, kebab) |
-| `case_extended.rs` | Extended case converters |
-| `encoding.rs` | Base64, hex, URL encode/decode |
-| `encoding_extended.rs` | Additional encodings |
-| `hash.rs` | MD5, SHA-256 hashing |
-| `format.rs` | Text formatting |
-| `counter.rs` | Word/char/line counting |
-| `wrapper.rs` | Text wrapping |
-| `manipulation.rs` | Text manipulation |
-| `unicode.rs` | Unicode transformations |
-| `generators.rs` | Text generators |
-
-Build configured: `crate-type = ["cdylib", "rlib"]`, `wasm-bindgen`, `wasm-pack`, `opt-level = "z"`.
-
-### 2.4 FastAPI Backend Tools (✅ IMPLEMENTED)
-
-`backend/fastapi/src/tools/` — 10 files:
-
-| File | What It Does |
-|------|-------------|
-| `image_converter.py` | Image format conversion (libvips) |
-| `audio_converter.py` | Audio conversion (FFmpeg) |
-| `video_converter.py` | Video conversion (FFmpeg) |
-| `document_converter.py` | DOCX/PDF/TXT conversion |
-| `pdf_handler.py` | PDF merge, split, compress (Poppler) |
-| `font_handler.py` | TTF/WOFF/WOFF2 conversion |
-| `archive_handler.py` | ZIP/TAR/GZ operations |
-| `file_handler.py` | General file handling |
-| `python_tools.py` | Python-specific text/data tools |
-| `executor.py` | Tool execution orchestration/dispatch |
-
-Plus scrapers at `backend/fastapi/src/scrapers/` (container tracking for KICT, KGTL, QICT, SAPT terminals).
-
-Docker image includes: FFmpeg, libvips, Poppler, Tesseract, wkhtmltopdf.
-
-### 2.5 API Endpoints (✅ IMPLEMENTED)
-
-**Web App API Routes (16 route groups):**
-- `POST /api/auth/[...all]` — Better-Auth catch-all
-- `POST /api/cron/anonymous-cleanup`
-- `POST /api/cron/stale-job-cleanup`
-- `POST /api/cron/subscription-sync`
-- `POST /api/cron/wallet-reconciliation`
-- `POST /api/internal/job-complete`
-- `ANY /api/trpc/[trpc]` — tRPC endpoint
-- `GET /api/v1/health`
-- `GET /api/v1/account` + `/api/v1/account/usage`
-- `GET /api/v1/tools` + `POST /api/v1/tools/[toolKey]/execute`
-- `GET /api/v1/jobs/[jobId]` + `/api/v1/jobs/[jobId]/result`
-- `POST /api/webhooks/stripe`
-- `POST /api/webhooks/polar`
-
-**Admin App API Routes (20 route groups):**
-- Auth, session, 2FA, users, tools, categories, subscriptions, billing, coin-packs, plans, feature-flags, api-keys, config, audit, dashboard (5 sub-routes)
+| ✅ | Fully implemented per planning spec |
+| ⚠️ | Partially implemented — works but deviates or missing features |
+| ❌ | Not implemented or stub only |
+| 🔴 | Critical gap — blocks core functionality |
+| 🟠 | High gap — blocks a planned feature |
+| 🟡 | Medium gap — cosmetic or naming deviation |
 
 ---
 
-## 3. Phase 2 — Database & Auth
+## 1. INFRASTRUCTURE & DEVOPS
 
-### 3.1 Database Schema (✅ COMPLETE — Exceeds Planning)
+| Item | Status | Notes |
+|------|--------|-------|
+| Turborepo monorepo | ✅ | v2.7.5, 13 workspace packages, `turbo.json` configured |
+| pnpm workspaces | ✅ | pnpm v9, `pnpm-workspace.yaml` correct |
+| TypeScript project refs | ✅ | Root + per-package `tsconfig.json` |
+| ESLint config | ✅ | `@hsafx/config` package, 0 errors (78 warnings remain) |
+| Git repo | ✅ | 7 commits on master, `develop` branch, `v0.1.0-alpha` tag |
+| GitHub Actions CI | ✅ | `.github/workflows/ci.yml` — lint, typecheck, test, build |
+| Staging deploy workflow | ✅ | Vercel + Railway targets |
+| Production deploy workflow | ✅ | Tag-triggered release pipeline |
+| Docker configs | ⚠️ | `infra/docker/` exists with Dockerfiles — not tested end-to-end |
+| K8s manifests | ⚠️ | `infra/k8s/` exists — not validated |
+| Seed script | ✅ | `packages/db/src/seed.ts` with plans, permissions, roles |
 
-**44 tables implemented** across 6 Drizzle schema files:
-
-| Schema File | Tables | Status |
-|------------|--------|--------|
-| `users.ts` | users, userPreferences, userSettings | ✅ |
-| `auth.ts` | sessions, oauthConnections, roles, userRoles, permissions, rolePermissions, activityLogs, passwordResetTokens, emailVerificationTokens, refreshTokens, userPermissionOverrides | ✅ |
-| `billing.ts` | plans, planLimits, subscriptions, coinTransactions, invoices, payments, userCoinWallets, coinPacks, toolCoinCosts, planFeatures, planCoinRules, adRewardTransactions, userAdDailyCaps | ✅ |
-| `tools.ts` | toolCategories, tools, toolLimits, toolVersions, usageCounters, toolExecutions, apiKeys, anonymousUsage, apiRateLimits | ✅ |
-| `misc.ts` | fileUploads, asyncJobs, notifications, favorites, featureFlags, emailProviderConfig, emailTemplates, emailLogs, adminSettings | ✅ |
-| `audit.ts` | apiRequestLogs, permissionAuditLogs | ✅ |
-
-**All planned tables from `13_DATABASE_SCHEMA.md` are present**, plus additional tables not in original planning (favorites, notifications, fileUploads, asyncJobs, emailTemplates, emailLogs, toolVersions, toolExecutions, adRewardTransactions, userAdDailyCaps).
-
-Migration exists: `packages/db/drizzle/0000_serious_sister_grimm.sql`
-
-### 3.2 Authentication (✅ MOSTLY COMPLETE)
-
-| Feature | Planning Spec | Status |
-|---------|--------------|--------|
-| Email + Password | Required | ✅ Implemented (Better-Auth) |
-| Email Verification | Required | ✅ Auto-sends on signup |
-| Password Reset | Required | ✅ Email-based flow |
-| Google OAuth | Required | ✅ Conditional via env |
-| GitHub OAuth | Required | ✅ Conditional via env |
-| Facebook OAuth | Not in planning (Meta listed) | ✅ Bonus — added |
-| Account Linking | Required | ✅ Across all providers |
-| Session Management | Redis-based, 7-day | ✅ Better-Auth sessions |
-| Login Security | Rate limiting, CAPTCHA | ✅ IP-based checking |
-| API Key Auth | `hsafx_{env}_{random}` format | ✅ SHA-256 hashed, scoped |
-| Rate Limiting | 3-layer (IP, session, auth) | ✅ Upstash Ratelimit |
-| Admin Separate Auth | 24hr expiry, no OAuth | ✅ Separate Better-Auth instance |
-| **2FA/TOTP** | **Required for admin** | **❌ NOT IMPLEMENTED** |
-
-### 3.3 RBAC System (✅ IMPLEMENTED)
-
-- `roles` table with admin, moderator, user, guest definitions
-- `permissions` table with granular permission names + categories
-- `rolePermissions` M:N join table
-- `userRoles` M:N join table
-- `userPermissionOverrides` for per-user grants/denials
-- Admin panel: `permission-guard.tsx`, `protected-route.tsx`, `use-rbac.tsx`
+**Infrastructure score: ~85%** — CI/CD done, containerization untested.
 
 ---
 
-## 4. Phase 3 — Admin Panel (✅ ~90% COMPLETE)
+## 2. DATABASE SCHEMA
 
-### 4.1 Admin Pages Implemented
+| Item | Status | Gap Detail |
+|------|--------|------------|
+| Schema files exist (6 files) | ✅ | `users.ts`, `auth.ts`, `billing.ts`, `tools.ts`, `misc.ts`, `audit.ts` |
+| Table count | ⚠️ | **47 tables exist** vs **60+ planned** — 13 tables completely missing |
+| PostgreSQL enums | 🔴 | **ZERO enums defined** — all use free `text`. Planning requires 13 pgEnum types |
+| Database indexes | 🔴 | **ZERO explicit indexes** beyond inline `.unique()` — ALL composite, partial, and performance indexes missing |
+| Column naming alignment | 🟡 | **30+ column name mismatches** vs planning DBML (see doc 02) |
+| `subscriptions.status` stored | 🟡 | Planning says "NEVER store status — derive from timestamps." Violated. |
+| Provider: Polar vs Stripe | 🟡 | Planning says Stripe; code uses Polar (`polar_product_id`, `polar_subscription_id`) |
+| Money columns | 🟡 | Planning says `bigint` cents; code uses `decimal(10,2)` or `integer` |
 
-| Page | Planning Spec Section | Status |
-|------|----------------------|--------|
-| `/dashboard` | Section 5 — Monitoring | ✅ |
-| `/users` + `/users/[id]` | Section 6 — User Management | ✅ |
-| `/subscriptions` + `/subscriptions/[id]` | Section 7 — Subscription Management | ✅ |
-| `/tools` + `/tools/[id]` | Section 8 — Tool Management | ✅ |
-| `/billing` | Section 9 — Billing & Transactions | ✅ |
-| `/categories` | Section 8 — Tool Categories | ✅ |
-| `/coin-packs` | Section 9 — Coin Pack Management | ✅ |
-| `/plans` | Section 7 — Plan Configuration | ✅ |
-| `/feature-flags` | Section 10 — System Config | ✅ |
-| `/activity` | Section 11 — Audit Logging | ✅ |
-| `/settings` | Section 10 — System Settings | ✅ |
-| `/admins` | Section 4 — Admin User Management | ✅ |
-| `/api-keys` | API Key Management | ✅ |
-| `/login` | Auth — Admin Login | ✅ |
+### Missing Tables (13)
 
-### 4.2 Admin Components
+| # | Table | Why It Matters |
+|---|-------|----------------|
+| 1 | `processed_webhooks` | 🔴 No idempotency for non-coin webhook events |
+| 2 | `tool_class_policy` | 🔴 Core billing: BA weights per tool class — currently hardcoded |
+| 3 | `usage_coin_fallbacks` | 🟠 Over-limit fallback discount rates |
+| 4 | `billable_action_logs` | 🟠 Granular billing audit trail |
+| 5 | `plan_permissions` | 🟠 Plan→permission mapping for CASL |
+| 6 | `plan_theme_access` | 🟡 Per-plan theme presets |
+| 7 | `permission_groups` | 🟡 Permission categorization |
+| 8 | `invoice_payments` | 🟡 Supports partial payments |
+| 9 | `payment_methods` | 🟡 Stored payment methods |
+| 10 | `coin_purchase_payments` | 🟡 Coin pack→payment linkage |
+| 11 | `plan_metadata` | 🟡 Extensible plan properties |
+| 12 | `plan_upgrade_rules` | 🟡 Auto-upgrade logic |
+| 13 | `plan_audit_logs` | 🟡 Plan change history |
 
-- RBAC guards: `permission-guard.tsx`, `protected-route.tsx`, `use-rbac.tsx`
-- UI primitives: Badge (Status, Plan, Tier, Role), Button, Card, DataTable, Form, Modal (Confirm + TOTP), Sheet
-- Auth libs: `auth.ts`, `auth-client.ts`, `permissions.ts`
-- API client: `api.ts`, `hooks.ts`
-- Monitoring: `monitoring.ts`
+### Extra Tables (14 — not in planning, added by implementation)
 
----
+`tool_categories`, `tool_limits`, `tool_versions`, `tool_executions`, `refresh_tokens`, `file_uploads`, `notifications`, `favorites`, `feature_flags`, `email_templates`, `email_logs`, `ad_reward_transactions`, `user_ad_daily_caps`, `admin_settings`
 
-## 5. Phase 4 — User Frontend (✅ ~85% COMPLETE)
-
-### 5.1 Pages Implemented
-
-| Route | Planning Spec | Status |
-|-------|--------------|--------|
-| `/` (landing page) | Phase 4, Week 8 | ✅ |
-| `/auth/signin` | Phase 4, Week 6 | ✅ |
-| `/auth/signup` | Phase 4, Week 6 | ✅ |
-| `/tools` | Phase 4, Week 3 | ✅ |
-| `/tools/all` | Phase 4, Week 3 | ✅ |
-| `/tools/category/[category]` | Phase 4, Week 3 | ✅ |
-| `/tools/[slug]` | Phase 4, Week 3 | ✅ |
-| `/tools/text-converter` | Phase 4, Week 3 — Single-pane model | ✅ |
-| `/tools/db-schema-visualizer` | Phase 4, Week 5 | ✅ |
-| `/tools/file-tree-generator` | Phase 4, Week 5 | ✅ |
-| `/dashboard` | Phase 4, Week 6 | ✅ |
-| `/dashboard/api-keys` | Phase 4, Week 6 | ✅ |
-| `/dashboard/coins` | Phase 4, Week 6 | ✅ |
-| `/dashboard/history` | Phase 4, Week 6 | ✅ |
-| `/dashboard/subscription` | Phase 4, Week 6 | ✅ |
-| `/settings/profile` | Phase 4, Week 8 | ✅ |
-| `/settings/security` | Phase 4, Week 8 | ✅ |
-| `/settings/billing` | Phase 4, Week 6 | ✅ |
-| `/settings/preferences` | Phase 4, Week 8 | ✅ |
-| `/settings/notifications` | Phase 4, Week 8 | ✅ |
-| `/pricing` | Phase 4, Week 6 | ✅ |
-| `/docs` | Phase 4, Week 8 | ✅ |
-| `/api-docs` | Phase 4, Week 8 | ✅ |
-
-### 5.2 Tool UI Components
-
-| Component | Purpose | Status |
-|-----------|---------|--------|
-| `text-converter-unified.tsx` | All-in-one text converter (191 tools) | ✅ |
-| `text-converter-layout.tsx` | Text tool layout | ✅ |
-| `calculator-layout.tsx` | Calculator wrapper | ✅ |
-| `unit-converter-layout.tsx` | Unit converter | ✅ |
-| `file-converter-layout.tsx` | File upload/download | ✅ |
-| `generator-layout.tsx` | Generator wrapper | ✅ |
-| `code-editor-tool.tsx` | Dual Monaco editors | ✅ |
-| `cheque-generator.tsx` | Cheque preview + PDF | ✅ |
-| `db-schema-visualizer-interactive.tsx` | ER diagram | ✅ |
-| `file-tree-visualizer.tsx` | Tree structure | ✅ |
-| `islamic-calculators.tsx` | Inheritance + Zakat | ✅ |
-| `async-intelligence-layout.tsx` | Container tracker | ✅ |
-| `tool-popup.tsx` | Quick-access modal | ✅ |
-
-### 5.3 Tool Executors
-
-- `text-executor.tsx` — Text input/output
-- `calculator-executor.tsx` — Calculator forms
-- `code-executor.tsx` — Code editor execution
-- `file-executor.tsx` — File upload + download
-- `generator-executor.tsx` — Generator controls
-- `unit-executor.tsx` — Unit conversion dropdowns
-
-### 5.4 Client-Side State & Hooks
-
-| Hook/Store | Purpose | Status |
-|-----------|---------|--------|
-| `use-auth.tsx` | Auth state management | ✅ |
-| `use-coins.ts` | Coin balance + operations | ✅ |
-| `use-subscription.ts` | Plan state + operations | ✅ |
-| `use-plan-access.tsx` | Feature gating | ✅ |
-| `use-session.ts` | Session management | ✅ |
-| `use-file-upload.ts` | File upload state | ✅ |
-| `use-code-editor.ts` | Code editor state | ✅ |
-| `use-utils.ts` | Utility functions | ✅ |
-| `tool-store.ts` | Zustand tool state | ✅ |
-| `ui-store.ts` | Zustand UI state | ✅ |
-| `user-store.ts` | Zustand user state | ✅ |
-
-### 5.5 WASM Integration
-
-- `wasm-loader.ts` — Dynamic WASM module loader
-- `wasm-fallback.ts` — Fallback for non-WASM browsers
-- `registry.ts` — Tool dispatch registry
-- `executor.ts` — Execution orchestration
+**Database score: ~55%** — Tables exist but enums, indexes, and 13 planned tables missing.
 
 ---
 
-## 6. Phase 5 — Finalization (⚠️ PARTIAL)
+## 3. AUTHENTICATION & AUTHORIZATION
 
-| Task | Planning Spec | Status |
-|------|--------------|--------|
-| Unit tests | 80% critical, 60% tools | ✅ 2,631 tests passing |
-| ESLint | Zero errors | ✅ 0 errors, 134 warnings |
-| Ruff (Python) | Clean | ✅ 23 cosmetic warnings only |
-| TypeScript type-check | Zero errors | ✅ Both apps compile |
-| Build verification | Both apps | ✅ Web (30 routes) + Admin (38 routes) |
-| Server startup test | FastAPI | ✅ Health returns 200 |
-| Docker compose | Local dev | ✅ PostgreSQL + Redis + FastAPI |
-| Load testing | 1000 concurrent users | ❌ Not done |
-| Security audit | OWASP Top 10 | ❌ Not done |
-| Browser compatibility | Chrome/Firefox/Safari/Edge | ❌ Not tested |
-| Mobile testing | iOS/Android | ❌ Not tested |
-| Real payment testing | Stripe live mode | ❌ Not done |
-| Monitoring/Alerts | Sentry + custom | ⚠️ Sentry SDK installed, not verified |
-| Database backup | Automated | ❌ Not configured |
+| Item | Status | Gap Detail |
+|------|--------|------------|
+| better-auth core | ✅ | v1.4.14 in both apps, DB adapter, email+password |
+| OAuth (Google, GitHub) | ✅ | Configured in web app |
+| Facebook OAuth | ⚠️ | **Extra** — not in planning docs |
+| Session config (7d expiry) | ✅ | `expiresIn: 7 * 86400`, `updateAge: 86400` |
+| Session cookie name | 🟡 | Uses `better-auth.session_token`, planning says `__hsafx_session` |
+| Rolling sessions | ❌ | No `rolling: true` configured |
+| Absolute session timeout | ❌ | No `absoluteTimeout` configured |
+| Redis session storage | ❌ | Uses DB-backed sessions only |
+| Admin session (24h) | ✅ | Configured correctly |
+| 2FA (TOTP) | ⚠️ | Custom `otpauth` + `qrcode` — works but NOT using Better-Auth `twoFactor` plugin |
+| Admin 2FA enforcement | ⚠️ | Cookie-based, client-side cooperative — NOT server-enforced in middleware |
+| CASL ability definitions | ✅ | `buildUserAbility()` + `buildAdminAbility()` in `packages/shared` |
+| @casl/react `<Can>` component | ❌ | Package not installed, no React integration |
+| CASL wired into web app | 🔴 | `buildUserAbility` **never imported** in `apps/web/` — completely unwired |
+| CASL wired into API routes | 🔴 | No tRPC or REST middleware calls CASL |
+| Admin RBAC (custom) | ✅ | Full `useRBAC`, `Can`/`Cannot`, `PermissionGuard`, `RoleGate` |
+| API key format | ✅ | `hsafx_{env}_{random}`, SHA-256 hashed |
+| API key scope enforcement | ⚠️ | `hasScope()` exists but `scopes` column missing from DB |
+| API key full middleware | ❌ | Full hash→scope→context pipeline not wired |
+
+**Auth score: ~50%** — Core auth works. CASL completely unwired. Several planned security features missing.
 
 ---
 
-## 7. Cross-Cutting Concerns
+## 4. SECURITY
 
-### 7.1 Billing System (✅ COMPLETE)
+| Item | Status | Gap Detail |
+|------|--------|------------|
+| Security headers (HSTS, CSP, etc.) | ✅ | Full set in both `next.config.js` |
+| CSRF protection (Origin check) | ✅ | Middleware validates Origin on state-changing requests |
+| CSRF Referer fallback | ❌ | Only checks `Origin` |
+| Rate limiting — IP layer | ✅ | 100/min via Upstash sliding window |
+| Rate limiting — Auth layer | ✅ | 10/15min on auth endpoints |
+| Rate limiting — API key layer | ✅ | Per-key limits |
+| Rate limiting — Session layer | 🔴 | `checkUserRateLimit` defined but **NEVER called** |
+| `Retry-After` header | ❌ | Not included in rate limit responses |
+| Structured logging (TypeScript) | 🔴 | **ALL TypeScript uses `console.*`** — no pino/winston/PII redaction |
+| Structured logging (Python) | ✅ | `structlog` throughout FastAPI |
+| Impersonation — core flow | ✅ | Admin-only, 2FA-gated, 1hr TTL, HMAC-signed |
+| Impersonation — `reason` field | ❌ | No mandatory reason in POST body |
+| Impersonation — scoped actions | ❌ | No middleware blocks restricted actions during impersonation |
+| Impersonation — banner | ✅ | Fixed amber banner with stop button |
+
+**Security score: ~60%**
+
+---
+
+## 5. BILLING SYSTEM
+
+| Item | Status | Gap Detail |
+|------|--------|------------|
+| Coin cost formula | ✅ | `Math.ceil(ba × (1 - discount/100))` correct |
+| BA weight lookup | ✅ | `toolCoinCosts` table + `DEFAULT_BA_WEIGHTS` fallback |
+| `reserveCoins()` + FOR UPDATE | ✅ | Proper row locking |
+| `confirmReservation()` | 🔴 | **Exists but NEVER called** — reservations stay pending forever |
+| B2C coin deduction (tRPC) | ✅ | `tools.execute` → `executeToolServer()` → deduction |
+| B2B coin deduction (REST) | 🔴 | **`/api/v1/tools/:key/execute` bypasses coin-service** — free execution |
+| Polar checkout flow | ✅ | `billing.createCheckout` working |
+| Daily bonus claim | ⚠️ | Works but lacks `FOR UPDATE` — race condition |
+| Stripe webhook — signature | ✅ | `constructEvent()` |
+| Stripe webhook — refund clawback | 🔴 | Does NOT claw back coins — user keeps coins after refund |
+| Stripe webhook — dispute/failed | ❌ | Only logs, TODO comments |
+| Polar webhook — full lifecycle | ✅ | create, update, cancel |
+| Webhook idempotency | ⚠️ | Metadata-based for coin events only. **Non-coin events: ZERO idempotency** |
+| Billing REST endpoints | ❌ | No `/api/v1/billing/*` REST routes for B2B |
+| Wallet reconciliation cron | ✅ | Exists |
+
+**Billing score: ~50%**
+
+---
+
+## 6. TOOL EXECUTION PIPELINE
+
+| Item | Status | Gap Detail |
+|------|--------|------------|
+| WASM execution (client) | ✅ | `wasm-loader.ts` with JS fallback, ~154 exports |
+| Node.js inline execution | ⚠️ | **~15 tools return stub/placeholder text** |
+| FastAPI native execution | ✅ | 121 tools across 9 handler classes |
+| Async job system | ⚠️ | `job-manager.ts` + `job-worker.ts` — BullMQ not installed, inline only |
+| FastAPI job processing | ❌ | `process_job` in `jobs.py` commented out |
+| Tool metadata registry | ✅ | 454+ tools defined |
+
+**Execution score: ~65%**
+
+---
+
+## 7. FRONTEND — WEB APP
+
+| Item | Status | Gap Detail |
+|------|--------|------------|
+| Next.js app structure | ✅ | App Router, pages, layouts |
+| Tool pages + execution UI | ✅ | Per-type layouts work |
+| Search | ⚠️ | **Client-side `String.includes()` only** — no Meilisearch, no tsvector |
+
+### Planned Components (10)
 
 | Component | Status |
 |-----------|--------|
-| Stripe SDK (coin purchases) | ✅ Configured, API v2026-01-28.clover |
-| Polar SDK (subscriptions) | ✅ Configured, sandbox support |
-| Stripe webhooks | ✅ Route implemented |
-| Polar webhooks | ✅ Route implemented |
-| Coin wallets table | ✅ `userCoinWallets` |
-| Coin transactions ledger | ✅ `coinTransactions` (immutable) |
-| Coin packs | ✅ `coinPacks` table + service |
-| Tool coin costs | ✅ `toolCoinCosts` table |
-| Plan coin rules | ✅ `planCoinRules` (discounts) |
-| Ad reward system | ✅ `adRewardTransactions` + `userAdDailyCaps` |
-| Coin service | ✅ `apps/web/src/server/limits/coin-service.ts` |
-| Ad service | ✅ `apps/web/src/server/ads/ad-reward-service.ts` |
-| Billing tRPC router | ✅ `packages/api/src/routers/billing.ts` |
-| Client hooks | ✅ `use-coins.ts`, `use-subscription.ts` |
+| ToolCard | ⚠️ Partial — missing `isFavorite`, `executionCount`, `onFavoriteToggle` |
+| ToolGrid | ⚠️ Partial — dumb wrapper, no `tools`/`isLoading`/`emptyState` |
+| ToolFilterBar | ⚠️ Partial — split into separate SearchBar/FilterPills/SortDropdown |
+| ExecutionPanel | ❌ Missing |
+| ResultDisplay | ⚠️ Partial — local-only, wrong interface |
+| UsageCard | ❌ Missing |
+| BillingCard | ❌ Missing |
+| TransactionList | ❌ Missing |
+| ActivityFeed | ❌ Missing |
+| NotificationBell | ❌ Missing |
 
-### 7.2 Theme System (✅ 100% COMPLETE)
+**0/10 fully implemented. 4 partial. 6 missing.**
 
-Matches `32_THEME_SYSTEM.md` exactly:
-- Intent-driven architecture (ThemeIntent interface)
-- OKLCH color space (parseToOklch, ensureContrast)
-- Derivation engine (deriveTheme, deriveColors, deriveRadius, deriveShadows, deriveTypography)
-- CSS variable output (themeToCssVars)
-- Presets with tier-based access (canAccessPreset, getPresetsForTier)
-- WCAG AA compliance guaranteed (ensureContrast)
+### Zustand Stores (6 planned)
 
-### 7.3 Redis/Caching (✅ 100% COMPLETE)
+| Store | Status |
+|-------|--------|
+| useToolStore | ⚠️ Execution-focused, merged with useExecutionStore |
+| useExecutionStore | ⚠️ Merged into useToolStore |
+| useBillingStore | ❌ Missing |
+| useUIStore | ✅ Mostly complete |
+| useNotificationStore | ❌ Missing |
+| useUserStore | ⚠️ Partial — missing preferences/sessions |
 
-- Upstash Redis configured (`@upstash/redis`)
-- Key schema matches `46_REDIS_KEY_SCHEMA.md`
-- Rule enforced: every key has TTL
-- 3-layer rate limiting (IP, session, auth)
-- Edge-compatible sliding window algorithm
-- Execution caching (`packages/shared/src/execution/cache.ts`)
+**1/6 complete. 2/6 merged/partial. 3/6 missing.**
 
-### 7.4 Error Handling
-
-- Sentry SDK installed in both web and admin apps
-- Custom error classes in `packages/shared/src/errors/`
-- Error taxonomy in API responses
-- Activity logging in database
+**Frontend score: ~40%**
 
 ---
 
-## 8. Package Completion Status
+## 8. FRONTEND — ADMIN APP
 
-| Package | Description | Completion |
-|---------|-------------|------------|
-| `@hsafx/api` | tRPC server + 5 routers + Stripe/Polar libs | ✅ 90% |
-| `@hsafx/db` | 44 Drizzle tables + migration + client | ✅ 100% |
-| `@hsafx/schemas` | Zod schemas for API, billing, tools | ✅ 90% |
-| `@hsafx/shared` | Business logic (billing, permissions, exec, ads, flags) | ✅ 95% |
-| `@hsafx/theme` | Intent-driven OKLCH theme system | ✅ 100% |
-| `@hsafx/tool-definitions` | 454 tool metadata entries | ✅ 100% |
-| `@hsafx/tools` | 9 categories, ~40+ implementation files | ✅ 70% |
-| `@hsafx/ui` | Theme provider (minimal) | ⚠️ 30% |
-| `@hsafx/config` | Shared configs | ✅ 80% |
+| Item | Status |
+|------|--------|
+| Admin app structure | ✅ |
+| Login + 2FA | ✅ |
+| RBAC hooks + guards | ✅ |
+| User management CRUD | ✅ |
+| Tool management CRUD | ✅ |
+| API key management | ✅ |
+| SSE streaming | ✅ |
+| Impersonation | ✅ |
+| Email templates CRUD | ✅ |
+| Analytics dashboard | ❌ Missing |
+| Billing administration | ❌ Missing |
+| Audit log viewer | ❌ Missing |
+
+**Admin score: ~60%**
 
 ---
 
-*This document reflects the verified state of the codebase as of February 11, 2026.*
+## 9. FASTAPI BACKEND
+
+| Item | Status |
+|------|--------|
+| App structure | ✅ |
+| Tool execution endpoint | ✅ |
+| Internal execute endpoint | ✅ |
+| Rate limiting middleware | ✅ |
+| Auth middleware | ✅ |
+| Structured logging | ✅ |
+| Job processing | ❌ Commented out |
+
+**FastAPI score: ~80%**
+
+---
+
+## 10. SHARED PACKAGES
+
+| Package | Status | Notes |
+|---------|--------|-------|
+| `@hsafx/config` | ✅ | ESLint + TS configs |
+| `@hsafx/db` | ⚠️ | See §2 gaps |
+| `@hsafx/schemas` | ✅ | Zod schemas |
+| `@hsafx/shared` | ✅ | Permissions, flags, storage, email, rate-limit |
+| `@hsafx/theme` | ✅ | Full CSS theme system |
+| `@hsafx/ui` | ⚠️ | Theme-only — no shared UI components |
+| `@hsafx/api` | ✅ | tRPC routers (user, billing, tools, admin, ads) |
+| `@hsafx/tool-definitions` | ✅ | 454+ tools |
+| `@hsafx/tools` | ✅ | Registry + WASM bindings |
+
+**Packages score: ~80%**
+
+---
+
+## 11. REDIS & CACHING
+
+| Item | Status |
+|------|--------|
+| Core Redis client (Upstash) | ✅ |
+| Rate limiting in Redis | ✅ |
+| Job state in Redis | ✅ |
+| Ad reward tracking | ✅ |
+| Anonymous usage tracking | ✅ |
+| Feature flag caching | ✅ |
+| BullMQ job queues | 🔴 NOT installed — inline only |
+| Session caching | ❌ |
+| Pub/sub channels | ❌ |
+| Coin lock (Lua script) | ❌ Uses SQL FOR UPDATE instead |
+
+**Redis score: ~55%**
+
+---
+
+## OVERALL COMPLETION SUMMARY
+
+| Area | Score | Critical Gaps |
+|------|-------|---------------|
+| Infrastructure & DevOps | 85% | Docker/K8s untested |
+| Database Schema | 55% | Zero enums, zero indexes, 13 missing tables |
+| Auth & Authorization | 50% | CASL unwired, session config incomplete |
+| Security | 60% | Session rate limit unwired, no TS structured logging |
+| Billing System | 50% | B2B bypass, reservation never confirmed, refund clawback missing |
+| Tool Execution | 65% | ~15 stubs, no BullMQ, async billing broken |
+| Frontend (Web) | 40% | 6/10 components missing, 3/6 stores missing, no search |
+| Frontend (Admin) | 60% | No analytics, billing admin, audit viewer |
+| FastAPI Backend | 80% | Job processing disabled |
+| Shared Packages | 80% | UI package is theme-only |
+| Redis & Caching | 55% | No BullMQ, no session cache |
+
+### **Weighted Overall: ~58%**
+
+This is NOT deployment-ready. Solid foundations exist but critical billing, auth, and frontend gaps remain.

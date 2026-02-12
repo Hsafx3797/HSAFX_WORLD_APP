@@ -1,376 +1,251 @@
-# HSAFX World App — Deviations from Planning
+# 02 — DEVIATIONS FROM PLANNING
 
-> **Date:** February 11, 2026
-> **Source of Truth:** Codebase audit vs `docs/PLANNING/` specifications
-> **Format:** Each deviation listed with Planning spec → Actual implementation → Impact assessment
-
----
-
-## Table of Contents
-
-1. [Architecture Deviations](#1-architecture-deviations)
-2. [Technology Stack Deviations](#2-technology-stack-deviations)
-3. [Authentication Deviations](#3-authentication-deviations)
-4. [Database Schema Deviations](#4-database-schema-deviations)
-5. [API Contract Deviations](#5-api-contract-deviations)
-6. [Billing System Deviations](#6-billing-system-deviations)
-7. [Tool Implementation Deviations](#7-tool-implementation-deviations)
-8. [Admin Panel Deviations](#8-admin-panel-deviations)
-9. [Infrastructure Deviations](#9-infrastructure-deviations)
-10. [Security Model Deviations](#10-security-model-deviations)
-11. [Build Order Deviations](#11-build-order-deviations)
-12. [Impact Summary](#12-impact-summary)
+> **Last audited:** 2025-07-15
+> **Commit:** `2234bb7`
+> **Source:** All planning docs (01–74) cross-referenced against actual source code
 
 ---
 
-## 1. Architecture Deviations
+## SEVERITY DEFINITIONS
 
-### DEV-001: Admin Panel Backend Architecture
-| | Detail |
-|---|---|
-| **Planning** (`10_SYSTEM_ARCHITECTURE.md`) | Admin panel uses **shared Next.js backend** — Admin calls `app.hsafx.com/api` (same backend as user app). Single API layer serves both. |
-| **Actual** | Admin app (`apps/admin`) has **its own API routes** (`/api/admin/*`). Separate Better-Auth instance, separate API handlers. |
-| **Impact** | 🟡 **Medium** — Diverges from "single shared backend" but is actually better for security isolation. Admin routes are not exposed on the user-facing domain. Acceptable improvement. |
-
-### DEV-002: Background Job Engine
-| | Detail |
-|---|---|
-| **Planning** (`10_SYSTEM_ARCHITECTURE.md`) | Background jobs via **Inngest** for workflow orchestration. |
-| **Actual** | `asyncJobs` table has `inngestJobId` field, but actual job execution uses custom `job-manager.ts` + `job-worker.ts`. Inngest is referenced but not the primary implementation. |
-| **Impact** | 🟡 **Medium** — Custom job management works but loses Inngest's retry/replay/fan-out capabilities. May need to decide: commit to Inngest or replace schema references. |
-
-### DEV-003: Search Engine
-| | Detail |
-|---|---|
-| **Planning** (`10_SYSTEM_ARCHITECTURE.md`) | **Meilisearch** for tool search and full-text search. |
-| **Actual** | No Meilisearch integration found. Tool search appears to be client-side filtering or basic DB queries. |
-| **Impact** | 🟡 **Medium** — Tool search works for 446 tools without a dedicated engine, but won't scale if tool count grows or if semantic search is needed. |
-
-### DEV-004: Object Storage
-| | Detail |
-|---|---|
-| **Planning** (`10_SYSTEM_ARCHITECTURE.md`) | **Cloudflare R2** for temporary file uploads. |
-| **Actual** | `fileUploads` table has `storageKey` and `storageUrl` columns suggesting R2, but no Cloudflare R2 SDK or client found. FastAPI uses local temp file handling. |
-| **Impact** | 🟡 **Medium** — Local file handling works for dev but doesn't scale for production. R2 integration needed before deploy. |
+| Level | Meaning |
+|-------|---------|
+| **CRITICAL** | Blocks core functionality, data corruption risk, or security vulnerability |
+| **HIGH** | Feature entirely missing or broken — user-visible impact |
+| **MEDIUM** | Works differently than planned — may cause confusion or partial feature gaps |
+| **LOW** | Naming/cosmetic differences or minor spec deviations |
 
 ---
 
-## 2. Technology Stack Deviations
+## CRITICAL DEVIATIONS (12)
 
-### DEV-005: Rust WASM Coverage
-| | Detail |
-|---|---|
-| **Planning** (`11_TECHNOLOGY_STACK.md`) | **ALL 191 text tools** run as Rust → WASM in browser. Single Rust crate with all text operations. |
-| **Actual** | WASM module has ~19 exported functions (12 modules). Many text tools use **TypeScript fallback** (`packages/tools/src/text/index.ts`) rather than pure WASM. `wasm-fallback.ts` exists explicitly. |
-| **Impact** | 🟡 **Medium** — Functionality works via TypeScript. WASM is available but doesn't cover all 191 tools yet. Performance is acceptable since text tools are fast in JS too. |
+### C-01: B2B REST Execute Route Bypasses Coin Deduction
+- **Planning:** Every tool execution must go through coin deduction (doc 21, 22)
+- **Actual:** `POST /api/v1/tools/:key/execute` calls `createJob()` directly, skipping `reserveCoins()`/`deductCoins()` entirely
+- **Impact:** API key users can execute tools for free — revenue loss
+- **File:** `apps/web/src/app/api/v1/tools/[toolKey]/execute/route.ts`
 
-### DEV-006: Native Binaries in FastAPI
-| | Detail |
-|---|---|
-| **Planning** (`10_SYSTEM_ARCHITECTURE.md`) | FastAPI uses FFmpeg, **libvips**, **Poppler**, **Tesseract**, **LibreOffice** for file processing. |
-| **Actual** | Docker image installs FFmpeg, libvips, Poppler, Tesseract, wkhtmltopdf. LibreOffice is **NOT installed** in Docker image. |
-| **Impact** | 🟡 **Medium** — DOCX → PDF and other Office format conversions may not work without LibreOffice. Partial file conversion capability. |
+### C-02: Coin Reservation Never Confirmed After Async Jobs
+- **Planning:** Reserve → Execute → Confirm lifecycle (doc 21 §4.1)
+- **Actual:** `confirmReservation()` is imported but **never called** in any code path. After `job-worker.ts` completes a job, the reservation stays `pending` forever.
+- **Impact:** Wallet balance becomes inconsistent over time
+- **Files:** `apps/web/src/server/jobs/job-worker.ts`, `apps/web/src/server/tool-execution/index.ts`
 
-### DEV-007: CSS Framework Version
-| | Detail |
-|---|---|
-| **Planning** (`10_SYSTEM_ARCHITECTURE.md`) | **Tailwind CSS v4** with `@theme inline` contract. |
-| **Actual** | Both apps use `postcss.config.js` with `@tailwindcss/postcss`. Tailwind v4 is in use but the exact `@theme inline` pattern vs standard CSS integration needs verification. |
-| **Impact** | 🟢 **Low** — Tailwind v4 is used as planned. Minor implementation detail difference. |
+### C-03: CASL Completely Unwired in Web App
+- **Planning:** `defineUserAbility()` enforces plan-based tool access; backend re-verifies (doc 01 §6, doc 15 §5)
+- **Actual:** `buildUserAbility()` exists in `packages/shared` but is **never imported** in `apps/web/`. No tRPC middleware, no API route, no React provider uses CASL. `@casl/react` is not installed.
+- **Impact:** Any user can access any tool regardless of plan. No plan-based access control exists.
+- **Files:** `packages/shared/src/permissions/ability.ts` (defined), `apps/web/` (never consumed)
 
-### DEV-008: State Management
-| | Detail |
-|---|---|
-| **Planning** (`72_STATE_MANAGEMENT_SPEC.md`) | **React Context + Zustand** for client state. |
-| **Actual** | Zustand stores exist (`tool-store.ts`, `ui-store.ts`, `user-store.ts`). React Context used via providers. |
-| **Impact** | 🟢 **Low** — Matches planning. No deviation. |
+### C-04: Zero PostgreSQL Enums in Schema
+- **Planning:** 13 pgEnum types required (doc 13 DBML): `payment_status`, `invoice_status`, `billing_interval`, `coin_txn_type`, `audit_action`, `permission_target`, `admin_role_type`, `plan_change_type`, `plan_limit_type`, `reset_period`, `identifier_type`, `email_provider`, `permission_type`
+- **Actual:** All enum-typed columns use free `text`. No `pgEnum()` calls in any schema file.
+- **Impact:** No type safety at database level. Invalid values can be inserted.
+- **Files:** `packages/db/src/schema/*.ts`
 
----
+### C-05: Zero Explicit Database Indexes
+- **Planning:** 25+ indexes specified in DBML (doc 13) including partial unique, composite, and performance
+- **Actual:** Only inline `.unique()` constraints exist. No composite indexes, no partial indexes, no performance indexes.
+- **Impact:** Query performance degrades with scale. Missing idempotency index on `coin_transactions` allows duplicate charges.
+- **Files:** `packages/db/src/schema/*.ts`
 
-## 3. Authentication Deviations
+### C-06: Session Rate Limiting Never Invoked
+- **Planning:** 3-layer rate limiting: IP → Session/User → API Key (doc 15 §4)
+- **Actual:** `checkUserRateLimit` is exported from `rate-limit.ts` but **never called** in middleware. Only IP and API key layers are active.
+- **Impact:** Authenticated users have no per-session rate limits — can hammer endpoints
+- **Files:** `apps/web/src/middleware.ts`, `apps/web/src/lib/rate-limit.ts`
 
-### DEV-009: 2FA/TOTP — MISSING
-| | Detail |
-|---|---|
-| **Planning** (`15_SECURITY_MODEL.md`, `26_ADMIN_PANEL_SPECIFICATION.md`) | **2FA mandatory for all admin users.** TOTP required for destructive operations (delete user, adjust coins, etc.). |
-| **Actual** | **No 2FA/TOTP implementation exists.** No `two-factor` plugin, no TOTP generation, no QR code flow. Admin `TotpModal` component exists in UI but has no backend. |
-| **Impact** | 🔴 **HIGH** — Admin panel security severely weakened without 2FA. Planning explicitly requires it for: delete users, adjust coins, change plans, system configuration. Must implement before production. |
+### C-07: No Structured Logging in TypeScript
+- **Planning:** Structured JSON logging with PII redaction is invariant #7 (doc 15 §1.1)
+- **Actual:** **Every** TypeScript file uses `console.log`/`console.error`/`console.warn`. No pino, winston, or any structured logger. No `sanitizeForLogging()` utility.
+- **Impact:** No queryable logs in production. Potential PII leakage.
+- **Files:** `apps/admin/src/**`, `apps/web/src/**`, `packages/**`
 
-### DEV-010: OAuth Provider Set
-| | Detail |
-|---|---|
-| **Planning** (`15_SECURITY_MODEL.md`) | OAuth: **Google, GitHub** (primary). Meta/Facebook mentioned as optional. |
-| **Actual** | OAuth: **Google, GitHub, Facebook** — all three enabled. |
-| **Impact** | 🟢 **Low** — Positive deviation. More providers than planned. |
+### C-08: Stripe Refund Webhook Does Not Claw Back Coins
+- **Planning:** On `charge.refunded`, reverse the coin grant (doc 21 §6.2)
+- **Actual:** Handler marks the payment record as refunded but does NOT deduct coins from the user's wallet. User gets money back AND keeps coins.
+- **Impact:** Financial loss on every refund
+- **File:** `apps/web/src/app/api/webhooks/stripe/route.ts`
 
-### DEV-011: Session Configuration
-| | Detail |
-|---|---|
-| **Planning** (`15_SECURITY_MODEL.md`) | User session: **7-day** expiry, 30-day absolute max. Admin session: **24-hour** expiry. Redis-backed. Cookie: `__hsafx_session`. |
-| **Actual** | Admin session: 24hr max age, 1hr update age, 2min cookie cache. User session configuration not explicitly verified to match 7-day spec. |
-| **Impact** | 🟡 **Medium** — Admin matches. User session settings should be verified against spec. |
+### C-09: 13 Planned Database Tables Missing
+- **Planning:** 60+ tables across 6 schema areas (doc 13)
+- **Actual:** 47 tables exist. 13 completely absent (see doc 01 §2).
+- **Key missing:** `processed_webhooks` (webhook idempotency), `tool_class_policy` (billing core), `plan_permissions` (CASL), `usage_coin_fallbacks`, `billable_action_logs`
 
-### DEV-012: Impersonation System
-| | Detail |
-|---|---|
-| **Planning** (`15_SECURITY_MODEL.md` Section 8) | Admin can **impersonate users** with: scoped permissions, 1-hour time limit, audit trail, visual indicator. |
-| **Actual** | No impersonation implementation found in codebase. |
-| **Impact** | 🟡 **Medium** — Nice-to-have for support workflows. Not critical for launch but was explicitly specified. |
+### C-10: BullMQ Not Installed — No Job Queue
+- **Planning:** 4 BullMQ queues (default, priority, scheduled, dead-letter) with Redis-backed processing (doc 73 §AsyncJobSpec, doc 11)
+- **Actual:** BullMQ is NOT in any `package.json`. `job-manager.ts` explicitly comments: "Phase 3 inline, Phase 4+ BullMQ."
+- **Impact:** No priority, no retries, no dead-letter, no scheduled jobs. All async work is inline.
+- **Files:** `apps/web/src/server/jobs/job-manager.ts`
 
----
+### C-11: Non-Coin Webhook Events Have Zero Idempotency
+- **Planning:** Dedicated `processed_webhooks` table checks `(provider, eventId)` before processing any webhook (doc 21 §6)
+- **Actual:** Idempotency check uses `coinTransactions.metadata` JSONB — only works for events that create coin transactions. Events like `subscription.canceled` or `charge.dispute.created` have NO idempotency protection.
+- **Impact:** Reprocessed webhooks create duplicate side effects
+- **Files:** `apps/web/src/app/api/webhooks/stripe/route.ts`, `apps/web/src/app/api/webhooks/polar/route.ts`
 
-## 4. Database Schema Deviations
-
-### DEV-013: Extra Tables Added
-| | Detail |
-|---|---|
-| **Planning** (`13_DATABASE_SCHEMA.md`) | ~25-30 tables in original schema. |
-| **Actual** | **44 tables** — extras include: `favorites`, `notifications`, `fileUploads`, `asyncJobs`, `emailTemplates`, `emailLogs`, `toolVersions`, `toolExecutions`, `toolCategories`, `adRewardTransactions`, `userAdDailyCaps`, `refreshTokens`, `featureFlags`. |
-| **Impact** | 🟢 **Low** — Positive deviation. More comprehensive schema than planned. All additions serve valid purposes. |
-
-### DEV-014: Naming Conventions
-| | Detail |
-|---|---|
-| **Planning** (`13_DATABASE_SCHEMA.md`) | `snake_case` table names: `user_preferences`, `coin_transactions`, `user_coin_wallets`. |
-| **Actual** | Drizzle uses **camelCase** in TypeScript (`userPreferences`, `coinTransactions`, `userCoinWallets`) that maps to snake_case in PostgreSQL. |
-| **Impact** | 🟢 **Low** — Standard Drizzle ORM pattern. Database columns are snake_case as planned. TypeScript is camelCase for ergonomics. |
-
-### DEV-015: `social_auths` Table Naming
-| | Detail |
-|---|---|
-| **Planning** (`13_DATABASE_SCHEMA.md`) | Table: `social_auths`. |
-| **Actual** | Table: `oauthConnections`. |
-| **Impact** | 🟢 **Low** — Same functionality, different name. Better name actually (more descriptive). |
+### C-12: Admin 2FA Not Server-Enforced
+- **Planning:** 2FA is mandatory for admin operations (doc 01 §8, doc 15 §2.3)
+- **Actual:** Admin middleware has a comment: "We can't definitively check 2FA status here (would need a DB call), so we rely on session API + client cooperation." A crafted request can bypass 2FA.
+- **File:** `apps/admin/src/middleware.ts` L100-103
 
 ---
 
-## 5. API Contract Deviations
+## HIGH DEVIATIONS (15)
 
-### DEV-016: tRPC Router Structure
-| | Detail |
-|---|---|
-| **Planning** (`14_API_CONTRACTS.md`) | tRPC routers: `user.*`, `tool.*`, `billing.*`, `admin.*`. |
-| **Actual** | tRPC routers: `user`, `tools`, `billing`, `admin`, `ads` (extra). |
-| **Impact** | 🟢 **Low** — Matches planning plus an `ads` router for ad reward system. Good addition. |
+### H-01: No Search Infrastructure
+- **Planning:** Meilisearch for fuzzy search + PostgreSQL tsvector for FTS (doc 11, 16)
+- **Actual:** Client-side `String.includes()` on tool names. No Meilisearch, no tsvector, no fuzzy matching.
+- **Files:** `apps/web/src/app/api/v1/tools/route.ts` (in-memory filter)
 
-### DEV-017: OpenAPI/Swagger Documentation
-| | Detail |
-|---|---|
-| **Planning** (`14_API_CONTRACTS.md`) | Auto-generated **OpenAPI spec** for public REST API. |
-| **Actual** | `/api-docs` page exists but unclear if it's auto-generated from code or manually maintained. |
-| **Impact** | 🟡 **Medium** — API documentation should be verified as auto-generated and kept in sync. |
+### H-02: 6/10 Planned UI Components Missing
+- **Planning:** 10 domain components (doc 60–62): ToolCard, ToolGrid, ToolFilterBar, ExecutionPanel, ResultDisplay, UsageCard, BillingCard, TransactionList, ActivityFeed, NotificationBell
+- **Actual:** ExecutionPanel, UsageCard, BillingCard, TransactionList, ActivityFeed, NotificationBell do not exist. 4 others are partial.
 
-### DEV-018: gRPC Support
-| | Detail |
-|---|---|
-| **Planning** (`11_TECHNOLOGY_STACK.md`) | **gRPC (optional)** for enterprise B2B access. |
-| **Actual** | No gRPC implementation. REST API only. |
-| **Impact** | 🟢 **Low** — Was explicitly marked "optional" in planning. REST is sufficient for MVP. |
+### H-03: 3/6 Zustand Stores Missing
+- **Planning:** 6 stores (doc 72): tool, execution, billing, UI, notification, user
+- **Actual:** `useBillingStore`, `useNotificationStore` missing. `useExecutionStore` merged into `useToolStore`.
 
----
+### H-04: `@hsafx/ui` Package Is Theme-Only
+- **Planning:** Shared reusable component library (doc 12, 60)
+- **Actual:** Only exports `ThemeProvider` + theme utilities. All UI components live in `apps/web/src/components/` (app-local, not shared).
+- **Impact:** Admin app cannot reuse web components without duplication
 
-## 6. Billing System Deviations
+### H-05: Impersonation Missing Mandatory `reason` Field
+- **Planning:** Every impersonation requires a documented `reason` for audit trail (doc 01 §8)
+- **Actual:** POST body only validates `userId`. No `reason` parameter.
+- **File:** `apps/admin/src/app/api/admin/impersonate/route.ts`
 
-### DEV-019: Billing Provider Responsibilities
-| | Detail |
-|---|---|
-| **Planning** (`20_BILLING_SYSTEM.md`) | **Polar** = Merchant of Record for subscriptions. **Stripe** = coin-pack one-time payments. |
-| **Actual** | Polar for subscriptions + Stripe for coins. Matches planning. No deviation. |
-| **Impact** | 🟢 **Low** — Matches exactly. |
+### H-06: Impersonation Missing Scoped-Action Enforcement
+- **Planning:** Impersonated sessions block billing, account deletion, password change, and other sensitive operations (doc 01 §8)
+- **Actual:** No middleware checks for impersonation context on any route. All actions allowed.
+- **File:** No middleware exists for this
 
-### DEV-020: BA Weight Enforcement
-| | Detail |
-|---|---|
-| **Planning** (`20_BILLING_SYSTEM.md`) | Each tool class has specific BA weights (0.1 for calculators, 0.2 for text, 1.0 for media). `toolCoinCosts` table stores per-tool overrides. |
-| **Actual** | `toolCoinCosts` table exists with BA weight column. Coin service exists. Whether BA weight logic is fully wired through tool execution → coin deduction needs verification. |
-| **Impact** | 🟡 **Medium** — Schema supports it. End-to-end flow needs integration testing. |
+### H-07: Daily Bonus Race Condition
+- **Planning:** Coin operations require `SELECT ... FOR UPDATE` locking (doc 21 §4)
+- **Actual:** `claimDailyBonus` does NOT use `FOR UPDATE`. Concurrent requests can double-claim.
+- **File:** `packages/api/src/routers/billing.ts`
 
-### DEV-021: Ad Reward System
-| | Detail |
-|---|---|
-| **Planning** (`20_BILLING_SYSTEM.md` Section 8) | Users watch ads → earn 10 coins/ad, 5 ads/day max, 30-second minimum view, fraud detection. |
-| **Actual** | `adRewardTransactions` and `userAdDailyCaps` tables exist. `ad-reward-service.ts` exists. Ad validation status and fraud detection columns present. |
-| **Impact** | 🟢 **Low** — Infrastructure is complete. Ad provider integration (actual ad display) needs wiring. |
+### H-08: ~15 Node.js Tool Handlers Return Stubs
+- **Planning:** All 454+ tools should execute (doc 00, 73)
+- **Actual:** ~15 handlers in `executor.ts` return placeholder text like "requires X library" or "coming soon"
+- **File:** `apps/web/src/lib/tools/executor.ts`
 
----
+### H-09: FastAPI Job Processing Disabled
+- **Planning:** FastAPI processes native Python jobs from queue (doc 11, 22)
+- **Actual:** `process_job` function in `jobs.py` is **commented out** with a TODO. Job processing routes through Next.js instead.
+- **File:** `backend/fastapi/src/api/v1/jobs.py`
 
-## 7. Tool Implementation Deviations
+### H-10: No Billing REST Endpoints for B2B
+- **Planning:** REST API for balance, transactions, purchases (doc 14, 25)
+- **Actual:** All billing is tRPC-only (session-based B2C). Missing: `GET /api/v1/billing/balance`, `GET /api/v1/billing/transactions`, `POST /api/v1/billing/purchase`, etc.
 
-### DEV-022: Tool Logic Coverage Gap
-| | Detail |
-|---|---|
-| **Planning** (`44_IMPLEMENTATION_ROADMAP.md`) | All 446 tools must have working execution logic with 3 test vectors each = 1,338 tests. |
-| **Actual** | 454 tools are **registered in metadata** but actual execution logic is concentrated in ~40+ implementation files. Many tools share common logic (e.g., all 55 case converters use one function with parameters). Not all 446 have individual test vectors. |
-| **Impact** | 🟡 **Medium** — Tools that share logic work, but the 3-test-vectors-per-tool standard from planning is not met. Current tests (2,631) cover more than the 1,338 target but through broader integration tests, not per-tool. |
+### H-11: API Key Scopes Not in Database Column
+- **Planning:** `api_keys.scopes text[]` column for scope-based authorization (doc 13)
+- **Actual:** Scopes stored in `metadata` JSONB. No dedicated column, no database-level enforcement.
+- **File:** `packages/db/src/schema/tools.ts`
 
-### DEV-023: Tool Execution Router Pattern
-| | Detail |
-|---|---|
-| **Planning** (`73_TOOL_EXECUTION_ROUTER.md`) | Explicit routing: WASM tools → browser, sync tools → Node.js, async tools → FastAPI. Three-tier dispatch. |
-| **Actual** | `apps/web/src/lib/tools/registry.ts` + `executor.ts` + `wasm-loader.ts` handle routing. FastAPI `executor.py` handles backend dispatch. |
-| **Impact** | 🟢 **Low** — Routing pattern is implemented. May not match the exact tri-tier specification perfectly but serves the same purpose. |
+### H-12: No Admin Analytics Dashboard
+- **Planning:** Admin dashboard with usage analytics, revenue metrics, user growth (doc 01 §9)
+- **Actual:** No analytics routes or components in admin app
 
-### DEV-024: Monaco Editor Integration
-| | Detail |
-|---|---|
-| **Planning** (`61_MONACO_EDITOR_SPEC.md`) | Monaco Editor for: 106 code editor tools. Dual editors, diff viewer, AST viewer. |
-| **Actual** | `code-editor-tool.tsx` exists. `use-code-editor.ts` hook exists. Whether full Monaco with diff viewer and AST viewer is implemented needs deeper verification. |
-| **Impact** | 🟡 **Medium** — Basic code editor exists. Advanced Monaco features (AST viewer, multi-lang support for all 106 tools) may be incomplete. |
+### H-13: No Admin Audit Log Viewer
+- **Planning:** Admin can browse and search audit logs (doc 01 §9)
+- **Actual:** Audit tables exist but no admin UI to view them
+
+### H-14: No Redis Session Cache
+- **Planning:** Sessions cached in Redis for performance (doc 15 §2.2)
+- **Actual:** Better-Auth uses database-backed sessions only
+
+### H-15: Missing `tools.tool_class` Column
+- **Planning:** `tool_class` on tools table links to `tool_class_policy` for billing (doc 13, 21)
+- **Actual:** Column doesn't exist. Tool class determined by `DEFAULT_BA_WEIGHTS` map in `coin-service.ts`
+- **Impact:** Cannot manage BA weights per tool class from admin
 
 ---
 
-## 8. Admin Panel Deviations
+## MEDIUM DEVIATIONS (20)
 
-### DEV-025: Real-Time Updates
-| | Detail |
-|---|---|
-| **Planning** (`26_ADMIN_PANEL_SPECIFICATION.md` Section 12) | **Real-time WebSocket updates** for: error logs, job queue, user activity, revenue tickers. |
-| **Actual** | No WebSocket implementation found. Admin panel appears to use standard HTTP polling or manual refresh. |
-| **Impact** | 🟡 **Medium** — Admin can still function without real-time. Nice-to-have for monitoring. Polling is acceptable for MVP. |
+### M-01: Session Cookie Name
+- **Planning:** `__hsafx_session` (doc 15 §2.2)
+- **Actual:** `better-auth.session_token` (Better-Auth default)
 
-### DEV-026: Admin Roles Depth
-| | Detail |
-|---|---|
-| **Planning** (`26_ADMIN_PANEL_SPECIFICATION.md` Section 3) | 6 admin roles: Super Admin, Admin, Support, Developer, Analyst, Billing — each with specific permission matrices. |
-| **Actual** | `roles` table supports custom roles. RBAC components exist. Whether all 6 planned roles are seeded with correct permission matrices needs verification. |
-| **Impact** | 🟡 **Medium** — RBAC infrastructure is complete. Role seeding/configuration may be incomplete. |
+### M-02: No Rolling Sessions
+- **Planning:** Rolling sessions with `absoluteTimeout` (doc 15 §2.2)
+- **Actual:** Not configured in auth config
 
-### DEV-027: IP Whitelist for Admin
-| | Detail |
-|---|---|
-| **Planning** (`26_ADMIN_PANEL_SPECIFICATION.md` Section 2) | Optional IP whitelist for admin access. |
-| **Actual** | Not found in middleware or auth configuration. |
-| **Impact** | 🟢 **Low** — Was marked "optional, configurable" in planning. Can be added at deployment level (Vercel, Cloudflare). |
+### M-03: Facebook OAuth Added Without Planning
+- **Actual:** `apps/web/src/lib/auth.ts` includes Facebook provider. Planning specifies Google + GitHub only.
 
----
+### M-04: tRPC Router Structure Differs
+- **Planning:** Separate `subscription`, `coins`, `usage` tRPC routers (doc 14)
+- **Actual:** Single `billing` router combines all
 
-## 9. Infrastructure Deviations
+### M-05: Table Name — `plans` vs `subscription_plans`
+- **Actual** uses `plans`. Planning DBML says `subscription_plans`.
 
-### DEV-028: Kubernetes — NOT IMPLEMENTED
-| | Detail |
-|---|---|
-| **Planning** (`49_DEPLOYMENT_GUIDE.md`) | K8s manifests for production deployment. |
-| **Actual** | `infra/k8s/` directory exists but is **empty**. |
-| **Impact** | 🔴 **HIGH** — No production deployment strategy. Need either K8s or alternative (Vercel + Railway/Fly.io) before launch. |
+### M-06: Table Name — `oauth_connections` vs `social_auths`
+### M-07: Table Name — `activity_logs` vs `audit_logs`
+### M-08: Table Name — `permissions` vs `permissions_catalog`
+### M-09: Column — `plans.slug` vs `subscription_plans.code`
+### M-10: Column — `plans.price_monthly/yearly` vs `subscription_plans.price_cents`
+### M-11: Column — `plans.polar_product_id` vs `subscription_plans.stripe_price_id`
+### M-12: Column — `coin_transactions.type` vs `coin_transactions.txn_type`
+### M-13: Column — `coin_transactions.resource_type/id` vs `reference_type/id`
+### M-14: Column — `api_keys.rate_limit_tier` (text) vs `rate_limit_per_hour` (integer)
+### M-15: Column — `admin_settings.key/value` vs `setting_key/setting_value`
 
-### DEV-029: CI/CD Pipeline — NOT IMPLEMENTED
-| | Detail |
-|---|---|
-| **Planning** (`50_DEFINITION_OF_DONE.md`) | Automated pipelines: lint, test, build, deploy on every PR/merge. |
-| **Actual** | No `.github/workflows/` directory. No CI/CD configuration of any kind. |
-| **Impact** | 🔴 **HIGH** — No automated quality gates. Every merge is manual and untested. Must implement before team collaboration. |
+### M-16: `api_rate_limits` Keyed Differently
+- **Planning:** FK on `(tool_id, plan_id)` — per-tool per-plan limits
+- **Actual:** FK on `api_key_id` — per-API-key limits
 
-### DEV-030: Git Repository — NO COMMITS
-| | Detail |
-|---|---|
-| **Planning** (`44_IMPLEMENTATION_ROADMAP.md` Section 14) | "Tag git commit" at each phase checkpoint. |
-| **Actual** | Zero git commits in repository. No version history. |
-| **Impact** | 🔴 **HIGH** — No version control history. No rollback capability. No phase checkpoints. Critical to commit immediately. |
+### M-17: Money Stored as `decimal(10,2)` Not `bigint` Cents
+- Affects: `plans`, `invoices`, `payments`
+- **Risk:** Floating point issues with decimal math
 
-### DEV-031: Monitoring & Alerting
-| | Detail |
-|---|---|
-| **Planning** (`10_SYSTEM_ARCHITECTURE.md` Section 10) | Observability: Sentry (errors), Upstash Analytics, custom metrics dashboard. |
-| **Actual** | Sentry SDK installed (`@sentry/nextjs` v10.38.0) in both apps. `monitoring.ts` file in admin. No custom metrics pipeline. |
-| **Impact** | 🟡 **Medium** — Sentry basics in place. Full observability pipeline (Grafana/Datadog equivalent) not built. |
+### M-18: `async_jobs` Still Has `inngest_job_id` Column
+- Inngest was replaced. Column name is vestigial.
 
----
+### M-19: `roles` Table Missing Columns
+- Missing: `role_type`, `is_default`, `is_active`, `sort_order`, `deleted_at`, `updated_at`
 
-## 10. Security Model Deviations
-
-### DEV-032: CSRF Protection
-| | Detail |
-|---|---|
-| **Planning** (`15_SECURITY_MODEL.md`) | CSRF via SameSite=Lax cookies + Origin/Referer header validation on state-changing endpoints. |
-| **Actual** | SameSite cookies are set by Better-Auth. Origin/Referer validation needs verification in middleware. |
-| **Impact** | 🟡 **Medium** — Likely protected by SameSite alone for same-origin requests, but spec requires explicit header checks. |
-
-### DEV-033: Security Headers
-| | Detail |
-|---|---|
-| **Planning** (`15_SECURITY_MODEL.md`) | HSTS, CSP, X-Content-Type-Options, X-Frame-Options headers on all responses. |
-| **Actual** | Next.js provides some default headers. Whether explicit security headers are configured in `next.config.js` needs verification. |
-| **Impact** | 🟡 **Medium** — Important for hardening. Should verify and add missing headers. |
-
-### DEV-034: PII Redaction in Logs
-| | Detail |
-|---|---|
-| **Planning** (`15_SECURITY_MODEL.md`) | "Zero PII in logs" — structured logging with PII redaction. |
-| **Actual** | No structured logging library configured. Console.log likely used (ESLint has 134 warnings, some may be console usage). |
-| **Impact** | 🟡 **Medium** — Should add structured logger (pino/winston) with PII filter before production. |
+### M-20: Missing Unique Constraints On Join Tables
+- `user_roles(user_id, role_id)` — no unique constraint
+- `role_permissions(role_id, permission_id)` — no unique constraint
+- `user_permission_overrides(user_id, permission_id)` — no unique constraint
+- `oauth_connections(provider, provider_user_id)` — no unique constraint
+- `plan_features(plan_id, feature_key)` — no unique constraint
+- `plan_limits(plan_id, limit_key)` — no unique constraint
+- `plan_coin_rules(plan_id, tool_class)` — no unique constraint
 
 ---
 
-## 11. Build Order Deviations
+## LOW DEVIATIONS (10)
 
-### DEV-035: Phase Ordering
-| | Detail |
-|---|---|
-| **Planning** (`44_IMPLEMENTATION_ROADMAP.md`) | Strict sequence: Phase 1 (Tools) → Phase 2 (DB+Auth) → Phase 3 (Admin) → Phase 4 (User UI) → Phase 5 (Finalize). No phase starts until previous passes acceptance. |
-| **Actual** | All phases appear to have been built **simultaneously** or interleaved. UI, auth, billing, admin, tools were developed together. No phase boundary testing was done. |
-| **Impact** | 🟡 **Medium** — The "tools-first" approach was not followed. However, the codebase compiles and 2,631 tests pass, suggesting integration worked despite parallel development. The intended benefit of isolation was lost. |
-
-### DEV-036: Human Testing Checkpoints
-| | Detail |
-|---|---|
-| **Planning** (`44_IMPLEMENTATION_ROADMAP.md`) | "Human tester confirms" at each phase boundary. Every 50 tools manually tested. |
-| **Actual** | No evidence of systematic human testing. No phase completion reports (until now). |
-| **Impact** | 🟡 **Medium** — Quality is being ensured through automated tests (2,631 passing) rather than manual verification. Both approaches are valid but planning specified manual. |
+### L-01: CSRF Only Checks Origin, No Referer Fallback
+### L-02: No `Retry-After` Header in Rate Limit Responses
+### L-03: CASL Functions Named `buildUserAbility`/`buildAdminAbility` Not `defineUserAbility`/`defineAdminAbility`
+### L-04: Permission Check Uses Role Membership Not `admin:impersonate` Granular Permission
+### L-05: `password_reset_tokens.used_at` (timestamp) vs Planning's `used` (boolean)
+### L-06: `email_verification_tokens.used_at` (timestamp) vs Planning's `verified` (boolean)
+### L-07: `user_roles.assigned_at` vs Planning's `created_at`
+### L-08: `role_permissions.granted_at` vs Planning's `created_at` + Missing `granted` Boolean
+### L-09: Impersonation Banner Says "Read-only session" — Planning Says Scoped Read+Execute
+### L-10: `user_preferences`/`user_settings` Missing `created_at`/`updated_at` Columns
 
 ---
 
-## 12. Impact Summary
+## DEVIATION COUNT SUMMARY
 
-### Critical Deviations (🔴 MUST FIX)
+| Severity | Count |
+|----------|-------|
+| CRITICAL | 12 |
+| HIGH | 15 |
+| MEDIUM | 20 |
+| LOW | 10 |
+| **TOTAL** | **57** |
 
-| ID | Description | Risk |
-|----|-------------|------|
-| DEV-009 | **2FA/TOTP missing** for admin panel | Security — admin operations unprotected |
-| DEV-028 | **Kubernetes empty** — no production deploy | Cannot deploy to production |
-| DEV-029 | **CI/CD missing** — no automated quality gates | Manual-only testing, no PR validation |
-| DEV-030 | **Zero git commits** — no version history | No rollback, no history, no collaboration |
+### Previous Assessment (old doc): 36 deviations (4 critical, 18 medium, 14 low)
+### Current Assessment: 57 deviations (12 critical, 15 high, 20 medium, 10 low)
 
-### Medium Deviations (🟡 SHOULD ADDRESS)
-
-| ID | Description | Risk |
-|----|-------------|------|
-| DEV-001 | Admin has own API routes (actually better) | Architecture doc should be updated |
-| DEV-002 | Inngest partially replaced by custom jobs | Unclear job retry/replay capability |
-| DEV-003 | No Meilisearch | Tool search limited to basic filtering |
-| DEV-004 | No R2 integration | File handling local-only in dev |
-| DEV-005 | WASM covers ~19 of 191 text tools | Performance acceptable with JS fallback |
-| DEV-011 | Session config needs verification | May not match 7-day/30-day spec |
-| DEV-012 | No impersonation system | Support workflows limited |
-| DEV-017 | OpenAPI auto-generation unclear | API docs may drift from code |
-| DEV-020 | BA weight flow needs e2e verification | Billing accuracy at risk |
-| DEV-022 | Not all 446 tools have 3 test vectors | Testing standard not met per spec |
-| DEV-024 | Monaco advanced features unclear | Code editor may be basic |
-| DEV-025 | No WebSocket for admin real-time | Monitoring requires manual refresh |
-| DEV-026 | Role seeding may be incomplete | RBAC may not match 6-role spec |
-| DEV-031 | Observability pipeline incomplete | Alerting limited to Sentry |
-| DEV-032 | CSRF Origin/Referer check needed | Security hardening |
-| DEV-033 | Security headers not verified | Browser hardening |
-| DEV-034 | No structured logging with PII filter | Compliance risk |
-| DEV-035 | Phase order not followed | Integration risks absorbed |
-
-### Low/Positive Deviations (🟢 OK)
-
-| ID | Description | Verdict |
-|----|-------------|---------|
-| DEV-006 | LibreOffice not in Docker | Add when needed for Office formats |
-| DEV-007 | Tailwind v4 minor detail | No real deviation |
-| DEV-008 | State management matches | No deviation |
-| DEV-010 | Extra OAuth (Facebook) | Positive — more options |
-| DEV-013 | Extra DB tables | Positive — more comprehensive |
-| DEV-014 | CamelCase TypeScript / snake_case DB | Standard Drizzle pattern |
-| DEV-015 | `oauthConnections` vs `social_auths` | Better naming |
-| DEV-016 | Extra `ads` tRPC router | Positive addition |
-| DEV-018 | No gRPC | Was optional in planning |
-| DEV-019 | Billing providers match | No deviation |
-| DEV-021 | Ad reward infrastructure complete | Schema matches spec |
-| DEV-023 | Tool routing implemented | Minor pattern difference |
-| DEV-027 | No IP whitelist | Optional per spec, add at deploy |
-
----
-
-*Total: 36 deviations identified — 4 Critical, 18 Medium, 14 Low/Positive.*
+The increase reflects a **much deeper audit** — many issues existed before but were not identified.
