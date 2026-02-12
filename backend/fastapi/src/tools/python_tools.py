@@ -359,6 +359,171 @@ class PythonToolExecutor:
         except Exception as e:
             return {"success": False, "error": f"Parquet parse error: {e}"}
 
+    # ── BSON → JSON ──────────────────────────────────────────────
+
+    async def _handle_bson_to_json(
+        self, *, input_data: Any, opts: dict
+    ) -> dict[str, Any]:
+        """Convert BSON binary to JSON using pymongo's bson module."""
+        try:
+            import bson  # type: ignore[import-untyped]
+
+            if isinstance(input_data, str):
+                import base64
+                raw = base64.b64decode(input_data)
+            elif isinstance(input_data, bytes):
+                raw = input_data
+            else:
+                return {"success": False, "error": "BSON input must be binary or base64 string"}
+
+            # BSON may contain multiple documents (concatenated)
+            docs: list[dict] = []
+            offset = 0
+            while offset < len(raw):
+                if offset + 4 > len(raw):
+                    break
+                import struct
+                doc_len = struct.unpack_from("<i", raw, offset)[0]
+                if doc_len < 5 or offset + doc_len > len(raw):
+                    break
+                doc_bytes = raw[offset : offset + doc_len]
+                docs.append(bson.decode(doc_bytes))
+                offset += doc_len
+
+            if not docs:
+                # Try single-document decode
+                docs = [bson.decode(raw)]
+
+            output = docs if len(docs) > 1 else docs[0]
+            return {
+                "success": True,
+                "output": json.dumps(output, indent=2, default=str),
+                "metadata": {"document_count": len(docs)},
+            }
+        except ImportError:
+            return {"success": False, "error": "pymongo not installed (pip install pymongo)"}
+        except Exception as e:
+            return {"success": False, "error": f"BSON parse error: {e}"}
+
+    # ── MessagePack → JSON ───────────────────────────────────────
+
+    async def _handle_messagepack_to_json(
+        self, *, input_data: Any, opts: dict
+    ) -> dict[str, Any]:
+        """Convert MessagePack binary to JSON using msgspec."""
+        try:
+            import msgspec  # type: ignore[import-untyped]
+
+            if isinstance(input_data, str):
+                import base64
+                raw = base64.b64decode(input_data)
+            elif isinstance(input_data, bytes):
+                raw = input_data
+            else:
+                return {"success": False, "error": "MessagePack input must be binary or base64 string"}
+
+            decoded = msgspec.msgpack.decode(raw)
+            return {
+                "success": True,
+                "output": json.dumps(decoded, indent=2, default=str),
+            }
+        except ImportError:
+            return {"success": False, "error": "msgspec not installed (pip install msgspec)"}
+        except Exception as e:
+            return {"success": False, "error": f"MessagePack parse error: {e}"}
+
+    # ── Protobuf → JSON (schema-less wire format) ────────────────
+
+    async def _handle_protobuf_to_json(
+        self, *, input_data: Any, opts: dict
+    ) -> dict[str, Any]:
+        """Decode Protocol Buffer binary to JSON (schema-less, best-effort)."""
+        try:
+            if isinstance(input_data, str):
+                import base64
+                raw = base64.b64decode(input_data)
+            elif isinstance(input_data, bytes):
+                raw = input_data
+            else:
+                return {"success": False, "error": "Protobuf input must be binary or base64 string"}
+
+            result = self._decode_protobuf_wire(raw)
+            return {
+                "success": True,
+                "output": json.dumps(result, indent=2, default=str),
+                "metadata": {
+                    "decoder": "wire-format",
+                    "note": "Field numbers used as keys (schema-less decode)",
+                },
+            }
+        except Exception as e:
+            return {"success": False, "error": f"Protobuf parse error: {e}"}
+
+    def _decode_protobuf_wire(self, data: bytes) -> dict:
+        """Basic protobuf wire format decoder (no .proto required)."""
+        import struct
+
+        result: dict[str, Any] = {}
+        pos = 0
+        while pos < len(data):
+            tag, pos = self._read_varint(data, pos)
+            if pos > len(data):
+                break
+            field_number = tag >> 3
+            wire_type = tag & 0x7
+            key = f"field_{field_number}"
+
+            value: Any
+            if wire_type == 0:  # Varint
+                value, pos = self._read_varint(data, pos)
+            elif wire_type == 1:  # 64-bit fixed
+                if pos + 8 > len(data):
+                    break
+                value = struct.unpack_from("<d", data, pos)[0]
+                pos += 8
+            elif wire_type == 2:  # Length-delimited
+                length, pos = self._read_varint(data, pos)
+                if pos + length > len(data):
+                    break
+                chunk = data[pos : pos + length]
+                pos += length
+                try:
+                    value = chunk.decode("utf-8")
+                except UnicodeDecodeError:
+                    try:
+                        value = self._decode_protobuf_wire(chunk)
+                    except Exception:
+                        value = chunk.hex()
+            elif wire_type == 5:  # 32-bit fixed
+                if pos + 4 > len(data):
+                    break
+                value = struct.unpack_from("<f", data, pos)[0]
+                pos += 4
+            else:
+                break  # Unknown/deprecated wire type
+
+            if key in result:
+                if not isinstance(result[key], list):
+                    result[key] = [result[key]]
+                result[key].append(value)
+            else:
+                result[key] = value
+
+        return result
+
+    def _read_varint(self, data: bytes, pos: int) -> tuple[int, int]:
+        """Read a protobuf varint from data at pos."""
+        result = 0
+        shift = 0
+        while pos < len(data):
+            byte = data[pos]
+            pos += 1
+            result |= (byte & 0x7F) << shift
+            if (byte & 0x80) == 0:
+                break
+            shift += 7
+        return result, pos
+
     async def _handle_avro_to_json_schema(
         self, *, input_data: Any, opts: dict
     ) -> dict[str, Any]:

@@ -454,31 +454,25 @@ async function executeDataTool(
       const { language: astLang } = options ?? {};
       return converters.viewAst(input, astLang as string || 'javascript');
 
-    // ====== Unrouted Tools — Stub/Server-Side (Phase 1.3 audit) ======
+    // ====== Binary Format Converters — server-side only ======
+    // bson-to-json, messagepack-to-json, protobuf-to-json, avro-to-json, parquet-to-json
+    // are execution: 'server' — routed via executeServerTool() → FastAPI.
+    // No client-side handling needed here.
 
-    // Binary format converters — server-side (need native libraries)
-    case 'bson-to-json':
-    case 'messagepack-to-json':
-      return `⚠️ "${toolId}" requires server-side processing.\nThis tool needs native binary parsing libraries (bson/msgpack).\nServer-side implementation coming in Phase 1.4.`;
-
-    // Python/FastAPI tools (Avro, Parquet)
-    case 'avro-to-json':
-    case 'parquet-to-json':
+    // ====== Schema/API Converters (client-side) ======
     case 'avro-to-json-schema':
-      return `⚠️ "${toolId}" requires Python + FastAPI.\nThis tool processes binary data formats that require the fastavro/pyarrow libraries.\nRouted to server — ensure FastAPI is running.`;
-
-    // Schema/API converters — complex, need dedicated libraries
-    case 'protobuf-to-json':
-      return `⚠️ "${toolId}" requires protobufjs library integration.\nComing soon — Phase 2 server-side tools.`;
+      return converters.avroToJsonSchema(input);
     case 'openapi2-to-openapi3':
-      return `⚠️ "${toolId}" requires swagger2openapi library.\nComing soon — Phase 2 server-side tools.`;
+      return converters.openapi2ToOpenapi3(input);
     case 'openapi-to-typescript':
-      return `⚠️ "${toolId}" requires openapi-typescript library.\nComing soon — Phase 2 server-side tools.`;
+      return converters.openapiToTypescript(input);
     case 'openapi-to-graphql':
+      return converters.openapiToGraphql(input);
     case 'graphql-to-openapi':
-      return `⚠️ "${toolId}" requires complex schema translation.\nComing soon — Phase 2 server-side tools.`;
+      return converters.graphqlToOpenapi(input);
     case 'graphql-to-typescript':
-      return `⚠️ "${toolId}" requires graphql-codegen library.\nComing soon — Phase 2 server-side tools.`;
+      return converters.graphqlToTypescript(input);
+
     case 'sql-ddl-to-json-schema': {
       // Basic DDL → JSON Schema (regex-based, handles CREATE TABLE)
       const tables = input.match(/CREATE\s+TABLE\s+["`]?(\w+)["`]?\s*\(([\s\S]*?)\);/gi) || [];
@@ -508,16 +502,19 @@ async function executeDataTool(
       return JSON.stringify(schemas.length === 1 ? schemas[0] : schemas, null, 2);
     }
 
-    // Language transpilers — very high complexity
+    // ====== Language Transpilers (client-side, simplified) ======
     case 'dart-to-javascript':
+      return converters.dartToJavascript(input);
     case 'reasonml-to-javascript':
-      return `⚠️ "${toolId}" requires a full language compiler.\nThis transpilation tool is extremely complex and not yet implemented.\nPlanned for a future release.`;
+      return converters.reasonmlToJavascript(input);
 
-    // DevOps — require deep cloud provider knowledge
+    // ====== DevOps Converters (client-side) ======
     case 'helm-to-kubernetes':
+      return converters.helmToKubernetes(input);
     case 'terraform-to-cloudformation':
+      return converters.terraformToCloudformation(input);
     case 'terraform-to-pulumi':
-      return `⚠️ "${toolId}" requires deep cloud provider integration.\nThis DevOps conversion tool is planned for Phase 3.`;
+      return converters.terraformToPulumi(input);
 
     // ====== Unicode/Encoding (291-297) ======
     case 'html-entity-encode':

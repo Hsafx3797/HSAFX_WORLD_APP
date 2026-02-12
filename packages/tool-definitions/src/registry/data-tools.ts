@@ -442,7 +442,7 @@ export const dataToolsRegistry: ToolMetadata[] = [
     ]
   },
   {
-    id: 'dart-to-javascript', name: 'Dart → JavaScript', description: 'Convert Dart to JavaScript', category: 'Data', subcategory: 'Code', tier: 'pro', costType: 'coin', coinCost: 2, execution: 'server', inputType: 'text', outputType: 'text',
+    id: 'dart-to-javascript', name: 'Dart → JavaScript', description: 'Convert Dart to JavaScript', category: 'Data', subcategory: 'Code', tier: 'pro', costType: 'coin', coinCost: 2, execution: 'client', inputType: 'text', outputType: 'text',
     options: [
       { name: 'optimization', type: 'select', label: 'Optimization Level', options: [{ value: 'O0', label: 'None (debug)' }, { value: 'O1', label: 'Basic' }, { value: 'O2', label: 'Standard' }, { value: 'O3', label: 'Aggressive' }], defaultValue: 'O2' },
       { name: 'minify', type: 'checkbox', label: 'Minify Output', defaultValue: false }
@@ -456,7 +456,7 @@ export const dataToolsRegistry: ToolMetadata[] = [
     ]
   },
   {
-    id: 'reasonml-to-javascript', name: 'ReasonML → JavaScript', description: 'Convert ReasonML to JS', category: 'Data', subcategory: 'Code', tier: 'pro', costType: 'coin', coinCost: 2, execution: 'server', inputType: 'text', outputType: 'text',
+    id: 'reasonml-to-javascript', name: 'ReasonML → JavaScript', description: 'Convert ReasonML to JS', category: 'Data', subcategory: 'Code', tier: 'pro', costType: 'coin', coinCost: 2, execution: 'client', inputType: 'text', outputType: 'text',
     options: [
       { name: 'moduleFormat', type: 'select', label: 'Module Format', options: [{ value: 'commonjs', label: 'CommonJS' }, { value: 'es6', label: 'ES Modules' }], defaultValue: 'es6' }
     ]
@@ -556,21 +556,21 @@ export const dataToolsRegistry: ToolMetadata[] = [
     ]
   },
   {
-    id: 'helm-to-kubernetes', name: 'Helm Values → Kubernetes', description: 'Expand Helm to K8s', category: 'Data', subcategory: 'DevOps', tier: 'pro', costType: 'coin', coinCost: 3, execution: 'server', inputType: 'text', outputType: 'text',
+    id: 'helm-to-kubernetes', name: 'Helm Values → Kubernetes', description: 'Expand Helm to K8s', category: 'Data', subcategory: 'DevOps', tier: 'pro', costType: 'coin', coinCost: 3, execution: 'client', inputType: 'text', outputType: 'text',
     options: [
       { name: 'releaseName', type: 'string', label: 'Release Name', placeholder: 'my-release', defaultValue: 'my-release' },
       { name: 'includeHooks', type: 'checkbox', label: 'Include Hooks', defaultValue: false }
     ]
   },
   {
-    id: 'terraform-to-cloudformation', name: 'Terraform → CloudFormation', description: 'Convert to CloudFormation', category: 'Data', subcategory: 'DevOps', tier: 'pro', costType: 'coin', coinCost: 5, execution: 'server', inputType: 'text', outputType: 'text',
+    id: 'terraform-to-cloudformation', name: 'Terraform → CloudFormation', description: 'Convert to CloudFormation', category: 'Data', subcategory: 'DevOps', tier: 'pro', costType: 'coin', coinCost: 5, execution: 'client', inputType: 'text', outputType: 'text',
     options: [
       { name: 'stackName', type: 'string', label: 'Stack Name', placeholder: 'MyStack', defaultValue: '' },
       { name: 'outputFormat', type: 'select', label: 'Output Format', options: [{ value: 'yaml', label: 'YAML' }, { value: 'json', label: 'JSON' }], defaultValue: 'yaml' }
     ]
   },
   {
-    id: 'terraform-to-pulumi', name: 'Terraform → Pulumi', description: 'Convert to Pulumi', category: 'Data', subcategory: 'DevOps', tier: 'pro', costType: 'coin', coinCost: 5, execution: 'server', inputType: 'text', outputType: 'text',
+    id: 'terraform-to-pulumi', name: 'Terraform → Pulumi', description: 'Convert to Pulumi', category: 'Data', subcategory: 'DevOps', tier: 'pro', costType: 'coin', coinCost: 5, execution: 'client', inputType: 'text', outputType: 'text',
     options: [
       { name: 'language', type: 'select', label: 'Target Language', options: [{ value: 'typescript', label: 'TypeScript' }, { value: 'python', label: 'Python' }, { value: 'go', label: 'Go' }, { value: 'csharp', label: 'C#' }], defaultValue: 'typescript' }
     ]

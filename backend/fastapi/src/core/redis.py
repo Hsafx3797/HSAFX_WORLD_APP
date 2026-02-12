@@ -103,6 +103,43 @@ class RedisCache:
         client = await get_redis()
         await client.expire(self._key(key), ttl)
 
+    # ── Sorted Sets ──────────────────────────────────────────────
+
+    async def zadd(self, key: str, mapping: dict[str, float]) -> int:
+        """Add members to sorted set with scores"""
+        client = await get_redis()
+        prefixed = {m: s for m, s in mapping.items()}
+        return await client.zadd(self._key(key), prefixed)
+
+    async def zrank(self, key: str, member: str) -> int | None:
+        """Get rank of member in sorted set (0-based)"""
+        client = await get_redis()
+        return await client.zrank(self._key(key), member)
+
+    async def zrem(self, key: str, *members: str) -> int:
+        """Remove members from sorted set"""
+        client = await get_redis()
+        return await client.zrem(self._key(key), *members)
+
+    # ── Sets ─────────────────────────────────────────────────────
+
+    async def sadd(self, key: str, *members: str) -> int:
+        """Add members to a set"""
+        client = await get_redis()
+        return await client.sadd(self._key(key), *members)
+
+    async def smembers(self, key: str) -> set[str]:
+        """Get all members of a set"""
+        client = await get_redis()
+        return await client.smembers(self._key(key))
+
+    # ── Lists ────────────────────────────────────────────────────
+
+    async def lpush(self, key: str, *values: str) -> int:
+        """Push values to the head of a list"""
+        client = await get_redis()
+        return await client.lpush(self._key(key), *values)
+
 
 # Default cache instance
 cache = RedisCache()

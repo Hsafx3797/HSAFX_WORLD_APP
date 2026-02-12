@@ -3,16 +3,20 @@ Async Job API Endpoints
 HSAFX WORLD - Handles async tool execution jobs
 """
 
+import asyncio
 import json
+import time
 import uuid
 from datetime import datetime
 from typing import Any, List, Optional
 
+import httpx
 import structlog
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
 from src.core.redis import cache
+from src.tools import execute_tool
 
 router = APIRouter()
 logger = structlog.get_logger()
@@ -83,6 +87,99 @@ async def update_job_status(job_id: str, status: str, **kwargs) -> None:
         await store_job(job_id, job)
 
 
+# ==================== JOB PROCESSOR ====================
+
+JOB_TIMEOUT_SECONDS = 300  # 5 minutes max per job
+
+
+async def process_job(job_id: str) -> None:
+    """Background worker: execute a tool job and store the result."""
+    job = await get_job(job_id)
+    if not job or job["status"] == "cancelled":
+        return
+
+    tool_id = job["tool_id"]
+    start_ts = time.monotonic()
+    now = datetime.utcnow().isoformat()
+
+    # Mark running
+    await update_job_status(job_id, "running", started_at=now, progress=10)
+    await cache.zrem("job_queue", job_id)
+
+    try:
+        result = await asyncio.wait_for(
+            execute_tool(
+                tool_id,
+                input_data=job.get("data"),
+                options=job.get("data", {}).get("options"),
+            ),
+            timeout=JOB_TIMEOUT_SECONDS,
+        )
+
+        elapsed_ms = round((time.monotonic() - start_ts) * 1000, 2)
+        completed_at = datetime.utcnow().isoformat()
+
+        if result.get("success"):
+            await update_job_status(
+                job_id,
+                "completed",
+                output=result.get("output"),
+                metadata=result.get("metadata"),
+                execution_time_ms=elapsed_ms,
+                completed_at=completed_at,
+                progress=100,
+            )
+        else:
+            await update_job_status(
+                job_id,
+                "failed",
+                error=result.get("error", "Unknown execution error"),
+                execution_time_ms=elapsed_ms,
+                completed_at=completed_at,
+                progress=100,
+            )
+
+    except asyncio.TimeoutError:
+        elapsed_ms = round((time.monotonic() - start_ts) * 1000, 2)
+        await update_job_status(
+            job_id,
+            "timeout",
+            error=f"Job timed out after {JOB_TIMEOUT_SECONDS}s",
+            execution_time_ms=elapsed_ms,
+            completed_at=datetime.utcnow().isoformat(),
+            progress=100,
+        )
+    except Exception as exc:
+        elapsed_ms = round((time.monotonic() - start_ts) * 1000, 2)
+        logger.exception("Job processing failed", job_id=job_id)
+        await update_job_status(
+            job_id,
+            "failed",
+            error=str(exc),
+            execution_time_ms=elapsed_ms,
+            completed_at=datetime.utcnow().isoformat(),
+            progress=100,
+        )
+
+    # Send webhook notification if configured
+    job = await get_job(job_id)
+    webhook_url = job.get("webhook_url") if job else None
+    if webhook_url:
+        try:
+            async with httpx.AsyncClient(timeout=10) as client:
+                await client.post(
+                    webhook_url,
+                    json={
+                        "job_id": job_id,
+                        "status": job["status"],
+                        "tool_id": tool_id,
+                        "completed_at": job.get("completed_at"),
+                    },
+                )
+        except Exception:
+            logger.warning("Webhook notification failed", job_id=job_id, url=webhook_url)
+
+
 # ==================== ENDPOINTS ====================
 
 @router.post("", response_model=JobStatus, status_code=201)
@@ -136,6 +233,10 @@ async def create_job(
 
     await store_job(job_id, job_data)
 
+    # Track job per user for list endpoint
+    if user_id:
+        await cache.sadd(f"user_jobs:{user_id}", job_id)
+
     # Store idempotency key mapping
     if input_data.idempotency_key:
         await cache.set(f"idempotency:{input_data.idempotency_key}", job_id, ttl=86400)
@@ -145,8 +246,8 @@ async def create_job(
     priority_score = priority_scores.get(input_data.priority, 10)
     await cache.zadd("job_queue", {job_id: priority_score})
 
-    # TODO: Trigger background worker to process job
-    # background_tasks.add_task(process_job, job_id)
+    # Trigger background worker
+    background_tasks.add_task(process_job, job_id)
 
     logger.info("Job created", job_id=job_id, tool_id=input_data.tool_id, user_id=user_id)
 
@@ -268,10 +369,16 @@ async def cancel_job(
     # Remove from queue
     await cache.zrem("job_queue", job_id)
 
-    # Refund reserved coins if any
+    # Record coin refund for Next.js to process
     if job.get("coins_reserved", 0) > 0 and job.get("user_id"):
-        # TODO: Refund coins
-        pass
+        refund_data = json.dumps({
+            "job_id": job_id,
+            "user_id": job["user_id"],
+            "amount": job["coins_reserved"],
+            "reason": "job_cancelled",
+            "timestamp": datetime.utcnow().isoformat(),
+        })
+        await cache.lpush("coin_refund_queue", refund_data)
 
     logger.info("Job cancelled", job_id=job_id)
 

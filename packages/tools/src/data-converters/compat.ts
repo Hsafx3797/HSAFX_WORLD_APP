@@ -127,6 +127,21 @@ export {
 // Alias for web compatibility (web uses lowercase 'javascript')
 export { typeScriptToJavaScript as typescriptToJavascript } from './code';
 
+// Specialized converters
+export {
+  avroToJsonSchema,
+  openapi2ToOpenapi3,
+  openapiToTypescript,
+  openapiToGraphql,
+  graphqlToOpenapi,
+  graphqlToTypescript,
+  helmToKubernetes,
+  terraformToCloudformation,
+  terraformToPulumi,
+  dartToJavascript,
+  reasonmlToJavascript,
+} from './specialized';
+
 // ============================================================
 // Functions that need to be added or are in other modules
 // These stubs maintain API compatibility

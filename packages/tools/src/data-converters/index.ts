@@ -16,6 +16,7 @@ export * from './devops';
 export * from './api';
 export * from './schema';
 export * from './code';
+export * from './specialized';
 
 // Web app compatibility layer (includes all re-exports and additional functions)
 export * from './compat';
