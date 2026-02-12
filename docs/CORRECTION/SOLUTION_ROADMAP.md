@@ -1,162 +1,175 @@
 # SOLUTION ROADMAP — HSAFX WORLD APP
 
-> **Date:** 2025-07-15
+> **Date:** 2026-02-12
+> **Commit:** `5394975` on `master`
 > **Based on:** CORRECTION docs 01–05
-> **Status:** Pre-Sprint 6
+> **Status:** Phase 1 COMPLETE, Phase 2 partial, entering Phase 3
 
 ---
 
 ## OVERVIEW
 
-This roadmap translates the 44 remaining work items (from [03_REMAINING_WORK.md](03_REMAINING_WORK.md)) into an actionable sequence. It requires **5 decisions from the owner** before Sprint 6 begins.
+This roadmap translates the remaining work items (from [03_REMAINING_WORK.md](03_REMAINING_WORK.md)) into an actionable sequence. All 5 owner decisions are resolved. All 10 planning conflicts are locked.
+
+**Progress:** 16/44 items complete (~36% items, ~85 hours done). ~169 hours remaining.
+**No CRITICAL blockers remain** — staging deployment is safe.
 
 ---
 
-## DECISION GATES (Owner Must Resolve)
+## DECISION GATES — ALL RESOLVED ✅
 
-These come from [05_PLANNING_DOCUMENT_CONFLICTS.md](05_PLANNING_DOCUMENT_CONFLICTS.md) and deviation analysis:
+| # | Decision | Answer | Locked |
+|---|----------|--------|--------|
+| D-01 | Deployment strategy | Self-hosted VPS | ✅ |
+| D-02 | Background jobs | Simple queue (no BullMQ) | ✅ |
+| D-03 | Email provider | Resend + Self SMTP dual | ✅ |
+| D-04 | Search engine | Skip Meilisearch for MVP (PostgreSQL FTS) | ✅ |
+| D-05 | Admin real-time | Both WebSocket + SSE | ✅ |
 
-| # | Decision | Options | Impact |
-|---|----------|---------|--------|
-| D-01 | **Rename tables/columns to match DBML?** | (a) Rename code to match planning  (b) Update DBML to match code | Migration risk vs doc drift |
-| D-02 | **Payment provider: Stripe or Polar?** | (a) Keep Polar  (b) Migrate to Stripe | Polar works but docs say Stripe |
-| D-03 | **Add Facebook OAuth?** | (a) Add it  (b) Remove from planning | MVP scope question |
-| D-04 | **Pro plan price: $10/mo or $29/mo?** | Doc 20 says $10, doc 21 says $29 | Revenue model |
-| D-05 | **Daily ad coin cap: 50 or 1,000?** | Doc 20 says 1,000, doc 21 says 50 | Economics |
+### Planning Conflicts — ALL LOCKED ✅
 
-**Nothing in Sprint 6 should start until D-01 through D-05 are answered.**
+| # | Conflict | Decision |
+|---|----------|----------|
+| #1 | Starter plan price | $4.99 |
+| #2 | Ad system vs login rewards | Login rewards (ads removed) |
+| #3 | Daily coin cap | 50 coins/day |
+| #4 | API key limit | Max 5 per user |
+| #5 | Rate limits | Free=100, Pro=500 req/hr |
+| #6 | Pro plan price | $10/mo |
+| #7 | Over-limit error code | HTTP 402 with B001 |
+| #8 | Coins per reward | 10 coins |
+| #9 | Status column type | varchar (not pgEnum) |
+| #10 | Payment provider | Polar(subs) + Stripe(coins) dual |
 
 ---
 
 ## PHASE PLAN
 
-### Phase 1 — Security & Billing Fixes (Sprint 6) — ~28h
-> Prerequisite: Decisions D-01 through D-05
+### ✅ Phase 1 — Security & Billing Fixes — COMPLETE
+> Sprints P0-01 through P0-08, P1-07
 
-**What:** Fix the 12 CRITICAL deviations. No new features.
+**Completed:**
+- ✅ Wire coin deduction into B2B REST route
+- ✅ Call `confirmReservation()` after async job completion
+- ✅ Wire CASL `can()` checks into API routes and UI (full stack)
+- ✅ Implement refund clawback webhook handler
+- ✅ Add `processed_webhooks` table + idempotency
+- ✅ Invoke session rate limit in middleware
+- ✅ Server-enforce admin 2FA on all sensitive routes
+- ✅ Restrict impersonation actions (scoped middleware)
 
-- Wire coin deduction into B2B REST route
-- Call `confirmReservation()` after async job completion
-- Wire CASL `can()` checks into API routes and UI
-- Implement refund clawback webhook handler
-- Add `processed_webhooks` table + idempotency check
-- Invoke session rate limit in middleware
-- Server-enforce admin 2FA on all sensitive routes
-- Restrict impersonation actions (billing, password, 2FA)
-
-**Exit Criteria:** All 8 P0 items pass manual testing. `confirmReservation` verified in job completion path. B2B route deducts coins.
-
----
-
-### Phase 2 — Schema & Data Integrity (Sprint 7) — ~30h
-
-**What:** Fix database foundation.
-
-- Add all 13 PostgreSQL enums from DBML
-- Add all planned indexes (composite, GIN, partial)
-- Create 13 missing tables or decide to defer
-- Rename columns per D-01 decision
-- Add missing foreign keys and constraints
-- Generate and run Drizzle migrations
-
-**Exit Criteria:** `drizzle-kit push` succeeds cleanly. Schema matches DBML (or DBML updated to match code per D-01).
+**Result:** All 12 CRITICAL deviations resolved or partially resolved. Zero blocking items remain.
 
 ---
 
-### Phase 3 — Billing Lifecycle Completion (Sprint 8) — ~32h
+### ✅ Phase 2 (partial) — Schema & Logging
+> Sprint P2-01 (logging), Sprint P1-01 (partial enums)
 
-**What:** Complete the billing system end-to-end.
+**Completed:**
+- ✅ Structured logging with pino (`createLogger()` in `@hsafx/shared/logger`)
+- ✅ ~75+ `console.*` calls migrated across apps and packages
+- ✅ 4 pgEnums created (`subscription_status`, `coin_transaction_type`, `invoice_status`, `payment_status`)
+- ✅ Login reward tables added (`login_reward_claims`)
+- ✅ `processed_webhooks` table added
+- ✅ `inngest_job_id` renamed to `external_job_id`
+- ✅ Ad tables + dead code removed
 
-- Monthly allowance cron job
-- Plan upgrade/downgrade proration
-- Usage reporting (weekly aggregation)
-- B2B billing dashboard
-- Invoice generation
-- Grace period enforcement for failed payments
-- Free tier daily cap enforcement
-- Overage handling logic
-
-**Exit Criteria:** Full subscribe → use → exhaust → refill → upgrade cycle works.
-
----
-
-### Phase 4 — Frontend Completion (Sprint 9) — ~36h
-
-**What:** Build the missing 60% of web app UI.
-
-- Tool execution page (the core use case)
-- User billing dashboard
-- Result viewer (export JSON/CSV/PDF)
-- Notification system (toast + inbox)
-- Search infrastructure (Meilisearch or client-side)
-- Missing Zustand stores (`useBillingStore`, `useNotificationStore`, `useExecutionStore`)
-- Mobile-responsive layout audit
-
-**Exit Criteria:** User can: discover tool → execute → see result → export → check billing.
+**Remaining in Phase 2:**
+- 9 more pgEnums to add
+- 25+ database indexes
+- Unique constraints on join tables
+- Missing columns (`tools.tool_class`, `api_keys.scopes`)
 
 ---
 
-### Phase 5 — Admin & Observability (Sprint 10) — ~28h
+### 🔜 Phase 3 — Schema Completion (NEXT)
 
-**What:** Admin panel and operational tooling.
+**What:** Complete all remaining database schema work in one batch.
 
-- Admin analytics viewer (chart.js or recharts)
-- Audit log viewer with filters
-- User management CRUD (currently list-only)
-- Tool management (enable/disable/adjust pricing)
-- Structured logging in TypeScript (pino or winston)
-- Error boundary + Sentry integration
-- Health check endpoints for all services
+- Add 9 remaining pgEnums from DBML
+- Add all 25+ planned indexes (composite, GIN, partial)
+- Add unique constraints on 7 join tables
+- Add `tools.tool_class` column
+- Add `api_keys.scopes` text[] column
+- Generate Drizzle migrations
 
-**Exit Criteria:** Admin can view analytics, manage users/tools, and debug issues via logs.
-
----
-
-### Phase 6 — Job Queue & Async Processing (Sprint 11) — ~24h
-
-**What:** Proper background job infrastructure.
-
-- Install and configure BullMQ
-- Move FastAPI job dispatch to BullMQ
-- Job retry, DLQ, and monitoring
-- Email sending via queue
-- Scheduled jobs (cleanup, aggregation, allowance)
-- Redis queue dashboard in admin
-
-**Exit Criteria:** All async work goes through BullMQ. No inline `setTimeout` processing.
+**Exit Criteria:** Schema matches DBML. All enums, indexes, and constraints present.
 
 ---
 
-### Phase 7 — Testing & Launch Prep (Sprint 12) — ~20h
+### Phase 4 — Frontend Completion
 
-**What:** Quality gate before staging.
+**What:** Build missing stores, components, search, and B2B billing API.
 
-- Integration tests for billing lifecycle
-- E2E test for critical user journey
-- Load test for /api/v1/tools/:key/execute
-- Security audit (OWASP top 10 check)
-- Performance budget enforcement
-- Documentation update (README, API docs)
-- Staging deployment dry run
+- Zustand stores: `useBillingStore`, `useNotificationStore`, `useExecutionStore`
+- UI components: ExecutionPanel, UsageCard, BillingCard, TransactionList, ActivityFeed, NotificationBell
+- PostgreSQL FTS: tsvector + GIN index on tools table, search API, replace client-side filtering
+- Billing REST endpoints for B2B
 
-**Exit Criteria:** CI green. Billing integration test passes. Under 500ms p95 for tool execution.
+**Exit Criteria:** User can discover → execute → view results → check billing. FTS search works.
+
+---
+
+### Phase 5 — Tool Execution Completion
+
+**What:** Complete stub tool handlers and enable FastAPI processing.
+
+- Implement ~15 stub tool handlers (BSON, MessagePack, Avro, Protobuf, Parquet, etc.)
+- Enable FastAPI job processing with completion callback
+
+**Exit Criteria:** All 454+ tools execute (zero stubs). FastAPI processes Python jobs.
+
+---
+
+### Phase 6 — Admin & Polish (P2)
+
+**What:** Admin panel features and session/infrastructure improvements.
+
+- Admin analytics dashboard (charts, metrics)
+- Admin audit log viewer (filterable)
+- Move shared UI components to `@hsafx/ui`
+- Redis session caching
+- Rolling sessions + absolute timeout
+- Session cookie rename
+- CSRF + Retry-After improvements
+
+---
+
+### Phase 7 — Alignment & Remaining
+
+**What:** Naming alignment, admin billing, pub/sub, remaining DB tables.
+
+- Update planning docs to match code table/column naming
+- Admin billing management
+- Pub/sub channels
+- Remaining ~7 DB tables
+
+---
+
+### Phase 8 — Final Polish (P3)
+
+**What:** Money column migration, E2E testing, cleanup.
+
+- Money columns to integer cents
+- Facebook OAuth resolution
+- Docker/K8s end-to-end testing
 
 ---
 
 ## TIMELINE SUMMARY
 
-| Phase | Sprint | Hours | Running Total |
-|-------|--------|-------|---------------|
-| 1. Security & Billing Fixes | 6 | 28h | 28h |
-| 2. Schema & Data Integrity | 7 | 30h | 58h |
-| 3. Billing Lifecycle | 8 | 32h | 90h |
-| 4. Frontend Completion | 9 | 36h | 126h |
-| 5. Admin & Observability | 10 | 28h | 154h |
-| 6. Job Queue & Async | 11 | 24h | 178h |
-| 7. Testing & Launch Prep | 12 | 20h | 198h |
+| Phase | Focus | Hours | Cumulative | Status |
+|-------|-------|-------|------------|--------|
+| 1. Security & Billing | 28h | 28h | ✅ DONE |
+| 2. Schema & Logging | 30h | 58h | ✅ Partial (logging done) |
+| 3. Schema Completion | 12h | 70h | **NEXT** |
+| 4. Frontend Completion | 34h | 104h | Not started |
+| 5. Tool Execution | 15h | 119h | Not started |
+| 6. Admin & Polish | 50h | 169h | Not started |
+| 7. Alignment + Remaining | 26h | 195h | Not started |
+| 8. Final Polish | 16h | 211h | Not started |
 
-**MVP (P0 + P1 only, Phases 1–3): ~90 hours**
-**Full Build (all phases): ~198 hours**
+**Total remaining: ~169 hours** (from original ~254)
 
 ---
 
@@ -164,8 +177,8 @@ These come from [05_PLANNING_DOCUMENT_CONFLICTS.md](05_PLANNING_DOCUMENT_CONFLIC
 
 | Risk | Likelihood | Mitigation |
 |------|-----------|------------|
-| Table rename migration breaks existing data | Medium | Take DB snapshot before D-01 migration |
-| Polar → Stripe migration disrupts subscriptions | Low (if staying Polar) | Keep Polar unless owner demands Stripe |
-| BullMQ adds operational complexity | Low | Use Upstash Redis (already provisioned) |
+| Schema migration breaks existing data | Low | Take DB snapshot before migration batch |
 | Frontend rebuild exceeds estimates | Medium | Prioritize tool execution page; defer search |
-| Planning doc conflicts cause rework | High | **Resolve D-01 through D-05 FIRST** |
+| Stub tool implementation quality | Medium | Start with simpler tools, iterate |
+| ~~Planning doc conflicts cause rework~~ | ~~High~~ | ✅ All 10 conflicts resolved and locked |
+| ~~Decision gates block progress~~ | ~~High~~ | ✅ All 5 decisions resolved |

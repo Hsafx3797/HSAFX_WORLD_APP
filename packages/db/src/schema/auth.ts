@@ -1,8 +1,14 @@
-import { pgTable, uuid, text, varchar, timestamp, boolean, integer, index, uniqueIndex } from 'drizzle-orm/pg-core';
+import { pgTable, pgEnum, uuid, text, varchar, timestamp, boolean, integer, index, uniqueIndex } from 'drizzle-orm/pg-core';
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 import { users } from './users';
+
+// ─── Enums ────────────────────────────────────────────────────
+
+export const adminRoleTypeEnum = pgEnum('admin_role_type', [
+  'system', 'custom',
+]);
 
 /**
  * Sessions Table - User authentication sessions
@@ -193,7 +199,9 @@ export const userPermissionOverrides = pgTable('user_permission_overrides', {
   expiresAt: timestamp('expires_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
-});
+}, (t) => [
+  uniqueIndex('upo_user_perm_idx').on(t.userId, t.permissionId),
+]);
 
 // Types inferred from tables using InferSelectModel and InferInsertModel
 export type Session = InferSelectModel<typeof sessions>;

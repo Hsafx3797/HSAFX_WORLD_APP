@@ -1,8 +1,18 @@
-import { pgTable, serial, uuid, text, varchar, timestamp, integer, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, pgEnum, serial, uuid, text, varchar, timestamp, integer, jsonb, index } from 'drizzle-orm/pg-core';
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 import { users } from './users';
+
+// ─── Enums ────────────────────────────────────────────────────
+
+export const auditActionEnum = pgEnum('audit_action', [
+  'create', 'update', 'delete', 'grant', 'revoke', 'login', 'logout', 'payment', 'refund',
+]);
+
+export const permissionTargetEnum = pgEnum('permission_target', [
+  'role_permission', 'user_override', 'plan_feature',
+]);
 
 /**
  * API Request Logs - High-volume append-only request audit trail
@@ -24,7 +34,10 @@ export const apiRequestLogs = pgTable('api_request_logs', {
   errorMessage: text('error_message'),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-});
+}, (t) => [
+  index('arl_user_id_idx').on(t.userId),
+  index('arl_created_at_idx').on(t.createdAt),
+]);
 
 /**
  * Permission Audit Logs - Tracks permission changes for compliance
@@ -46,7 +59,10 @@ export const permissionAuditLogs = pgTable('permission_audit_logs', {
   reason: text('reason'),
   ipAddress: varchar('ip_address', { length: 45 }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-});
+}, (t) => [
+  index('pal_actor_id_idx').on(t.actorId),
+  index('pal_created_at_idx').on(t.createdAt),
+]);
 
 // Types inferred from tables using InferSelectModel and InferInsertModel
 export type ApiRequestLog = InferSelectModel<typeof apiRequestLogs>;

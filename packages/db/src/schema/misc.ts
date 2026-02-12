@@ -1,8 +1,14 @@
-import { pgTable, uuid, text, varchar, timestamp, integer, boolean, jsonb, index, uniqueIndex } from 'drizzle-orm/pg-core';
+import { pgTable, pgEnum, uuid, text, varchar, timestamp, integer, boolean, jsonb, index, uniqueIndex } from 'drizzle-orm/pg-core';
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 import { users } from './users';
+
+// ─── Enums ────────────────────────────────────────────────────
+
+export const emailProviderEnum = pgEnum('email_provider', [
+  'resend', 'smtp',
+]);
 
 /**
  * File Uploads - Temporary file storage tracking

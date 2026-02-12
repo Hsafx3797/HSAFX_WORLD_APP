@@ -29,11 +29,27 @@ export const coinTransactionTypeEnum = pgEnum('coin_transaction_type', [
 ]);
 
 export const invoiceStatusEnum = pgEnum('invoice_status', [
-  'draft', 'open', 'paid', 'void', 'uncollectible',
+  'draft', 'open', 'partially_paid', 'paid', 'void', 'uncollectible',
 ]);
 
 export const paymentStatusEnum = pgEnum('payment_status', [
   'pending', 'succeeded', 'failed', 'refunded',
+]);
+
+export const billingIntervalEnum = pgEnum('billing_interval', [
+  'monthly', 'yearly',
+]);
+
+export const planLimitTypeEnum = pgEnum('plan_limit_type', [
+  'integer', 'size', 'duration', 'boolean', 'complex',
+]);
+
+export const resetPeriodEnum = pgEnum('reset_period', [
+  'hourly', 'daily', 'monthly', 'yearly', 'never',
+]);
+
+export const planChangeTypeEnum = pgEnum('plan_change_type', [
+  'feature_toggle', 'limit_update', 'metadata_add', 'metadata_remove',
 ]);
 
 /**
@@ -68,7 +84,9 @@ export const planLimits = pgTable('plan_limits', {
   limitValue: integer('limit_value').notNull(),
   unit: text('unit'), // 'MB', 'requests/min', 'executions/day'
   description: text('description'),
-});
+}, (t) => [
+  uniqueIndex('pl_plan_key_idx').on(t.planId, t.limitKey),
+]);
 
 /**
  * Subscriptions Table - User subscription records
@@ -229,7 +247,9 @@ export const planFeatures = pgTable('plan_features', {
   enabled: boolean('enabled').notNull().default(false),
   limitValue: integer('limit_value'),
   metadata: jsonb('metadata').$type<Record<string, unknown>>(),
-});
+}, (t) => [
+  uniqueIndex('pf_plan_feature_idx').on(t.planId, t.featureKey),
+]);
 
 /**
  * Plan Coin Rules - Discount percentages per tool class per plan
@@ -242,7 +262,9 @@ export const planCoinRules = pgTable('plan_coin_rules', {
     .references(() => plans.id, { onDelete: 'cascade' }),
   toolClass: varchar('tool_class', { length: 50 }).notNull(),
   discountPercent: integer('discount_percent').notNull().default(0),
-});
+}, (t) => [
+  uniqueIndex('pcr_plan_class_idx').on(t.planId, t.toolClass),
+]);
 
 /**
  * Login Reward Claims - Immutable log of every claimed login reward

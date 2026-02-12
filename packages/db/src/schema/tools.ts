@@ -1,5 +1,6 @@
 import {
   pgTable,
+  pgEnum,
   uuid,
   text,
   varchar,
@@ -14,6 +15,12 @@ import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 import { users } from './users';
+
+// ─── Enums ────────────────────────────────────────────────────
+
+export const identifierTypeEnum = pgEnum('identifier_type', [
+  'ip_hash', 'fingerprint',
+]);
 
 /**
  * Tool Categories - Hierarchical organization of tools
@@ -113,7 +120,9 @@ export const usageCounters = pgTable('usage_counters', {
   metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
-});
+}, (t) => [
+  uniqueIndex('uc_user_resource_period_idx').on(t.userId, t.resourceType, t.periodStart),
+]);
 
 /**
  * Tool Executions - Audit log for tool usage
