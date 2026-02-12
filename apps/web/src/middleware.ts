@@ -150,7 +150,7 @@ async function handleRateLimit(
 
 // ─── Auth Route Protection ────────────────────────────────────────────────────
 
-/** Routes that require an authenticated session (cookie: better-auth.session_token) */
+/** Routes that require an authenticated session (cookie: __hsafx.session_token) */
 const PROTECTED_PREFIXES = ['/dashboard', '/settings', '/billing', '/account'];
 
 /** Routes that require admin role (checked via admin cookie set at login) */
@@ -159,8 +159,8 @@ const ADMIN_PREFIXES = ['/admin'];
 /** Auth pages — redirect authenticated users away from here to /dashboard */
 const AUTH_PAGES = ['/auth/signin', '/auth/signup', '/auth/login', '/auth/register'];
 
-/** The session cookie name used by better-auth */
-const SESSION_COOKIE = 'better-auth.session_token';
+/** The session cookie name used by better-auth (prefix: __hsafx) */
+const SESSION_COOKIE = '__hsafx.session_token';
 
 function handleAuth(request: NextRequest): NextResponse | null {
   const pathname = request.nextUrl.pathname;
@@ -212,10 +212,11 @@ const ALLOWED_ORIGINS = new Set([
 /** Safe methods that don't require Origin checks */
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
-/** Paths exempt from CSRF checks (webhooks, OAuth callbacks) */
+/** Paths exempt from CSRF checks (webhooks, OAuth callbacks, B2B API key routes) */
 const CSRF_EXEMPT_PREFIXES = [
   '/api/auth/',      // better-auth handles its own CSRF via trustedOrigins
   '/api/webhooks/',  // Stripe/Polar webhooks verify signatures instead
+  '/api/v1/',        // B2B routes use Bearer token auth, not cookies
 ];
 
 function handleCsrf(request: NextRequest): NextResponse | null {
@@ -230,15 +231,43 @@ function handleCsrf(request: NextRequest): NextResponse | null {
   // Only check API routes and server actions
   if (!pathname.startsWith('/api/')) return null;
 
+  // Check Origin header first
   const origin = request.headers.get('origin');
-  if (origin && !ALLOWED_ORIGINS.has(origin)) {
-    return NextResponse.json(
-      { error: 'Forbidden: invalid origin' },
-      { status: 403 },
-    );
+  if (origin) {
+    if (!ALLOWED_ORIGINS.has(origin)) {
+      return NextResponse.json(
+        { error: 'Forbidden: invalid origin' },
+        { status: 403 },
+      );
+    }
+    return null; // Origin present and valid
   }
 
-  return null;
+  // Referer fallback when Origin header is absent
+  const referer = request.headers.get('referer');
+  if (referer) {
+    try {
+      const refererOrigin = new URL(referer).origin;
+      if (!ALLOWED_ORIGINS.has(refererOrigin)) {
+        return NextResponse.json(
+          { error: 'Forbidden: invalid referer origin' },
+          { status: 403 },
+        );
+      }
+      return null; // Referer origin valid
+    } catch {
+      return NextResponse.json(
+        { error: 'Forbidden: malformed referer' },
+        { status: 403 },
+      );
+    }
+  }
+
+  // Neither Origin nor Referer present — reject
+  return NextResponse.json(
+    { error: 'Forbidden: missing origin' },
+    { status: 403 },
+  );
 }
 
 // ─── Middleware Entry Point ──────────────────────────────────────────────────

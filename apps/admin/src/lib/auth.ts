@@ -40,6 +40,9 @@ function createAuth() {
         maxAge: 60 * 2, // 2 minutes
       },
     },
+    advanced: {
+      cookiePrefix: '__hsafx',
+    },
     rateLimit: {
       window: 60,
       max: 20,

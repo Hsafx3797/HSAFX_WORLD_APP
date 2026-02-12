@@ -89,7 +89,7 @@
 | OAuth (Google, GitHub)     | ✅     | Configured in web app                                                                    |
 | Facebook OAuth             | ⚠️     | **Extra** — not in planning docs                                                         |
 | Session config (7d expiry) | ✅     | `expiresIn: 7 * 86400`, `updateAge: 86400`                                               |
-| Session cookie name        | 🟡     | Uses `better-auth.session_token`, planning says `__hsafx_session`                        |
+| Session cookie name        | ✅     | Renamed to `__hsafx.session_token` via `advanced.cookiePrefix: '__hsafx'`                |
 | Rolling sessions           | ❌     | No `rolling: true` configured                                                            |
 | Absolute session timeout   | ❌     | No `absoluteTimeout` configured                                                          |
 | Redis session storage      | ❌     | Uses DB-backed sessions only                                                             |
@@ -227,11 +227,11 @@
 | SSE streaming          | ✅         |
 | Impersonation          | ✅         |
 | Email templates CRUD   | ✅         |
-| Analytics dashboard    | ❌ Missing |
-| Billing administration | ❌ Missing |
-| Audit log viewer       | ❌ Missing |
+| Analytics dashboard    | ✅ Full — 4 StatCards, 6 metrics, 4 Recharts charts, skeleton loading |
+| Billing administration | ✅ Full — Transactions + webhooks tabs, search/filter, CSV export |
+| Audit log viewer       | ✅ Full — DataTable, 6 action filters, date range, CSV export, details modal |
 
-**Admin score: ~60%**
+**Admin score: ~85%**
 
 ---
 
@@ -299,11 +299,11 @@
 | Billing System          | 90%   | Wallet reconciliation edge cases                                |
 | Tool Execution          | 95%   | All stubs implemented, job processing enabled                   |
 | Frontend (Web)          | 65%   | Partial ToolCard/ToolGrid/ResultDisplay                         |
-| Frontend (Admin)        | 60%   | No analytics, billing admin, audit viewer                       |
+| Frontend (Admin)        | 85%   | All pages built — remaining: UI package migration               |
 | FastAPI Backend         | 90%   | Job processing enabled                                          |
 | Shared Packages         | 88%   | UI package is theme-only                                        |
 | Redis & Caching         | 70%   | No session cache, no pub/sub                                    |
 
-### **Weighted Overall: ~88%**
+### **Weighted Overall: ~91%**
 
-Significant progress since last audit (~84%). **Phase 5 complete** — All 16 stub tools implemented (11 JS converters in `specialized.ts`, 3 FastAPI binary handlers, 2 already-implemented stubs removed), FastAPI job processing enabled with timeout/webhook/refund logic, Redis extended with sorted set/set/list operations. Build passes (5/5). Remaining work: admin features, session polish, naming alignment.
+Significant progress since last audit (~88%). **Phase 5 complete** — All 16 stub tools implemented (11 JS converters in `specialized.ts`, 3 FastAPI binary handlers, 2 already-implemented stubs removed), FastAPI job processing enabled with timeout/webhook/refund logic, Redis extended with sorted set/set/list operations. Build passes (5/5). **Admin features discovery** — Analytics dashboard (#31), audit log viewer (#32), and billing admin (#39) were already fully implemented but previously marked missing. Remaining work: UI package migration, session polish, naming alignment.

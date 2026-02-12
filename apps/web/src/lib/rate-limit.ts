@@ -193,12 +193,15 @@ export async function checkApiKeyRateLimit(keyId: string): Promise<RateLimitResu
 
 /**
  * Build rate-limit response headers.
+ * Includes Retry-After (seconds) per RFC 6585 §4.
  */
 export function rateLimitHeaders(result: RateLimitResult): Record<string, string> {
+  const retryAfter = Math.max(1, Math.ceil((result.reset - Date.now()) / 1000));
   return {
     'X-RateLimit-Limit': String(result.limit),
     'X-RateLimit-Remaining': String(result.remaining),
     'X-RateLimit-Reset': String(result.reset),
     'X-RateLimit-Layer': result.layer,
+    'Retry-After': String(retryAfter),
   };
 }

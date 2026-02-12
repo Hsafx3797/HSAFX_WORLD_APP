@@ -10,6 +10,7 @@ import {
   resetLoginFailures,
   verifyCaptcha,
 } from '@/lib/login-security';
+import { getRedis } from '@/lib/redis';
 
 // Lazy initialization to avoid build-time errors
 let _auth: ReturnType<typeof betterAuth> | undefined;
@@ -45,6 +46,27 @@ function createAuth() {
         });
       },
     },
+    // Redis-backed secondary storage for session caching (graceful degradation)
+    secondaryStorage: process.env.UPSTASH_REDIS_REST_URL
+      ? {
+          get: async (key: string) => {
+            const redis = getRedis();
+            return (await redis.get<string>(key)) ?? null;
+          },
+          set: async (key: string, value: string, ttl?: number) => {
+            const redis = getRedis();
+            if (ttl) {
+              await redis.set(key, value, { ex: ttl });
+            } else {
+              await redis.set(key, value);
+            }
+          },
+          delete: async (key: string) => {
+            const redis = getRedis();
+            await redis.del(key);
+          },
+        }
+      : undefined,
     emailVerification: {
       sendOnSignUp: true,
       autoSignInAfterVerification: true,
@@ -82,12 +104,15 @@ function createAuth() {
       },
     },
     session: {
-      expiresIn: 60 * 60 * 24 * 7, // 7 days
-      updateAge: 60 * 60 * 24, // 1 day
+      expiresIn: 60 * 60 * 24 * 7, // 7 days (idle timeout)
+      updateAge: 60 * 60, // 1 hour — rolling: session extends on activity
       cookieCache: {
         enabled: true,
         maxAge: 60 * 5, // 5 minutes — reduce DB lookups for session validation
       },
+    },
+    advanced: {
+      cookiePrefix: '__hsafx',
     },
     rateLimit: {
       window: 60, // 1 minute window

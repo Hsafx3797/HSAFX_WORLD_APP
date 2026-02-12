@@ -1,7 +1,7 @@
 # 03 — REMAINING WORK
 
 > **Last audited:** 2026-02-12
-> **Current state:** ~88% overall completion
+> **Current state:** ~91% overall completion
 > **Methodology:** Every gap from doc 01 and 02 mapped to actionable work items
 
 ---
@@ -103,14 +103,10 @@
 - **Effort:** ~12 hours
 
 ### P2-03: Add Admin Analytics Dashboard
-- **Gap:** H-12
-- **Work:** API routes for usage metrics, revenue, user growth. Admin dashboard page with charts.
-- **Effort:** ~20 hours
+> **✅ COMPLETED** (pre-existing) — Full dashboard page with 4 StatCards, 6 secondary metrics, 4 Recharts charts (user growth, execution trend, revenue, user breakdown), top tools, recent errors, quick actions, skeleton loading. 5 API routes + 5 SWR hooks.
 
 ### P2-04: Add Admin Audit Log Viewer
-- **Gap:** H-13
-- **Work:** Admin page with searchable/filterable audit log table. API route to query `activity_logs` + `permission_audit_logs`.
-- **Effort:** ~8 hours
+> **✅ COMPLETED** (pre-existing) — Full audit page with DataTable, 6 action category filters, search, date range, admin ID filter, CSV export, details modal with JSON viewer. API route + SWR hook.
 
 ### P2-05: Add Redis Session Caching
 - **Gap:** H-14
@@ -136,7 +132,7 @@
 > **SKIPPED** (D-04 decision: too expensive for MVP). PostgreSQL FTS is sufficient.
 
 ### P2-10: Add Admin Billing Management
-- **Effort:** ~12 hours
+> **✅ COMPLETED** (pre-existing) — Full billing page with transactions tab (search, type/date filters, paginated DataTable, CSV export) + webhooks tab (Stripe/Polar provider badges, retry button, status tracking). API routes + SWR hooks.
 
 ### P2-11: Add Stripe Dispute + Payment Failed Handlers
 > **✅ COMPLETED** (Sprint P1-06) — Stub handlers with structured logging added.
@@ -150,7 +146,7 @@
 ### P2-14: Add `Retry-After` Header to Rate Limit Responses
 - **Effort:** ~1 hour
 
-**P2 Remaining: ~74 hours** (was ~110, reduced by completed + skipped items)
+**P2 Remaining: ~34 hours** (was ~74, reduced by P2-03, P2-04, P2-10 discovery as pre-existing)
 
 ---
 
@@ -191,14 +187,14 @@
 |---------------------------|--------|--------------------------|-----------------------|
 | **P0 — Blocking**         | 8      | ~28                    | ✅ ALL 8 DONE         |
 | **P1 — v1.0 Required**    | 15     | ~11 remaining            | 13/15 done            |
-| **P2 — Complete Product** | 14     | ~74 remaining            | 3/14 done (1 skipped) |
+| **P2 — Complete Product** | 14     | ~34 remaining            | 6/14 done (1 skipped) |
 | **P3 — Polish**           | 7      | ~25 remaining            | 2/7 done              |
-| **TOTAL**                 | **44** | **~110 hours remaining** | **26/44 done**        |
+| **TOTAL**                 | **44** | **~70 hours remaining**  | **29/44 done**        |
 
 ### Progress
 - **Originally estimated:** ~254 hours total
-- **Completed:** ~144 hours of work (P0 + partial P1/P2/P3 + P4-A stores/components + P4-B search/billing + P5 tool execution/jobs)
-- **Remaining:** ~110 hours
+- **Completed:** ~184 hours of work (P0 + partial P1/P2/P3 + P4-A stores/components + P4-B search/billing + P5 tool execution/jobs + admin features discovered)
+- **Remaining:** ~70 hours
 - **No CRITICAL items remain** — system is deployment-safe for staging
 - **Schema 13/13 enums DONE, 5/25+ indexes DONE + GIN FTS index, 7/7 unique constraints DONE**
 - **Frontend: 6/6 stores DONE, 6/6 missing components DONE, FTS search DONE**

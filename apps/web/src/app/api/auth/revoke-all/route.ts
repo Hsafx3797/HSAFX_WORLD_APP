@@ -44,9 +44,9 @@ export async function POST(request: NextRequest) {
       revokedCount,
     });
 
-    // Clear both possible cookie names
-    response.cookies.delete('better-auth.session_token');
-    response.cookies.delete('__Secure-better-auth.session_token');
+    // Clear both possible cookie names (__hsafx prefix)
+    response.cookies.delete('__hsafx.session_token');
+    response.cookies.delete('__Secure-__hsafx.session_token');
 
     return response;
   } catch (error) {

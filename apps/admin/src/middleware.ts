@@ -110,19 +110,46 @@ export async function middleware(request: NextRequest) {
   if (!SAFE_METHODS.has(request.method) && pathname.startsWith('/api/')) {
     if (!CSRF_EXEMPT_PREFIXES.some((p) => pathname.startsWith(p))) {
       const origin = request.headers.get('origin');
-      if (origin && !ALLOWED_ORIGINS.has(origin)) {
-        return NextResponse.json(
-          { error: 'Forbidden: invalid origin' },
-          { status: 403 },
-        );
+      if (origin) {
+        if (!ALLOWED_ORIGINS.has(origin)) {
+          return NextResponse.json(
+            { error: 'Forbidden: invalid origin' },
+            { status: 403 },
+          );
+        }
+      } else {
+        // Referer fallback when Origin header is absent
+        const referer = request.headers.get('referer');
+        if (referer) {
+          try {
+            const refererOrigin = new URL(referer).origin;
+            if (!ALLOWED_ORIGINS.has(refererOrigin)) {
+              return NextResponse.json(
+                { error: 'Forbidden: invalid referer origin' },
+                { status: 403 },
+              );
+            }
+          } catch {
+            return NextResponse.json(
+              { error: 'Forbidden: malformed referer' },
+              { status: 403 },
+            );
+          }
+        } else {
+          // Neither Origin nor Referer — reject
+          return NextResponse.json(
+            { error: 'Forbidden: missing origin' },
+            { status: 403 },
+          );
+        }
       }
     }
   }
 
-  // Check for session cookie (better-auth uses this pattern)
+  // Check for session cookie (__hsafx prefix)
   const sessionCookie =
-    request.cookies.get('better-auth.session_token') ||
-    request.cookies.get('__Secure-better-auth.session_token');
+    request.cookies.get('__hsafx.session_token') ||
+    request.cookies.get('__Secure-__hsafx.session_token');
 
   const isAuthenticated = !!sessionCookie?.value;
   const isPublic = isPublicPath(pathname);

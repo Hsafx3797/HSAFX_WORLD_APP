@@ -123,14 +123,14 @@
 ---
 
 ## PHASE 6: ADMIN & POLISH (P2) — NEXT
-**Duration: ~50 hours**
+**Duration: ~22 hours** (Sprint A already complete — admin features discovered as pre-existing)
 
-### Sprint A — Admin Features (28 hours)
+### Sprint A — Admin Features ✅ ALREADY COMPLETE
 
-| #  | Task                      | Ref   | Hours |
-|----|---------------------------|-------|-------|
-| 31 | Admin analytics dashboard | P2-03 | 20    |
-| 32 | Admin audit log viewer    | P2-04 | 8     |
+| #  | Task                      | Ref   | Hours | Status                           |
+|----|---------------------------|-------|-------|----------------------------------|
+| 31 | Admin analytics dashboard | P2-03 | 20    | ✅ Pre-existing (310-line page)  |
+| 32 | Admin audit log viewer    | P2-04 | 8     | ✅ Pre-existing (~300-line page) |
 
 ### Sprint B — Infrastructure Polish (22 hours)
 
@@ -145,15 +145,15 @@
 ---
 
 ## PHASE 7: NAMING ALIGNMENT + REMAINING (P2 + P3)
-**Duration: ~26 hours**
+**Duration: ~14 hours** (#39 already complete)
 
-| #  | Task                                                            | Ref   | Hours |
-|----|-----------------------------------------------------------------|-------|-------|
-| 38 | Resolve table/column naming: update planning docs to match code | P2-08 | 4     |
-| 39 | Add admin billing management                                    | P2-10 | 12    |
-| 40 | Add impersonation `reason` field                                | P1-12 | 1     |
-| 41 | Add pub/sub channels                                            | P2-12 | 8     |
-| 42 | Add remaining ~7 DB tables                                      | P3-01 | 8     |
+| #  | Task                                                            | Ref   | Hours | Status                           |
+|----|-----------------------------------------------------------------|-------|-------|----------------------------------|
+| 38 | Resolve table/column naming: update planning docs to match code | P2-08 | 4     |                                  |
+| 39 | Add admin billing management                                    | P2-10 | 12    | ✅ Pre-existing (~300-line page) |
+| 40 | Add impersonation `reason` field                                | P1-12 | 1     |                                  |
+| 41 | Add pub/sub channels                                            | P2-12 | 8     |                                  |
+| 42 | Add remaining ~7 DB tables                                      | P3-01 | 8     |                                  |
 
 ---
 
@@ -178,9 +178,9 @@
 | 4A    | Frontend Stores + Components | 22    | 92         | ✅ DONE     |
 | 4B    | Search + Billing API         | 12    | 104        | ✅ DONE     |
 | 5     | Tool Execution Completion    | 15    | 119        | ✅ DONE     |
-| 6     | Admin Features + Polish      | 50    | 169        | **NEXT**    |
-| 7     | Naming + Remaining           | 26    | 195        | Not started |
-| 8     | Final Polish                 | 16    | 211        | Not started |
+| 6     | Admin Features + Polish      | 22    | 141        | **NEXT**    |
+| 7     | Naming + Remaining           | 14    | 155        | Not started |
+| 8     | Final Polish                 | 16    | 171        | Not started |
 
 ### Critical Milestones
 

@@ -19,6 +19,7 @@
     "@hsafx/theme": "workspace:*",
     "@hsafx/tool-definitions": "workspace:*",
     "@hsafx/tool-execution": "workspace:*",
+    "@hsafx/ui": "workspace:*",
     "@polar-sh/sdk": "^0.43.0",
     "@radix-ui/react-checkbox": "^1.3.3",
     "@sentry/nextjs": "^10.38.0",
