@@ -33,10 +33,10 @@
 > - `PlanAccessProvider` → `trpc.user.getMyPlan.useQuery()` in React
 
 ### C-04: Zero PostgreSQL Enums in Schema
-> **⚠️ PARTIALLY RESOLVED** (Sprint P1-01) — 4 pgEnums defined: `subscription_status`, `coin_transaction_type`, `invoice_status`, `payment_status`. **9 remaining:** `billing_interval`, `audit_action`, `permission_target`, `admin_role_type`, `plan_change_type`, `plan_limit_type`, `reset_period`, `identifier_type`, `email_provider`.
+> **✅ RESOLVED** (Phase 3) — All 13 pgEnums defined: `subscription_status`, `coin_transaction_type`, `invoice_status` (+ `partially_paid`), `payment_status`, `billing_interval`, `plan_limit_type`, `reset_period`, `plan_change_type`, `audit_action`, `permission_target`, `admin_role_type`, `identifier_type`, `email_provider`.
 
 ### C-05: Zero Explicit Database Indexes
-> **⚠️ PARTIALLY RESOLVED** — Some indexes added (e.g. `async_jobs` user_id + status). **Bulk planned indexes still needed** (25+ from DBML).
+> **⚠️ PARTIALLY RESOLVED** — 5 critical indexes added (`apiRequestLogs(userId)`, `apiRequestLogs(createdAt)`, `permissionAuditLogs(actorId)`, `permissionAuditLogs(createdAt)`, `usageCounters(userId,resourceType,periodStart)` unique) + GIN FTS expression index on tools. **~20 bulk planned indexes still needed** (from DBML).
 
 ### C-06: Session Rate Limiting Never Invoked
 > **✅ RESOLVED** (Sprint P0-06) — `checkUserRateLimit()` invoked in web middleware for authenticated non-API-key requests.
@@ -48,7 +48,7 @@
 > **✅ RESOLVED** (Sprint P0-04) — `charge.refunded` handler now deducts coins from wallet.
 
 ### C-09: 13 Planned Database Tables Missing
-> **⚠️ PARTIALLY RESOLVED** — `processed_webhooks` and `login_reward_claims` added. **~10 tables still missing** (see doc 01 §2).
+> **⚠️ MOSTLY RESOLVED** (Phase 7 #42) — 13 of 14 missing tables addressed: `processed_webhooks`, `login_reward_claims` (Phase 2), + 11 new tables in Phase 7 (`toolClassPolicy`, `usageCoinFallbacks`, `invoicePayments`, `paymentMethods`, `coinPurchasePayments`, `planMetadata`, `planUpgradeRules`, `planAuditLogs`, `auditLogs`, `permissionGroups`, `emailUsageTracking`). **~2-3 tables remaining** (`plan_permissions`, `billable_action_logs`, `plan_theme_access`).
 
 ### C-10: BullMQ Not Installed — No Job Queue
 > **✅ RESOLVED BY DECISION** (D-02) — Decision: simple queue, no BullMQ. `job-manager.ts` + `job-worker.ts` use custom lightweight approach with Redis. `inngest_job_id` column renamed to `external_job_id`.
@@ -59,26 +59,26 @@
 ### C-12: Admin 2FA Not Server-Enforced
 > **✅ RESOLVED** (Sprint P0-07) — Admin middleware verifies 2FA session server-side. State-changing requests denied without valid 2FA.
 
-**CRITICAL SUMMARY: 9/12 fully resolved, 3/12 partially resolved (enums, indexes, tables). Zero critical deviations remain blocking.**
+**CRITICAL SUMMARY: 10/12 fully resolved, 2/12 partially/mostly resolved (indexes, tables). Zero critical deviations remain blocking.**
 
 ---
 
 ## HIGH DEVIATIONS (15) — STATUS UPDATE
 
 ### H-01: No Search Infrastructure
-> **OPEN** — Client-side `String.includes()` only. PostgreSQL FTS planned but not yet implemented.
+> **✅ RESOLVED** (Sprint P4-B) — PostgreSQL FTS: GIN expression index on tools `to_tsvector('english', name || description || tags)`, `plainto_tsquery` in tRPC `tools.list`, `useToolSearch` hook (300ms debounce), hybrid server/client search in `/tools/all`.
 
 ### H-02: 6/10 Planned UI Components Missing
-> **OPEN** — ExecutionPanel, UsageCard, BillingCard, TransactionList, ActivityFeed, NotificationBell still missing.
+> **✅ RESOLVED** (Sprint P4-A) — All 6 components built with Skeleton loading: ExecutionPanel, UsageCard, BillingCard, TransactionList, ActivityFeed, NotificationBell. Barrel-exported from `components/index.ts`.
 
 ### H-03: 3/6 Zustand Stores Missing
-> **OPEN** — `useBillingStore`, `useNotificationStore` missing. `useExecutionStore` merged into `useToolStore`.
+> **✅ RESOLVED** (Sprint P4-A) — `useBillingStore`, `useNotificationStore`, `useExecutionStore` created. 6 total stores now.
 
 ### H-04: `@hsafx/ui` Package Is Theme-Only
-> **OPEN** — All UI components in `apps/web/src/components/` (app-local, not shared).
+> **✅ RESOLVED** (Sprint P6-B) — 16 shared Shadcn components migrated to `packages/ui/src/components/`. Web app files converted to thin re-exports from `@hsafx/ui`.
 
 ### H-05: Impersonation Missing Mandatory `reason` Field
-> **OPEN** — POST body still only validates `userId`. No `reason` parameter.
+> **✅ RESOLVED** (pre-existing) — POST body requires `reason` (string, min 10 chars), validated inline, stored in audit log metadata as `{ adminRole, targetEmail, targetName, reason }`. Route: `apps/admin/src/app/api/admin/impersonate/route.ts`.
 
 ### H-06: Impersonation Missing Scoped-Action Enforcement
 > **✅ RESOLVED** (Sprint P0-08) — Middleware blocks billing, password change, 2FA, API key, and account deletion during impersonation.
@@ -87,78 +87,79 @@
 > **✅ RESOLVED** (Sprint P1-02) — Replaced with login reward system with proper `FOR UPDATE` locking (10 coins/reward, 50 coins/day cap).
 
 ### H-08: ~15 Node.js Tool Handlers Return Stubs
-> **OPEN** — Still ~15 stub handlers in `executor.ts`.
+> **✅ RESOLVED** (Sprint P5) — All 16 stubs implemented: 11 JS converters in `specialized.ts`, 3 new FastAPI binary handlers (BSON, MessagePack, Protobuf), 2 dead stubs removed.
 
 ### H-09: FastAPI Job Processing Disabled
-> **OPEN** — `process_job` in `jobs.py` still commented out.
+> **✅ RESOLVED** (Sprint P5) — `process_job` implemented in `jobs.py` with 5-min timeout, status tracking, webhook notification, coin refund on cancellation.
 
 ### H-10: No Billing REST Endpoints for B2B
-> **OPEN** — All billing tRPC-only. Missing: `/api/v1/billing/balance`, `/api/v1/billing/transactions`, etc.
+> **✅ RESOLVED** (Sprint P4-B) — 3 B2B billing routes: `GET /api/v1/billing/balance`, `/transactions` (paginated, type filter), `/subscription`. All use `authenticateApiKey` + `requireScope('billing:read')`.
 
 ### H-11: API Key Scopes Not in Database Column
-> **OPEN** — Scopes still in `metadata` JSONB. No dedicated `text[]` column.
+> **✅ RESOLVED** (pre-existing) — `scopes: text('scopes').array().default([])` column exists in `apiKeys` schema. `hasScope()` operational.
 
 ### H-12: No Admin Analytics Dashboard
-> **OPEN** — No analytics routes or components.
+> **✅ RESOLVED** (pre-existing) — Full dashboard: 4 StatCards, 6 secondary metrics, 4 Recharts charts, top tools, recent errors, quick actions, skeleton loading. 5 API routes + 5 SWR hooks.
 
 ### H-13: No Admin Audit Log Viewer
-> **OPEN** — Audit tables exist but no admin UI.
+> **✅ RESOLVED** (pre-existing) — Full audit page: DataTable, 6 action filters, search, date range, admin ID filter, CSV export, details modal with JSON viewer.
 
 ### H-14: No Redis Session Cache
-> **OPEN** — Better-Auth uses database-backed sessions only.
+> **✅ RESOLVED** (Sprint P6-B) — Better-Auth `secondaryStorage` configured with Upstash Redis. DB fallback retained.
 
 ### H-15: Missing `tools.tool_class` Column
-> **OPEN** — Tool class still determined by `DEFAULT_BA_WEIGHTS` map in `coin-service.ts`.
+> **✅ RESOLVED** (pre-existing) — `toolClass: varchar('tool_class', { length: 50 })` exists in tools schema.
 
-**HIGH SUMMARY: 2/15 resolved (H-06, H-07). 13/15 open.**
+**HIGH SUMMARY: 15/15 resolved (all HIGH deviations closed).**
 
 ---
 
 ## MEDIUM DEVIATIONS (20) — STATUS UPDATE
 
-### M-01: Session Cookie Name — **OPEN**
-### M-02: No Rolling Sessions — **OPEN**
+### M-01: Session Cookie Name — **✅ RESOLVED** (Sprint P6-B) — `advanced.cookiePrefix: '__hsafx'` → `__hsafx.session_token`
+### M-02: No Rolling Sessions — **✅ RESOLVED** (Sprint P6-B) — `session.updateAge: 3600` (1h)
 ### M-03: Facebook OAuth Added Without Planning — **OPEN**
 ### M-04: tRPC Router Structure Differs — **OPEN** (but ads router removed, rewards router added)
-### M-05: Table Name — `plans` vs `subscription_plans` — **OPEN**
-### M-06: Table Name — `oauth_connections` vs `social_auths` — **OPEN**
-### M-07: Table Name — `activity_logs` vs `audit_logs` — **OPEN**
-### M-08: Table Name — `permissions` vs `permissions_catalog` — **OPEN**
-### M-09: Column — `plans.slug` vs `subscription_plans.code` — **OPEN**
-### M-10: Column — `plans.price_monthly/yearly` vs `subscription_plans.price_cents` — **OPEN**
-### M-11: Column — `plans.polar_product_id` vs `subscription_plans.stripe_price_id` — **OPEN** (dual provider resolved by D-10)
-### M-12: Column — `coin_transactions.type` vs `coin_transactions.txn_type` — **OPEN**
-### M-13: Column — `coin_transactions.resource_type/id` vs `reference_type/id` — **OPEN**
-### M-14: Column — `api_keys.rate_limit_tier` (text) vs `rate_limit_per_hour` (integer) — **OPEN**
-### M-15: Column — `admin_settings.key/value` vs `setting_key/setting_value` — **OPEN**
+### M-05: Table Name — `plans` vs `subscription_plans` — **✅ RESOLVED** (Phase 7 #38) — DBML renamed `subscription_plans` → `plans`, all FK refs updated
+### M-06: Table Name — `oauth_connections` vs `social_auths` — **✅ RESOLVED** (Phase 7 #38) — DBML renamed `social_auths` → `oauth_connections`, column `provider_id` → `provider_user_id`
+### M-07: Table Name — `activity_logs` vs `audit_logs` — **✅ RESOLVED** (Phase 7 #38) — Both tables exist in code: `activity_logs` (auth.ts) + `audit_logs` (audit.ts). DBML has `audit_logs`.
+### M-08: Table Name — `permissions` vs `permissions_catalog` — **✅ RESOLVED** (Phase 7 #38) — DBML renamed `permissions_catalog` → `permissions`, columns simplified to match code (`name`, `description`, `category`)
+### M-09: Column — `plans.slug` vs `subscription_plans.code` — **✅ RESOLVED** (Phase 7 #38) — DBML column renamed `code` → `slug`
+### M-10: Column — `plans.price_monthly/yearly` vs `subscription_plans.price_cents` — **✅ RESOLVED** (Phase 7 #38) — DBML replaced single `price_cents` with `price_monthly decimal(10,2)` + `price_yearly decimal(10,2)`, added `coin_grant`, `polar_product_id`
+### M-11: Column — `plans.polar_product_id` vs `subscription_plans.stripe_price_id` — **✅ RESOLVED** (Phase 7 #38) — DBML replaced `stripe_price_id` with `polar_product_id` (Polar for subscriptions)
+### M-12: Column — `coin_transactions.type` vs `coin_transactions.txn_type` — **✅ RESOLVED** (Phase 7 #38) — DBML renamed column `txn_type` → `type`, enum `coin_txn_type` → `coin_transaction_type`
+### M-13: Column — `coin_transactions.resource_type/id` vs `reference_type/id` — **✅ RESOLVED** (Phase 7 #38) — DBML renamed `reference_type`/`reference_id` → `resource_type`/`resource_id`
+### M-14: Column — `api_keys.rate_limit_tier` (text) vs `rate_limit_per_hour` (integer) — **✅ RESOLVED** (Phase 7 #38) — DBML replaced `rate_limit_per_hour int` with `rate_limit_tier text [default: 'standard']`
+### M-15: Column — `admin_settings.key/value` vs `setting_key/setting_value` — **✅ RESOLVED** (Phase 7 #38) — DBML renamed `setting_key`→`key`, `setting_value`→`value` (jsonb), `setting_group`→`category`, added `updated_by`
 ### M-16: `api_rate_limits` Keyed Differently — **OPEN**
 ### M-17: Money Stored as `decimal(10,2)` Not `bigint` Cents — **OPEN**
 ### M-18: `async_jobs` Still Has `inngest_job_id` Column
 > **✅ RESOLVED** (Sprint P1-05) — Column renamed from `inngest_job_id` to `external_job_id` (simple queue reference).
 
 ### M-19: `roles` Table Missing Columns — **OPEN**
-### M-20: Missing Unique Constraints On Join Tables — **OPEN**
+### M-20: Missing Unique Constraints On Join Tables — **✅ RESOLVED** (Phase 3)
+> 7 unique constraints: `planLimits(planId,limitKey)`, `planFeatures(planId,featureKey)`, `planCoinRules(planId,toolClass)`, `userPermissionOverrides(userId,permissionId)`, `userRoles`, `rolePermissions`, `favorites`.
 
-**MEDIUM SUMMARY: 1/20 resolved (M-18). 19/20 open (mostly naming/cosmetic — will be batch-resolved via doc update per D-01 decision).**
+**MEDIUM SUMMARY: 15/20 resolved (M-01, M-02, M-05–M-15, M-18, M-20). 5/20 open (M-03 Facebook OAuth, M-04 tRPC structure, M-16 rate limits keying, M-17 money type, M-19 roles columns).**
 
 ---
 
 ## LOW DEVIATIONS (10) — STATUS UPDATE
 
-### L-01: CSRF Only Checks Origin, No Referer Fallback — **OPEN**
-### L-02: No `Retry-After` Header in Rate Limit Responses — **OPEN**
+### L-01: CSRF Only Checks Origin, No Referer Fallback — **✅ RESOLVED** (Sprint P6-B) — Origin → Referer fallback → reject chain in both web + admin middleware
+### L-02: No `Retry-After` Header in Rate Limit Responses — **✅ RESOLVED** (Sprint P6-B) — 429 responses include `Retry-After` header with seconds-until-reset
 ### L-03: CASL Functions Named `buildUserAbility`/`buildAdminAbility` — **OPEN** (cosmetic only)
 ### L-04: Permission Check Uses Role Membership Not Granular Permission — **OPEN**
-### L-05: `password_reset_tokens.used_at` (timestamp) vs Planning's `used` (boolean) — **OPEN**
-### L-06: `email_verification_tokens.used_at` (timestamp) vs Planning's `verified` (boolean) — **OPEN**
-### L-07: `user_roles.assigned_at` vs Planning's `created_at` — **OPEN**
-### L-08: `role_permissions.granted_at` vs Planning's `created_at` + Missing `granted` Boolean — **OPEN**
+### L-05: `password_reset_tokens.used_at` (timestamp) vs Planning's `used` (boolean) — **✅ RESOLVED** (Phase 7 #38) — DBML updated `used boolean` → `used_at timestamp`
+### L-06: `email_verification_tokens.used_at` (timestamp) vs Planning's `verified` (boolean) — **✅ RESOLVED** (Phase 7 #38) — DBML updated `verified boolean` → `used_at timestamp`
+### L-07: `user_roles.assigned_at` vs Planning's `created_at` — **✅ RESOLVED** (Phase 7 #38) — DBML `expires_at` noted as "(planned)"; code uses `created_at` which maps naturally
+### L-08: `role_permissions.granted_at` vs Planning's `created_at` + Missing `granted` Boolean — **✅ RESOLVED** (Phase 7 #38) — DBML updated: removed `granted`/`scope`/`scope_conditions`, renamed `created_at` → `granted_at`
 ### L-09: Impersonation Banner Says "Read-only session" — Planning Says Scoped Read+Execute
 > **⚠️ PARTIALLY RESOLVED** — Scoped actions now enforced (P0-08), but banner text may still say "Read-only".
 
 ### L-10: `user_preferences`/`user_settings` Missing `created_at`/`updated_at` Columns — **OPEN**
 
-**LOW SUMMARY: 0/10 fully resolved. 1/10 partially resolved.**
+**LOW SUMMARY: 6/10 fully resolved (L-01, L-02, L-05, L-06, L-07, L-08). 1/10 partially resolved (L-09).**
 
 ---
 
@@ -166,11 +167,11 @@
 
 | Severity | Total | Resolved | Partial | Open |
 |----------|-------|----------|---------|------|
-| CRITICAL | 12 | 9 | 3 | 0 |
-| HIGH | 15 | 2 | 0 | 13 |
-| MEDIUM | 20 | 1 | 0 | 19 |
-| LOW | 10 | 0 | 1 | 9 |
-| **TOTAL** | **57** | **12** | **4** | **41** |
+| CRITICAL | 12 | 10 | 2 | 0 |
+| HIGH | 15 | 15 | 0 | 0 |
+| MEDIUM | 20 | 15 | 0 | 5 |
+| LOW | 10 | 6 | 1 | 3 |
+| **TOTAL** | **57** | **46** | **3** | **8** |
 
-### Progress: 12 fully resolved + 4 partially = **28% fully resolved, 7% partial**
-### Remaining: 41 open deviations (13 HIGH, 19 MEDIUM, 9 LOW) — no CRITICAL items blocking
+### Progress: 46 fully resolved + 3 partially = **81% fully resolved, 5% partial**
+### Remaining: 8 open deviations (0 CRITICAL, 0 HIGH, 5 MEDIUM, 3 LOW)
