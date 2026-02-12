@@ -1,0 +1,53 @@
+# Git
+.git
+.gitignore
+
+# Dependencies (rebuilt in container)
+node_modules
+**/node_modules
+
+# Build outputs
+.next
+**/.next
+dist
+**/dist
+.turbo
+**/.turbo
+
+# Rust build artifacts
+backend/rust/target
+
+# Python virtual environments
+backend/fastapi/.venv
+**/__pycache__
+*.pyc
+
+# IDE & editor
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment files (secrets — pass via Docker env)
+.env
+.env.local
+.env.*.local
+
+# Docs & non-essential
+docs/
+*.md
+!README.md
+LICENSE
+
+# Testing
+coverage
+**/.vitest
+**/test-results
+
+# Temporary files
+tmp*
+tmpclaude-*

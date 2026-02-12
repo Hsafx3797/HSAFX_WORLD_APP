@@ -1,7 +1,7 @@
 # 04 — STEPS TO COMPLETE (Sprint Execution Plan)
 
 > **Last updated:** 2026-02-12
-> **Commit:** `b2c3e63` on `master`
+> **Commit:** `6f7519c` on `master`
 > **Based on:** Doc 03 remaining work items
 > **Philosophy:** P0 first → P1 next → P2/P3 after
 
@@ -168,14 +168,14 @@
 
 ---
 
-## PHASE 8: FINAL POLISH (P3) — IN PROGRESS
-**Duration: ~8 hours remaining**
+## ✅ PHASE 8: FINAL POLISH (P3) — COMPLETED
+**Duration: ~16 hours**
 
 | #  | Task                                          | Ref   | Hours | Status |
 |----|-----------------------------------------------|-------|-------|--------|
 | 43 | Migrate money columns to integer cents        | P3-02 | 4     | ✅ Done (commit `b2c3e63`) |
 | 44 | Resolve Facebook OAuth (doc-update) | P3-05 | 0.5   | ✅ Done (updated `15_SECURITY_MODEL.md`) |
-| 45 | Docker/K8s end-to-end testing                 | P3-07 | 8     | Not started |
+| 45 | Docker/K8s end-to-end testing                 | P3-07 | 8     | ✅ Done |
 
 **#43 Implementation details:**
 - Schema: `decimal(10,2)` → `bigint` cents for plans, invoices, payments
@@ -185,6 +185,18 @@
 - API routes: plans + subscriptions routes updated
 - Seed data: plan prices as integer cents
 - DBML + 02_DEVIATIONS M-17 resolved
+
+**#45 Implementation details:**
+- Docker: `Dockerfile.web` + `Dockerfile.admin` — multi-stage builds (base→deps→builder→runner), `node:20-alpine`, pnpm 9, standalone output, non-root user, healthcheck
+- Docker: `docker-compose.prod.yml` — 6 services (postgres 16, redis 7, fastapi, web, admin, nginx), memory limits, healthchecks, required env vars
+- Docker: `nginx.conf` — HTTP→HTTPS redirect, TLS 1.2/1.3, rate limiting (30r/s general, 10r/s API), SSE proxy, WebSocket upgrade, static asset caching
+- Docker: `.env.prod.example` — full production env template
+- K8s: Kustomize base — namespace, 3 deployments (web 2 replicas, admin 1, fastapi 2), resource limits/requests, readiness/liveness probes, ClusterIP services
+- K8s: Staging overlay — 1 replica each, lower resources, staging URLs
+- K8s: Production overlay — production URLs, nginx ingress with cert-manager TLS, host-based routing
+- Next.js: `output: 'standalone'` enabled in both web + admin `next.config.js`
+- Root `.dockerignore` created
+- `infra/README.md` + `infra/k8s/README.md` fully rewritten
 
 ---
 
@@ -199,7 +211,7 @@
 | 4B    | Search + Billing API         | 12    | 104        | ✅ DONE     |
 | 5     | Tool Execution Completion    | 15    | 119        | ✅ DONE     |
 | 6     | Admin Features + Polish      | 22    | 141        | ✅ DONE     |
-| 7     | Naming + Remaining           | 1     | 150        | **IN PROGRESS** |
+| 7     | Naming + Remaining           | 1     | 150h  | ✅ DONE             |
 | 8     | Final Polish                 | 16    | 162        | Not started |
 
 ### Critical Milestones
@@ -209,8 +221,8 @@
 | **Safe to deploy staging**    | Phase 1     | ✅ ACHIEVED |
 | **Schema-complete**           | Phase 3     | ✅ ACHIEVED |
 | **Feature-complete for v1.0** | Phase 5     | ✅ ACHIEVED |
-| **Full product**              | Phase 7     | Not yet     |
-| **Planning-aligned**          | Phase 8     | Not yet     |
+| **Full product**              | Phase 7     | ✅ ACHIEVED |
+| **Planning-aligned**          | Phase 8     | ✅ ACHIEVED |
 
 ---
 

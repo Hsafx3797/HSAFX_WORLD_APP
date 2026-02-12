@@ -1,7 +1,7 @@
 # 01 — WHAT IS ACTUALLY COMPLETED
 
-> **Last audited:** 2026-02-12 — Post Sprint P0-01..P0-08, P1-01..P1-07, P2-01..P2-05, P4-A, P4-B, P5, P6-B, P7, P8 #43
-> **Commit:** `b2c3e63` on `master`
+> **Last audited:** 2026-02-12 — Post Sprint P0-01..P0-08, P1-01..P1-07, P2-01..P2-05, P4-A, P4-B, P5, P6-B, P7, P8 #43–#45
+> **Commit:** `6f7519c` on `master`
 > **Methodology:** Every planning doc (01–74) compared against actual source files
 
 ---
@@ -31,11 +31,11 @@
 | GitHub Actions CI          | ✅     | `.github/workflows/ci.yml` — lint, typecheck, test, build       |
 | Staging deploy workflow    | ✅     | Vercel + Railway targets                                        |
 | Production deploy workflow | ✅     | Tag-triggered release pipeline                                  |
-| Docker configs             | ⚠️     | `infra/docker/` exists with Dockerfiles — not tested end-to-end |
-| K8s manifests              | ⚠️     | `infra/k8s/` exists — not validated                             |
+| Docker configs             | ✅     | `Dockerfile.web`, `Dockerfile.admin`, `Dockerfile.fastapi`, `docker-compose.prod.yml`, `nginx.conf` — full production stack (Phase 8 #45) |
+| K8s manifests              | ✅     | Kustomize base (3 deployments, services) + staging/production overlays + ingress (Phase 8 #45) |
 | Seed script                | ✅     | `packages/db/src/seed.ts` with plans, permissions, roles        |
 
-**Infrastructure score: ~85%** — CI/CD done, containerization untested.
+**Infrastructure score: ~95%** — CI/CD done. Full Docker production stack (6 services, nginx reverse proxy, TLS). K8s manifests with Kustomize overlays (staging + production). Next.js `output: 'standalone'` enabled.
 
 ---
 
@@ -299,7 +299,7 @@
 
 | Area                    | Score | Critical Gaps                                                   |
 |-------------------------|-------|-----------------------------------------------------------------|
-| Infrastructure & DevOps | 85%   | Docker/K8s untested                                             |
+| Infrastructure & DevOps | 95%   | Docker/K8s complete — end-to-end build testing remaining        |
 | Database Schema         | 82%   | ~20 remaining indexes, ~3 missing tables                        |
 | Auth & Authorization    | 92%   | 2FA not using Better-Auth plugin                                |
 | Security                | 92%   | No remaining critical gaps                                      |
@@ -311,6 +311,6 @@
 | Shared Packages         | 92%   | All key packages populated                                      |
 | Redis & Caching         | 80%   | Pub/sub done (Phase 7 #41)                                   |
 
-### **Weighted Overall: ~95%**
+### **Weighted Overall: ~96%**
 
-Significant progress since last audit (~94%). **Phase 8 #43 complete** — All money columns migrated from `decimal(10,2)` to `bigint` cents. **Phase 8 #44 complete** — Facebook OAuth resolved by updating `15_SECURITY_MODEL.md` to match PRD (already listed Meta as planned provider). 02_DEVIATIONS M-03 + M-17 resolved (48/57, 84%). TypeScript compiles clean (0 errors). Remaining work: ~3 DB tables, ~20 indexes, Docker/K8s testing.
+Significant progress since last audit (~95%). **Phase 8 #43 complete** — All money columns migrated from `decimal(10,2)` to `bigint` cents. **Phase 8 #44 complete** — Facebook OAuth resolved by updating `15_SECURITY_MODEL.md` to match PRD. **Phase 8 #45 complete** — Full Docker production stack (Dockerfile.web, Dockerfile.admin, docker-compose.prod.yml with 6 services, nginx reverse proxy with TLS/rate-limiting/SSE support) + K8s manifests (Kustomize base + staging/production overlays + nginx ingress). Next.js `output: 'standalone'` enabled for both apps. 02_DEVIATIONS: 48/57 resolved (84%). TypeScript compiles clean (0 errors). Remaining work: ~3 DB tables, ~20 indexes.

@@ -1,0 +1,17 @@
+# ═══════════════════════════════════════════════════════════════
+# HSAFX World App — Production Overlay
+# ═══════════════════════════════════════════════════════════════
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: hsafx
+
+resources:
+  - ../../base
+  - ingress.yaml
+
+configMapGenerator:
+  - name: hsafx-config
+    literals:
+      - app-url=https://hsafx.world
+      - admin-url=https://admin.hsafx.world

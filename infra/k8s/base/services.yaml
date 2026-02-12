@@ -1,0 +1,52 @@
+# ═══════════════════════════════════════════════════════════════
+# HSAFX World App — Kubernetes Services
+# ═══════════════════════════════════════════════════════════════
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  labels:
+    app.kubernetes.io/name: web
+    app.kubernetes.io/component: frontend
+spec:
+  selector:
+    app.kubernetes.io/name: web
+  ports:
+    - port: 3000
+      targetPort: 3000
+      protocol: TCP
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: admin
+  labels:
+    app.kubernetes.io/name: admin
+    app.kubernetes.io/component: frontend
+spec:
+  selector:
+    app.kubernetes.io/name: admin
+  ports:
+    - port: 3001
+      targetPort: 3001
+      protocol: TCP
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fastapi
+  labels:
+    app.kubernetes.io/name: fastapi
+    app.kubernetes.io/component: backend
+spec:
+  selector:
+    app.kubernetes.io/name: fastapi
+  ports:
+    - port: 8000
+      targetPort: 8000
+      protocol: TCP
+  type: ClusterIP

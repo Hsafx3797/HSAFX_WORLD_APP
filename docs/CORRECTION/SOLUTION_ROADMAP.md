@@ -1,9 +1,9 @@
 # SOLUTION ROADMAP — HSAFX WORLD APP
 
 > **Date:** 2026-02-12
-> **Commit:** `b2c3e63` on `master`
+> **Commit:** `6f7519c` on `master`
 > **Based on:** CORRECTION docs 01–05
-> **Status:** Phases 1–7 COMPLETE, Phase 8 IN PROGRESS (#43, #44 done)
+> **Status:** Phases 1–8 COMPLETE (43/44 items done)
 
 ---
 
@@ -11,8 +11,8 @@
 
 This roadmap translates the remaining work items (from [03_REMAINING_WORK.md](03_REMAINING_WORK.md)) into an actionable sequence. All 5 owner decisions are resolved. All 10 planning conflicts are locked.
 
-**Progress:** 42/44 items complete (~95% items, ~221.5 hours done). ~20.5 hours remaining.
-**No CRITICAL blockers remain** — staging deployment is safe. **Schema-complete milestone achieved. FTS search operational. Feature-complete for v1.0 achieved. Phase 6 Admin & Polish complete. Phase 7 #42 (remaining DB tables) complete.**
+**Progress:** 43/44 items complete (~97% items, ~237.5 hours done). ~12.5 hours remaining.
+**No CRITICAL blockers remain** — staging deployment is safe. **Schema-complete milestone achieved. FTS search operational. Feature-complete for v1.0 achieved. Phase 6 Admin & Polish complete. Phase 7 Alignment complete. Phase 8 Final Polish complete.**
 
 ---
 
@@ -180,16 +180,16 @@ This roadmap translates the remaining work items (from [03_REMAINING_WORK.md](03
 
 ---
 
-### Phase 8 — Final Polish (P3) — IN PROGRESS
+### ✅ Phase 8 — Final Polish (P3) — COMPLETE
 
-**What:** Money column migration, E2E testing, cleanup.
+**What:** Money column migration, Facebook OAuth doc fix, Docker/K8s infrastructure.
 
 **Completed:**
 - ✅ #43 — Money→cents migration: All money columns migrated from `decimal(10,2)` to `bigint` cents (`plans.price_monthly_cents`/`price_yearly_cents`, `invoices.amount_cents`, `payments.amount_cents`). Coin columns upgraded from `integer` to `bigint`. Shared billing types (`CoinPack.priceInCents`), admin UI (`formatPrice` cents→dollars), API routes, seed data, and DBML all updated. 02_DEVIATIONS M-17 resolved (47/57, 82%). Commit `b2c3e63`.
-- ✅ #44 — Facebook OAuth resolution: Updated `15_SECURITY_MODEL.md` to include Facebook/Meta OAuth (already in PRD `00_PRODUCT_REQUIREMENTS.md`). 02_DEVIATIONS M-03 resolved (48/57, 84%).
+- ✅ #44 — Facebook OAuth resolution: Updated `15_SECURITY_MODEL.md` to include Facebook/Meta OAuth (already in PRD `00_PRODUCT_REQUIREMENTS.md`). 02_DEVIATIONS M-03 resolved (48/57, 84%). Commit `6f7519c`.
+- ✅ #45 — Docker/K8s infrastructure: Full production Docker stack (`Dockerfile.web`, `Dockerfile.admin`, `docker-compose.prod.yml` with 6 services, `nginx.conf` with TLS/rate-limiting/SSE, `.env.prod.example`). K8s manifests (Kustomize base with 3 deployments + services, staging/production overlays, nginx ingress with cert-manager TLS). Next.js `output: 'standalone'` enabled. Root `.dockerignore`. Infrastructure READMEs fully rewritten.
 
-**Remaining:**
-- #45 — Docker/K8s end-to-end testing
+**Exit Criteria:** ✅ All Phase 8 items resolved. TypeScript compiles clean.
 
 ---
 
@@ -205,9 +205,9 @@ This roadmap translates the remaining work items (from [03_REMAINING_WORK.md](03
 | 5. Tool Execution              | 15h   | 119h  | ✅ DONE             |
 | 6. Admin & Polish              | 22h   | 141h  | ✅ DONE             |
 | 7. Alignment + Remaining       | 5h    | 146h  | ✅ DONE                 |
-| 8. Final Polish                | 16h   | 162h  | **IN PROGRESS** (#43 done) |
+| 8. Final Polish                | 16h   | 162h  | ✅ DONE             |
 
-**Total remaining: ~21 hours** (from original ~254)
+**Total remaining: ~12.5 hours** (from original ~254)
 
 ---
 

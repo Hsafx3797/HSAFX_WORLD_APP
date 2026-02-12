@@ -1,0 +1,70 @@
+# ═══════════════════════════════════════════════════════════════
+# HSAFX World App — FastAPI Deployment
+# ═══════════════════════════════════════════════════════════════
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fastapi
+  labels:
+    app.kubernetes.io/name: fastapi
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: hsafx-world
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: fastapi
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: fastapi
+        app.kubernetes.io/component: backend
+    spec:
+      containers:
+        - name: fastapi
+          image: hsafx/fastapi:latest
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+          env:
+            - name: DEBUG
+              value: "false"
+            - name: HOST
+              value: "0.0.0.0"
+            - name: PORT
+              value: "8000"
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: hsafx-secrets
+                  key: redis-url
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: hsafx-secrets
+                  key: fastapi-secret-key
+            - name: INTERNAL_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: hsafx-secrets
+                  key: internal-secret
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 20
+      restartPolicy: Always

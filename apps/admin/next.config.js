@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   reactStrictMode: true,
   transpilePackages: ['@hsafx/db', '@hsafx/shared', '@hsafx/api', '@hsafx/config', '@hsafx/schemas', '@hsafx/theme', '@hsafx/tool-definitions'],
   experimental: {

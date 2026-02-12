@@ -1,0 +1,14 @@
+# ═══════════════════════════════════════════════════════════════
+# HSAFX World App — Kustomize Base
+# ═══════════════════════════════════════════════════════════════
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: hsafx
+
+resources:
+  - namespace.yaml
+  - web-deployment.yaml
+  - admin-deployment.yaml
+  - fastapi-deployment.yaml
+  - services.yaml

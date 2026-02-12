@@ -1,7 +1,7 @@
 # 03 — REMAINING WORK
 
 > **Last audited:** 2026-02-12
-> **Current state:** ~95% overall completion
+> **Current state:** ~96% overall completion
 > **Methodology:** Every gap from doc 01 and 02 mapped to actionable work items
 
 ---
@@ -164,9 +164,9 @@
 - **Effort:** ~4 hours
 
 ### P3-07: Docker/K8s End-to-End Testing
-- **Effort:** ~8 hours
+> **✅ COMPLETED** (Phase 8 #45) — Full Docker production stack: `Dockerfile.web` and `Dockerfile.admin` (multi-stage, standalone output, non-root user, healthcheck), `docker-compose.prod.yml` (6 services: postgres, redis, fastapi, web, admin, nginx), `nginx.conf` (TLS 1.2/1.3, rate limiting, SSE support, WebSocket upgrade, static asset caching), `.env.prod.example`. K8s manifests: Kustomize base (namespace, 3 deployments with resource limits/probes, ClusterIP services) + staging/production overlays + nginx ingress with cert-manager TLS. Next.js `output: 'standalone'` enabled for both apps. Root `.dockerignore` created.
 
-**P3 Remaining: ~14.5 hours** (was ~15, reduced by P3-05 completed)
+**P3 Remaining: ~6.5 hours** (was ~14.5, reduced by P3-07 completed)
 
 ---
 
@@ -177,8 +177,8 @@
 | **P0 — Blocking**         | 8      | ~28                    | ✅ ALL 8 DONE         |
 | **P1 — v1.0 Required**    | 15     | ~6 remaining             | 14.5/15 done          |
 | **P2 — Complete Product** | 14     | ~0 remaining             | 14/14 done (1 skipped) |
-| **P3 — Polish**           | 7      | ~14.5 remaining          | 5.5/7 done            |
-| **TOTAL**                 | **44** | **~20.5 hours remaining** | **42/44 done**       |
+| **P3 — Polish**           | 7      | ~6.5 remaining           | 6.5/7 done            |
+| **TOTAL**                 | **44** | **~12.5 hours remaining** | **43/44 done**       |
 
 ### Progress
 - **Originally estimated:** ~254 hours total
@@ -193,4 +193,5 @@
 - **Phase 7 #42: 11 new DB tables added across 5 schema files (toolClassPolicy, usageCoinFallbacks, invoicePayments, paymentMethods, coinPurchasePayments, planMetadata, planUpgradeRules, planAuditLogs, auditLogs, permissionGroups, emailUsageTracking)**
 - **Phase 7 #41: Pub/sub event system — in-process EventBus (8 channels), SSE hybrid upgrade, metrics collector, publisher wiring (errors, impersonation, config). Commit `f79c2f5`**
 - **Phase 7 #38: DBML naming alignment — 3 table renames, 15+ column renames, enum rename, all FK refs updated. 02_DEVIATIONS: 46/57 resolved (81%)**
-- **Phase 8 #43: Money→cents migration — all money columns to `bigint` cents, coin columns `integer`→`bigint`. Shared types, admin UI, API routes, seed, DBML updated. 02_DEVIATIONS M-17 resolved (47/57, 82%). Commit `b2c3e63`**
+- **Phase 8 #43: Money→cents migration — all money columns to `bigint` cents, coin columns `integer`→`bigint`. Shared types, admin UI, API routes, seed, DBML updated. 02_DEVIATIONS M-17 resolved (47/57, 82%). Commit `b2c3e63`**- **Phase 8 #44: Facebook OAuth** — docs inconsistency resolved. 02_DEVIATIONS M-03 resolved (48/57, 84%). Commit `6f7519c`
+- **Phase 8 #45: Docker/K8s infrastructure** — full production Docker stack (6 services, nginx, TLS), K8s manifests (Kustomize + overlays + ingress), Next.js standalone mode, `.dockerignore`

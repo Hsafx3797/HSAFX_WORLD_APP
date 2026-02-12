@@ -1,0 +1,68 @@
+# ═══════════════════════════════════════════════════════════════
+# HSAFX World App — Web (Next.js) Dockerfile
+# Multi-stage build for pnpm monorepo with standalone output
+# ═══════════════════════════════════════════════════════════════
+
+# ── Stage 1: Base ─────────────────────────────────────────────
+FROM node:20-alpine AS base
+RUN apk add --no-cache libc6-compat
+RUN corepack enable && corepack prepare pnpm@9 --activate
+WORKDIR /app
+
+# ── Stage 2: Install dependencies ─────────────────────────────
+FROM base AS deps
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY apps/web/package.json ./apps/web/
+COPY packages/api/package.json ./packages/api/
+COPY packages/config/package.json ./packages/config/
+COPY packages/db/package.json ./packages/db/
+COPY packages/schemas/package.json ./packages/schemas/
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/theme/package.json ./packages/theme/
+COPY packages/tool-definitions/package.json ./packages/tool-definitions/
+COPY packages/tools/package.json ./packages/tools/
+COPY packages/ui/package.json ./packages/ui/
+RUN pnpm install --frozen-lockfile
+
+# ── Stage 3: Build ────────────────────────────────────────────
+FROM base AS builder
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
+COPY --from=deps /app/packages/ ./packages/
+COPY . .
+
+# Build-time env vars (override at build or use defaults)
+ARG NEXT_PUBLIC_APP_URL=https://hsafx.world
+ARG NEXT_PUBLIC_FASTAPI_URL=http://fastapi:8000
+
+ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
+ENV NEXT_PUBLIC_FASTAPI_URL=$NEXT_PUBLIC_FASTAPI_URL
+ENV NEXT_TELEMETRY_DISABLED=1
+
+RUN pnpm turbo run build --filter=@hsafx/web
+
+# ── Stage 4: Production runner ────────────────────────────────
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
+
+# Copy standalone output
+COPY --from=builder /app/apps/web/.next/standalone ./
+COPY --from=builder /app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=builder /app/apps/web/public ./apps/web/public
+
+USER nextjs
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
+
+CMD ["node", "apps/web/server.js"]
