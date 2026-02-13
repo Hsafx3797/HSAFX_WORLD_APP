@@ -1,7 +1,7 @@
 # 04 — STEPS TO COMPLETE (Sprint Execution Plan)
 
-> **Last updated:** 2026-02-12
-> **Commit:** `6f7519c` on `master`
+> **Last updated:** 2026-02-12 (Phase 9 update)
+> **Commit:** `755c552` on `master` + uncommitted Phase 9 changes
 > **Based on:** Doc 03 remaining work items
 > **Philosophy:** P0 first → P1 next → P2/P3 after
 
@@ -22,13 +22,13 @@
 
 ### Sprint 6B — Security Hardening ✅
 
-| #  | Task                                                                                  | Ref   | Status  |
-|----|---------------------------------------------------------------------------------------|-------|---------|
-| 6  | Invoke `checkUserRateLimit()` in web middleware                                       | P0-06 | ✅ Done |
-| 7  | Server-enforce admin 2FA in middleware                                                | P0-07 | ✅ Done |
-| 8  | Add impersonation scoped-action middleware                                            | P0-08 | ✅ Done |
+| #  | Task                                                                                  | Ref   | Status          |
+|----|---------------------------------------------------------------------------------------|-------|-----------------|
+| 6  | Invoke `checkUserRateLimit()` in web middleware                                       | P0-06 | ✅ Done         |
+| 7  | Server-enforce admin 2FA in middleware                                                | P0-07 | ✅ Done         |
+| 8  | Add impersonation scoped-action middleware                                            | P0-08 | ✅ Done         |
 | 9  | Add impersonation `reason` field                                                      | P1-12 | ✅ Pre-existing |
-| 10 | Wire CASL into web app — `@casl/ability`, `PlanAccessProvider`, `withPlan` middleware | P0-03 | ✅ Done |
+| 10 | Wire CASL into web app — `@casl/ability`, `PlanAccessProvider`, `withPlan` middleware | P0-03 | ✅ Done         |
 
 ---
 
@@ -40,11 +40,11 @@
 | #  | Task                                            | Ref   | Status                 |
 |----|-------------------------------------------------|-------|------------------------|
 | 11 | Add remaining 9 pgEnum types (total 13 now)     | P1-01 | ✅ Done (Sprint P2-02) |
-| 12 | Add 5 critical database indexes                 | P1-02 | ✅ Done (Sprint P2-05) |
+| 12 | Add ~25 database indexes                        | P1-02 | ✅ Done (Phase 9)      |
 | 13 | Add missing unique constraints on 7 join tables | P1-08 | ✅ Done (Sprint P2-04) |
 | 14 | `tools.tool_class` column already exists        | P1-09 | ✅ Pre-existing        |
 
-**Exit criteria:** `drizzle-kit push` succeeds. All enums + indexes in place. No duplicate join-table rows.
+**Exit criteria:** `drizzle-kit push` succeeds. All enums + ~25 indexes in place. No duplicate join-table rows.
 
 ### Sprint 7B — Structured Logging ✅
 
@@ -158,24 +158,24 @@
 ## ✅ PHASE 7: NAMING ALIGNMENT + REMAINING (P2 + P3) — COMPLETED
 **Duration: ~0 hours remaining** (#38, #39, #40, #41, #42 done)
 
-| #  | Task                                                            | Ref   | Hours | Status                           |
-|----|-----------------------------------------------------------------|-------|-------|----------------------------------|
-| 38 | Resolve table/column naming: update planning docs to match code | P2-08 | 4     | ✅ Done (DBML aligned, 15 deviations resolved) |
-| 39 | Add admin billing management                                    | P2-10 | 12    | ✅ Pre-existing (~300-line page) |
-| 40 | Add impersonation `reason` field                                | P1-12 | 1     | ✅ Pre-existing (min 10 chars, audit logged) |
+| #  | Task                                                            | Ref   | Hours | Status                                               |
+|----|-----------------------------------------------------------------|-------|-------|------------------------------------------------------|
+| 38 | Resolve table/column naming: update planning docs to match code | P2-08 | 4     | ✅ Done (DBML aligned, 15 deviations resolved)       |
+| 39 | Add admin billing management                                    | P2-10 | 12    | ✅ Pre-existing (~300-line page)                     |
+| 40 | Add impersonation `reason` field                                | P1-12 | 1     | ✅ Pre-existing (min 10 chars, audit logged)         |
 | 41 | Add pub/sub channels                                            | P2-12 | 8     | ✅ Done (event bus + SSE upgrade + publisher wiring) |
-| 42 | Add remaining ~7 DB tables                                      | P3-01 | 8     | ✅ Done (11 tables across 5 schema files) |
+| 42 | Add remaining ~7 DB tables                                      | P3-01 | 8     | ✅ Done (11 tables across 5 schema files)            |
 
 ---
 
 ## ✅ PHASE 8: FINAL POLISH (P3) — COMPLETED
 **Duration: ~16 hours**
 
-| #  | Task                                          | Ref   | Hours | Status |
-|----|-----------------------------------------------|-------|-------|--------|
-| 43 | Migrate money columns to integer cents        | P3-02 | 4     | ✅ Done (commit `b2c3e63`) |
-| 44 | Resolve Facebook OAuth (doc-update) | P3-05 | 0.5   | ✅ Done (updated `15_SECURITY_MODEL.md`) |
-| 45 | Docker/K8s end-to-end testing                 | P3-07 | 8     | ✅ Done |
+| #  | Task                                          | Ref   | Hours | Status                                   |
+|----|-----------------------------------------------|-------|-------|------------------------------------------|
+| 43 | Migrate money columns to integer cents        | P3-02 | 4     | ✅ Done (commit `b2c3e63`)               |
+| 44 | Resolve Facebook OAuth (doc-update)           | P3-05 | 0.5   | ✅ Done (updated `15_SECURITY_MODEL.md`) |
+| 45 | Docker/K8s end-to-end testing                 | P3-07 | 8     | ✅ Done                                  |
 
 **#43 Implementation details:**
 - Schema: `decimal(10,2)` → `bigint` cents for plans, invoices, payments
@@ -211,8 +211,9 @@
 | 4B    | Search + Billing API         | 12    | 104        | ✅ DONE     |
 | 5     | Tool Execution Completion    | 15    | 119        | ✅ DONE     |
 | 6     | Admin Features + Polish      | 22    | 141        | ✅ DONE     |
-| 7     | Naming + Remaining           | 1     | 150h  | ✅ DONE             |
-| 8     | Final Polish                 | 16    | 162        | Not started |
+| 7     | Naming + Remaining           | 1     | 150h       | ✅ DONE     |
+| 8     | Final Polish                 | 16    | 162        | ✅ DONE     |
+| 9     | Bulk Indexes + Deviations    | 2     | 164        | ✅ DONE     |
 
 ### Critical Milestones
 
@@ -223,6 +224,7 @@
 | **Feature-complete for v1.0** | Phase 5     | ✅ ACHIEVED |
 | **Full product**              | Phase 7     | ✅ ACHIEVED |
 | **Planning-aligned**          | Phase 8     | ✅ ACHIEVED |
+| **Zero deviations**           | Phase 9     | ✅ ACHIEVED |
 
 ---
 

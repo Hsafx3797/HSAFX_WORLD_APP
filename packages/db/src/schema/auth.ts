@@ -58,7 +58,7 @@ export const roles = pgTable('roles', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: text('name').notNull().unique(), // 'admin', 'moderator', 'user', 'guest'
   description: text('description'),
-  roleType: varchar('role_type', { length: 20 }).notNull().default('custom'), // 'system' | 'custom'
+  roleType: adminRoleTypeEnum('role_type').notNull().default('custom'), // 'system' | 'custom'
   isDefault: boolean('is_default').notNull().default(false),
   isActive: boolean('is_active').notNull().default(true),
   sortOrder: integer('sort_order').notNull().default(0),

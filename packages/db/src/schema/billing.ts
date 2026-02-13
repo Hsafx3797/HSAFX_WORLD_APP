@@ -70,7 +70,9 @@ export const plans = pgTable('plans', {
   metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
-});
+}, (t) => [
+  index('plans_slug_idx').on(t.slug),
+]);
 
 /**
  * Plan Limits - Feature limits per plan
@@ -116,6 +118,9 @@ export const subscriptions = pgTable('subscriptions', {
 }, (t) => [
   index('sub_user_id_idx').on(t.userId),
   index('sub_status_idx').on(t.status),
+  index('sub_plan_id_idx').on(t.planId),
+  index('sub_period_end_idx').on(t.currentPeriodEnd),
+  index('sub_polar_sub_id_idx').on(t.polarSubscriptionId),
 ]);
 
 /**
@@ -164,6 +169,8 @@ export const invoices = pgTable('invoices', {
 }, (t) => [
   index('inv_user_id_idx').on(t.userId),
   index('inv_status_idx').on(t.status),
+  index('inv_subscription_id_idx').on(t.subscriptionId),
+  index('inv_due_date_idx').on(t.dueDate),
 ]);
 
 /**
@@ -188,6 +195,10 @@ export const payments = pgTable('payments', {
 }, (t) => [
   index('pay_user_id_idx').on(t.userId),
   index('pay_status_idx').on(t.status),
+  index('pay_invoice_id_idx').on(t.invoiceId),
+  index('pay_stripe_pi_idx').on(t.stripePaymentIntentId),
+  index('pay_user_created_idx').on(t.userId, t.createdAt),
+  index('pay_sub_status_idx').on(t.invoiceId, t.status),
 ]);
 
 /**

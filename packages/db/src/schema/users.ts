@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, boolean, timestamp, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, boolean, timestamp, jsonb, uniqueIndex, index } from 'drizzle-orm/pg-core';
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
@@ -21,7 +21,10 @@ export const users = pgTable('users', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
   deletedAt: timestamp('deleted_at'),
-});
+}, (t) => [
+  uniqueIndex('users_email_idx').on(t.email),
+  uniqueIndex('users_username_idx').on(t.username),
+]);
 
 /**
  * User Preferences - UI/UX settings
@@ -37,6 +40,8 @@ export const userPreferences = pgTable('user_preferences', {
   language: text('language').notNull().default('en'),
   timezone: text('timezone').notNull().default('UTC'),
   preferences: jsonb('preferences').$type<Record<string, unknown>>().default({}),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
 /**
@@ -53,6 +58,8 @@ export const userSettings = pgTable('user_settings', {
   pushNotifications: boolean('push_notifications').notNull().default(false),
   marketingEmails: boolean('marketing_emails').notNull().default(false),
   settings: jsonb('settings').$type<Record<string, unknown>>().default({}),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
 // Types inferred from tables using InferSelectModel and InferInsertModel

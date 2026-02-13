@@ -3,6 +3,7 @@ import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 import { users } from './users';
+import { tools } from './tools';
 
 // ─── Enums ────────────────────────────────────────────────────
 
@@ -23,6 +24,7 @@ export const permissionTargetEnum = pgEnum('permission_target', [
 export const apiRequestLogs = pgTable('api_request_logs', {
   id: serial('id').primaryKey(),
   userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  toolId: uuid('tool_id').references(() => tools.id, { onDelete: 'set null' }),
   method: varchar('method', { length: 10 }).notNull(), // GET, POST, etc.
   path: text('path').notNull(),
   statusCode: integer('status_code').notNull(),
@@ -36,6 +38,7 @@ export const apiRequestLogs = pgTable('api_request_logs', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 }, (t) => [
   index('arl_user_id_idx').on(t.userId),
+  index('arl_tool_id_idx').on(t.toolId),
   index('arl_created_at_idx').on(t.createdAt),
 ]);
 

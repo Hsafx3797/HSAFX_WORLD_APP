@@ -75,7 +75,7 @@ export function ImpersonationBanner() {
       }}
     >
       <span>
-        🔍 Impersonating: {info.name} ({info.email}) — Read-only session
+        🔍 Impersonating: {info.name} ({info.email}) — Scoped session
       </span>
       <button
         onClick={handleStop}

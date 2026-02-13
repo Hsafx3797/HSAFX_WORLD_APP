@@ -180,6 +180,7 @@ export const apiKeys = pgTable('api_keys', {
 }, (t) => [
   index('ak_user_id_idx').on(t.userId),
   index('ak_is_active_idx').on(t.isActive),
+  index('ak_user_active_idx').on(t.userId, t.isActive),
 ]);
 
 /**
@@ -194,7 +195,10 @@ export const anonymousUsage = pgTable('anonymous_usage', {
     .notNull()
     .references(() => tools.id),
   usedAt: timestamp('used_at').notNull().defaultNow(),
-});
+}, (t) => [
+  index('au_fingerprint_tool_idx').on(t.fingerprint, t.toolId, t.usedAt),
+  index('au_ip_tool_idx').on(t.ipAddress, t.toolId, t.usedAt),
+]);
 
 /**
  * API Rate Limits - Per-key configurable rate limits

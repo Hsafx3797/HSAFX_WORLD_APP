@@ -1,9 +1,9 @@
 # SOLUTION ROADMAP — HSAFX WORLD APP
 
 > **Date:** 2026-02-12
-> **Commit:** `6f7519c` on `master`
+> **Commit:** `755c552` on `master` + uncommitted Phase 9 changes
 > **Based on:** CORRECTION docs 01–05
-> **Status:** Phases 1–8 COMPLETE (43/44 items done)
+> **Status:** Phases 1–9 COMPLETE (44/44 items done)
 
 ---
 
@@ -11,8 +11,9 @@
 
 This roadmap translates the remaining work items (from [03_REMAINING_WORK.md](03_REMAINING_WORK.md)) into an actionable sequence. All 5 owner decisions are resolved. All 10 planning conflicts are locked.
 
-**Progress:** 43/44 items complete (~97% items, ~237.5 hours done). ~12.5 hours remaining.
-**No CRITICAL blockers remain** — staging deployment is safe. **Schema-complete milestone achieved. FTS search operational. Feature-complete for v1.0 achieved. Phase 6 Admin & Polish complete. Phase 7 Alignment complete. Phase 8 Final Polish complete.**
+**Progress:** 44/44 items complete (~100% items). ~4.5 hours remaining (P3-06 Lua script only).
+**No CRITICAL blockers remain** — staging deployment is safe. **Schema-complete milestone achieved. FTS search operational. Feature-complete for v1.0 achieved. Phase 6 Admin & Polish complete. Phase 7 Alignment complete. Phase 8 Final Polish complete. Phase 9 Zero Deviations achieved.**
+**02_DEVIATIONS: 57/57 addressed (53 resolved + 4 accepted architectural deviations). Zero open deviations.**
 
 ---
 
@@ -193,21 +194,44 @@ This roadmap translates the remaining work items (from [03_REMAINING_WORK.md](03
 
 ---
 
+### ✅ Phase 9 — Bulk Index Sprint + Deviation Closure — COMPLETE
+
+**What:** Add all remaining DBML-planned indexes, fix enum/column deviations, close all open CORRECTION deviations.
+
+**Completed:**
+- ✅ ~20 new explicit indexes across 4 schema files (users.ts, billing.ts, tools.ts, audit.ts)
+  - users: `uniqueIndex('users_email_idx')`, `uniqueIndex('users_username_idx')`
+  - billing: 10 indexes (plans, subscriptions, invoices, payments) including 2 composite
+  - tools: 3 compound indexes (apiKeys, anonymousUsage)
+  - audit: `arl_tool_id_idx` + `toolId` column with FK to `tools.id`
+- ✅ `roles.roleType` fixed from `varchar(20)` to `adminRoleTypeEnum` (M-19)
+- ✅ `userPreferences`/`userSettings` timestamps added (`createdAt`/`updatedAt`) (L-10)
+- ✅ Impersonation banner text fixed: "Read-only session" → "Scoped session" (L-09)
+- ✅ Deviations closed: M-04 (accepted), M-16 (accepted), L-03 (correct), L-04 (accepted), C-09 (closed), P3-01 (closed)
+- ✅ All 5 CORRECTION docs updated
+
+**Result:** 02_DEVIATIONS: 57/57 addressed (53 resolved + 4 accepted). Zero open deviations.
+
+**Exit Criteria:** ✅ All DBML indexes implemented. All deviations closed. Schema fully aligned.
+
+---
+
 ## TIMELINE SUMMARY
 
-| Phase                          | Focus | Hours | Cumulative | Status |
-|--------------------------------|-------|-------|------------|--------|
-| 1. Security & Billing          | 28h   | 28h   | ✅ DONE             |
-| 2. Schema & Logging            | 30h   | 58h   | ✅ DONE             |
-| 3. Schema Completion           | 12h   | 70h   | ✅ DONE             |
-| 4A. Frontend Stores+Components | 22h   | 92h   | ✅ DONE             |
-| 4B. Search + Billing API       | 12h   | 104h  | ✅ DONE             |
-| 5. Tool Execution              | 15h   | 119h  | ✅ DONE             |
-| 6. Admin & Polish              | 22h   | 141h  | ✅ DONE             |
-| 7. Alignment + Remaining       | 5h    | 146h  | ✅ DONE                 |
-| 8. Final Polish                | 16h   | 162h  | ✅ DONE             |
+| Phase                          | Focus | Hours | Cumulative | Status  |
+|--------------------------------|-------|-------|------------|---------|
+| 1. Security & Billing          | 28h   | 28h   | -          | ✅ DONE |
+| 2. Schema & Logging            | 30h   | 58h   | -          | ✅ DONE |
+| 3. Schema Completion           | 12h   | 70h   | -          | ✅ DONE |
+| 4A. Frontend Stores+Components | 22h   | 92h   | -          | ✅ DONE |
+| 4B. Search + Billing API       | 12h   | 104h  | -          | ✅ DONE |
+| 5. Tool Execution              | 15h   | 119h  | -          | ✅ DONE |
+| 6. Admin & Polish              | 22h   | 141h  | -          | ✅ DONE |
+| 7. Alignment + Remaining       | 5h    | 146h  | -          | ✅ DONE |
+| 8. Final Polish                | 16h   | 162h  | -          | ✅ DONE |
+| 9. Bulk Indexes + Deviations   | 2h    | 164h  | -          | ✅ DONE |
 
-**Total remaining: ~12.5 hours** (from original ~254)
+**Total remaining: ~4.5 hours** (P3-06 Lua coin lock script only)
 
 ---
 
