@@ -2,17 +2,30 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import { CompactModeToggle } from './appearance-panel';
+import { NotificationBell } from './notification-bell';
+import { useAuth } from '@/hooks/use-auth';
+import {
+  User,
+  LayoutDashboard,
+  History,
+  Settings,
+  Key,
+  LogOut,
+  Coins,
+  Search,
+} from 'lucide-react';
 
 interface NavItem {
   label: string;
@@ -37,9 +50,46 @@ const navItems: NavItem[] = [
   { label: 'API', href: '/api-docs' },
 ];
 
+function UserAvatar({ name, avatarUrl, className }: { name: string; avatarUrl?: string; className?: string }) {
+  const initials = name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+
+  if (avatarUrl) {
+    return (
+      <img
+        src={avatarUrl}
+        alt={name}
+        className={cn('h-8 w-8 rounded-full object-cover', className)}
+      />
+    );
+  }
+
+  return (
+    <div
+      className={cn(
+        'flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground',
+        className
+      )}
+    >
+      {initials || 'U'}
+    </div>
+  );
+}
+
 export function Header() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+
+  const handleLogout = async () => {
+    await logout();
+    router.push('/');
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
@@ -139,34 +189,82 @@ export function Header() {
 
         {/* Actions */}
         <div className="flex items-center gap-2">
-          {/* Theme Toggle */}
           <CompactModeToggle />
-          
+
           <Button variant="ghost" size="icon" className="h-9 w-9">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-5 w-5"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.3-4.3" />
-            </svg>
+            <Search className="h-5 w-5" />
+            <span className="sr-only">Search</span>
           </Button>
-          
-          <Button variant="ghost" asChild className="hidden sm:inline-flex">
-            <Link href="/login">Sign In</Link>
-          </Button>
-          
-          <Button asChild className="hidden sm:inline-flex">
-            <Link href="/register">Get Started</Link>
-          </Button>
+
+          {isAuthenticated && user ? (
+            <>
+              <NotificationBell />
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2 rounded-full outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                    <UserAvatar name={user.name} avatarUrl={user.avatarUrl} />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium">{user.name}</span>
+                      <span className="text-xs text-muted-foreground">{user.email}</span>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard" className="flex items-center gap-2">
+                      <LayoutDashboard className="h-4 w-4" />
+                      Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard/history" className="flex items-center gap-2">
+                      <History className="h-4 w-4" />
+                      History
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard/coins" className="flex items-center gap-2">
+                      <Coins className="h-4 w-4" />
+                      Coins
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings/api-keys" className="flex items-center gap-2">
+                      <Key className="h-4 w-4" />
+                      API Keys
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings" className="flex items-center gap-2">
+                      <Settings className="h-4 w-4" />
+                      Settings
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="flex items-center gap-2 text-destructive focus:text-destructive"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          ) : !isLoading ? (
+            <>
+              <Button variant="ghost" asChild className="hidden sm:inline-flex">
+                <Link href="/login">Sign In</Link>
+              </Button>
+              <Button asChild className="hidden sm:inline-flex">
+                <Link href="/register">Get Started</Link>
+              </Button>
+            </>
+          ) : null}
 
           {/* Mobile menu button */}
           <Button
@@ -234,12 +332,49 @@ export function Header() {
               </div>
             ))}
             <div className="flex flex-col gap-2 pt-4 border-t">
-              <Button variant="outline" asChild>
-                <Link href="/login">Sign In</Link>
-              </Button>
-              <Button asChild>
-                <Link href="/register">Get Started</Link>
-              </Button>
+              {isAuthenticated && user ? (
+                <>
+                  <div className="flex items-center gap-3 px-1 py-2">
+                    <UserAvatar name={user.name} avatarUrl={user.avatarUrl} />
+                    <div>
+                      <p className="text-sm font-medium">{user.name}</p>
+                      <p className="text-xs text-muted-foreground">{user.email}</p>
+                    </div>
+                  </div>
+                  <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="outline" className="w-full justify-start gap-2">
+                      <LayoutDashboard className="h-4 w-4" />
+                      Dashboard
+                    </Button>
+                  </Link>
+                  <Link href="/settings" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="outline" className="w-full justify-start gap-2">
+                      <Settings className="h-4 w-4" />
+                      Settings
+                    </Button>
+                  </Link>
+                  <Button
+                    variant="destructive"
+                    className="w-full justify-start gap-2"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      handleLogout();
+                    }}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Sign Out
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="outline" asChild>
+                    <Link href="/login">Sign In</Link>
+                  </Button>
+                  <Button asChild>
+                    <Link href="/register">Get Started</Link>
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -259,6 +394,7 @@ export function Footer() {
               <li><Link href="/tools" className="hover:text-primary">All Tools</Link></li>
               <li><Link href="/pricing" className="hover:text-primary">Pricing</Link></li>
               <li><Link href="/api-docs" className="hover:text-primary">API</Link></li>
+              <li><Link href="/changelog" className="hover:text-primary">Changelog</Link></li>
             </ul>
           </div>
           <div>

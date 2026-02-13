@@ -1,16 +1,49 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
+import { authClient } from '@/lib/auth-client';
+import { toast } from 'sonner';
 
-interface Session {
+interface SessionData {
   id: string;
-  device: string;
-  browser: string;
-  location: string;
-  lastActive: string;
+  token: string;
+  userAgent: string | null;
+  ipAddress: string | null;
+  createdAt: Date;
+  expiresAt: Date;
   isCurrent: boolean;
+}
+
+function parseUserAgent(ua: string | null): { device: string; browser: string } {
+  if (!ua) return { device: 'Unknown device', browser: 'Unknown browser' };
+  const browser =
+    ua.includes('Firefox') ? 'Firefox' :
+    ua.includes('Edg') ? 'Edge' :
+    ua.includes('Chrome') ? 'Chrome' :
+    ua.includes('Safari') ? 'Safari' :
+    'Other';
+  const device =
+    /iPhone|iPad/.test(ua) ? 'iPhone/iPad' :
+    /Android/.test(ua) ? 'Android' :
+    /Macintosh/.test(ua) ? 'Mac' :
+    /Windows/.test(ua) ? 'Windows PC' :
+    /Linux/.test(ua) ? 'Linux' :
+    'Unknown';
+  return { device, browser };
+}
+
+function timeAgo(date: Date): string {
+  const now = new Date();
+  const diffMs = now.getTime() - new Date(date).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
 }
 
 export default function SecuritySettingsPage() {
@@ -24,32 +57,31 @@ export default function SecuritySettingsPage() {
   const [verificationCode, setVerificationCode] = useState('');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const [sessions] = useState<Session[]>([
-    {
-      id: '1',
-      device: 'Windows PC',
-      browser: 'Chrome 120',
-      location: 'Dubai, UAE',
-      lastActive: 'Now',
-      isCurrent: true,
-    },
-    {
-      id: '2',
-      device: 'iPhone 15',
-      browser: 'Safari',
-      location: 'Dubai, UAE',
-      lastActive: '2 hours ago',
-      isCurrent: false,
-    },
-    {
-      id: '3',
-      device: 'MacBook Pro',
-      browser: 'Firefox 121',
-      location: 'Abu Dhabi, UAE',
-      lastActive: '1 day ago',
-      isCurrent: false,
-    },
-  ]);
+  const [sessions, setSessions] = useState<SessionData[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(true);
+
+  const fetchSessions = useCallback(async () => {
+    try {
+      setSessionsLoading(true);
+      const res = await authClient.listSessions();
+      if (res.data) {
+        setSessions(
+          (res.data as unknown as SessionData[]).map((s) => ({
+            ...s,
+            isCurrent: s.isCurrent ?? false,
+          }))
+        );
+      }
+    } catch {
+      // silently fail — will show empty
+    } finally {
+      setSessionsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchSessions();
+  }, [fetchSessions]);
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,21 +143,23 @@ export default function SecuritySettingsPage() {
     }
   };
 
-  const handleRevokeSession = async (sessionId: string) => {
+  const handleRevokeSession = async (sessionToken: string) => {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setMessage({ type: 'success', text: 'Session revoked successfully.' });
+      await authClient.revokeSession({ token: sessionToken });
+      toast.success('Session revoked successfully.');
+      fetchSessions();
     } catch {
-      setMessage({ type: 'error', text: 'Failed to revoke session.' });
+      toast.error('Failed to revoke session.');
     }
   };
 
   const handleRevokeAllSessions = async () => {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setMessage({ type: 'success', text: 'All other sessions have been revoked.' });
+      await authClient.revokeSessions();
+      toast.success('All other sessions have been revoked.');
+      fetchSessions();
     } catch {
-      setMessage({ type: 'error', text: 'Failed to revoke sessions.' });
+      toast.error('Failed to revoke sessions.');
     }
   };
 
@@ -326,38 +360,47 @@ export default function SecuritySettingsPage() {
             </div>
 
             <div className="space-y-4">
-              {sessions.map((session) => (
-                <div
-                  key={session.id}
-                  className="flex items-center justify-between p-4 bg-muted/50 rounded-lg"
-                >
-                  <div className="flex items-center gap-4">
-                    <span className="text-2xl">
-                      {session.device.includes('iPhone') || session.device.includes('Android')
-                        ? '📱'
-                        : '💻'}
-                    </span>
-                    <div>
-                      <p className="font-medium text-sm">
-                        {session.device} • {session.browser}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {session.location} • {session.lastActive}
-                      </p>
-                    </div>
-                  </div>
-                  {session.isCurrent ? (
-                    <span className="text-xs text-success font-medium">Current</span>
-                  ) : (
-                    <button
-                      onClick={() => handleRevokeSession(session.id)}
-                      className="text-sm text-destructive hover:text-destructive/80"
+              {sessionsLoading ? (
+                <div className="text-center py-4 text-muted-foreground text-sm">Loading sessions...</div>
+              ) : sessions.length === 0 ? (
+                <div className="text-center py-4 text-muted-foreground text-sm">No active sessions found.</div>
+              ) : (
+                sessions.map((session) => {
+                  const { device, browser } = parseUserAgent(session.userAgent);
+                  return (
+                    <div
+                      key={session.id}
+                      className="flex items-center justify-between p-4 bg-muted/50 rounded-lg"
                     >
-                      Revoke
-                    </button>
-                  )}
-                </div>
-              ))}
+                      <div className="flex items-center gap-4">
+                        <span className="text-2xl">
+                          {device.includes('iPhone') || device.includes('iPad') || device.includes('Android')
+                            ? '📱'
+                            : '💻'}
+                        </span>
+                        <div>
+                          <p className="font-medium text-sm">
+                            {device} &bull; {browser}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {session.ipAddress ?? 'Unknown IP'} &bull; {timeAgo(session.createdAt)}
+                          </p>
+                        </div>
+                      </div>
+                      {session.isCurrent ? (
+                        <span className="text-xs text-success font-medium">Current</span>
+                      ) : (
+                        <button
+                          onClick={() => handleRevokeSession(session.token)}
+                          className="text-sm text-destructive hover:text-destructive/80"
+                        >
+                          Revoke
+                        </button>
+                      )}
+                    </div>
+                  );
+                })
+              )}
             </div>
           </section>
 

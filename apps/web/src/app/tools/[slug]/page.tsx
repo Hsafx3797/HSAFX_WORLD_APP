@@ -99,7 +99,21 @@ export default async function ToolPage({ params }: ToolPageProps) {
         
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
           <span>Category: <Badge variant="outline">{tool.category}</Badge></span>
-          <span>Execution: <Badge variant="outline">{tool.execution}</Badge></span>
+          {tool.execution === 'client' && (
+            <Badge variant="secondary" className="gap-1">
+              <span>⚡</span> Processed locally
+            </Badge>
+          )}
+          {tool.execution === 'server' && (
+            <Badge variant="secondary" className="gap-1">
+              <span>🔒</span> Encrypted server
+            </Badge>
+          )}
+          {tool.execution === 'hybrid' && (
+            <Badge variant="secondary" className="gap-1">
+              <span>⚡🔒</span> Hybrid
+            </Badge>
+          )}
           {tool.costType === 'coin' && tool.coinCost && (
             <span>Cost: <Badge variant="outline">{tool.coinCost} coins</Badge></span>
           )}

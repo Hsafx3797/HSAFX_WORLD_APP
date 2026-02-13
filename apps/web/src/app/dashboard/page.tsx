@@ -8,12 +8,41 @@ import { useSubscription } from '@/hooks/use-subscription';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { ActivityFeed, ActivityFeedSkeleton, type ActivityItem } from '@/components/activity-feed';
+import { trpc } from '@/lib/trpc';
+import { toolCounts } from '@/lib/tools/registry';
+import { toast } from 'sonner';
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
   const { balance, dailyBonusAvailable, claimDailyBonus } = useCoins();
   const { subscription, isPro } = useSubscription();
+
+  const executionsQuery = trpc.tools.getMyExecutions.useQuery(
+    { page: 1, pageSize: 10 },
+    { enabled: !!user }
+  );
+
+  const activityItems: ActivityItem[] = (executionsQuery.data?.items ?? []).map((exec) => ({
+    id: exec.id,
+    toolId: exec.toolId,
+    toolName: (exec as Record<string, unknown>).toolName as string ?? exec.toolId,
+    status: exec.status === 'completed' ? 'completed' : exec.status === 'failed' ? 'failed' : 'running',
+    coinsCharged: exec.coinCost ?? 0,
+    duration: exec.executionTime ?? undefined,
+    timestamp: exec.createdAt instanceof Date ? exec.createdAt.toISOString() : String(exec.createdAt),
+  }));
+
+  const todayCount = (executionsQuery.data?.items ?? []).filter((exec) => {
+    const created = exec.createdAt instanceof Date ? exec.createdAt : new Date(String(exec.createdAt));
+    const today = new Date();
+    return (
+      created.getDate() === today.getDate() &&
+      created.getMonth() === today.getMonth() &&
+      created.getFullYear() === today.getFullYear()
+    );
+  }).length;
 
   if (authLoading) {
     return (
@@ -31,7 +60,7 @@ export default function DashboardPage() {
   const handleClaimBonus = async () => {
     const result = await claimDailyBonus();
     if (result.success) {
-      // Show success toast
+      toast.success('Daily bonus claimed! Coins added to your balance.');
     }
   };
 
@@ -96,7 +125,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Tools Available</CardDescription>
-            <CardTitle className="text-3xl">448+</CardTitle>
+            <CardTitle className="text-3xl">{toolCounts.total}+</CardTitle>
           </CardHeader>
           <CardContent>
             <Link href="/tools">
@@ -111,7 +140,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Executions Today</CardDescription>
-            <CardTitle className="text-3xl">0</CardTitle>
+            <CardTitle className="text-3xl">{todayCount}</CardTitle>
           </CardHeader>
           <CardContent>
             <Link href="/dashboard/history">
@@ -135,7 +164,7 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <h3 className="font-semibold">Use a Tool</h3>
-                  <p className="text-sm text-muted-foreground">Browse 448+ available tools</p>
+                  <p className="text-sm text-muted-foreground">Browse {toolCounts.total}+ available tools</p>
                 </div>
               </CardContent>
             </Card>
@@ -215,16 +244,27 @@ export default function DashboardPage() {
 
       {/* Recent Activity */}
       <div>
-        <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center py-8 text-muted-foreground">
-              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-4 opacity-50"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-              <p>No recent activity</p>
-              <p className="text-sm mt-1">Start using tools to see your history here</p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold">Recent Activity</h2>
+          <Link href="/dashboard/history">
+            <Button variant="ghost" size="sm">View All</Button>
+          </Link>
+        </div>
+        {executionsQuery.isLoading ? (
+          <ActivityFeedSkeleton />
+        ) : activityItems.length > 0 ? (
+          <ActivityFeed items={activityItems} />
+        ) : (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center py-8 text-muted-foreground">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-4 opacity-50"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                <p>No recent activity</p>
+                <p className="text-sm mt-1">Start using tools to see your history here</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

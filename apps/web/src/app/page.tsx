@@ -139,6 +139,26 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Stats Section */}
+      <section className="py-12 border-b">
+        <div className="container">
+          <div className="grid gap-8 sm:grid-cols-3 text-center">
+            <div>
+              <p className="text-4xl font-bold text-primary">{totalTools}+</p>
+              <p className="text-muted-foreground mt-1">Tools Available</p>
+            </div>
+            <div>
+              <p className="text-4xl font-bold text-primary">{categories.length}</p>
+              <p className="text-muted-foreground mt-1">Categories</p>
+            </div>
+            <div>
+              <p className="text-4xl font-bold text-primary">100%</p>
+              <p className="text-muted-foreground mt-1">Free to Use</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Categories Section */}
       <section className="py-16">
         <div className="container">
