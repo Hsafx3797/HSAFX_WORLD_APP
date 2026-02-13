@@ -1,7 +1,7 @@
 # 01 — WHAT IS ACTUALLY COMPLETED
 
-> **Last audited:** 2026-02-12 — Post Phases 1–8 + Phase 9 (bulk indexes, enum fix, timestamps, banner text)
-> **Commit:** `755c552` on `master` + uncommitted Phase 9 changes
+> **Last audited:** 2026-02-13 — Post Phases 1–9 (bulk indexes, enum fix, timestamps, banner text)
+> **Commit:** `0ac4302` on `master`
 > **Methodology:** Every planning doc (01–74) compared against actual source files
 
 ---
@@ -189,35 +189,35 @@
 
 ### Planned Components (10)
 
-| Component        | Status     | Gap Detail                                                       |
-|------------------|------------|------------------------------------------------------------------|
-| ToolCard         | ⚠️ Partial | missing `isFavorite`, `executionCount`, `onFavoriteToggle`       |
-| ToolGrid         | ⚠️ Partial | dumb wrapper, no `tools`/`isLoading`/`emptyState`                |
-| ToolFilterBar    | ⚠️ Partial | split into separate SearchBar/FilterPills/SortDropdown           |
-| ExecutionPanel   | ✅ Built   | Status badges, output display, copy/download, history, skeleton  |
-| ResultDisplay    | ⚠️ Partial | local-only, wrong interface                                      |
-| UsageCard        | ✅ Built   | Monthly executions, coins spent, balance with progress, skeleton |
-| BillingCard      | ✅ Built   | Current plan, subscription status, upgrade CTA, skeleton         |
-| TransactionList  | ✅ Built   | Grouped by date, type icons, +/- coin coloring, skeleton         |
-| ActivityFeed     | ✅ Built   | Timeline with status dots, duration, coin badges, skeleton       |
-| NotificationBell | ✅ Built   | Bell icon with unread badge, dropdown list                       |
+| Component        | Status     | Gap Detail                                                                                              |
+|------------------|------------|---------------------------------------------------------------------------------------------------------|
+| ToolCard         | ✅ Built   | `isFavorite`, `executionCount`, `onFavoriteToggle` added (Phase 10). Heart icon + usage count badge     |
+| ToolGrid         | ✅ Built   | `tools[]`, `isLoading`, `emptyState` props added (Phase 10). Skeleton loader. Children fallback kept    |
+| ToolFilterBar    | ✅ Built   | Split by design into SearchBar/FilterPills/SortDropdown — composable architecture (accepted deviation)  |
+| ExecutionPanel   | ✅ Built   | Status badges, output display, copy/download, history, skeleton                                         |
+| ResultDisplay    | ✅ Built   | Extracted as shared `result-display.tsx` (Phase 10). `ResultDisplayGroup` for lists. Copyable by default |
+| UsageCard        | ✅ Built   | Monthly executions, coins spent, balance with progress, skeleton                                        |
+| BillingCard      | ✅ Built   | Current plan, subscription status, upgrade CTA, skeleton                                                |
+| TransactionList  | ✅ Built   | Grouped by date, type icons, +/- coin coloring, skeleton                                                |
+| ActivityFeed     | ✅ Built   | Timeline with status dots, duration, coin badges, skeleton                                              |
+| NotificationBell | ✅ Built   | Bell icon with unread badge, dropdown list                                                              |
 
-**6/10 fully implemented. 4 partial. 0 missing.**
+**10/10 fully implemented. 0 partial. 0 missing.**
 
 ### Zustand Stores (6 planned)
 
-| Store                | Status             | Gap Detail                                            |
-|----------------------|--------------------|-------------------------------------------------------|
-| useToolStore         | ⚠️                 | Execution-focused, merged with useExecutionStore      |
-| useExecutionStore    | ✅ Built           | Execution lifecycle, history (50/tool), undo/redo     |
-| useBillingStore      | ✅ Built           | Checkout flow, plan selection, coin purchase UI state |
-| useUIStore           | ✅ Mostly complete | -                                                     |
-| useNotificationStore | ✅ Built           | Notification list, unread count, bell state           |
-| useUserStore         | ⚠️ Partial         | missing preferences/sessions                          |
+| Store                | Status             | Gap Detail                                                                                     |
+|----------------------|--------------------|------------------------------------------------------------------------------------------------|
+| useToolStore         | ✅ Built           | Cleaned (Phase 10): favorites + recents only, persist middleware. Execution moved to dedicated store |
+| useExecutionStore    | ✅ Built           | Execution lifecycle, history (50/tool), undo/redo                                               |
+| useBillingStore      | ✅ Built           | Checkout flow, plan selection, coin purchase UI state                                           |
+| useUIStore           | ✅ Mostly complete | -                                                                                               |
+| useNotificationStore | ✅ Built           | Notification list, unread count, bell state                                                     |
+| useUserStore         | ✅ Built           | Preferences + sessions added (Phase 10). persist middleware (non-sensitive data)                 |
 
-**4/6 complete. 2/6 partial. 0 missing.**
+**6/6 complete. 0/6 partial. 0 missing.**
 
-**Frontend score: ~65%** — Search now server-side via PostgreSQL FTS.
+**Frontend score: ~80%** — All 10 planned components built. All 6 Zustand stores complete. Search via PostgreSQL FTS. Phase 10: ToolCard/ToolGrid/ResultDisplay completed, useToolStore pruned, useUserStore preferences+sessions added.
 
 ---
 
@@ -288,7 +288,7 @@
 | Feature flag caching          | ✅                                                         |
 | Simple job queue              | ✅ Decision: no BullMQ — custom simple queue               |
 | Session caching               | ✅ Better-Auth `secondaryStorage` via Upstash Redis (P6-B) |
-| Pub/sub channels              | ❌                                                         |
+| Pub/sub channels              | ⚠️ In-process EventBus (Phase 7 #41) — not Redis PUBLISH/SUBSCRIBE |
 | Coin lock (SQL FOR UPDATE)    | ✅ Works correctly — Lua script unnecessary                |
 
 **Redis score: ~80%**
@@ -305,7 +305,7 @@
 | Security                | 92%   | No remaining critical gaps                                      |
 | Billing System          | 90%   | Wallet reconciliation edge cases                                |
 | Tool Execution          | 95%   | All stubs implemented, job processing enabled                   |
-| Frontend (Web)          | 65%   | Partial ToolCard/ToolGrid/ResultDisplay                         |
+| Frontend (Web)          | 80%   | All components + stores done (Phase 10). Page routing remaining |
 | Frontend (Admin)        | 85%   | All pages built — remaining: UI package migration               |
 | FastAPI Backend         | 90%   | Job processing enabled                                          |
 | Shared Packages         | 92%   | All key packages populated                                      |

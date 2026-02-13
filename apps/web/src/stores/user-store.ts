@@ -1,5 +1,5 @@
 /**
- * User Store — session, plan, coin balance
+ * User Store — session, plan, coin balance, preferences
  * Reference: SOLUTION_ROADMAP Task 4.3
  */
 
@@ -12,6 +12,20 @@ export interface UserPlan {
   name: string;
   coinGrant: number;
   discountPercent: number;
+}
+
+export interface UserPreferences {
+  themeMode: 'light' | 'dark' | 'system';
+  locale: string;
+  notificationsEnabled: boolean;
+  compactMode: boolean;
+}
+
+export interface UserSession {
+  id: string;
+  device: string;
+  lastActive: number; // timestamp
+  current: boolean;
 }
 
 export interface UserState {
@@ -29,6 +43,10 @@ export interface UserState {
   lifetimeEarned: number;
   lifetimeSpent: number;
 
+  // Preferences & sessions
+  preferences: UserPreferences | null;
+  sessions: UserSession[];
+
   // Actions
   setUser: (user: {
     id: string;
@@ -41,6 +59,8 @@ export interface UserState {
   setCoinBalance: (balance: number) => void;
   updateCoinBalance: (delta: number) => void;
   setLifetimeStats: (earned: number, spent: number) => void;
+  setPreferences: (preferences: UserPreferences) => void;
+  setSessions: (sessions: UserSession[]) => void;
   clearUser: () => void;
 }
 
@@ -55,6 +75,8 @@ const initialState = {
   coinBalance: 0,
   lifetimeEarned: 0,
   lifetimeSpent: 0,
+  preferences: null as UserPreferences | null,
+  sessions: [] as UserSession[],
 };
 
 export const useUserStore = create<UserState>()(
@@ -82,6 +104,10 @@ export const useUserStore = create<UserState>()(
       setLifetimeStats: (earned, spent) =>
         set({ lifetimeEarned: earned, lifetimeSpent: spent }),
 
+      setPreferences: (preferences) => set({ preferences }),
+
+      setSessions: (sessions) => set({ sessions }),
+
       clearUser: () => set(initialState),
     }),
     {
@@ -92,6 +118,7 @@ export const useUserStore = create<UserState>()(
         fullName: state.fullName,
         plan: state.plan,
         coinBalance: state.coinBalance,
+        preferences: state.preferences,
       }),
     },
   ),

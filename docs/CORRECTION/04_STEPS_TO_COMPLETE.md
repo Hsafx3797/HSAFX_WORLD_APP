@@ -1,13 +1,14 @@
 # 04 — STEPS TO COMPLETE (Sprint Execution Plan)
 
-> **Last updated:** 2026-02-12 (Phase 9 update)
-> **Commit:** `755c552` on `master` + uncommitted Phase 9 changes
+> **Last updated:** 2026-02-13 (Phase 9 update)
+> **Commit:** `0ac4302` on `master`
 > **Based on:** Doc 03 remaining work items
 > **Philosophy:** P0 first → P1 next → P2/P3 after
 
 ---
 
 ## ✅ PHASE 1: SECURITY & BILLING CRITICAL FIXES (P0) — COMPLETED
+
 **All 8 P0 items done across Sprints P0-01 through P0-08, P1-07**
 
 ### Sprint 6A — Billing Integrity ✅
@@ -33,6 +34,7 @@
 ---
 
 ## ✅ PHASE 2: DATA INTEGRITY & LOGGING — COMPLETED
+
 **Logging COMPLETED. Schema quality COMPLETED.**
 
 ### Sprint 7A — Schema Quality ✅
@@ -58,6 +60,7 @@
 ---
 
 ## ✅ PHASE 3: SCHEMA COMPLETION + API KEYS — COMPLETED
+
 **Commit:** `f1e7900` — All enum, index, and constraint gaps closed.
 
 | #  | Task                                            | Ref   | Status          |
@@ -73,6 +76,7 @@
 ---
 
 ## ✅ PHASE 4A: FRONTEND STORES + COMPONENTS — COMPLETED
+
 **Commit:** `71ebaec` — 3 stores + 6 components + barrel exports. Build passes (5/5).
 
 ### Sprint A — Missing Stores + Components ✅
@@ -92,6 +96,7 @@
 ---
 
 ## ✅ PHASE 4B: SEARCH + BILLING API — COMPLETED
+
 **Commit:** `d92267a` — FTS search + billing REST. Build passes (5/5).
 
 | #  | Task                                                                   | Ref   | Status  |
@@ -104,6 +109,7 @@
 ---
 
 ## ✅ PHASE 5: TOOL EXECUTION COMPLETION — COMPLETED
+
 **Commit:** `c0c1541` — All stubs resolved + job processing enabled. Build passes (5/5).
 
 | #  | Task                            | Ref   | Status  |
@@ -112,6 +118,7 @@
 | 30 | Enable FastAPI job processing   | P1-15 | ✅ Done |
 
 **Implementation details:**
+
 - 11 JS converters in `packages/tools/src/data-converters/specialized.ts` (~750 lines)
 - 3 new FastAPI binary handlers (BSON, MessagePack, Protobuf) in `python_tools.py`
 - 5 text-input tools reclassified from server→client in registry
@@ -123,6 +130,7 @@
 ---
 
 ## ✅ PHASE 6: ADMIN & POLISH (P2) — COMPLETED
+
 **Commit:** `ccfc034` — Sprint A pre-existing + Sprint B security/UI polish. Build passes (5/5).
 **Duration: ~22 hours**
 
@@ -144,6 +152,7 @@
 | 37 | Add CSRF Referer fallback + Retry-After header | P2-13, P2-14 | 3     | ✅ Done |
 
 **Implementation details:**
+
 - 16 Shadcn components migrated to `packages/ui/src/components/` (alert, badge, button, card, checkbox, dialog, dropdown-menu, input, label, progress, select, skeleton, switch, tabs, textarea, tooltip)
 - Web app UI files converted to thin re-exports from `@hsafx/ui` — zero import-path changes needed
 - Better-Auth `secondaryStorage` via Upstash Redis for session caching
@@ -156,6 +165,7 @@
 ---
 
 ## ✅ PHASE 7: NAMING ALIGNMENT + REMAINING (P2 + P3) — COMPLETED
+
 **Duration: ~0 hours remaining** (#38, #39, #40, #41, #42 done)
 
 | #  | Task                                                            | Ref   | Hours | Status                                               |
@@ -169,6 +179,7 @@
 ---
 
 ## ✅ PHASE 8: FINAL POLISH (P3) — COMPLETED
+
 **Duration: ~16 hours**
 
 | #  | Task                                          | Ref   | Hours | Status                                   |
@@ -178,6 +189,7 @@
 | 45 | Docker/K8s end-to-end testing                 | P3-07 | 8     | ✅ Done                                  |
 
 **#43 Implementation details:**
+
 - Schema: `decimal(10,2)` → `bigint` cents for plans, invoices, payments
 - Schema: `integer` → `bigint` for coin_transactions, user_coin_wallets, coin_packs
 - Shared: `CoinPack.price` (USD float) → `priceInCents` (integer cents)
@@ -187,6 +199,7 @@
 - DBML + 02_DEVIATIONS M-17 resolved
 
 **#45 Implementation details:**
+
 - Docker: `Dockerfile.web` + `Dockerfile.admin` — multi-stage builds (base→deps→builder→runner), `node:20-alpine`, pnpm 9, standalone output, non-root user, healthcheck
 - Docker: `docker-compose.prod.yml` — 6 services (postgres 16, redis 7, fastapi, web, admin, nginx), memory limits, healthchecks, required env vars
 - Docker: `nginx.conf` — HTTP→HTTPS redirect, TLS 1.2/1.3, rate limiting (30r/s general, 10r/s API), SSE proxy, WebSocket upgrade, static asset caching
@@ -231,16 +244,21 @@
 ## DECISION POINTS — ALL RESOLVED
 
 ### D-01: Deployment Strategy ✅
+
 **Decision:** Self-hosted VPS. Single VPS initially, split later.
 
 ### D-02: Background Jobs ✅
+
 **Decision:** Simple queue system. No BullMQ, no Inngest. Custom lightweight queue with Redis.
 
 ### D-03: Email Provider ✅
+
 **Decision:** Resend + Self SMTP dual provider. Admin-configurable from panel.
 
 ### D-04: Search Engine ✅
+
 **Decision:** Skip Meilisearch for MVP. PostgreSQL FTS sufficient.
 
 ### D-05: Admin Real-time ✅
+
 **Decision:** Both WebSocket AND SSE. SSE for metrics/notifications, WebSocket for bidirectional communication.

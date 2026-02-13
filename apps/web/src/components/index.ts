@@ -3,7 +3,8 @@ export * from './ui';
 export { FileUpload } from './file-upload';
 export { CodeBlock, CodeDiff } from './code-block';
 export { TextToolLayout, TextToolInput, TextToolOutput } from './text-tool-layout';
-export { ToolCard, ToolGrid, CategorySection } from './tool-card';
+export { ToolCard, ToolGrid, CategorySection, type ToolCardProps } from './tool-card';
+export { ResultDisplay, ResultDisplayGroup, type ResultDisplayProps } from './result-display';
 export { Header, Footer } from './layout';
 export { SearchBar, FilterPills, SortDropdown } from './search';
 
