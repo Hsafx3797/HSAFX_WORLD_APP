@@ -10,6 +10,7 @@
 ## WHY THIS MATTERS
 
 When two planning documents specify different values for the same thing, developers don't know which is correct. This leads to:
+
 - Picking one arbitrarily (50% chance of being wrong)
 - Implementing neither (the current state for most of these)
 - Implementing both and creating bugs
@@ -168,6 +169,7 @@ Code to update: [list, if already implemented wrong]
 ## IMPACT ON IMPLEMENTATION
 
 All 10 conflicts are now resolved. Implementation can proceed with:
+
 - **Billing system:** $4.99/$19.99 coin packs, $10/mo Pro, Polar + Stripe dual provider
 - **Rate limits:** 100 req/hr (free), 500 req/hr (pro), max 5 API keys
 - **Error codes:** B001 = 402 Payment Required
