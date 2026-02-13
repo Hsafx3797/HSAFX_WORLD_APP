@@ -2,7 +2,16 @@
 const nextConfig = {
   output: 'standalone',
   reactStrictMode: true,
-  transpilePackages: ['@hsafx/config', '@hsafx/db', '@hsafx/schemas', '@hsafx/shared', '@hsafx/api', '@hsafx/theme', '@hsafx/tool-definitions', '@hsafx/tool-execution'],
+  transpilePackages: [
+    '@hsafx/config',
+    '@hsafx/db',
+    '@hsafx/schemas',
+    '@hsafx/shared',
+    '@hsafx/api',
+    '@hsafx/theme',
+    '@hsafx/tool-definitions',
+    '@hsafx/tool-execution',
+  ],
   experimental: {
     serverActions: {
       bodySizeLimit: '10mb',
@@ -42,7 +51,10 @@ const nextConfig = {
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'X-XSS-Protection', value: '1; mode=block' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-          { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload',
+          },
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
           {
             key: 'Content-Security-Policy',
@@ -75,12 +87,15 @@ const nextConfig = {
     ];
   },
   async rewrites() {
-    return [
-      {
-        source: '/api/v1/:path*',
-        destination: `${process.env.NEXT_PUBLIC_FASTAPI_URL || 'http://localhost:8000'}/api/v1/:path*`,
-      },
-    ];
+    // NOTE: Rewrite disabled — B2B API routes are served by Next.js API routes
+    // in apps/web/src/app/api/v1/. Only enable when FastAPI handles /api/v1/*.
+    // return [
+    //   {
+    //     source: '/api/v1/:path*',
+    //     destination: `${process.env.NEXT_PUBLIC_FASTAPI_URL || 'http://localhost:8000'}/api/v1/:path*`,
+    //   },
+    // ];
+    return [];
   },
 };
 

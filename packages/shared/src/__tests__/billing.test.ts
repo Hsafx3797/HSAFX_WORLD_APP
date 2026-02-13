@@ -147,7 +147,8 @@ describe('getEffectiveCoins', () => {
 describe('getCostPerCoin', () => {
   it('should calculate cost per coin', () => {
     const pack = getCoinPack('starter')!;
-    expect(getCostPerCoin(pack)).toBeCloseTo(4.99 / 100); // $0.0499
+    // priceInCents=499, coins=100, bonusCoins=0 → 499/100 = 4.99 cents per coin
+    expect(getCostPerCoin(pack)).toBeCloseTo(499 / 100); // 4.99 cents/coin
   });
 
   it('should be cheaper for bigger packs', () => {

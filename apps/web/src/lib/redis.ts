@@ -1,26 +1,53 @@
-/**
- * Redis configuration and helpers
- * Reference: 46_REDIS_KEY_SCHEMA.md
- *
- * Provider: Upstash Redis (serverless)
- * Key pattern: {env}:{category}:{scope}:{identifier}
- * Rule: Every key MUST have a TTL — no eternal keys.
- */
-
 import { Redis } from '@upstash/redis';
 
 // ─── Singleton ─────────────────────────────────────────────────
 
 let _redis: Redis | undefined;
+let _usingFallback = false;
+
+/**
+ * Dev-mode no-op Redis fallback.
+ * Returns safe defaults for all operations when Upstash credentials are missing.
+ */
+const devFallbackRedis = new Proxy({} as Redis, {
+  get(_target, prop) {
+    const noOps: Record<string, (...args: unknown[]) => unknown> = {
+      incr: async () => 1,
+      expire: async () => true,
+      ttl: async () => -1,
+      get: async () => null,
+      set: async () => 'OK',
+      del: async () => 1,
+      hgetall: async () => null,
+      hset: async () => 1,
+      exists: async () => 0,
+      pipeline: () => ({
+        incr: () => devFallbackRedis,
+        expire: () => devFallbackRedis,
+        exec: async () => [[null, 1], [null, true]],
+      }),
+    };
+    if (prop in noOps) return noOps[prop as string];
+    if (typeof prop === 'string') return async () => null;
+    return undefined;
+  },
+});
 
 export function getRedis(): Redis {
   if (!_redis) {
     const url = process.env.UPSTASH_REDIS_REST_URL;
     const token = process.env.UPSTASH_REDIS_REST_TOKEN;
     if (!url || !token) {
-      throw new Error(
-        'UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are required',
-      );
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error(
+          'UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are required',
+        );
+      }
+      // Dev mode: use no-op fallback
+      console.warn('[redis] No Upstash credentials — using dev fallback (no rate-limiting)');
+      _usingFallback = true;
+      _redis = devFallbackRedis;
+      return _redis;
     }
     _redis = new Redis({ url, token });
   }
