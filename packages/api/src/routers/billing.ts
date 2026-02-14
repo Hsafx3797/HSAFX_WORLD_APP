@@ -32,23 +32,42 @@ export const billingRouter = router({
       .from(plans)
       .where(eq(plans.isActive, true));
 
-    const plansWithLimits = await Promise.all(
-      allPlans.map(async (plan) => {
-        const limits = await ctx.db
-          .select()
-          .from(planLimits)
-          .where(eq(planLimits.planId, plan.id));
+    if (allPlans.length === 0) return [];
 
-        const features = await ctx.db
-          .select()
-          .from(planFeatures)
-          .where(eq(planFeatures.planId, plan.id));
+    // Batch-fetch all limits and features in 2 queries instead of 2N
+    const planIds = allPlans.map((p) => p.id);
 
-        return { ...plan, limits, features };
-      }),
-    );
+    const [allLimits, allFeatures] = await Promise.all([
+      ctx.db
+        .select()
+        .from(planLimits)
+        .where(sql`${planLimits.planId} IN ${planIds}`),
+      ctx.db
+        .select()
+        .from(planFeatures)
+        .where(sql`${planFeatures.planId} IN ${planIds}`),
+    ]);
 
-    return plansWithLimits;
+    // Group by planId in JS
+    const limitsMap = new Map<string, typeof allLimits>();
+    for (const limit of allLimits) {
+      const arr = limitsMap.get(limit.planId) ?? [];
+      arr.push(limit);
+      limitsMap.set(limit.planId, arr);
+    }
+
+    const featuresMap = new Map<string, typeof allFeatures>();
+    for (const feature of allFeatures) {
+      const arr = featuresMap.get(feature.planId) ?? [];
+      arr.push(feature);
+      featuresMap.set(feature.planId, arr);
+    }
+
+    return allPlans.map((plan) => ({
+      ...plan,
+      limits: limitsMap.get(plan.id) ?? [],
+      features: featuresMap.get(plan.id) ?? [],
+    }));
   }),
 
   // ─── Subscription ─────────────────────────────────────────

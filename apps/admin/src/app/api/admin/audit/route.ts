@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db, activityLogs, users, roles, userRoles, eq, and, sql, desc, asc } from '@hsafx/db';
+import { db, activityLogs, users, eq, and, sql, desc, asc } from '@hsafx/db';
 import { createLogger } from '@hsafx/shared/logger';
 import { requireAdminRole } from '@/lib/require-admin';
 
@@ -38,7 +38,15 @@ export async function GET(request: NextRequest) {
     // Build where clause
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-    // Query audit logs with user info
+    // Subquery for user role — eliminates N+1
+    const roleSubquery = sql<string>`COALESCE((
+      SELECT r.name FROM user_roles ur
+      INNER JOIN roles r ON ur.role_id = r.id
+      WHERE ur.user_id = ${activityLogs.userId}
+      LIMIT 1
+    ), 'user')`;
+
+    // Query audit logs with user info and role — single query
     const logsQuery = db
       .select({
         id: activityLogs.id,
@@ -51,6 +59,7 @@ export async function GET(request: NextRequest) {
         ipAddress: activityLogs.ipAddress,
         userAgent: activityLogs.userAgent,
         createdAt: activityLogs.createdAt,
+        adminRole: roleSubquery,
       })
       .from(activityLogs)
       .leftJoin(users, eq(activityLogs.userId, users.id))
@@ -72,44 +81,25 @@ export async function GET(request: NextRequest) {
     // Execute queries in parallel
     const [logResults, countResults] = await Promise.all([logsQuery, countQuery]);
 
-    // Enrich logs with user role info
-    const enrichedLogs = await Promise.all(
-      logResults.map(async (log) => {
-        let adminRole = 'user';
+    // Map results — no N+1 enrichment needed
+    const enrichedLogs = logResults.map((logEntry) => {
+      const metadata = typeof logEntry.metadata === 'string' 
+        ? JSON.parse(logEntry.metadata) 
+        : (logEntry.metadata || {});
 
-        // Get user's role if available
-        if (log.userId) {
-          const userRoleData = await db
-            .select({ roleName: roles.name })
-            .from(userRoles)
-            .innerJoin(roles, eq(userRoles.roleId, roles.id))
-            .where(eq(userRoles.userId, log.userId))
-            .limit(1);
-
-          if (userRoleData.length > 0) {
-            adminRole = userRoleData[0].roleName;
-          }
-        }
-
-        // Parse metadata if it's a string
-        const metadata = typeof log.metadata === 'string' 
-          ? JSON.parse(log.metadata) 
-          : (log.metadata || {});
-
-        return {
-          id: log.id,
-          adminId: log.userId,
-          adminEmail: log.userEmail || 'system',
-          adminRole,
-          action: log.action,
-          targetType: log.resource,
-          targetId: log.resourceId,
-          details: metadata,
-          ip: log.ipAddress,
-          createdAt: log.createdAt?.toISOString(),
-        };
-      })
-    );
+      return {
+        id: logEntry.id,
+        adminId: logEntry.userId,
+        adminEmail: logEntry.userEmail || 'system',
+        adminRole: logEntry.adminRole,
+        action: logEntry.action,
+        targetType: logEntry.resource,
+        targetId: logEntry.resourceId,
+        details: metadata,
+        ip: logEntry.ipAddress,
+        createdAt: logEntry.createdAt?.toISOString(),
+      };
+    });
 
     const total = countResults[0]?.count ?? 0;
     const totalPages = Math.ceil(total / limit);

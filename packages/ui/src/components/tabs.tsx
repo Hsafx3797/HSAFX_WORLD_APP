@@ -58,17 +58,58 @@ function Tabs({
 const TabsList = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn(
-      'inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground',
-      className
-    )}
-    role="tablist"
-    {...props}
-  />
-));
+>(({ className, ...props }, ref) => {
+  const listRef = React.useRef<HTMLDivElement>(null);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    const tabs = listRef.current?.querySelectorAll<HTMLElement>('[role="tab"]');
+    if (!tabs?.length) return;
+
+    const currentIndex = Array.from(tabs).findIndex((el) => el === document.activeElement);
+    let nextIndex = currentIndex;
+
+    switch (e.key) {
+      case 'ArrowRight':
+        e.preventDefault();
+        nextIndex = currentIndex < tabs.length - 1 ? currentIndex + 1 : 0;
+        break;
+      case 'ArrowLeft':
+        e.preventDefault();
+        nextIndex = currentIndex > 0 ? currentIndex - 1 : tabs.length - 1;
+        break;
+      case 'Home':
+        e.preventDefault();
+        nextIndex = 0;
+        break;
+      case 'End':
+        e.preventDefault();
+        nextIndex = tabs.length - 1;
+        break;
+      default:
+        return;
+    }
+
+    tabs[nextIndex].focus();
+    tabs[nextIndex].click();
+  };
+
+  return (
+    <div
+      ref={(node) => {
+        (listRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+        if (typeof ref === 'function') ref(node);
+        else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
+      }}
+      className={cn(
+        'inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground',
+        className
+      )}
+      role="tablist"
+      onKeyDown={handleKeyDown}
+      {...props}
+    />
+  );
+});
 TabsList.displayName = 'TabsList';
 
 interface TabsTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -85,7 +126,10 @@ const TabsTrigger = React.forwardRef<HTMLButtonElement, TabsTriggerProps>(
         ref={ref}
         type="button"
         role="tab"
+        id={`tab-${value}`}
         aria-selected={isSelected}
+        aria-controls={`tabpanel-${value}`}
+        tabIndex={isSelected ? 0 : -1}
         data-state={isSelected ? 'active' : 'inactive'}
         className={cn(
           'inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
@@ -118,6 +162,9 @@ const TabsContent = React.forwardRef<HTMLDivElement, TabsContentProps>(
       <div
         ref={ref}
         role="tabpanel"
+        id={`tabpanel-${value}`}
+        aria-labelledby={`tab-${value}`}
+        tabIndex={0}
         data-state={selectedValue === value ? 'active' : 'inactive'}
         className={cn(
           'mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',

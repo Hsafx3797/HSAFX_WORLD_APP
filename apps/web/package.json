@@ -9,6 +9,8 @@
     "start": "next start",
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
     "sync:wasm": "node -e \"const fs=require('fs');const s='../../backend/rust/text-tools/pkg/';const d='./public/wasm/';fs.mkdirSync(d,{recursive:true});['text_tools.js','text_tools_bg.wasm'].forEach(f=>{if(fs.existsSync(s+f)){fs.copyFileSync(s+f,d+f);console.log('Synced '+f)}else{console.warn('Missing '+s+f)}})\""
   },
   "dependencies": {

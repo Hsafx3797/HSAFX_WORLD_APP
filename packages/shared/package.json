@@ -13,7 +13,8 @@
     "./billing": "./src/billing/index.ts",
     "./env": "./src/env/index.ts",
     "./logger": "./src/logger.ts",
-    "./storage": "./src/storage.ts"
+    "./storage": "./src/storage.ts",
+    "./crypto": "./src/crypto/index.ts"
   },
   "scripts": {
     "lint": "tsc --noEmit",

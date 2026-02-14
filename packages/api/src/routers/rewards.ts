@@ -52,9 +52,8 @@ type LoginRewardServiceModule = {
   getUserStreak: (userId: string) => Promise<StreakInfo>;
 };
 
-/** Lazy-load login-reward-service (resolves via @/ alias at Next.js runtime) */
+/** Lazy-load login-reward-service */
 async function loadLoginRewardService(): Promise<LoginRewardServiceModule> {
-  // @ts-ignore — @/ alias resolves at Next.js runtime, not during standalone tsc
   return (await import('@/server/rewards/login-reward-service')) as LoginRewardServiceModule;
 }
 

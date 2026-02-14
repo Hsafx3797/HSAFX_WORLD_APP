@@ -122,7 +122,7 @@ interface SelectContentProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 const SelectContent = React.forwardRef<HTMLDivElement, SelectContentProps>(
   ({ className, children, ...props }, ref) => {
-    const { open, setOpen } = useSelect();
+    const { open, setOpen, onValueChange } = useSelect();
     const contentRef = React.useRef<HTMLDivElement>(null);
 
     React.useEffect(() => {
@@ -134,6 +134,12 @@ const SelectContent = React.forwardRef<HTMLDivElement, SelectContentProps>(
 
       if (open) {
         document.addEventListener('mousedown', handleClickOutside);
+        // Focus first option on open
+        requestAnimationFrame(() => {
+          const selected = contentRef.current?.querySelector<HTMLElement>('[aria-selected="true"]');
+          const first = contentRef.current?.querySelector<HTMLElement>('[role="option"]');
+          (selected ?? first)?.focus();
+        });
       }
 
       return () => {
@@ -141,11 +147,64 @@ const SelectContent = React.forwardRef<HTMLDivElement, SelectContentProps>(
       };
     }, [open, setOpen]);
 
+    React.useEffect(() => {
+      if (!open) return;
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        const items = contentRef.current?.querySelectorAll<HTMLElement>('[role="option"]');
+        if (!items?.length) return;
+
+        const currentIndex = Array.from(items).findIndex((el) => el === document.activeElement);
+
+        switch (e.key) {
+          case 'ArrowDown': {
+            e.preventDefault();
+            const next = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
+            items[next].focus();
+            break;
+          }
+          case 'ArrowUp': {
+            e.preventDefault();
+            const prev = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
+            items[prev].focus();
+            break;
+          }
+          case 'Home': {
+            e.preventDefault();
+            items[0].focus();
+            break;
+          }
+          case 'End': {
+            e.preventDefault();
+            items[items.length - 1].focus();
+            break;
+          }
+          case 'Enter':
+          case ' ': {
+            e.preventDefault();
+            const focused = document.activeElement as HTMLElement;
+            const value = focused?.getAttribute('data-value');
+            if (value) onValueChange(value);
+            break;
+          }
+          case 'Escape': {
+            e.preventDefault();
+            setOpen(false);
+            break;
+          }
+        }
+      };
+
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [open, setOpen, onValueChange]);
+
     if (!open) return null;
 
     return (
       <div
         ref={contentRef}
+        role="listbox"
         className={cn(
           'absolute z-50 mt-1 max-h-75 min-w-32 w-full overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95',
           className
@@ -171,6 +230,10 @@ const SelectItem = React.forwardRef<HTMLDivElement, SelectItemProps>(
     return (
       <div
         ref={ref}
+        role="option"
+        aria-selected={isSelected}
+        data-value={value}
+        tabIndex={0}
         className={cn(
           'relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
           isSelected && 'bg-accent/50',

@@ -180,7 +180,6 @@ export const toolsRouter = router({
       // Allow trial executions for free/guest users (1 per day)
       if (tool.isPremium && !isPlanAtLeast(ctx.plan as UserPlan, 'pro')) {
         if (input.isTrialExecution) {
-          // @ts-ignore — @/ alias resolved by Next.js bundler at runtime
           const { consumeTrial } = (await import('@/server/limits/pro-trial-service')) as {
             consumeTrial: (userId: string, toolId: string) => Promise<{ success: boolean; reason?: string }>;
           };
@@ -283,7 +282,6 @@ export const toolsRouter = router({
   // ─── Pro Trial Endpoints (T2.6) ─────────────────────────────
 
   getTrialStatus: protectedProcedure.query(async ({ ctx }) => {
-    // @ts-ignore — @/ alias resolved by Next.js bundler at runtime
     const { getTrialStatus } = (await import('@/server/limits/pro-trial-service')) as {
       getTrialStatus: (userId: string) => Promise<{ trialsUsedToday: number; trialsRemaining: number; maxTrialsPerDay: number }>;
     };
@@ -293,7 +291,6 @@ export const toolsRouter = router({
   useProTrial: protectedProcedure
     .input(z.object({ toolId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      // @ts-ignore — @/ alias resolved by Next.js bundler at runtime
       const { consumeTrial } = (await import('@/server/limits/pro-trial-service')) as {
         consumeTrial: (userId: string, toolId: string) => Promise<{ success: boolean; remaining?: number; reason?: string }>;
       };
@@ -369,7 +366,6 @@ export const toolsRouter = router({
   // ─── User Analytics (T3.2) ────────────────────────────────
 
   getAnalytics: protectedProcedure.query(async ({ ctx }) => {
-    // @ts-ignore — @/ alias resolves at Next.js runtime
     const { getUserAnalytics } = await import('@/server/analytics/analytics-service');
     return getUserAnalytics(ctx.user!.id);
   }),
@@ -382,7 +378,6 @@ export const toolsRouter = router({
       inputs: z.array(z.record(z.unknown())).min(1).max(100),
     }))
     .mutation(async ({ ctx, input }) => {
-      // @ts-ignore — @/ alias resolves at Next.js runtime
       const { createBatchJob } = await import('@/server/batch/batch-service');
       return createBatchJob({
         userId: ctx.user!.id,
@@ -399,13 +394,11 @@ export const toolsRouter = router({
   getBatchJobStatus: protectedProcedure
     .input(z.object({ jobId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
-      // @ts-ignore — @/ alias resolves at Next.js runtime
       const { getBatchJobStatus } = await import('@/server/batch/batch-service');
       return getBatchJobStatus(input.jobId, ctx.user!.id);
     }),
 
   getMyBatchJobs: protectedProcedure.query(async ({ ctx }) => {
-    // @ts-ignore — @/ alias resolves at Next.js runtime
     const { getUserBatchJobs } = await import('@/server/batch/batch-service');
     return getUserBatchJobs(ctx.user!.id);
   }),

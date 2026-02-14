@@ -397,6 +397,39 @@ function SecuritySection() {
 
 // ─── API Access Section ─────────────────────────────────────
 function ApiAccessSection() {
+  const utils = trpc.useUtils();
+  const { data: keys, isLoading } = trpc.apiKeys.list.useQuery();
+  const generateKey = trpc.apiKeys.generate.useMutation({
+    onSuccess: (data) => {
+      setNewKey(data.key);
+      toast.success('API key generated');
+      utils.apiKeys.list.invalidate();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+  const revokeKey = trpc.apiKeys.revoke.useMutation({
+    onSuccess: () => {
+      toast.success('API key revoked');
+      utils.apiKeys.list.invalidate();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const [newKey, setNewKey] = useState<string | null>(null);
+  const [keyName, setKeyName] = useState('');
+
+  const handleGenerate = () => {
+    generateKey.mutate({ name: keyName || 'Default' });
+    setKeyName('');
+  };
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success('Copied to clipboard');
+  };
+
+  const activeKeys = keys?.filter((k) => k.isActive) ?? [];
+
   return (
     <section id="api" className="bg-card border border-border rounded-lg p-6">
       <h2 className="text-xl font-semibold mb-6">API Access</h2>
@@ -404,26 +437,88 @@ function ApiAccessSection() {
         <p className="text-muted-foreground">
           Generate API keys to access HSAFX World tools programmatically.
         </p>
-        <div className="p-4 bg-muted/50 rounded-lg">
-          <div className="flex items-center justify-between mb-2">
-            <span className="font-medium text-sm">Default API Key</span>
-            <span className="text-xs text-muted-foreground">Created Jan 1, 2024</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <code className="flex-1 px-3 py-2 bg-background border border-border rounded text-sm font-mono">
-              sk_•••••••••••••••••••••••
-            </code>
-            <button className="px-3 py-2 border border-border rounded hover:bg-muted transition-colors text-sm">
-              Copy
+
+        {/* New key reveal (shown once after generation) */}
+        {newKey && (
+          <div className="p-4 bg-success/10 border border-success/30 rounded-lg">
+            <p className="text-sm font-medium mb-2">
+              Save this key now — you won&apos;t see it again!
+            </p>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 px-3 py-2 bg-background border border-border rounded text-sm font-mono break-all">
+                {newKey}
+              </code>
+              <button
+                onClick={() => handleCopy(newKey)}
+                className="px-3 py-2 border border-border rounded hover:bg-muted transition-colors text-sm"
+              >
+                Copy
+              </button>
+            </div>
+            <button
+              onClick={() => setNewKey(null)}
+              className="mt-2 text-xs text-muted-foreground hover:text-foreground"
+            >
+              Dismiss
             </button>
-            <button className="px-3 py-2 border border-border rounded hover:bg-muted transition-colors text-sm">
-              Reveal
-            </button>
           </div>
+        )}
+
+        {/* Existing keys */}
+        {isLoading ? (
+          <div className="p-4 bg-muted/50 rounded-lg text-sm text-muted-foreground">Loading keys...</div>
+        ) : activeKeys.length === 0 ? (
+          <div className="p-4 bg-muted/50 rounded-lg text-sm text-muted-foreground">No active API keys.</div>
+        ) : (
+          activeKeys.map((key) => (
+            <div key={key.id} className="p-4 bg-muted/50 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-medium text-sm">{key.name}</span>
+                <span className="text-xs text-muted-foreground">
+                  Created {new Date(key.createdAt).toLocaleDateString()}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 px-3 py-2 bg-background border border-border rounded text-sm font-mono">
+                  {key.keyPrefix}•••••••••••••••••••
+                </code>
+                <button
+                  onClick={() => revokeKey.mutate({ id: key.id })}
+                  disabled={revokeKey.isPending}
+                  className="px-3 py-2 border border-destructive/30 text-destructive rounded hover:bg-destructive/10 transition-colors text-sm"
+                >
+                  Revoke
+                </button>
+              </div>
+              {key.lastUsed && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Last used {new Date(key.lastUsed).toLocaleDateString()}
+                </p>
+              )}
+            </div>
+          ))
+        )}
+
+        {/* Generate new key */}
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            placeholder="Key name (optional)"
+            value={keyName}
+            onChange={(e) => setKeyName(e.target.value)}
+            className="px-3 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+          />
+          <button
+            onClick={handleGenerate}
+            disabled={generateKey.isPending || activeKeys.length >= 5}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+          >
+            {generateKey.isPending ? 'Generating...' : 'Generate New Key'}
+          </button>
         </div>
-        <button className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
-          Generate New Key
-        </button>
+        {activeKeys.length >= 5 && (
+          <p className="text-xs text-muted-foreground">Maximum 5 active keys. Revoke a key to generate a new one.</p>
+        )}
         <Link href="/docs/api" className="block text-sm text-primary hover:underline">
           View API Documentation →
         </Link>
@@ -434,6 +529,22 @@ function ApiAccessSection() {
 
 // ─── Billing Section ────────────────────────────────────────
 function BillingSection() {
+  const { data, isLoading } = trpc.billing.getMySubscription.useQuery();
+
+  const planName = data?.plan?.name ?? 'Free';
+  const derivedStatus = data?.derivedStatus ?? 'none';
+
+  const statusLabel =
+    derivedStatus === 'trialing'
+      ? 'Trial'
+      : derivedStatus === 'active_canceling'
+        ? 'Canceling'
+        : derivedStatus === 'active'
+          ? 'Active'
+          : derivedStatus === 'past_due'
+            ? 'Past Due'
+            : 'Free';
+
   return (
     <section id="billing" className="bg-card border border-border rounded-lg p-6">
       <h2 className="text-xl font-semibold mb-6">Billing</h2>
@@ -442,18 +553,27 @@ function BillingSection() {
           <div className="flex items-center justify-between mb-2">
             <span className="font-semibold">Current Plan</span>
             <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
-              Free
+              {isLoading ? '...' : planName}
             </span>
           </div>
           <p className="text-sm text-muted-foreground">
-            You&apos;re on the free plan with limited features.
+            {data?.subscription ? (
+              <>
+                Status: <span className="font-medium">{statusLabel}</span>
+                {data.subscription.currentPeriodEnd && (
+                  <> &middot; Renews {new Date(data.subscription.currentPeriodEnd).toLocaleDateString()}</>
+                )}
+              </>
+            ) : (
+              <>You&apos;re on the free plan with limited features.</>
+            )}
           </p>
         </div>
         <Link
           href="/pricing"
           className="inline-block px-6 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
         >
-          Upgrade Plan
+          {data?.subscription ? 'Manage Plan' : 'Upgrade Plan'}
         </Link>
       </div>
     </section>

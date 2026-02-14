@@ -5,6 +5,9 @@ export * from './utils';
 export * from './errors';
 export * from './permissions';
 
+// Crypto / encryption
+export { encrypt, decrypt, isEncrypted } from './crypto';
+
 // Environment helpers (migrated from @hsafx/config)
 export { ENV, validateEnv, getEnv } from './env';
 

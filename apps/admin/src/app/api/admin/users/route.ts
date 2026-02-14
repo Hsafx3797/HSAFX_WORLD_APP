@@ -8,7 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db, users, subscriptions, plans, coinTransactions, toolExecutions, activityLogs, eq, and, or, sql, desc, asc } from '@hsafx/db';
+import { db, users, subscriptions, plans, coinTransactions, toolExecutions, userCoinWallets, activityLogs, eq, and, or, sql, desc, asc } from '@hsafx/db';
 import { createLogger } from '@hsafx/shared/logger';
 import { requireAdminRole } from '@/lib/require-admin';
 
@@ -52,10 +52,43 @@ export async function GET(request: NextRequest) {
       conditions.push(eq(users.isActive, false));
     }
 
+    // Tier filter applied at query level via subscription join
+    if (tier && tier !== 'free') {
+      conditions.push(sql`EXISTS (
+        SELECT 1 FROM subscriptions s
+        JOIN plans p ON p.id = s.plan_id
+        WHERE s.user_id = ${users.id} AND s.status = 'active' AND p.slug = ${tier}
+      )`);
+    } else if (tier === 'free') {
+      conditions.push(sql`NOT EXISTS (
+        SELECT 1 FROM subscriptions s
+        WHERE s.user_id = ${users.id} AND s.status = 'active'
+      )`);
+    }
+
     // Build where clause
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-    // Query users with aggregated data
+    // Subqueries for enrichment — eliminates N+1
+    const planSubquery = sql<string>`(
+      SELECT p.slug FROM subscriptions s
+      JOIN plans p ON p.id = s.plan_id
+      WHERE s.user_id = ${users.id} AND s.status = 'active'
+      LIMIT 1
+    )`;
+
+    const balanceSubquery = sql<number>`COALESCE((
+      SELECT w.balance FROM user_coin_wallets w
+      WHERE w.user_id = ${users.id}
+      LIMIT 1
+    ), 0)`;
+
+    const execCountSubquery = sql<number>`(
+      SELECT COUNT(*) FROM tool_executions te
+      WHERE te.user_id = ${users.id}
+    )`;
+
+    // Single query with all enrichment data
     const usersQuery = db
       .select({
         id: users.id,
@@ -68,6 +101,9 @@ export async function GET(request: NextRequest) {
         lastActiveAt: users.lastLogin,
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,
+        tier: sql<string>`COALESCE(${planSubquery}, 'free')`,
+        coinBalance: balanceSubquery,
+        totalExecutions: execCountSubquery,
       })
       .from(users)
       .where(whereClause)
@@ -87,61 +123,17 @@ export async function GET(request: NextRequest) {
       countQuery,
     ]);
 
-    // Enrich users with subscription and coin data
-    const enrichedUsers = await Promise.all(
-      userResults.map(async (user) => {
-        // Get user's current subscription with plan info
-        const [subscription] = await db
-          .select({
-            plan: plans.slug,
-            status: subscriptions.status,
-          })
-          .from(subscriptions)
-          .innerJoin(plans, eq(subscriptions.planId, plans.id))
-          .where(
-            and(
-              eq(subscriptions.userId, user.id),
-              eq(subscriptions.status, 'active')
-            )
-          )
-          .limit(1);
-
-        // Get user's coin balance (latest transaction balanceAfter)
-        const [latestCoinTx] = await db
-          .select({ balance: coinTransactions.balanceAfter })
-          .from(coinTransactions)
-          .where(eq(coinTransactions.userId, user.id))
-          .orderBy(desc(coinTransactions.createdAt))
-          .limit(1);
-
-        // Get total executions count
-        const [execCount] = await db
-          .select({ count: sql<number>`COUNT(*)` })
-          .from(toolExecutions)
-          .where(eq(toolExecutions.userId, user.id));
-
-        return {
-          ...user,
-          tier: subscription?.plan || 'free',
-          coinBalance: latestCoinTx?.balance ?? 0,
-          totalExecutions: execCount?.count ?? 0,
-          usageCount: execCount?.count ?? 0,
-          subscription: subscription ? { plan: subscription.plan } : undefined,
-        };
-      })
-    );
-
-    // Apply tier filter after enrichment (since tier comes from subscription)
-    let filteredUsers = enrichedUsers;
-    if (tier) {
-      filteredUsers = enrichedUsers.filter((u) => u.tier === tier);
-    }
+    const enrichedUsers = userResults.map((user) => ({
+      ...user,
+      usageCount: user.totalExecutions,
+      subscription: user.tier !== 'free' ? { plan: user.tier } : undefined,
+    }));
 
     const total = countResults[0]?.count ?? 0;
     const totalPages = Math.ceil(total / limit);
 
     return NextResponse.json({
-      data: filteredUsers,
+      data: enrichedUsers,
       page,
       limit,
       total,

@@ -98,16 +98,58 @@ function getApiKeyLimiter(): Ratelimit {
 
 // ─── Plan tier limits ─────────────────────────────────────────
 
-/** Requests per hour by plan slug (user decisions: Free=100, Pro=500) */
-const PLAN_RATE_LIMITS: Record<string, number> = {
-  guest: 50,    // Anonymous edge limit
-  free: 100,    // Free tier: 100 req/hr
-  pro: 500,     // Pro tier: 500 req/hr
+/** Hardcoded fallback — overridden by DB-backed Redis config when available */
+const DEFAULT_PLAN_RATE_LIMITS: Record<string, number> = {
+  guest: 50,
+  free: 100,
+  pro: 500,
   advance: 2000,
 };
 
-/** Default edge-level session limit (generous — exact plan limits at tRPC layer) */
 const EDGE_SESSION_LIMIT = 500;
+
+/** In-memory cache of DB-backed limits (refreshed from Redis) */
+let _cachedPlanLimits: Record<string, number> | null = null;
+let _cacheExpiry = 0;
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Load plan rate limits from Redis cache (synced from DB by admin).
+ * Falls back to hardcoded defaults if Redis unavailable or unconfigured.
+ */
+async function getPlanRateLimits(): Promise<Record<string, number>> {
+  const now = Date.now();
+  if (_cachedPlanLimits && _cacheExpiry > now) return _cachedPlanLimits;
+
+  try {
+    const redis = getEdgeRedis();
+    const raw = await redis.get<Record<string, number>>('config:rate_limits:plan_hourly');
+    if (raw && typeof raw === 'object') {
+      _cachedPlanLimits = { ...DEFAULT_PLAN_RATE_LIMITS, ...raw };
+      _cacheExpiry = now + CACHE_TTL_MS;
+      return _cachedPlanLimits;
+    }
+  } catch {
+    // Redis unavailable — use defaults
+  }
+
+  _cachedPlanLimits = DEFAULT_PLAN_RATE_LIMITS;
+  _cacheExpiry = now + CACHE_TTL_MS;
+  return _cachedPlanLimits;
+}
+
+/**
+ * Sync rate limit config from DB to Redis. Call from admin save handler.
+ */
+export async function syncRateLimitsToRedis(
+  limits: Record<string, number>,
+): Promise<void> {
+  const redis = getEdgeRedis();
+  await redis.set('config:rate_limits:plan_hourly', limits);
+  // Invalidate local cache immediately
+  _cachedPlanLimits = null;
+  _cacheExpiry = 0;
+}
 
 // ─── Public API ───────────────────────────────────────────────
 
@@ -145,8 +187,9 @@ export async function checkUserRateLimit(
   userId: string,
   planSlug?: string,
 ): Promise<RateLimitResult> {
+  const planLimits = await getPlanRateLimits();
   const limit = planSlug
-    ? (PLAN_RATE_LIMITS[planSlug] ?? PLAN_RATE_LIMITS.free!)
+    ? (planLimits[planSlug] ?? planLimits.free ?? 100)
     : EDGE_SESSION_LIMIT;
   const limiter = getUserLimiter(limit);
   const result = await limiter.limit(userId);

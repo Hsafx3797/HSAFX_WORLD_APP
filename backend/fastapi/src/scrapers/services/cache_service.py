@@ -1,17 +1,29 @@
 """
-Cache Service - In-memory TTL cache for vessel and container data
+Cache Service - Redis-backed TTL cache for vessel and container data
 
 Tool 446 - Seaport Terminal Container Activity Tracker
 Default TTL: 300 seconds (5 minutes)
+Falls back to in-memory cache if Redis is unavailable.
 """
 
+from __future__ import annotations
+
+import json
 import os
 import time
 from typing import Optional, Tuple
 
-# In-memory caches with TTL
-_vessel_cache: dict[str, tuple[float, list]] = {}
-_container_cache: dict[tuple[str, str], tuple[float, list]] = {}
+import structlog
+
+from src.core.redis import get_redis
+
+logger = structlog.get_logger()
+
+# In-memory fallback caches (used only when Redis is unavailable)
+_vessel_fallback: dict[str, tuple[float, list]] = {}
+_container_fallback: dict[str, tuple[float, list]] = {}
+
+_KEY_PREFIX = "scraper:cache"
 
 
 def get_cache_ttl_seconds() -> int:
@@ -22,148 +34,224 @@ def get_cache_ttl_seconds() -> int:
         return 300
 
 
-def get_vessel_by_key(key: str) -> Optional[list]:
-    """
-    Get vessel data from cache by key
-    Returns None if not found or expired
-    """
-    now = time.time()
-    ent = _vessel_cache.get(key)
-    if not ent:
-        return None
-    exp, data = ent
-    if exp <= now:
-        _vessel_cache.pop(key, None)
-        return None
-    return data
+def _vessel_key(name: str) -> str:
+    return f"{_KEY_PREFIX}:vessel:{name.strip().lower()}"
 
 
-def put_vessel_by_key(key: str, data: list) -> None:
+def _container_key(terminal: str, container_no: str) -> str:
+    return f"{_KEY_PREFIX}:container:{terminal.strip().upper()}:{container_no.strip().upper()}"
+
+
+# ── Vessel cache ────────────────────────────────────────────────
+
+
+async def get_vessel_by_key(key: str) -> Optional[list]:
+    """Get vessel data from Redis by raw key. Returns None if not found or expired."""
+    redis_key = f"{_KEY_PREFIX}:vessel:{key}"
+    try:
+        client = await get_redis()
+        raw = await client.get(redis_key)
+        if raw is not None:
+            return json.loads(raw)
+    except Exception:
+        # Fallback to in-memory
+        ent = _vessel_fallback.get(key)
+        if ent and ent[0] > time.time():
+            return ent[1]
+        _vessel_fallback.pop(key, None)
+    return None
+
+
+async def put_vessel_by_key(key: str, data: list) -> None:
     """Put vessel data in cache with TTL"""
-    exp = time.time() + get_cache_ttl_seconds()
-    _vessel_cache[key] = (exp, data)
+    redis_key = f"{_KEY_PREFIX}:vessel:{key}"
+    ttl = get_cache_ttl_seconds()
+    try:
+        client = await get_redis()
+        await client.set(redis_key, json.dumps(data), ex=ttl)
+    except Exception:
+        _vessel_fallback[key] = (time.time() + ttl, data)
 
 
-def get_vessel(name: str) -> Optional[list]:
+async def get_vessel(name: str) -> Optional[list]:
     """Get vessel data by vessel name (case-insensitive)"""
-    return get_vessel_by_key(name.strip().lower())
+    return await get_vessel_by_key(name.strip().lower())
 
 
-def put_vessel(name: str, data: list) -> None:
+async def put_vessel(name: str, data: list) -> None:
     """Put vessel data by vessel name (case-insensitive)"""
-    put_vessel_by_key(name.strip().lower(), data)
+    await put_vessel_by_key(name.strip().lower(), data)
 
 
-def get_container(terminal: str, container_no: str) -> Optional[list]:
-    """
-    Get container data from cache
-    Returns None if not found or expired
-    """
-    now = time.time()
-    key = (terminal.strip().upper(), container_no.strip().upper())
-    ent = _container_cache.get(key)
-    if not ent:
-        return None
-    exp, data = ent
-    if exp <= now:
-        _container_cache.pop(key, None)
-        return None
-    return data
+# ── Container cache ─────────────────────────────────────────────
 
 
-def put_container(terminal: str, container_no: str, data: list) -> None:
+async def get_container(terminal: str, container_no: str) -> Optional[list]:
+    """Get container data from cache. Returns None if not found or expired."""
+    redis_key = _container_key(terminal, container_no)
+    fallback_key = f"{terminal.strip().upper()}:{container_no.strip().upper()}"
+    try:
+        client = await get_redis()
+        raw = await client.get(redis_key)
+        if raw is not None:
+            return json.loads(raw)
+    except Exception:
+        ent = _container_fallback.get(fallback_key)
+        if ent and ent[0] > time.time():
+            return ent[1]
+        _container_fallback.pop(fallback_key, None)
+    return None
+
+
+async def put_container(terminal: str, container_no: str, data: list) -> None:
     """Put container data in cache with TTL"""
-    exp = time.time() + get_cache_ttl_seconds()
-    key = (terminal.strip().upper(), container_no.strip().upper())
-    _container_cache[key] = (exp, data)
+    redis_key = _container_key(terminal, container_no)
+    fallback_key = f"{terminal.strip().upper()}:{container_no.strip().upper()}"
+    ttl = get_cache_ttl_seconds()
+    try:
+        client = await get_redis()
+        await client.set(redis_key, json.dumps(data), ex=ttl)
+    except Exception:
+        _container_fallback[fallback_key] = (time.time() + ttl, data)
 
 
-def clear_vessel_cache(vessel_name: Optional[str] = None, terminal: Optional[str] = None) -> int:
+# ── Clear operations ────────────────────────────────────────────
+
+
+async def clear_vessel_cache(vessel_name: Optional[str] = None, terminal: Optional[str] = None) -> int:
     """
-    Clear vessel cache
-    If vessel_name provided, clear specific vessel
-    If terminal provided, clear vessels for that terminal
-    Returns number of entries cleared
+    Clear vessel cache entries from Redis.
+    If vessel_name provided, clear specific vessel.
+    If terminal provided, clear vessels matching terminal prefix.
+    Returns number of entries cleared.
     """
-    if not vessel_name and not terminal:
-        count = len(_vessel_cache)
-        _vessel_cache.clear()
-        return count
+    try:
+        client = await get_redis()
 
-    if vessel_name:
-        key = vessel_name.strip().lower()
+        if not vessel_name and not terminal:
+            keys = []
+            async for k in client.scan_iter(match=f"{_KEY_PREFIX}:vessel:*"):
+                keys.append(k)
+            if keys:
+                await client.delete(*keys)
+            _vessel_fallback.clear()
+            return len(keys)
+
+        if vessel_name:
+            key = vessel_name.strip().lower()
+            if terminal:
+                key = f"{terminal.upper()}:{key}"
+            redis_key = f"{_KEY_PREFIX}:vessel:{key}"
+            deleted = await client.delete(redis_key)
+            _vessel_fallback.pop(key, None)
+            return deleted
+
         if terminal:
-            key = f"{terminal.upper()}:{key}"
-        if key in _vessel_cache:
-            del _vessel_cache[key]
-            return 1
+            prefix = f"{_KEY_PREFIX}:vessel:{terminal.upper()}:"
+            keys = []
+            async for k in client.scan_iter(match=f"{prefix}*"):
+                keys.append(k)
+            if keys:
+                await client.delete(*keys)
+            # Clear matching fallback entries
+            fb_prefix = f"{terminal.upper()}:"
+            fb_keys = [k for k in _vessel_fallback if k.startswith(fb_prefix)]
+            for k in fb_keys:
+                del _vessel_fallback[k]
+            return len(keys)
+    except Exception:
+        logger.warning("Redis unavailable for clear_vessel_cache, clearing fallback only")
+        if not vessel_name and not terminal:
+            count = len(_vessel_fallback)
+            _vessel_fallback.clear()
+            return count
         return 0
-
-    # Clear by terminal prefix
-    if terminal:
-        prefix = f"{terminal.upper()}:"
-        keys_to_delete = [k for k in _vessel_cache.keys() if isinstance(k, str) and k.startswith(prefix)]
-        for k in keys_to_delete:
-            del _vessel_cache[k]
-        return len(keys_to_delete)
 
     return 0
 
 
-def clear_container_cache(container_no: Optional[str] = None, terminal: Optional[str] = None) -> int:
+async def clear_container_cache(container_no: Optional[str] = None, terminal: Optional[str] = None) -> int:
     """
-    Clear container cache
-    If container_no provided, clear specific container
-    If terminal provided, clear containers for that terminal
-    Returns number of entries cleared
+    Clear container cache entries from Redis.
+    Returns number of entries cleared.
     """
-    if not container_no and not terminal:
-        count = len(_container_cache)
-        _container_cache.clear()
-        return count
+    try:
+        client = await get_redis()
 
-    if container_no and terminal:
-        key = (terminal.strip().upper(), container_no.strip().upper())
-        if key in _container_cache:
-            del _container_cache[key]
-            return 1
+        if not container_no and not terminal:
+            keys = []
+            async for k in client.scan_iter(match=f"{_KEY_PREFIX}:container:*"):
+                keys.append(k)
+            if keys:
+                await client.delete(*keys)
+            _container_fallback.clear()
+            return len(keys)
+
+        if container_no and terminal:
+            redis_key = _container_key(terminal, container_no)
+            deleted = await client.delete(redis_key)
+            fb_key = f"{terminal.strip().upper()}:{container_no.strip().upper()}"
+            _container_fallback.pop(fb_key, None)
+            return deleted
+
+        if container_no:
+            container_upper = container_no.strip().upper()
+            keys = []
+            async for k in client.scan_iter(match=f"{_KEY_PREFIX}:container:*:{container_upper}"):
+                keys.append(k)
+            if keys:
+                await client.delete(*keys)
+            fb_keys = [k for k in _container_fallback if k.endswith(f":{container_upper}")]
+            for k in fb_keys:
+                del _container_fallback[k]
+            return len(keys)
+
+        if terminal:
+            terminal_upper = terminal.strip().upper()
+            keys = []
+            async for k in client.scan_iter(match=f"{_KEY_PREFIX}:container:{terminal_upper}:*"):
+                keys.append(k)
+            if keys:
+                await client.delete(*keys)
+            fb_keys = [k for k in _container_fallback if k.startswith(f"{terminal_upper}:")]
+            for k in fb_keys:
+                del _container_fallback[k]
+            return len(keys)
+    except Exception:
+        logger.warning("Redis unavailable for clear_container_cache, clearing fallback only")
+        if not container_no and not terminal:
+            count = len(_container_fallback)
+            _container_fallback.clear()
+            return count
         return 0
-
-    if container_no:
-        # Clear container across all terminals
-        container_upper = container_no.strip().upper()
-        keys_to_delete = [k for k in _container_cache.keys() if k[1] == container_upper]
-        for k in keys_to_delete:
-            del _container_cache[k]
-        return len(keys_to_delete)
-
-    if terminal:
-        # Clear all containers for terminal
-        terminal_upper = terminal.strip().upper()
-        keys_to_delete = [k for k in _container_cache.keys() if k[0] == terminal_upper]
-        for k in keys_to_delete:
-            del _container_cache[k]
-        return len(keys_to_delete)
 
     return 0
 
 
-def clear_all_cache() -> Tuple[int, int]:
-    """
-    Clear all caches
-    Returns (vessel_count, container_count)
-    """
-    vessel_count = len(_vessel_cache)
-    container_count = len(_container_cache)
-    _vessel_cache.clear()
-    _container_cache.clear()
-    return vessel_count, container_count
+async def clear_all_cache() -> Tuple[int, int]:
+    """Clear all caches. Returns (vessel_count, container_count)."""
+    v = await clear_vessel_cache()
+    c = await clear_container_cache()
+    return v, c
 
 
-def get_cache_stats() -> dict:
+async def get_cache_stats() -> dict:
     """Get cache statistics"""
+    vessel_count = 0
+    container_count = 0
+    try:
+        client = await get_redis()
+        async for _ in client.scan_iter(match=f"{_KEY_PREFIX}:vessel:*"):
+            vessel_count += 1
+        async for _ in client.scan_iter(match=f"{_KEY_PREFIX}:container:*"):
+            container_count += 1
+    except Exception:
+        vessel_count = len(_vessel_fallback)
+        container_count = len(_container_fallback)
+
     return {
-        "vessel_cache_size": len(_vessel_cache),
-        "container_cache_size": len(_container_cache),
+        "vessel_cache_size": vessel_count,
+        "container_cache_size": container_count,
         "ttl_seconds": get_cache_ttl_seconds(),
+        "backend": "redis",
     }

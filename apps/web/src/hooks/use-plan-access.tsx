@@ -68,9 +68,10 @@ const FEATURE_ACCESS: Record<FeatureKey, UserPlan[]> = {
   api_access: ['advance'],
 };
 
-// Tool category limits per plan (daily)
-const TOOL_LIMITS: Record<ToolCategory, Record<UserPlan, number>> = {
-  text: { guest: -1, free: -1, pro: -1, advance: -1 }, // -1 = unlimited
+// Static fallback tool limits per plan (daily, -1 = unlimited).
+// Overridden by DB-backed limits from planLimits table when available.
+const DEFAULT_TOOL_LIMITS: Record<ToolCategory, Record<UserPlan, number>> = {
+  text: { guest: -1, free: -1, pro: -1, advance: -1 },
   code: { guest: 10, free: 50, pro: -1, advance: -1 },
   file: { guest: 3, free: 10, pro: -1, advance: -1 },
   generator: { guest: 5, free: 25, pro: -1, advance: -1 },
@@ -79,8 +80,8 @@ const TOOL_LIMITS: Record<ToolCategory, Record<UserPlan, number>> = {
   intelligence: { guest: 0, free: 5, pro: 20, advance: -1 },
 };
 
-// File size limits (MB)
-const FILE_SIZE_LIMITS: Record<UserPlan, number> = {
+// Static fallback file size limits (MB).
+const DEFAULT_FILE_SIZE_LIMITS: Record<UserPlan, number> = {
   guest: 5,
   free: 10,
   pro: 100,
@@ -134,43 +135,52 @@ export function PlanAccessProvider({ children }: PlanAccessProviderProps) {
     return serverPlan === 'free' ? 'free' : (isAuthenticated ? 'free' : 'guest');
   }, [user, authLoading, planData, isAuthenticated]);
   
-  const value = React.useMemo<PlanAccessContextValue>(() => ({
-    plan,
-    isLoading,
-    
-    canAccess: (feature: FeatureKey) => {
-      const allowedPlans = FEATURE_ACCESS[feature];
-      return allowedPlans?.includes(plan) ?? false;
-    },
-    
-    getToolLimit: (category: ToolCategory) => {
-      return TOOL_LIMITS[category]?.[plan] ?? 0;
-    },
-    
-    getFileSizeLimit: () => {
-      return FILE_SIZE_LIMITS[plan] ?? 5;
-    },
-    
-    requiresUpgrade: (feature: FeatureKey) => {
-      const allowedPlans = FEATURE_ACCESS[feature];
-      if (!allowedPlans || allowedPlans.includes(plan)) {
-        return null;
-      }
-      
-      // Return minimum required plan
-      const planOrder: UserPlan[] = ['guest', 'free', 'pro', 'advance'];
-      for (const p of planOrder) {
-        if (allowedPlans.includes(p)) {
-          return p;
+  const value = React.useMemo<PlanAccessContextValue>(() => {
+    // DB-backed limits (Record<string, number>) from getMyPlan query
+    const dbLimits = planData?.limits;
+
+    return {
+      plan,
+      isLoading,
+
+      canAccess: (feature: FeatureKey) => {
+        const allowedPlans = FEATURE_ACCESS[feature];
+        return allowedPlans?.includes(plan) ?? false;
+      },
+
+      getToolLimit: (category: ToolCategory) => {
+        // DB key format: "daily_{category}", fallback to hardcoded
+        const dbVal = dbLimits?.[`daily_${category}`];
+        return dbVal !== undefined ? dbVal : (DEFAULT_TOOL_LIMITS[category]?.[plan] ?? 0);
+      },
+
+      getFileSizeLimit: () => {
+        const dbVal = dbLimits?.max_file_size;
+        return dbVal !== undefined ? dbVal : (DEFAULT_FILE_SIZE_LIMITS[plan] ?? 5);
+      },
+
+      requiresUpgrade: (feature: FeatureKey) => {
+        const allowedPlans = FEATURE_ACCESS[feature];
+        if (!allowedPlans || allowedPlans.includes(plan)) {
+          return null;
         }
-      }
-      return 'advance';
-    },
-    
-    isUnlimited: (category: ToolCategory) => {
-      return TOOL_LIMITS[category]?.[plan] === -1;
-    },
-  }), [plan, isLoading]);
+
+        const planOrder: UserPlan[] = ['guest', 'free', 'pro', 'advance'];
+        for (const p of planOrder) {
+          if (allowedPlans.includes(p)) {
+            return p;
+          }
+        }
+        return 'advance';
+      },
+
+      isUnlimited: (category: ToolCategory) => {
+        const dbVal = dbLimits?.[`daily_${category}`];
+        const limit = dbVal !== undefined ? dbVal : (DEFAULT_TOOL_LIMITS[category]?.[plan] ?? 0);
+        return limit === -1;
+      },
+    };
+  }, [plan, isLoading, planData]);
   
   return (
     <PlanAccessContext.Provider value={value}>

@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db, tools, toolCategories, toolExecutions, activityLogs, eq, and, or, sql, desc, asc } from '@hsafx/db';
+import { db, tools, toolCategories, activityLogs, eq, and, or, sql, desc, asc } from '@hsafx/db';
 import { createLogger } from '@hsafx/shared/logger';
 import { requireAdminRole } from '@/lib/require-admin';
 
@@ -59,10 +59,41 @@ export async function GET(request: NextRequest) {
       conditions.push(eq(tools.isPremium, true));
     }
 
+    // Category filter applied at query level
+    if (category) {
+      conditions.push(sql`EXISTS (
+        SELECT 1 FROM tool_categories tc
+        WHERE tc.id = ${tools.categoryId} AND tc.slug = ${category}
+      )`);
+    }
+
     // Build where clause
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-    // Query tools with category info
+    // Subqueries for enrichment — eliminates N+1
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    const exec24hSubquery = sql<number>`(
+      SELECT COUNT(*) FROM tool_executions te
+      WHERE te.tool_id = ${tools.id} AND te.created_at >= ${twentyFourHoursAgo}
+    )`;
+
+    const execTotalSubquery = sql<number>`(
+      SELECT COUNT(*) FROM tool_executions te
+      WHERE te.tool_id = ${tools.id}
+    )`;
+
+    const errorCountSubquery = sql<number>`(
+      SELECT COUNT(*) FROM tool_executions te
+      WHERE te.tool_id = ${tools.id} AND te.status = 'failed'
+    )`;
+
+    const avgTimeSubquery = sql<number>`(
+      SELECT AVG(te.execution_time) FROM tool_executions te
+      WHERE te.tool_id = ${tools.id} AND te.status = 'succeeded'
+    )`;
+
+    // Single query with all enrichment data
     const toolsQuery = db
       .select({
         id: tools.id,
@@ -79,6 +110,10 @@ export async function GET(request: NextRequest) {
         enabled: tools.isActive,
         createdAt: tools.createdAt,
         updatedAt: tools.updatedAt,
+        usageCount24h: exec24hSubquery,
+        usageCountTotal: execTotalSubquery,
+        errorCountRaw: errorCountSubquery,
+        avgExecutionTimeRaw: avgTimeSubquery,
       })
       .from(tools)
       .where(whereClause)
@@ -116,77 +151,42 @@ export async function GET(request: NextRequest) {
     // Create category lookup map
     const categoryMap = new Map(categories.map(c => [c.id, c]));
 
-    // Enrich tools with usage stats and category info
-    const enrichedTools = await Promise.all(
-      toolResults.map(async (tool) => {
-        // Get 24h execution count
-        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-        const [exec24h] = await db
-          .select({ count: sql<number>`COUNT(*)` })
-          .from(toolExecutions)
-          .where(
-            and(
-              eq(toolExecutions.toolId, tool.id),
-              sql`${toolExecutions.createdAt} >= ${twentyFourHoursAgo}`
-            )
-          );
+    // Map results — stats already included via subqueries
+    const enrichedTools = toolResults.map((tool) => {
+      const category = categoryMap.get(tool.categoryId);
+      const totalExec = Number(tool.usageCountTotal) || 0;
+      const errorExec = Number(tool.errorCountRaw) || 0;
 
-        // Get total execution count
-        const [execTotal] = await db
-          .select({ count: sql<number>`COUNT(*)` })
-          .from(toolExecutions)
-          .where(eq(toolExecutions.toolId, tool.id));
-
-        // Get error rate (failed executions / total)
-        const [errorCount] = await db
-          .select({ count: sql<number>`COUNT(*)` })
-          .from(toolExecutions)
-          .where(
-            and(
-              eq(toolExecutions.toolId, tool.id),
-              eq(toolExecutions.status, 'failed')
-            )
-          );
-
-        // Get average execution time
-        const [avgTime] = await db
-          .select({ avg: sql<number>`AVG(${toolExecutions.executionTime})` })
-          .from(toolExecutions)
-          .where(
-            and(
-              eq(toolExecutions.toolId, tool.id),
-              eq(toolExecutions.status, 'succeeded')
-            )
-          );
-
-        const category = categoryMap.get(tool.categoryId);
-        const totalExec = execTotal?.count ?? 0;
-        const errorExec = errorCount?.count ?? 0;
-
-        return {
-          ...tool,
-          category: category?.slug || 'unknown',
-          categoryName: category?.name || 'Unknown',
-          usageCount24h: exec24h?.count ?? 0,
-          usageCountTotal: totalExec,
-          usageCount: totalExec, // Alias for admin table
-          errorRate: totalExec > 0 ? Number(((errorExec / totalExec) * 100).toFixed(2)) : 0,
-          avgExecutionTime: avgTime?.avg ? Math.round(avgTime.avg) : 0,
-        };
-      })
-    );
-
-    // Apply category filter after enrichment
-    let filteredTools = enrichedTools;
-    if (category) {
-      filteredTools = enrichedTools.filter((t) => t.category === category);
-    }
+      return {
+        id: tool.id,
+        name: tool.name,
+        displayName: tool.displayName,
+        slug: tool.slug,
+        description: tool.description,
+        categoryId: tool.categoryId,
+        tier: tool.tier,
+        costType: tool.costType,
+        coinCost: tool.coinCost,
+        execution: tool.execution,
+        runtime: tool.runtime,
+        enabled: tool.enabled,
+        createdAt: tool.createdAt,
+        updatedAt: tool.updatedAt,
+        category: category?.slug || 'unknown',
+        categoryName: category?.name || 'Unknown',
+        usageCount24h: Number(tool.usageCount24h) || 0,
+        usageCountTotal: totalExec,
+        usageCount: totalExec,
+        errorRate: totalExec > 0 ? Number(((errorExec / totalExec) * 100).toFixed(2)) : 0,
+        avgExecutionTime: tool.avgExecutionTimeRaw ? Math.round(Number(tool.avgExecutionTimeRaw)) : 0,
+      };
+    });
 
     const total = countResults[0]?.count ?? 0;
     const totalPages = Math.ceil(total / limit);
 
     return NextResponse.json({
-      data: filteredTools,
+      data: enrichedTools,
       page,
       limit,
       total,

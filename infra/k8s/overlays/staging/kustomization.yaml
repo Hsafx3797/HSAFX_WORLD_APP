@@ -9,7 +9,13 @@ namespace: hsafx-staging
 resources:
   - ../../base
 
-namePrefix: staging-
+# NOTE: namePrefix removed. The namespace (hsafx-staging) provides sufficient
+# isolation. namePrefix caused service routing failures because internal env
+# vars like NEXT_PUBLIC_FASTAPI_URL=http://fastapi:8000 referenced the
+# original service names, not the prefixed ones.
+
+commonLabels:
+  app.kubernetes.io/instance: staging
 
 patches:
   # Scale down for staging

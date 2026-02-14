@@ -111,7 +111,7 @@ async def track_container(
 
     # Check cache first
     if not nocache and terminal:
-        cached = get_container(terminal, container_no)
+        cached = await get_container(terminal, container_no)
         if cached is not None:
             search_time = time.time() - start_time
             return ContainerTrackResponse(
@@ -129,7 +129,7 @@ async def track_container(
 
     for term in terminals_to_search:
         if not nocache:
-            cached = get_container(term, container_no)
+            cached = await get_container(term, container_no)
             if cached is not None:
                 results.extend(cached)
                 terminals_searched.append(term)
@@ -147,7 +147,7 @@ async def track_container(
                 results.extend(terminal_results)
                 # Cache the results
                 if not nocache:
-                    put_container(term, container_no, terminal_results)
+                    await put_container(term, container_no, terminal_results)
                 break
         except Exception as e:
             logger.warning("Terminal scraper failed", terminal=term, container=container_no, error=str(e))
@@ -189,7 +189,7 @@ async def track_vessel(
     # Check cache
     cache_key = f"{terminal}:{vessel_name}".lower()
     if not nocache:
-        cached = get_vessel(cache_key)
+        cached = await get_vessel(cache_key)
         if cached is not None:
             search_time = time.time() - start_time
             return VesselScheduleResponse(
@@ -206,7 +206,7 @@ async def track_vessel(
 
         # Cache results
         if not nocache and results:
-            put_vessel(cache_key, results)
+            await put_vessel(cache_key, results)
 
         search_time = time.time() - start_time
 
@@ -299,7 +299,7 @@ async def clear_cache(action: CacheAction):
     """
     try:
         if action.action == "clear_all":
-            vessel_count, container_count = clear_all_cache()
+            vessel_count, container_count = await clear_all_cache()
             return CacheResponse(
                 success=True,
                 message="All caches cleared",
@@ -307,7 +307,7 @@ async def clear_cache(action: CacheAction):
                 cleared_containers=container_count
             )
         elif action.action == "clear_containers":
-            count = clear_container_cache(
+            count = await clear_container_cache(
                 container_no=action.container_no,
                 terminal=action.terminal
             )
@@ -317,7 +317,7 @@ async def clear_cache(action: CacheAction):
                 cleared_containers=count
             )
         elif action.action == "clear_vessels":
-            count = clear_vessel_cache(
+            count = await clear_vessel_cache(
                 vessel_name=action.vessel_name,
                 terminal=action.terminal
             )
@@ -344,7 +344,7 @@ async def get_stats():
     return TrackingStats(
         supported_terminals=get_supported_terminals(),
         vessel_scraper_terminals=list(VESSEL_SCRAPERS.keys()),
-        cache_stats=get_cache_stats(),
+        cache_stats=await get_cache_stats(),
         connection_pool_stats=get_pool_stats()
     )
 

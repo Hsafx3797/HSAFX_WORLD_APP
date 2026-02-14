@@ -181,12 +181,9 @@ export async function setMonitoringUser(user: MonitoringUser | null): Promise<vo
 
 // ─── Alert Helpers ──────────────────────────────────────────
 
-/**
- * Track error counts for threshold-based alerting.
- * Uses in-memory counter (resets on deploy) — Sentry alerts handle production.
- */
-const errorCounts = new Map<string, { count: number; windowStart: number }>();
-const ALERT_WINDOW_MS = 60_000; // 1 minute
+import { getRedis, key } from './redis';
+
+const ALERT_WINDOW_SECONDS = 60; // 1-minute sliding window
 const ERROR_RATE_THRESHOLD = 10;
 const WEBHOOK_FAILURE_THRESHOLD = 5;
 
@@ -194,22 +191,26 @@ export async function trackErrorRate(
   category: string,
   threshold = ERROR_RATE_THRESHOLD,
 ): Promise<void> {
-  const now = Date.now();
-  const entry = errorCounts.get(category);
+  try {
+    const redis = getRedis();
+    const redisKey = key('monitoring', 'error_rate', category);
 
-  if (!entry || now - entry.windowStart > ALERT_WINDOW_MS) {
-    errorCounts.set(category, { count: 1, windowStart: now });
-    return;
-  }
+    const pipeline = redis.pipeline();
+    pipeline.incr(redisKey);
+    pipeline.expire(redisKey, ALERT_WINDOW_SECONDS);
+    const results = await pipeline.exec<[number, boolean]>();
 
-  entry.count++;
+    const count = results[0] ?? 1;
 
-  if (entry.count === threshold) {
-    await captureMessage(`Alert: ${category} error rate exceeded ${threshold}/min`, {
-      level: 'error',
-      tags: { alert: 'error_rate', category },
-      extra: { count: entry.count, windowMs: ALERT_WINDOW_MS },
-    });
+    if (count === threshold) {
+      await captureMessage(`Alert: ${category} error rate exceeded ${threshold}/min`, {
+        level: 'error',
+        tags: { alert: 'error_rate', category },
+        extra: { count, windowSeconds: ALERT_WINDOW_SECONDS },
+      });
+    }
+  } catch {
+    // Redis unavailable — silently degrade (Sentry alerts are primary)
   }
 }
 

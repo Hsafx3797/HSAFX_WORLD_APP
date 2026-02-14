@@ -9,6 +9,8 @@
   "scripts": {
     "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
     "clean": "rimraf dist .turbo"
   },
   "dependencies": {
