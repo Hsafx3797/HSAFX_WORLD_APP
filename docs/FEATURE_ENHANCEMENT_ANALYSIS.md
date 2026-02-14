@@ -34,11 +34,14 @@
 
 ## Current State Summary
 
-| Status       | Count | Features                                                                                                                  |
-| ------------ | ----- | ------------------------------------------------------------------------------------------------------------------------- |
-| Already done | 5     | Toast, Skeleton, Search, Notification Bell, Dark/Light toggle                                                             |
-| Partial      | 2     | Streak (no streak tracking), Referral (type enums only)                                                                   |
-| Not built    | 11    | Cmd palette, Achievements, Analytics, XP, Chaining, Batch, PWA, Onboarding, Sharing, Framer transitions, Live feed wiring |
+> **All actionable features have been implemented** (25/25 across T1, T2, T3).
+> Skipped/deferred items are documented in `DEFERRED_FEATURES.md`.
+
+| Status | Count | Features |
+| ------------ | ----- | ---- |
+| ✅ Implemented | 25 | All T1 (9), T2 (8), T3 (8) items — see IMPLEMENTATION_ROADMAP.md |
+| ⏭️ Skipped | 11 | XP/levels, leaderboard, coin gifting, achievements, tool chaining, tool comparison, Framer Motion, embeddable widget, year in review, feature request board, PWA |
+| 🔵 Pre-existing | 5 | Toast, Skeleton, Search, Notification Bell, Dark/Light toggle |
 
 ---
 
@@ -626,6 +629,8 @@ Show quota usage visually for API key users. Data exists, just needs UI.
 | **Subtotal**                | **~52-70h** |                                            |
 
 ### NEVER / HARD SKIP
+
+> Full details with reasoning and revisit conditions in `DEFERRED_FEATURES.md`.
 
 | Feature                   | Why Not                                                                |
 | ------------------------- | ---------------------------------------------------------------------- |

@@ -7,13 +7,15 @@
 
 ## Progress Summary
 
-| Tier | Status | Items | Completed |
-|------|--------|-------|-----------|
-| TIER 1 | ✅ COMPLETE | 9/9 | Committed as `e53aac4` |
-| TIER 2 | ✅ COMPLETE | 8/8 | Uncommitted — ready for commit |
-| TIER 3 | ✅ COMPLETE | 8/8 | Uncommitted — ready for commit |
+| Tier | Status | Items | Commit |
+|------|--------|-------|--------|
+| TIER 1 | ✅ COMPLETE | 9/9 | `e53aac4` |
+| TIER 2 | ✅ COMPLETE | 8/8 | `55ff3f6` |
+| TIER 3 | ✅ COMPLETE | 8/8 | `55ff3f6` |
 
-**Last updated:** 2026-02-14
+> **All 25 features implemented and committed.** Deferred/skipped items documented in `DEFERRED_FEATURES.md`.
+>
+> **Last updated:** February 2026
 
 ---
 
@@ -106,7 +108,7 @@
 
 ---
 
-## TIER 2 — Core Features (Retention + Conversion) ✅ ALL COMPLETE
+## TIER 2 — Core Features (Retention + Conversion) ✅ ALL COMPLETE (committed `55ff3f6`)
 
 ### T2.1 Command Palette (⌘K / Ctrl+K) ✅
 
@@ -185,11 +187,11 @@
 | Dependencies | `users.deletedAt` column (exists), Resend email (configured)                                                                                                                                     |
 | Effort       | ~4h                                                                                                                                                                                              |
 
-**TIER 2 Total: ~37h | 8 items — ✅ ALL COMPLETE (uncommitted — ready for commit)**
+**TIER 2 Total: ~37h | 8 items — ✅ ALL COMPLETE (committed `55ff3f6`)**
 
 ---
 
-## TIER 3 — Growth Phase (Build When Active Users Exist) ✅ ALL COMPLETE
+## TIER 3 — Growth Phase (Build When Active Users Exist) ✅ ALL COMPLETE (committed `55ff3f6`)
 
 ### T3.1 Referral Program ✅
 
@@ -223,7 +225,7 @@ Visual quota display on API keys page. Progress bars for requests/minute, reques
 
 Batch job creation via `asyncJobs` table, tRPC endpoints for create/status/list, Pro-only gating via `planGatedProcedure`.
 
-**TIER 3 Total: 8 items — ✅ ALL COMPLETE (uncommitted — ready for commit)**
+**TIER 3 Total: 8 items — ✅ ALL COMPLETE (committed `55ff3f6`)**
 
 ---
 
@@ -233,16 +235,18 @@ Batch job creation via `asyncJobs` table, tRPC endpoints for create/status/list,
 TIER 1 ✅ COMPLETE (committed e53aac4):
   T1.0 ✅ → T1.1 ✅ → T1.8 ✅ → T1.7 ✅ → T1.3 ✅ → T1.2 ✅ → T1.4 ✅ → T1.5 ✅ → T1.6 ✅
 
-TIER 2 ✅ COMPLETE (uncommitted — ready for commit):
+TIER 2 ✅ COMPLETE (committed 55ff3f6):
   T2.1 ✅ → T2.5 ✅ → T2.2 ✅ → T2.3 ✅ → T2.4 ✅ → T2.6 ✅ → T2.7 ✅ → T2.8 ✅
 
-TIER 3 ✅ COMPLETE (uncommitted — ready for commit):
+TIER 3 ✅ COMPLETE (committed 55ff3f6):
   T3.1 ✅ → T3.2 ✅ → T3.3 ✅ → T3.4 ✅ → T3.5 ✅ → T3.6 ✅ → T3.7 ✅ → T3.8 ✅
 ```
 
 ---
 
 ## NEVER / HARD SKIP
+
+> Full details with reasoning and revisit conditions in `DEFERRED_FEATURES.md`.
 
 | Feature                   | Reason                                    |
 | ------------------------- | ----------------------------------------- |
@@ -301,7 +305,7 @@ All 9 TIER 1 items were implemented and committed in a single batch commit.
 
 ---
 
-## Implementation Notes — TIER 2 (Uncommitted — Ready for Commit)
+## Implementation Notes — TIER 2 (Committed `55ff3f6`)
 
 ### T2.1 — Command Palette (⌘K / Ctrl+K)
 - **Files:** `apps/web/src/components/command-palette.tsx` (new), `layout.tsx`
@@ -373,7 +377,7 @@ All 9 TIER 1 items were implemented and committed in a single batch commit.
 
 ---
 
-## Implementation Notes — TIER 3 (Uncommitted — Ready for Commit)
+## Implementation Notes — TIER 3 (Committed `55ff3f6`)
 
 ### T3.1 — Referral Program
 - **DB:** `referrals` table + `referralStatusEnum` + `coinEvents` table in `packages/db/src/schema/billing.ts`

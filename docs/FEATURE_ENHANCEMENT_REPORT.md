@@ -3,17 +3,22 @@
 > **Research Method**: 8 deep web research queries synthesized with codebase knowledge  
 > **Focus**: Logic · Function · UI/UX · User Engagement · Trust · Retention
 
-> **⚠️ IMPLEMENTATION STATUS UPDATE (2026-02-14)**
+> **⚠️ IMPLEMENTATION STATUS UPDATE (February 2026)**
 >
-> TIER 1 (9 items), TIER 2 (8 items), and TIER 3 (8 items) have been fully implemented.
-> See `docs/IMPLEMENTATION_ROADMAP.md` for detailed implementation notes per feature.
-> Features marked in this document as "not built" or "partial" may now be complete — cross-reference the roadmap.
+> **All actionable features have been implemented** — TIER 1 (9/9), TIER 2 (8/8), TIER 3 (8/8).
+> See `IMPLEMENTATION_ROADMAP.md` for implementation notes per feature.
+> See `DEFERRED_FEATURES.md` for features that were analyzed and deliberately skipped with reasons.
+>
+> **Status key for sections below:**
+> - ✅ IMPLEMENTED — Feature built and committed
+> - ⏭️ SKIPPED — Deliberately not built (see DEFERRED_FEATURES.md for reasons)
+> - 🔵 PRE-EXISTING — Already existed before the enhancement analysis
 
 ---
 
 ## 1. 🧠 Intelligent Tool Discovery & Personalization
 
-### 1.1 Smart Search with AI Autocomplete
+### 1.1 Smart Search with AI Autocomplete ⏭️ SKIPPED
 
 **What**: Replace basic text search with a semantic search bar that predicts intent. As the user types "co", it shows "Color Converter", "Code Formatter", "Coin Pack Purchase" ranked by relevance, recency, and frequency.
 
@@ -25,7 +30,7 @@
 - On search, rank results: `score = (0.4 × textMatch) + (0.3 × userFrequency) + (0.2 × globalPopularity) + (0.1 × recency)`
 - Show "Recently Used" and "Trending This Week" carousels on the tools page
 
-### 1.2 Personalized Tool Recommendations
+### 1.2 Personalized Tool Recommendations ⏭️ SKIPPED
 
 **What**: "Suggested For You" section on dashboard and tools page, powered by collaborative filtering.
 
@@ -37,7 +42,7 @@
 - After each execution, show "Related Tools" cards (e.g., "You just used Markdown → HTML, try HTML Beautifier")
 - Weekly "New Tools You Might Like" email digest (Resend integration already exists)
 
-### 1.3 Command Palette (⌘K / Ctrl+K)
+### 1.3 Command Palette (⌘K / Ctrl+K) ✅ IMPLEMENTED (T2.1)
 
 **What**: Global keyboard shortcut that opens a spotlight-style search panel. Type to jump to any tool, setting, page, or action.
 
@@ -53,7 +58,7 @@
 
 ## 2. 🎮 Gamification & Engagement Loop
 
-### 2.1 XP & Level System
+### 2.1 XP & Level System ⏭️ SKIPPED
 
 **What**: Users earn XP for actions: using tools (10 XP), daily login (5 XP), completing tutorials (25 XP), referring friends (100 XP). Levels unlock cosmetic badges and profile frames.
 
@@ -66,7 +71,7 @@
 - Visual level badge beside username in header and on profile
 - Level milestones grant bonus coins (L5=50 coins, L10=200 coins)
 
-### 2.2 Streak Rewards & Daily Challenges
+### 2.2 Streak Rewards & Daily Challenges ✅ IMPLEMENTED (T2.2)
 
 **What**: Track consecutive daily usage. 3-day streak = 2× daily bonus, 7-day = 3×, 30-day = 5× + exclusive badge. Daily challenge: "Use 3 different categories today" → 15 bonus coins.
 
@@ -79,7 +84,7 @@
 - "Daily Challenge" card on dashboard with rotating objectives
 - Streak counter animation in header (🔥 with count)
 
-### 2.3 Achievement Badges System
+### 2.3 Achievement Badges System ⏭️ SKIPPED
 
 **What**: ~30 unlockable achievements that appear on profiles and in toast notifications.
 
@@ -98,7 +103,7 @@
 
 **Why**: Achievements provide milestone markers that create emotional investment. Users are 3× more likely to stay if they've unlocked badges.
 
-### 2.4 Leaderboard (Optional, Weekly)
+### 2.4 Leaderboard (Optional, Weekly) ⏭️ SKIPPED
 
 **What**: Anonymous weekly leaderboard showing top 50 users by tools used, streak length, or XP earned. Users opt-in via display name.
 
@@ -108,7 +113,7 @@
 
 ## 3. 💰 Coin Economy & Monetization Enhancements
 
-### 3.1 Coin Multiplier Events
+### 3.1 Coin Multiplier Events ✅ IMPLEMENTED (T3.7)
 
 **What**: Time-limited events: "Double Coin Weekend" (purchases give 2× coins), "Happy Hour" (daily bonus 3× between 6-8 PM), "Launch Day Bonus" (new tool release = free 10 coins for first 100 users).
 
@@ -121,7 +126,7 @@
 - Backend: modify coin grant logic to check active events
 - Push notification / email when event starts
 
-### 3.2 Coin Gifting / Transfer
+### 3.2 Coin Gifting / Transfer ⏭️ SKIPPED
 
 **What**: Users can send coins to other users as tips or gifts. "Gift 10 coins" button on a shared result or public profile.
 
@@ -133,7 +138,7 @@
 - 10% platform fee on transfers (sink for economy balance)
 - Toast: "🎁 @username sent you 10 coins!"
 
-### 3.3 Subscription Perks Enhancement
+### 3.3 Subscription Perks Enhancement ✅ IMPLEMENTED (T2.5)
 
 **What**: Pro users get visible perks beyond just "more tools":
 
@@ -145,7 +150,7 @@
 
 **Why**: Visible differentiation drives upgrade desire from free users who see Pro features. Spotify, GitHub, Discord all use visible status markers.
 
-### 3.4 "Try Before You Buy" for Pro Tools
+### 3.4 "Try Before You Buy" for Pro Tools ✅ IMPLEMENTED (T2.6)
 
 **What**: Free users can execute Pro-only tools once per day for free. After that, it prompts "⭐ Upgrade to Pro for unlimited access" or "💰 Use 5 coins for one more execution".
 
@@ -155,7 +160,7 @@
 
 ## 4. 🤝 Trust & Social Proof
 
-### 4.1 Live Activity Feed
+### 4.1 Live Activity Feed ✅ IMPLEMENTED (T1.7)
 
 **What**: Subtle, scrolling feed showing real-time anonymized usage: "Someone just formatted 2.4MB of JSON", "User in Germany converted 15 images", "350 tools used today".
 
@@ -168,7 +173,7 @@
 - Show on landing page and tools page sidebar
 - Counters: "📈 12,847 tool runs today | 🌍 Users from 45 countries"
 
-### 4.2 Trust Badges & Security Indicators
+### 4.2 Trust Badges & Security Indicators ✅ IMPLEMENTED (T1.2)
 
 **What**: Display prominent trust signals:
 
@@ -180,13 +185,13 @@
 
 **Why**: Developer tool users are privacy-conscious. Visible security signals reduce bounce by 15-20%.
 
-### 4.3 Testimonials & Usage Statistics
+### 4.3 Testimonials & Usage Statistics ✅ IMPLEMENTED (T1.3)
 
 **What**: Landing page section with real metrics: "X tools executed", "Y registered users", "Z countries served". Social proof quotes from power users (collect via feedback form).
 
 **Why**: Numbers are the strongest trust signal for utility tools. TinyWow, iLovePDF, CloudConvert all prominently display total conversions.
 
-### 4.4 Status Page
+### 4.4 Status Page ✅ IMPLEMENTED (T3.5)
 
 **What**: Public `/status` page showing service health for all components (API, DB, Auth, Tools, Scrapers).
 
@@ -202,7 +207,7 @@
 
 ## 5. 🚀 Onboarding & Activation
 
-### 5.1 Interactive Welcome Wizard
+### 5.1 Interactive Welcome Wizard ✅ IMPLEMENTED (T2.3)
 
 **What**: After signup, 3-step wizard: (1) "What do you mainly work with?" (Text, Code, Images, Data), (2) "Here are your top recommended tools" (shows 6 tools based on selection), (3) "Try one now!" (directs to a free tool for instant "aha" moment).
 
@@ -215,7 +220,7 @@
 - Skip option available
 - Completion rewards: 25 bonus coins
 
-### 5.2 Onboarding Checklist (Progressive Disclosure)
+### 5.2 Onboarding Checklist (Progressive Disclosure) ✅ IMPLEMENTED (T2.4)
 
 **What**: Persistent sidebar or dashboard widget showing completion progress:
 
@@ -228,7 +233,7 @@
 
 **Why**: Checklists exploit the Zeigarnik effect (people remember uncompleted tasks). Grammarly, Slack, Notion all use this pattern. Increases activation rate from ~17% (median SaaS) to 40%+.
 
-### 5.3 Contextual Tooltips & Feature Highlights
+### 5.3 Contextual Tooltips & Feature Highlights ⏭️ SKIPPED
 
 **What**: Non-intrusive pulsing dots on new features. Hover reveals explanation: "💡 New! You can now compare outputs side-by-side". After clicking, mark as seen.
 
@@ -238,7 +243,7 @@
 
 ## 6. 📱 UX Polish & Micro-Interactions
 
-### 6.1 Skeleton Loading Screens
+### 6.1 Skeleton Loading Screens 🔵 PRE-EXISTING
 
 **What**: Replace blank loading states and spinners with skeleton screens that mirror the page layout (gray boxes where content will appear).
 
@@ -246,7 +251,7 @@
 
 **Where to apply**: Tool list page, dashboard stats cards, tool detail page, history page, billing page.
 
-### 6.2 Toast Notification System
+### 6.2 Toast Notification System 🔵 PRE-EXISTING
 
 **What**: Beautiful, consistent toast notifications for all actions:
 
@@ -257,13 +262,13 @@
 
 **Why**: Immediate feedback is the top UX principle. Your current code has `// Show success toast` comments but no implementation.
 
-### 6.3 Smooth Page Transitions
+### 6.3 Smooth Page Transitions ⏭️ SKIPPED
 
 **What**: Framer Motion-powered page transitions — fade/slide effects between pages, spring animations on cards, staggered list items on tool grids.
 
 **Why**: Animations add perceived quality and delight. Apps with polished transitions are rated 20% higher in user satisfaction.
 
-### 6.4 Tool Result Sharing
+### 6.4 Tool Result Sharing ⏭️ SKIPPED
 
 **What**: After executing a tool, show "📋 Copy" | "📤 Share" | "💾 Download" buttons. Share generates a unique short link displaying the result.
 
@@ -275,7 +280,7 @@
 - `/share/[code]` public page showing the result (no login required)
 - Social cards (Open Graph metadata) for nice previews on Twitter/LinkedIn
 
-### 6.5 Dark/Light Mode Toggle with Smooth Transition
+### 6.5 Dark/Light Mode Toggle with Smooth Transition 🔵 PRE-EXISTING
 
 **What**: Smooth cross-fade theme toggle in header (not jarring class swap). Plus "system auto" option that follows OS preference.
 
@@ -285,7 +290,7 @@
 
 ## 7. 📊 Personal Analytics Dashboard
 
-### 7.1 Usage Insights Page
+### 7.1 Usage Insights Page ✅ IMPLEMENTED (T3.2)
 
 **What**: `/dashboard/analytics` page showing:
 
@@ -298,7 +303,7 @@
 
 **Why**: Personal analytics create self-reflection and investment. Users who see their own data feel ownership and are less likely to churn. Spotify Wrapped generates massive engagement from this principle.
 
-### 7.2 "Year in Review" / "Month in Review"
+### 7.2 "Year in Review" / "Month in Review" ⏭️ SKIPPED
 
 **What**: Monthly or yearly summary email/page: "This month you used 42 tools, spent 150 coins, and saved an estimated 8 hours of manual work".
 
@@ -308,7 +313,7 @@
 
 ## 8. 🔗 Referral & Viral Growth
 
-### 8.1 Referral Program
+### 8.1 Referral Program ✅ IMPLEMENTED (T3.1)
 
 **What**: Each user gets a unique referral link. When someone signs up through it + uses their first tool → referrer gets 50 coins, new user gets 25 coins.
 
@@ -321,13 +326,13 @@
 - Dashboard card: "Invite friends, earn 50 coins each"
 - Track: pending → signed_up → activated → rewarded
 
-### 8.2 Social Sharing of Achievements
+### 8.2 Social Sharing of Achievements ⏭️ SKIPPED
 
 **What**: When users unlock a badge or hit a milestone, show "🎉 Share on X/LinkedIn" button with pre-filled text: "I just hit Level 10 on HSAFX WORLD with 1000+ tool runs! 🚀".
 
 **Why**: Free brand awareness via user's social network. Each share reaches ~300 followers on average.
 
-### 8.3 Embeddable Widget
+### 8.3 Embeddable Widget ⏭️ SKIPPED
 
 **What**: `<script>` embed that adds an HSAFX WORLD tool directly to a user's own website. E.g., embed a JSON Formatter on a blog.
 
@@ -337,25 +342,25 @@
 
 ## 9. 🛡️ Security & Account Features
 
-### 9.1 Two-Factor Authentication (2FA)
+### 9.1 Two-Factor Authentication (2FA) ✅ IMPLEMENTED (T2.7)
 
 **What**: TOTP-based 2FA (Google Authenticator, Authy). Better Auth already supports this as a plugin.
 
 **Why**: Non-negotiable for users with API keys and coin balances.
 
-### 9.2 Active Sessions Management
+### 9.2 Active Sessions Management ✅ IMPLEMENTED (T1.5)
 
 **What**: View and revoke active sessions across devices. Show: "Chrome on Windows — Active now", "Safari on iPhone — 3 days ago [Revoke]".
 
 **Why**: Security-conscious users expect this. Better Auth provides session management APIs.
 
-### 9.3 Account Data Export (GDPR)
+### 9.3 Account Data Export (GDPR) ✅ IMPLEMENTED (T3.3)
 
 **What**: "Download My Data" button that exports all personal data as JSON/ZIP (profile, usage history, transactions, API keys, favorites).
 
 **Why**: GDPR/CCPA compliance requirement. Builds trust. Planning doc mentions but not implemented.
 
-### 9.4 Account Deletion with Grace Period
+### 9.4 Account Deletion with Grace Period ✅ IMPLEMENTED (T2.8)
 
 **What**: "Delete Account" flow with 14-day cooling period. Send confirmation email, mark `deletedAt`, CRON job performs hard delete after 14 days.
 
@@ -365,7 +370,7 @@
 
 ## 10. 🧩 Advanced Tool Features
 
-### 10.1 Tool Chaining / Workflows
+### 10.1 Tool Chaining / Workflows ⏭️ SKIPPED
 
 **What**: Let users chain tools: "Markdown → HTML → Minify HTML → Copy". Save chains as custom workflows.
 
@@ -377,19 +382,19 @@
 - Visual step builder (drag tools into sequence)
 - One-click execution of entire chain
 
-### 10.2 Batch Processing
+### 10.2 Batch Processing ✅ IMPLEMENTED (T3.8)
 
 **What**: Upload multiple files / paste multiple inputs, process all at once. Progress bar for batch.
 
 **Why**: Users processing 50 images shouldn't have to repeat the flow 50 times. This is a Pro-tier differentiator.
 
-### 10.3 Tool Comparison Mode
+### 10.3 Tool Comparison Mode ⏭️ SKIPPED
 
 **What**: Side-by-side comparison of two tools or two configurations. E.g., compare Base64 vs URL encoding of the same input.
 
 **Why**: Educational value + helps users choose the right tool.
 
-### 10.4 Result History with Re-Run
+### 10.4 Result History with Re-Run ✅ IMPLEMENTED (T1.6)
 
 **What**: Last 50 tool executions stored per user. Click to view input/output, one-click "Re-run" or "Run with different settings".
 
@@ -399,25 +404,25 @@
 
 ## 11. 📬 Communication & Re-Engagement
 
-### 11.1 In-App Notification Center
+### 11.1 In-App Notification Center ✅ IMPLEMENTED (T1.1)
 
 **What**: Bell icon in header → dropdown showing: system alerts, coin transactions, achievement unlocks, new tool announcements, streak warnings.
 
 **Why**: `notifications` table exists but no frontend. In-app notifications are the #1 re-engagement channel.
 
-### 11.2 Streak Break Warning Email
+### 11.2 Streak Break Warning Email ✅ IMPLEMENTED (T3.4)
 
 **What**: If a user hasn't logged in and their streak is about to break, send an email at 6 PM local time: "🔥 Your 15-day streak breaks in 6 hours! Log in to keep it alive."
 
 **Why**: Duolingo's "Don't break your streak!" push notification is one of the most effective re-engagement mechanisms ever built.
 
-### 11.3 "What's New" Changelog
+### 11.3 "What's New" Changelog ✅ IMPLEMENTED (T1.4)
 
 **What**: `/changelog` page and in-app "What's New" modal showing recent feature additions, bug fixes, and improvements.
 
 **Why**: Shows the product is actively maintained. Builds trust, showcases investment.
 
-### 11.4 Feature Request & Feedback Board
+### 11.4 Feature Request & Feedback Board ⏭️ SKIPPED
 
 **What**: Public board (like Canny or built-in) where users vote on feature requests. Top-voted features get prioritized.
 
@@ -427,19 +432,19 @@
 
 ## 12. 🏗️ Infrastructure & Performance
 
-### 12.1 Client-Side Processing Indicator
+### 12.1 Client-Side Processing Indicator ✅ IMPLEMENTED (T1.2)
 
 **What**: For tools that run client-side (most text tools), show a badge: "⚡ Processed locally — your data never leaves your browser".
 
 **Why**: Massive trust booster. Differentiates from competitors that upload data to servers.
 
-### 12.2 PWA (Progressive Web App)
+### 12.2 PWA (Progressive Web App) ⏭️ SKIPPED
 
 **What**: Make the web app installable as a PWA with offline support for client-side tools.
 
 **Why**: PWA "Add to Home Screen" increases repeat visits by 68%. Client-side tools can work offline.
 
-### 12.3 API Rate Limit Dashboard
+### 12.3 API Rate Limit Dashboard ✅ IMPLEMENTED (T3.6)
 
 **What**: For API key users, show allocated vs used quota visually: "1,000/10,000 requests used this month" with a progress bar.
 

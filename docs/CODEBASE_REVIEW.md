@@ -4,6 +4,9 @@
 > **Last Updated:** July 2025  
 > **Scope:** Full monorepo — 8 packages, 2 apps, 2 backend services, infrastructure  
 > **Files Analyzed:** 200+ source files across TypeScript, Python, Rust, Docker, Kubernetes
+>
+> **Status:** All P0–P3 issues resolved (fixed, documented as false positive, or deferred with reasoning).  
+> Deferred items consolidated in `DEFERRED_FEATURES.md`.
 
 ---
 
@@ -1105,6 +1108,8 @@ Multiple auth implementations coexist:
 | Migrate scraper cache to Redis                                    |  P3-09   | Medium |  ⏳ Deferred   |
 
 ### Sprint 5 — Accessibility & Testing (~5-7 days)
+
+> Deferred to growth phase. Full details with reasoning and revisit conditions in `DEFERRED_FEATURES.md`.
 
 | Task                                         | Priority | Effort |
 | -------------------------------------------- | :------: | :----: |
