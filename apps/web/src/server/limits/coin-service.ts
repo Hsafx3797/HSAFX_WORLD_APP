@@ -275,6 +275,10 @@ export async function releaseReservation(reservationId: string): Promise<void> {
 
     if (!original) return;
 
+    // Idempotency guard: skip if already released or confirmed
+    const status = (original.metadata as Record<string, unknown>)?.status;
+    if (status === 'released' || status === 'confirmed') return;
+
     const refundAmount = Math.abs(original.amount);
 
     // Mark original as released

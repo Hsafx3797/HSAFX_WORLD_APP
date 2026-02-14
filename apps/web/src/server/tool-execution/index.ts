@@ -20,6 +20,7 @@ import {
 import {
   getToolCoinCost,
   deductCoins,
+  grantCoins,
   reserveCoins,
   confirmReservation,
   releaseReservation,
@@ -251,9 +252,9 @@ export async function executeToolServer(
       })
       .where(eq(toolExecutions.id, execution!.id));
 
-    // Refund coins on failure
+    // Refund coins on failure (sync path used deductCoins, not reserveCoins)
     if (transactionId && coinCost > 0) {
-      await releaseReservation(transactionId);
+      await grantCoins(userId, coinCost, 'adjustment', `Refund: execution failed`, 'tool', toolId);
     }
 
     throw err;

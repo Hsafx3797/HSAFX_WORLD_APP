@@ -177,10 +177,11 @@ class FileHandler:
         if isinstance(algorithms, str):
             algorithms = [a.strip() for a in algorithms.split(",")]
 
+        ALLOWED_ALGORITHMS = {"md5", "sha1", "sha256", "sha384", "sha512"}
         hashes = {}
         for algo in algorithms:
             algo_lower = algo.lower().replace("-", "")
-            if algo_lower in hashlib.algorithms_available:
+            if algo_lower in ALLOWED_ALGORITHMS:
                 h = hashlib.new(algo_lower)
                 h.update(data)
                 hashes[algo] = h.hexdigest()

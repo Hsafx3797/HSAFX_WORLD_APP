@@ -11,11 +11,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, featureFlags, eq, asc } from '@hsafx/db';
 import { createLogger } from '@hsafx/shared/logger';
+import { requireAdminRole } from '@/lib/require-admin';
 
 const log = createLogger('admin-feature-flags');
 
 export async function GET() {
   try {
+    const authResult = await requireAdminRole();
+    if (authResult instanceof NextResponse) return authResult;
+
     // Query all feature flags
     const flags = await db
       .select({
@@ -61,6 +65,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const authResult = await requireAdminRole();
+    if (authResult instanceof NextResponse) return authResult;
+
     const body = await request.json();
     const { key, name, description, enabled, percentage, tier } = body;
 
@@ -129,6 +136,9 @@ export async function POST(request: NextRequest) {
  */
 export async function PATCH(request: NextRequest) {
   try {
+    const authResult = await requireAdminRole();
+    if (authResult instanceof NextResponse) return authResult;
+
     const body = await request.json();
     const { id, ...updates } = body as { id?: string; [k: string]: unknown };
 
@@ -198,6 +208,9 @@ export async function PATCH(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
+    const authResult = await requireAdminRole();
+    if (authResult instanceof NextResponse) return authResult;
+
     const body = await request.json();
     const { id } = body as { id?: string };
 

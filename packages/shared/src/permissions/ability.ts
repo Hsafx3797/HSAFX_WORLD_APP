@@ -16,6 +16,8 @@ import type {
 } from './types';
 import { getCombinedPermissions } from './admin-rbac';
 
+import { CATEGORY_FEATURE_MAP, PLAN_FEATURES } from './plan-access';
+
 // Define subjects for user app
 type UserSubjects = 
   | 'Tool'
@@ -194,10 +196,12 @@ export function buildAdminAbility(roles: AdminRole[]): AdminAbility {
 // Check if user can use a specific tool based on category
 export function canUseToolByCategory(
   ability: UserAbility, 
-  category: ToolCategory
+  category: ToolCategory,
+  plan: UserPlan
 ): boolean {
-  // Simplified check - in production would check category restrictions
-  return ability.can('use', 'Tool');
+  if (!ability.can('use', 'Tool')) return false;
+  const featureKey = CATEGORY_FEATURE_MAP[category];
+  return featureKey ? PLAN_FEATURES[plan].has(featureKey) : false;
 }
 
 // Check if admin can perform an action

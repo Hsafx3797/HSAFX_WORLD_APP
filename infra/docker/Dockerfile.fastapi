@@ -2,9 +2,23 @@
 # HSAFX World App — FastAPI Backend Dockerfile
 # Includes native binaries: FFmpeg, Poppler, Tesseract, libvips
 # ═══════════════════════════════════════════════════════════════
+
+# ── Build stage (compile C extensions) ────────────────────────
+FROM python:3.12-slim AS builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc g++ libvips-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+# ── Runtime stage ─────────────────────────────────────────────
 FROM python:3.12-slim AS base
 
-# ── System deps ───────────────────────────────────────────────
+# Runtime-only native dependencies (no compilers)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     # Media processing
     ffmpeg \
@@ -19,9 +33,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tesseract-ocr-ara \
     # HTML-to-PDF
     wkhtmltopdf \
-    # Build essentials (for packages with C extensions)
-    gcc \
-    g++ \
     # Utility
     curl \
     && rm -rf /var/lib/apt/lists/*
@@ -29,10 +40,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # ── App setup ─────────────────────────────────────────────────
 WORKDIR /app
 
-# Install Python deps first (cached layer)
-COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+# Copy pre-built Python packages from builder
+COPY --from=builder /install /usr/local
 
 # Copy application code
 COPY src/ ./src/

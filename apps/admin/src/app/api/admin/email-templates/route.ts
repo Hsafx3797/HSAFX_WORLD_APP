@@ -7,27 +7,15 @@
  */
 
 import { NextResponse, type NextRequest } from 'next/server';
-import { headers } from 'next/headers';
-import { auth } from '@/lib/auth';
 import { db, eq } from '@hsafx/db';
 import { emailTemplates } from '@hsafx/db/schema';
-
-// ── Auth helper ────────────────────────────────────────────
-
-async function requireAdmin() {
-  const headersList = await headers();
-  const session = await auth.api.getSession({ headers: headersList });
-  if (!session?.user) return null;
-  return session;
-}
+import { requireAdminRole } from '@/lib/require-admin';
 
 // ── GET: List templates ────────────────────────────────────
 
 export async function GET() {
-  const session = await requireAdmin();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const authResult = await requireAdminRole();
+  if (authResult instanceof NextResponse) return authResult;
 
   try {
     const templates = await db
@@ -45,10 +33,8 @@ export async function GET() {
 // ── POST: Create or update template ────────────────────────
 
 export async function POST(request: NextRequest) {
-  const session = await requireAdmin();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const authResult = await requireAdminRole();
+  if (authResult instanceof NextResponse) return authResult;
 
   try {
     const body = (await request.json()) as {

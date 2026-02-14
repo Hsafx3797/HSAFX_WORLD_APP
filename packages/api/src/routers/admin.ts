@@ -611,7 +611,7 @@ export const adminRouter = router({
 
       const cohorts = await ctx.db.execute(sql`
         SELECT
-          date_trunc(${trunc}, ${users.createdAt}) as cohort,
+          date_trunc(${sql.raw(`'${trunc}'`)}, ${users.createdAt}) as cohort,
           count(distinct ${users.id}) as users_count,
           count(distinct ${toolExecutions.userId}) as active_users
         FROM ${users}
@@ -703,7 +703,7 @@ export const adminRouter = router({
 
       const series = await ctx.db.execute(sql`
         SELECT
-          date_trunc(${trunc}, ${coinTransactions.createdAt}) as period,
+          date_trunc(${sql.raw(`'${trunc}'`)}, ${coinTransactions.createdAt}) as period,
           coalesce(sum(${coinTransactions.amount}), 0) as revenue,
           count(*) as transactions
         FROM ${coinTransactions}

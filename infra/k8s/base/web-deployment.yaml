@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: hsafx/web:latest
+          image: hsafx/web:0.1.0  # pin to release tag; CI/CD replaces via kustomize
           ports:
             - containerPort: 3000
               protocol: TCP

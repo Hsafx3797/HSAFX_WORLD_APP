@@ -8,11 +8,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, users, coinTransactions, tools, eq, and, or, sql, desc, asc } from '@hsafx/db';
 import { createLogger } from '@hsafx/shared/logger';
+import { requireAdminRole } from '@/lib/require-admin';
 
 const log = createLogger('admin-billing-transactions');
 
 export async function GET(request: NextRequest) {
   try {
+    const authResult = await requireAdminRole();
+    if (authResult instanceof NextResponse) return authResult;
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '10', 10);

@@ -149,7 +149,7 @@ async function logAuditEvent(
  * a given action is restricted. Returns null if not impersonating or
  * if the action is allowed. Returns a NextResponse 403 if blocked.
  */
-async function getImpersonationGuard(
+export async function getImpersonationGuard(
   request: NextRequest,
   action: string,
 ): Promise<NextResponse | null> {

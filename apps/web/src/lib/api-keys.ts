@@ -64,10 +64,15 @@ function getEnvTag(): 'live' | 'test' {
  */
 function randomAlphanumeric(len: number): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  const bytes = randomBytes(len);
+  const maxValid = 256 - (256 % chars.length); // 252 — reject >= 252 to avoid bias
   let result = '';
-  for (let i = 0; i < len; i++) {
-    result += chars[bytes[i]! % chars.length];
+  while (result.length < len) {
+    const bytes = randomBytes(len - result.length + 16); // over-sample to minimize loops
+    for (let i = 0; i < bytes.length && result.length < len; i++) {
+      if (bytes[i]! < maxValid) {
+        result += chars[bytes[i]! % chars.length];
+      }
+    }
   }
   return result;
 }

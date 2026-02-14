@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db, plans, planLimits, featureFlags, eq } from '@hsafx/db';
 import { createLogger } from '@hsafx/shared/logger';
 import { publishAdminAlert } from '@hsafx/shared';
+import { requireAdminRole } from '@/lib/require-admin';
 
 const log = createLogger('admin-config');
 
@@ -41,6 +42,9 @@ interface SystemConfig {
 
 export async function GET() {
   try {
+    const authResult = await requireAdminRole();
+    if (authResult instanceof NextResponse) return authResult;
+
     // Get rate limits from plan limits table
     const rateLimits = await db
       .select({
@@ -135,6 +139,9 @@ export async function GET() {
 
 export async function PATCH(request: NextRequest) {
   try {
+    const authResult = await requireAdminRole();
+    if (authResult instanceof NextResponse) return authResult;
+
     const body = await request.json();
     const { maintenance } = body;
 

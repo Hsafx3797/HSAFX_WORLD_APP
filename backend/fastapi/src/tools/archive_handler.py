@@ -93,6 +93,11 @@ class ArchiveHandler:
             extract_dir = out_dir / "extracted"
             extract_dir.mkdir(exist_ok=True)
             with zipfile.ZipFile(io.BytesIO(data)) as zf:
+                # Validate all member paths to prevent ZIP slip (path traversal)
+                for member in zf.namelist():
+                    member_path = (extract_dir / member).resolve()
+                    if not str(member_path).startswith(str(extract_dir.resolve())):
+                        return {"success": False, "error": f"Unsafe path in archive: {member}"}
                 zf.extractall(extract_dir)
             files = [str(p) for p in extract_dir.rglob("*") if p.is_file()]
             return {"success": True, "output": files, "metadata": {"file_count": len(files)}}

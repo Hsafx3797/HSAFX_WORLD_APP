@@ -46,22 +46,25 @@ async function verifyTfaCookie(token: string): Promise<string | null> {
   const age = Date.now() - parseInt(timestamp, 10);
   if (isNaN(age) || age > TFA_COOKIE_MAX_AGE_MS) return null;
 
-  // Verify HMAC-SHA256 signature using Web Crypto
+  // Verify HMAC-SHA256 signature using Web Crypto (constant-time)
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
     'raw',
     encoder.encode(secret),
     { name: 'HMAC', hash: 'SHA-256' },
     false,
-    ['sign'],
+    ['verify'],
   );
   const payload = `${userId}:${timestamp}`;
-  const signatureBytes = await crypto.subtle.sign('HMAC', key, encoder.encode(payload));
-  const expectedSig = Array.from(new Uint8Array(signatureBytes))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
+  // Decode the hex signature back to bytes for constant-time verify
+  const sigBytes = new Uint8Array(sig.length / 2);
+  for (let i = 0; i < sigBytes.length; i++) {
+    sigBytes[i] = parseInt(sig.slice(i * 2, i * 2 + 2), 16);
+  }
+  if (sigBytes.some(b => isNaN(b))) return null;
+  const valid = await crypto.subtle.verify('HMAC', key, sigBytes, encoder.encode(payload));
 
-  if (sig !== expectedSig) return null;
+  if (!valid) return null;
 
   return userId;
 }

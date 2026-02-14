@@ -9,11 +9,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, coinPacks, eq } from '@hsafx/db';
 import { createLogger } from '@hsafx/shared/logger';
+import { requireAdminRole } from '@/lib/require-admin';
 
 const log = createLogger('admin-coin-packs');
 
 export async function GET() {
   try {
+    const authResult = await requireAdminRole();
+    if (authResult instanceof NextResponse) return authResult;
+
     const packs = await db
       .select()
       .from(coinPacks)
@@ -28,6 +32,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const authResult = await requireAdminRole();
+    if (authResult instanceof NextResponse) return authResult;
+
     const body = await request.json();
     const { name, coins, priceInCents, bonusCoins, isActive, sortOrder } = body;
 
@@ -56,6 +63,9 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
+    const authResult = await requireAdminRole();
+    if (authResult instanceof NextResponse) return authResult;
+
     const body = await request.json();
     const { id, ...updates } = body;
 
@@ -82,6 +92,9 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const authResult = await requireAdminRole();
+    if (authResult instanceof NextResponse) return authResult;
+
     const body = await request.json();
     const { id } = body;
 

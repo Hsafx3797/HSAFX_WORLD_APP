@@ -51,6 +51,26 @@ interface EmailTemplate {
   text: (vars: Record<string, string>) => string;
 }
 
+// ─── HTML Escape ────────────────────────────────────────────────────────────
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/** Return a copy of vars with all values HTML-escaped */
+function esc(vars: Record<string, string>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(vars)) {
+    out[k] = escapeHtml(v);
+  }
+  return out;
+}
+
 // ─── Templates ──────────────────────────────────────────────────────────────
 
 function wrapHtml(content: string): string {
@@ -82,20 +102,20 @@ function wrapHtml(content: string): string {
 const TEMPLATES: Record<EmailTemplateName, EmailTemplate> = {
   'welcome': {
     subject: `Welcome to ${APP_NAME}! 🎉`,
-    html: (vars) => wrapHtml(`
+    html: (rawVars) => { const vars = esc(rawVars); return wrapHtml(`
       <h2>Welcome, ${vars.userName || 'there'}!</h2>
       <p>Thanks for signing up for ${APP_NAME}. Your account is ready to go.</p>
       <p>Explore hundreds of developer tools — text converters, code formatters, data generators, and more.</p>
       <a href="${APP_URL}/dashboard" class="btn">Go to Dashboard</a>
       <p>If you have any questions, just reply to this email.</p>
-    `),
+    `); },
     text: (vars) =>
       `Welcome to ${APP_NAME}, ${vars.userName || 'there'}!\n\nYour account is ready. Visit ${APP_URL}/dashboard to get started.\n\nIf you have questions, reply to this email.`,
   },
 
   'email-verification': {
     subject: `Verify your email — ${APP_NAME}`,
-    html: (vars) => wrapHtml(`
+    html: (rawVars) => { const vars = esc(rawVars); return wrapHtml(`
       <h2>Verify your email address</h2>
       <p>Hi ${vars.userName || 'there'},</p>
       <p>Click the button below to verify your email address and activate your account:</p>
@@ -103,14 +123,14 @@ const TEMPLATES: Record<EmailTemplateName, EmailTemplate> = {
       <p>Or copy and paste this link into your browser:</p>
       <p style="word-break: break-all; font-size: 13px; color: #666;">${vars.verifyLink}</p>
       <p>This link expires in <strong>24 hours</strong>.</p>
-    `),
+    `); },
     text: (vars) =>
       `Hi ${vars.userName || 'there'},\n\nVerify your email address by visiting:\n${vars.verifyLink}\n\nThis link expires in 24 hours.`,
   },
 
   'password-reset': {
     subject: `Reset your password — ${APP_NAME}`,
-    html: (vars) => wrapHtml(`
+    html: (rawVars) => { const vars = esc(rawVars); return wrapHtml(`
       <h2>Reset your password</h2>
       <p>Hi ${vars.userName || 'there'},</p>
       <p>We received a request to reset your password. Click the button below to create a new password:</p>
@@ -118,14 +138,14 @@ const TEMPLATES: Record<EmailTemplateName, EmailTemplate> = {
       <p>Or copy and paste this link into your browser:</p>
       <p style="word-break: break-all; font-size: 13px; color: #666;">${vars.resetLink}</p>
       <p>This link expires in <strong>1 hour</strong>. If you didn't request this, no action is needed.</p>
-    `),
+    `); },
     text: (vars) =>
       `Hi ${vars.userName || 'there'},\n\nReset your password by visiting:\n${vars.resetLink}\n\nThis link expires in 1 hour. If you didn't request this, ignore this email.`,
   },
 
   'invoice-receipt': {
     subject: `Invoice receipt — ${APP_NAME}`,
-    html: (vars) => wrapHtml(`
+    html: (rawVars) => { const vars = esc(rawVars); return wrapHtml(`
       <h2>Payment received</h2>
       <p>Hi ${vars.userName || 'there'},</p>
       <p>We've received your payment. Here's your receipt:</p>
@@ -136,21 +156,21 @@ const TEMPLATES: Record<EmailTemplateName, EmailTemplate> = {
         <tr><td style="padding: 8px;"><strong>Date</strong></td><td style="padding: 8px;">${vars.date || new Date().toLocaleDateString()}</td></tr>
       </table>
       <a href="${APP_URL}/billing" class="btn">View Billing</a>
-    `),
+    `); },
     text: (vars) =>
       `Payment received!\n\nInvoice #${vars.invoiceNumber || 'N/A'}\nPlan: ${vars.planName || 'N/A'}\nAmount: ${vars.amount || '$0.00'}\nDate: ${vars.date || new Date().toLocaleDateString()}\n\nView billing: ${APP_URL}/billing`,
   },
 
   'usage-alert': {
     subject: `Usage limit warning — ${APP_NAME}`,
-    html: (vars) => wrapHtml(`
+    html: (rawVars) => { const vars = esc(rawVars); return wrapHtml(`
       <h2>Usage limit approaching</h2>
       <p>Hi ${vars.userName || 'there'},</p>
       <p>You've used <strong>${vars.usagePercent || '80'}%</strong> of your <strong>${vars.limitName || 'daily tool executions'}</strong> limit for the current period.</p>
       <p>Current usage: <span class="code">${vars.currentUsage || '0'} / ${vars.maxUsage || '0'}</span></p>
       <p>To continue using tools without interruption, consider upgrading your plan:</p>
       <a href="${APP_URL}/billing" class="btn">Upgrade Plan</a>
-    `),
+    `); },
     text: (vars) =>
       `Usage Alert: You've used ${vars.usagePercent || '80'}% of your ${vars.limitName || 'daily tool executions'} limit.\n\nCurrent: ${vars.currentUsage || '0'} / ${vars.maxUsage || '0'}\n\nUpgrade: ${APP_URL}/billing`,
   },
@@ -185,8 +205,11 @@ export interface EmailResult {
 /**
  * Interpolates `{{variableName}}` placeholders in a string.
  */
-function interpolate(template: string, variables: Record<string, string>): string {
-  return template.replace(/\{\{(\w+)\}\}/g, (_, key: string) => variables[key] ?? '');
+function interpolate(template: string, variables: Record<string, string>, shouldEscape = false): string {
+  return template.replace(/\{\{(\w+)\}\}/g, (_, key: string) => {
+    const val = variables[key] ?? '';
+    return shouldEscape ? escapeHtml(val) : val;
+  });
 }
 
 /**
@@ -228,7 +251,7 @@ export async function sendEmail(options: SendEmailOptions): Promise<EmailResult>
     return sendRawEmail({
       to,
       subject: interpolate(dbTpl.subject, variables),
-      html: interpolate(dbTpl.htmlBody, variables),
+      html: interpolate(dbTpl.htmlBody, variables, true),
       text: dbTpl.textBody ? interpolate(dbTpl.textBody, variables) : undefined,
       userId,
       templateId: dbTpl.id,

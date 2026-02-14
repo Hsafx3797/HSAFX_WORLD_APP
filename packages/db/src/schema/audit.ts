@@ -88,8 +88,8 @@ export const auditLogs = pgTable('audit_logs', {
   metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 }, (t) => [
-  index('al_user_id_idx').on(t.userId),
-  index('al_created_at_idx').on(t.createdAt),
+  index('aul_user_id_idx').on(t.userId),
+  index('aul_created_at_idx').on(t.createdAt),
 ]);
 
 // Types inferred from tables using InferSelectModel and InferInsertModel

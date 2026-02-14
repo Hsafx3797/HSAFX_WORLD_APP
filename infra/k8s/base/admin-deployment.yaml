@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: admin
-          image: hsafx/admin:latest
+          image: hsafx/admin:0.1.0  # pin to release tag; CI/CD replaces via kustomize
           ports:
             - containerPort: 3001
               protocol: TCP

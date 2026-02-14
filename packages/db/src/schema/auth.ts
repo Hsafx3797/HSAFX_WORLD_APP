@@ -1,4 +1,4 @@
-import { pgTable, pgEnum, uuid, text, varchar, timestamp, boolean, integer, index, uniqueIndex } from 'drizzle-orm/pg-core';
+import { pgTable, pgEnum, uuid, text, varchar, timestamp, boolean, integer, jsonb, index, uniqueIndex } from 'drizzle-orm/pg-core';
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
@@ -138,7 +138,7 @@ export const activityLogs = pgTable('activity_logs', {
   action: text('action').notNull(), // 'login', 'tool_execute', 'subscription_change'
   resource: text('resource'), // Resource type affected
   resourceId: uuid('resource_id'), // ID of affected resource
-  metadata: text('metadata').$type<Record<string, unknown>>(),
+  metadata: jsonb('metadata').$type<Record<string, unknown>>(),
   ipAddress: text('ip_address'),
   userAgent: text('user_agent'),
   createdAt: timestamp('created_at').notNull().defaultNow(),

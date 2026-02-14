@@ -15,6 +15,30 @@ import { createLogger } from '@hsafx/shared/logger';
 
 const log = createLogger('admin-2fa');
 
+// ─── In-memory rate limiter for TOTP verification ────────────────────────────
+const TOTP_MAX_ATTEMPTS = 5;
+const TOTP_WINDOW_MS = 60_000; // 1 minute
+const attempts = new Map<string, { count: number; resetAt: number }>();
+
+function checkTotpRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const entry = attempts.get(userId);
+  if (!entry || now >= entry.resetAt) {
+    attempts.set(userId, { count: 1, resetAt: now + TOTP_WINDOW_MS });
+    return true;
+  }
+  entry.count++;
+  return entry.count <= TOTP_MAX_ATTEMPTS;
+}
+
+// Periodic cleanup to prevent memory leak
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of attempts) {
+    if (now >= entry.resetAt) attempts.delete(key);
+  }
+}, 60_000);
+
 // Ensure the admin_totp_secrets table exists
 let tableEnsured = false;
 async function ensureTable() {
@@ -52,6 +76,15 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const { action, code } = body;
+
+    // Rate limit TOTP code submissions to prevent brute-force
+    const CODE_ACTIONS = new Set(['enable', 'verify', 'disable']);
+    if (CODE_ACTIONS.has(action) && !checkTotpRateLimit(userId)) {
+      return NextResponse.json(
+        { code: 'RATE_LIMITED', message: 'Too many attempts. Please wait a minute.' },
+        { status: 429 }
+      );
+    }
 
     switch (action) {
       case 'setup': {

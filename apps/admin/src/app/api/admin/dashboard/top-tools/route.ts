@@ -7,9 +7,12 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db, tools, toolExecutions, eq, sql, desc } from '@hsafx/db';
+import { requireAdminRole } from '@/lib/require-admin';
 
 export async function GET(request: NextRequest) {
   try {
+    const authResult = await requireAdminRole();
+    if (authResult instanceof NextResponse) return authResult;
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '5', 10);
 

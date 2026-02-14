@@ -145,7 +145,7 @@ async def kict_track_container_html(container_no: str) -> List[ContainerTrackRes
     hist_url = os.getenv("KICT_HISTORY_URL", "https://kictl.com/Enquiries/ContainerHistory")
     details_url = os.getenv("KICT_DETAILS_URL", "https://kictl.com/Enquiries/ContainerDetails")
     # SSL verification configurability (to handle local issuer/corporate proxies)
-    verify_opt: bool | str = os.getenv("KICT_SSL_VERIFY", "false").lower() in ("1", "true", "yes", "on")
+    verify_opt: bool | str = os.getenv("KICT_SSL_VERIFY", "true").lower() in ("1", "true", "yes", "on")
     ca_bundle = os.getenv("SCRAPER_CA_BUNDLE", "").strip()
     if ca_bundle and os.path.exists(ca_bundle):
         verify_opt = ca_bundle

@@ -170,6 +170,17 @@ async function handleCheckoutCompleted(
     const currentBalance = wallet?.balance ?? 0;
     const newBalance = currentBalance + totalCoins;
 
+    // Insert payment record so refunds can find it
+    await tx.insert(payments).values({
+      userId,
+      amount: (data.amount_total as number) ?? 0,
+      currency: (data.currency as string) ?? 'usd',
+      status: 'succeeded',
+      provider: 'stripe',
+      stripePaymentIntentId: paymentIntentId ?? null,
+      metadata: { stripeEventId: eventId, packId, sessionId: data.id },
+    });
+
     await tx.insert(coinTransactions).values({
       userId,
       amount: totalCoins,

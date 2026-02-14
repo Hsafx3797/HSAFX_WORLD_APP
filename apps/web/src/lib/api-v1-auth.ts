@@ -82,6 +82,19 @@ function generateRequestId(): string {
 
 // ─── Rate Limiting (counter-based via Upstash) ────────────────
 
+/** Atomic INCR + EXPIRE — avoids the race where a crash between INCR and EXPIRE leaves a key without TTL */
+const INCR_WITH_TTL_SCRIPT = `
+local count = redis.call('INCR', KEYS[1])
+if count == 1 then
+  redis.call('EXPIRE', KEYS[1], ARGV[1])
+end
+return count
+`;
+
+async function atomicIncr(key: string, ttlSeconds: number): Promise<number> {
+  return await redis.eval(INCR_WITH_TTL_SCRIPT, [key], [ttlSeconds]) as number;
+}
+
 async function checkRateLimit(
   keyId: string,
   tier: RateLimitTier,
@@ -91,10 +104,7 @@ async function checkRateLimit(
 
   // Burst check (per minute)
   const burstKey = keys.rateLimit.apiKeyBurst(keyId);
-  const burstCount = await redis.incr(burstKey);
-  if (burstCount === 1) {
-    await redis.expire(burstKey, TTL.RATE_LIMIT_BURST);
-  }
+  const burstCount = await atomicIncr(burstKey, TTL.RATE_LIMIT_BURST);
   if (burstCount > limits.burstPerMinute) {
     const burstTtl = await redis.ttl(burstKey);
     return {
@@ -108,10 +118,7 @@ async function checkRateLimit(
 
   // Hourly check
   const hourlyKey = keys.rateLimit.apiKeyHourly(keyId);
-  const hourlyCount = await redis.incr(hourlyKey);
-  if (hourlyCount === 1) {
-    await redis.expire(hourlyKey, TTL.RATE_LIMIT_HOURLY);
-  }
+  const hourlyCount = await atomicIncr(hourlyKey, TTL.RATE_LIMIT_HOURLY);
   if (hourlyCount > limits.requestsPerHour) {
     const hourlyTtl = await redis.ttl(hourlyKey);
     return {
@@ -125,10 +132,7 @@ async function checkRateLimit(
 
   // Daily check
   const dailyKey = keys.rateLimit.apiKeyDaily(keyId);
-  const dailyCount = await redis.incr(dailyKey);
-  if (dailyCount === 1) {
-    await redis.expire(dailyKey, TTL.RATE_LIMIT_DAILY);
-  }
+  const dailyCount = await atomicIncr(dailyKey, TTL.RATE_LIMIT_DAILY);
   if (dailyCount > limits.requestsPerDay) {
     const dailyTtl = await redis.ttl(dailyKey);
     return {

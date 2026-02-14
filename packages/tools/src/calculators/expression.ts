@@ -374,24 +374,15 @@ export function evaluateExpression(expression: string): number {
 
 /**
  * Simple expression evaluator (basic math only, no functions)
- * Uses Function constructor for simple cases
+ * Delegates to the safe tokenizer/parser instead of using Function constructor.
  */
 export function evaluateSimpleExpression(expr: string): number {
-  // Remove whitespace and validate
+  // Remove whitespace and validate basic math only
   const cleaned = expr.replace(/\s/g, '');
-  
-  // Only allow numbers, operators, parentheses, and decimal points
+
   if (!/^[\d+\-*/().]+$/.test(cleaned)) {
     throw new Error('Invalid expression - only basic math operators allowed');
   }
-  
-  try {
-    const result = new Function(`return ${cleaned}`)();
-    if (typeof result !== 'number' || !isFinite(result)) {
-      throw new Error('Invalid result');
-    }
-    return result;
-  } catch {
-    throw new Error('Failed to evaluate expression');
-  }
+
+  return evaluateExpression(cleaned);
 }

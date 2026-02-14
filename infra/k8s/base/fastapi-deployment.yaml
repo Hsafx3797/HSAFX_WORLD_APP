@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: fastapi
-          image: hsafx/fastapi:latest
+          image: hsafx/fastapi:0.1.0  # pin to release tag; CI/CD replaces via kustomize
           ports:
             - containerPort: 8000
               protocol: TCP

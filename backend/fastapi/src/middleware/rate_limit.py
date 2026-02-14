@@ -51,7 +51,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         else:
             limit = settings.RATE_LIMIT_FREE
 
-        # Check rate limit
+        # Check rate limit BEFORE processing request
         try:
             redis = await get_redis()
             key = get_rate_limit_key(request)
@@ -62,14 +62,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             if current == 1:
                 await redis.expire(rate_key, 60)
 
-            # Add rate limit headers
-            response = await call_next(request)
-            response.headers["X-RateLimit-Limit"] = str(limit)
-            response.headers["X-RateLimit-Remaining"] = str(max(0, limit - current))
-            response.headers["X-RateLimit-Reset"] = str(await redis.ttl(rate_key))
-
             if current > limit:
                 logger.warning("Rate limit exceeded", key=key, current=current, limit=limit)
+                ttl = await redis.ttl(rate_key)
                 return Response(
                     content='{"error": "Rate limit exceeded"}',
                     status_code=429,
@@ -77,10 +72,16 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                     headers={
                         "X-RateLimit-Limit": str(limit),
                         "X-RateLimit-Remaining": "0",
-                        "X-RateLimit-Reset": str(await redis.ttl(rate_key)),
-                        "Retry-After": str(await redis.ttl(rate_key)),
+                        "X-RateLimit-Reset": str(ttl),
+                        "Retry-After": str(ttl),
                     },
                 )
+
+            # Only process request after rate limit passes
+            response = await call_next(request)
+            response.headers["X-RateLimit-Limit"] = str(limit)
+            response.headers["X-RateLimit-Remaining"] = str(max(0, limit - current))
+            response.headers["X-RateLimit-Reset"] = str(await redis.ttl(rate_key))
 
             return response
 

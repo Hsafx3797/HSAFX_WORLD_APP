@@ -102,7 +102,7 @@ services:
       dockerfile: infra/docker/Dockerfile.web
       args:
         - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-https://hsafx.world}
-        - NEXT_PUBLIC_FASTAPI_URL=http://fastapi:8000
+        - NEXT_PUBLIC_FASTAPI_URL=${NEXT_PUBLIC_FASTAPI_URL:-https://api.hsafx.world}
     container_name: hsafx-web
     restart: unless-stopped
     expose:
@@ -121,7 +121,7 @@ services:
       - META_CLIENT_ID=${META_CLIENT_ID:-}
       - META_CLIENT_SECRET=${META_CLIENT_SECRET:-}
       - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-https://hsafx.world}
-      - NEXT_PUBLIC_FASTAPI_URL=http://fastapi:8000
+      - NEXT_PUBLIC_FASTAPI_URL=${NEXT_PUBLIC_FASTAPI_URL:-https://api.hsafx.world}
       - POLAR_ACCESS_TOKEN=${POLAR_ACCESS_TOKEN:-}
       - POLAR_WEBHOOK_SECRET=${POLAR_WEBHOOK_SECRET:-}
     depends_on:

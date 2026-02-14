@@ -2,6 +2,13 @@
 Shared test fixtures for HSAFX World App FastAPI backend.
 """
 
+import os
+
+# Set required secrets BEFORE any app module is imported.
+# The config module validates at import time (fail-fast in production).
+os.environ.setdefault("SECRET_KEY", "test-secret-key")
+os.environ.setdefault("INTERNAL_SECRET", "test-internal-secret")
+
 import pytest
 from fastapi.testclient import TestClient
 

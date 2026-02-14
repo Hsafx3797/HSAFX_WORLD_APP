@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { scrypt, randomBytes, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import { router, protectedProcedure, adminProcedure } from '../trpc';
-import { users, userPreferences, userSettings, sessions, userOnboarding, eq, and } from '@hsafx/db/schema';
+import { users, userPreferences, userSettings, sessions, userOnboarding, eq, and, ne } from '@hsafx/db/schema';
 import { TRPCError } from '@trpc/server';
 import { getUserPlan } from '../helpers/get-user-plan';
 
@@ -230,15 +230,13 @@ export const userRouter = router({
         .where(eq(users.id, userId));
 
       // Invalidate all other sessions (keep current session active)
-      const sessionToken = ctx.session?.sessionToken;
-      if (sessionToken) {
+      if (ctx.session?.id) {
         await ctx.db
           .delete(sessions)
           .where(
             and(
               eq(sessions.userId, userId),
-              // Delete all sessions except the current one
-              // The session token in DB is hashed, so we compare by userId and exclude current
+              ne(sessions.id, ctx.session.id),
             ),
           );
       }

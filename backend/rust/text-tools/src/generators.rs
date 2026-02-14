@@ -33,12 +33,9 @@ pub fn lorem_ipsum(paragraphs: usize) -> String {
         .join("\n\n")
 }
 
-/// Password generator
+/// Password generator — uses CSPRNG (getrandom) for secure randomness
 #[wasm_bindgen]
 pub fn generate_password(length: usize, include_symbols: bool, include_numbers: bool) -> String {
-    use std::collections::hash_map::DefaultHasher;
-    use std::hash::{Hash, Hasher};
-    
     let mut chars = String::from("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
     if include_numbers {
         chars.push_str("0123456789");
@@ -48,15 +45,32 @@ pub fn generate_password(length: usize, include_symbols: bool, include_numbers: 
     }
     
     let char_vec: Vec<char> = chars.chars().collect();
-    
-    (0..length)
-        .map(|i| {
-            let mut hasher = DefaultHasher::new();
-            (i, length, "pwd").hash(&mut hasher);
-            let idx = (hasher.finish() as usize) % char_vec.len();
-            char_vec[idx]
-        })
-        .collect()
+    let charset_len = char_vec.len();
+
+    // Use CSPRNG via getrandom
+    let mut random_bytes = vec![0u8; length];
+    getrandom::getrandom(&mut random_bytes).expect("getrandom failed");
+
+    // Rejection sampling to avoid modulo bias
+    let max_valid = (256 / charset_len) * charset_len;
+
+    let mut result = String::with_capacity(length);
+    let mut byte_idx = 0;
+
+    while result.len() < length {
+        if byte_idx >= random_bytes.len() {
+            // Need more random bytes
+            random_bytes.resize(length * 2, 0);
+            getrandom::getrandom(&mut random_bytes[byte_idx..]).expect("getrandom failed");
+        }
+        let b = random_bytes[byte_idx] as usize;
+        byte_idx += 1;
+        if b < max_valid {
+            result.push(char_vec[b % charset_len]);
+        }
+    }
+
+    result
 }
 
 /// Escape regex special characters

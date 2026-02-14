@@ -7,9 +7,13 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db, plans, planLimits, planFeatures, eq, desc, sql } from '@hsafx/db';
+import { requireAdminRole } from '@/lib/require-admin';
 
 export async function GET() {
   try {
+    const authResult = await requireAdminRole();
+    if (authResult instanceof NextResponse) return authResult;
+
     const allPlans = await db
       .select()
       .from(plans)
@@ -35,6 +39,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const authResult = await requireAdminRole();
+    if (authResult instanceof NextResponse) return authResult;
+
     const body = await request.json();
     const { name, slug, description, priceMonthlyCents, priceYearlyCents, coinGrant, polarProductId, isActive } = body;
 
@@ -65,6 +72,9 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
+    const authResult = await requireAdminRole();
+    if (authResult instanceof NextResponse) return authResult;
+
     const body = await request.json();
     const { id, ...updates } = body;
 

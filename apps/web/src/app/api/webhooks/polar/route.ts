@@ -167,7 +167,12 @@ async function handleSubscriptionCreated(
   // Create subscription + grant coins in transaction
   await db.transaction(async (tx) => {
     const now = new Date();
-    const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // +30 days
+    // Use event data for period boundaries; fall back to billing cycle duration
+    const recurringInterval = (data.recurring_interval as string) ?? 'month';
+    const periodEnd = data.current_period_end
+      ? new Date(data.current_period_end as string)
+      : new Date(now.getTime() + (recurringInterval === 'year' ? 365 : 30) * 24 * 60 * 60 * 1000);
+    const billingCycle = recurringInterval === 'year' ? 'yearly' as const : 'monthly' as const;
 
     // Upsert subscription
     await tx
@@ -176,7 +181,7 @@ async function handleSubscriptionCreated(
         userId,
         planId: plan.id,
         status: 'active',
-        billingCycle: 'monthly',
+        billingCycle,
         polarSubscriptionId,
         currentPeriodStart: now,
         currentPeriodEnd: periodEnd,

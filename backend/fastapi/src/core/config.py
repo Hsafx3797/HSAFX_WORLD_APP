@@ -2,6 +2,7 @@
 Application Configuration
 """
 
+import os
 from functools import lru_cache
 from typing import List
 
@@ -15,7 +16,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "HSAFX World App"
     VERSION: str = "1.0.0"
     DEBUG: bool = False
-    SECRET_KEY: str = "change-me-in-production"
+    SECRET_KEY: str = ""
 
     # Server
     HOST: str = "0.0.0.0"
@@ -26,7 +27,7 @@ class Settings(BaseSettings):
     REDIS_CACHE_TTL: int = 3600
 
     # Auth — better-auth session validation (JWT removed — better-auth is the single auth system)
-    INTERNAL_SECRET: str = "internal-secret-change-me"  # For Next.js → FastAPI service calls
+    INTERNAL_SECRET: str = ""  # For Next.js → FastAPI service calls
 
     # CORS
     CORS_ORIGINS: List[str] = [
@@ -106,7 +107,14 @@ class Settings(BaseSettings):
 @lru_cache()
 def get_settings() -> Settings:
     """Get cached settings instance"""
-    return Settings()
+    s = Settings()
+    # Fail fast if critical secrets are missing in production
+    if not s.DEBUG:
+        if not s.SECRET_KEY:
+            raise RuntimeError("SECRET_KEY must be set in production (via env or .env)")
+        if not s.INTERNAL_SECRET:
+            raise RuntimeError("INTERNAL_SECRET must be set in production (via env or .env)")
+    return s
 
 
 settings = get_settings()

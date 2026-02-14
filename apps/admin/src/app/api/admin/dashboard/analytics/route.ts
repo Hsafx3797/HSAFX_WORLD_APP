@@ -6,9 +6,12 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db, users, subscriptions, coinTransactions, toolExecutions, sql } from '@hsafx/db';
+import { requireAdminRole } from '@/lib/require-admin';
 
 export async function GET(request: NextRequest) {
   try {
+    const authResult = await requireAdminRole();
+    if (authResult instanceof NextResponse) return authResult;
     const { searchParams } = new URL(request.url);
     const days = parseInt(searchParams.get('days') || '30', 10);
     const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);

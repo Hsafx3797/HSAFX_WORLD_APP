@@ -10,11 +10,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, users, subscriptions, plans, coinTransactions, toolExecutions, activityLogs, eq, and, or, sql, desc, asc } from '@hsafx/db';
 import { createLogger } from '@hsafx/shared/logger';
+import { requireAdminRole } from '@/lib/require-admin';
 
 const log = createLogger('admin-users');
 
 export async function GET(request: NextRequest) {
   try {
+    const authResult = await requireAdminRole();
+    if (authResult instanceof NextResponse) return authResult;
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '10', 10);
@@ -161,6 +164,9 @@ export async function GET(request: NextRequest) {
  */
 export async function PATCH(request: NextRequest) {
   try {
+    const authResult = await requireAdminRole();
+    if (authResult instanceof NextResponse) return authResult;
+
     const body = await request.json();
     const { id, ...updates } = body as { id?: string; [k: string]: unknown };
 
@@ -238,6 +244,9 @@ export async function PATCH(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
+    const authResult = await requireAdminRole();
+    if (authResult instanceof NextResponse) return authResult;
+
     const body = await request.json();
     const { id } = body as { id?: string };
 

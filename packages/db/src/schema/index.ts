@@ -9,4 +9,4 @@ export * from './config';
 export * from './relations';
 
 // Re-export Drizzle utilities
-export { sql, eq, and, or, not, isNull, isNotNull, desc, asc, gte, gt, lte, lt, like, ilike, inArray, notInArray, between } from 'drizzle-orm';
+export { sql, eq, ne, and, or, not, isNull, isNotNull, desc, asc, gte, gt, lte, lt, like, ilike, inArray, notInArray, between } from 'drizzle-orm';

@@ -692,44 +692,23 @@ class PdfHandler:
         return {"success": True, "output": str(out)}
 
     async def _handle_pdf_redact(self, *, input_file_url, opts, out_dir, **kw):
-        """Redact text patterns from PDF (replace with black boxes)."""
-        pypdf = _get_pypdf()
-        from reportlab.pdfgen import canvas as rl_canvas
+        """Redact text patterns from PDF.
 
-        data = await self._download(input_file_url)
-        reader = pypdf.PdfReader(io.BytesIO(data))
-        writer = pypdf.PdfWriter()
-
-        patterns = opts.get("patterns", [])  # List of strings to redact
-        if isinstance(patterns, str):
-            patterns = [p.strip() for p in patterns.split(",")]
-
-        # Simple text-replacement approach: extract text, find offsets, overlay black boxes
-        for page in reader.pages:
-            text = page.extract_text() or ""
-            pw = float(page.mediabox.width)
-            ph = float(page.mediabox.height)
-
-            # For each pattern found, we note it (real coordinate-based redaction
-            # requires a PDF library with layout info; this is a simplified version)
-            has_match = any(p in text for p in patterns)
-
-            if has_match and patterns:
-                # Overlay approach: add a note that redaction was applied
-                packet = io.BytesIO()
-                c = rl_canvas.Canvas(packet, pagesize=(pw, ph))
-                c.setFont("Helvetica", 6)
-                c.setFillColorRGB(1, 0, 0)
-                c.drawString(5, 5, f"[Redacted: {len(patterns)} pattern(s)]")
-                c.save()
-                packet.seek(0)
-                overlay = pypdf.PdfReader(packet)
-                page.merge_page(overlay.pages[0])
-
-            writer.add_page(page)
-
-        out = self._write_pdf(writer, out_dir, "redacted.pdf")
-        return {"success": True, "output": str(out), "metadata": {"patterns": len(patterns)}}
+        IMPORTANT: True coordinate-based redaction requires a PDF library with layout
+        information (e.g., pdfplumber or pymupdf). This implementation removes matching
+        text from the extracted content and overlays black rectangles, but for production
+        use a library like pymupdf (fitz) that can locate and remove text at specific
+        coordinates. This version returns an error to avoid giving a false sense of
+        security.
+        """
+        return {
+            "success": False,
+            "error": "PDF redaction is not yet implemented with a secure backend. "
+                     "Text-based redaction requires a library that can locate and "
+                     "permanently remove text at specific PDF coordinates (e.g., pymupdf). "
+                     "The current implementation cannot guarantee that sensitive text is "
+                     "actually removed from the PDF.",
+        }
 
     # ── Repair & Conversion ──────────────────────────────────────
 

@@ -14,9 +14,11 @@ export const sleep = (ms: number): Promise<void> => {
  */
 export const generateRandomString = (length: number = 32): string => {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const bytes = new Uint8Array(length);
+  globalThis.crypto.getRandomValues(bytes);
   let result = '';
   for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
+    result += chars.charAt(bytes[i]! % chars.length);
   }
   return result;
 };
