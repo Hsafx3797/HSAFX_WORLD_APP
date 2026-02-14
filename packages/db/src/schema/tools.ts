@@ -127,7 +127,7 @@ export const usageCounters = pgTable('usage_counters', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 }, (t) => [
-  uniqueIndex('uc_user_resource_period_idx').on(t.userId, t.resourceType, t.periodStart),
+  uniqueIndex('uc_user_resource_period_idx').on(t.userId, t.resourceType, t.resourceId, t.periodStart),
 ]);
 
 /**
@@ -226,7 +226,9 @@ export const dailyProTrials = pgTable('daily_pro_trials', {
   userId: uuid('user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
-  toolId: text('tool_id').notNull(),
+  toolId: uuid('tool_id')
+    .notNull()
+    .references(() => tools.id),
   trialDate: text('trial_date').notNull(), // YYYY-MM-DD
   usedAt: timestamp('used_at').notNull().defaultNow(),
 }, (t) => [

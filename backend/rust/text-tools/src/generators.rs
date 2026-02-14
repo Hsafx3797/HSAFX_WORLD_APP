@@ -188,11 +188,13 @@ pub fn simple_diff(text1: &str, text2: &str) -> String {
 /// Truncate text with ellipsis
 #[wasm_bindgen]
 pub fn truncate_text(text: &str, max_length: usize, ellipsis: &str) -> String {
-    if text.len() <= max_length {
+    let char_count = text.chars().count();
+    if char_count <= max_length {
         text.to_string()
     } else {
-        let truncate_at = max_length.saturating_sub(ellipsis.len());
-        format!("{}{}", &text[..truncate_at], ellipsis)
+        let truncate_at = max_length.saturating_sub(ellipsis.chars().count());
+        let truncated: String = text.chars().take(truncate_at).collect();
+        format!("{}{}", truncated, ellipsis)
     }
 }
 

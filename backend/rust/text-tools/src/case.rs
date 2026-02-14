@@ -54,11 +54,35 @@ pub fn camel_case(text: &str) -> String {
     result
 }
 
+/// Split text into words, handling camelCase boundaries and non-alphanumeric separators.
+fn split_words(text: &str) -> Vec<String> {
+    let mut words = Vec::new();
+    let mut current = String::new();
+
+    for ch in text.chars() {
+        if !ch.is_alphanumeric() {
+            if !current.is_empty() {
+                words.push(std::mem::take(&mut current));
+            }
+        } else if ch.is_uppercase() && !current.is_empty() {
+            // camelCase boundary: push accumulated word, start new one
+            words.push(std::mem::take(&mut current));
+            current.push(ch);
+        } else {
+            current.push(ch);
+        }
+    }
+    if !current.is_empty() {
+        words.push(current);
+    }
+    words
+}
+
 /// Convert text to snake_case
 #[wasm_bindgen]
 pub fn snake_case(text: &str) -> String {
-    text.split(|c: char| !c.is_alphanumeric())
-        .filter(|s| !s.is_empty())
+    split_words(text)
+        .iter()
         .map(|s| s.to_lowercase())
         .collect::<Vec<_>>()
         .join("_")
@@ -67,8 +91,8 @@ pub fn snake_case(text: &str) -> String {
 /// Convert text to kebab-case
 #[wasm_bindgen]
 pub fn kebab_case(text: &str) -> String {
-    text.split(|c: char| !c.is_alphanumeric())
-        .filter(|s| !s.is_empty())
+    split_words(text)
+        .iter()
         .map(|s| s.to_lowercase())
         .collect::<Vec<_>>()
         .join("-")
@@ -77,8 +101,8 @@ pub fn kebab_case(text: &str) -> String {
 /// Convert text to CONSTANT_CASE
 #[wasm_bindgen]
 pub fn constant_case(text: &str) -> String {
-    text.split(|c: char| !c.is_alphanumeric())
-        .filter(|s| !s.is_empty())
+    split_words(text)
+        .iter()
         .map(|s| s.to_uppercase())
         .collect::<Vec<_>>()
         .join("_")
@@ -122,5 +146,6 @@ mod tests {
     fn test_snake_case() {
         assert_eq!(snake_case("Hello World"), "hello_world");
         assert_eq!(snake_case("helloWorld"), "hello_world");
+        assert_eq!(snake_case("myHTTPClient"), "my_h_t_t_p_client");
     }
 }

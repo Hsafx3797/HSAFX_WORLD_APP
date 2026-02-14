@@ -1002,8 +1002,10 @@ class PythonToolExecutor:
         # Father blocks grandfather
         if "father" in rels:
             blocked.add("paternal_grandfather")
-        # Children block siblings (Hanafi)
-        if "son" in rels or "daughter" in rels:
+        # Children block siblings:
+        # Sons (alone or with daughters) block full & paternal siblings.
+        # Daughters alone do NOT block siblings — they share as asaba.
+        if "son" in rels:
             blocked |= {
                 "full_brother", "full_sister",
                 "paternal_brother", "paternal_sister",
@@ -1221,6 +1223,8 @@ class PythonToolExecutor:
     # Speech-to-Text (Whisper integration)
     # ═══════════════════════════════════════════════════════════════
 
+    _whisper_models: dict[str, Any] = {}
+
     async def _handle_speech_to_text(
         self, *, input_data: Any, opts: dict
     ) -> dict[str, Any]:
@@ -1248,7 +1252,9 @@ class PythonToolExecutor:
             else:
                 return {"success": False, "error": "Provide audio file path or base64 data"}
 
-            model = whisper.load_model(model_size)
+            if model_size not in self._whisper_models:
+                self._whisper_models[model_size] = whisper.load_model(model_size)
+            model = self._whisper_models[model_size]
             result = model.transcribe(
                 audio_path, language=language, verbose=False
             )

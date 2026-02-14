@@ -203,11 +203,14 @@ function createAuth() {
         if (!email) return;
 
         // Check if sign-in succeeded (2xx) or failed (4xx)
-        if (ctx.context.responseHeaders?.get('set-cookie')) {
-          // Success — session cookie was set
+        // Use returned context status; a 2FA challenge returns a specific code,
+        // not a final success, so don't count it as a failure.
+        const status = ctx.context.returned?.status ?? 0;
+        if (status >= 200 && status < 300) {
+          // Success — session was created
           await resetLoginFailures(ip, email);
-        } else {
-          // Failure — no session cookie
+        } else if (status >= 400) {
+          // Failure — bad credentials (but NOT a 2FA redirect)
           await recordFailedLogin(ip, email);
         }
       }),

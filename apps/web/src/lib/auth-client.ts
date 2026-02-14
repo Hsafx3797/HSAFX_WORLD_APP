@@ -21,6 +21,6 @@ export const {
 } = authClient;
 
 // Re-export password reset and email verification helpers
-export const forgotPassword = authClient.resetPassword;
+export const forgotPassword = authClient.forgetPassword;
 export const resetPassword = authClient.resetPassword;
 export const verifyEmail = authClient.verifyEmail;

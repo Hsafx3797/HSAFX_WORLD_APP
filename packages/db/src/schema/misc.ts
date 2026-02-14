@@ -30,7 +30,11 @@ export const fileUploads = pgTable('file_uploads', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
   deletedAt: timestamp('deleted_at'),
-});
+}, (t) => [
+  index('fu_user_id_idx').on(t.userId),
+  index('fu_status_idx').on(t.status),
+  index('fu_expires_at_idx').on(t.expiresAt),
+]);
 
 /**
  * Async Jobs - Background job tracking

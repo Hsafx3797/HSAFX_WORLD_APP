@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { scrypt, randomBytes, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import { router, protectedProcedure, adminProcedure } from '../trpc';
-import { users, userPreferences, userSettings, sessions, userOnboarding, eq, and, ne } from '@hsafx/db/schema';
+import { users, userPreferences, userSettings, sessions, userOnboarding, eq, and, ne, or, ilike } from '@hsafx/db/schema';
 import { TRPCError } from '@trpc/server';
 import { getUserPlan } from '../helpers/get-user-plan';
 
@@ -127,10 +127,18 @@ export const userRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       const offset = (input.page - 1) * input.pageSize;
-      
+
+      const where = input.search
+        ? or(
+            ilike(users.fullName, `%${input.search}%`),
+            ilike(users.email, `%${input.search}%`),
+          )
+        : undefined;
+
       const items = await ctx.db
         .select()
         .from(users)
+        .where(where)
         .limit(input.pageSize)
         .offset(offset);
 

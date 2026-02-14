@@ -27,11 +27,18 @@ import {
 const RATE_LIMIT_SKIP_PREFIXES = ['/_next', '/favicon', '/static', '/images'];
 
 function getClientIp(request: NextRequest): string {
-  return (
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-    request.headers.get('x-real-ip') ??
-    '127.0.0.1'
-  );
+  // Trust only the rightmost IP appended by our reverse proxy.
+  // Clients can spoof earlier entries in x-forwarded-for.
+  const xff = request.headers.get('x-forwarded-for');
+  if (xff) {
+    const ips = xff.split(',').map((s) => s.trim()).filter(Boolean);
+    // In a single-proxy setup, the last entry is the client IP appended by the proxy.
+    // For multi-proxy, adjust via TRUSTED_PROXY_DEPTH env var.
+    const depth = Math.max(1, parseInt(process.env.TRUSTED_PROXY_DEPTH ?? '1', 10));
+    const idx = Math.max(0, ips.length - depth);
+    return ips[idx] ?? '127.0.0.1';
+  }
+  return request.headers.get('x-real-ip') ?? request.ip ?? '127.0.0.1';
 }
 
 async function handleRateLimit(

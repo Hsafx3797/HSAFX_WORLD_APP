@@ -432,7 +432,7 @@ class ImageConverter:
         if brightness != 1.0:
             result = ImageEnhance.Brightness(result).enhance(brightness)
         if contrast != 1.0:
-            result = ImageEnhance.Color(result).enhance(contrast)
+            result = ImageEnhance.Contrast(result).enhance(contrast)
         if saturation != 1.0:
             result = ImageEnhance.Color(result).enhance(saturation)
         if sharpness != 1.0:

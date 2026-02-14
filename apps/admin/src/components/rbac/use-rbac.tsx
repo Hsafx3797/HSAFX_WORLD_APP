@@ -58,17 +58,6 @@ export function RBACProvider({ children, session: initialSession }: RBACProvider
         }
         const data = await response.json();
         setSession(data.session);
-
-        // If 2FA is enabled but not verified, redirect to verification page
-        // (unless already on the verification page or login)
-        if (
-          data.session?.twoFactorEnabled &&
-          !data.session?.twoFactorVerified &&
-          pathname !== '/verify-2fa' &&
-          pathname !== '/login'
-        ) {
-          router.replace(`/verify-2fa?callbackUrl=${encodeURIComponent(pathname || '/dashboard')}`);
-        }
       } catch (err) {
         setError(err instanceof Error ? err : new Error('Unknown error'));
       } finally {
@@ -77,7 +66,19 @@ export function RBACProvider({ children, session: initialSession }: RBACProvider
     }
 
     fetchSession();
-  }, [initialSession, pathname, router]);
+  }, [initialSession]);
+
+  // Redirect to 2FA verification if needed
+  React.useEffect(() => {
+    if (
+      session?.twoFactorEnabled &&
+      !session?.twoFactorVerified &&
+      pathname !== '/verify-2fa' &&
+      pathname !== '/login'
+    ) {
+      router.replace(`/verify-2fa?callbackUrl=${encodeURIComponent(pathname || '/dashboard')}`);
+    }
+  }, [session, pathname, router]);
 
   const value = React.useMemo<RBACContextValue>(() => ({
     session,

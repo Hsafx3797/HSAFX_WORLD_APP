@@ -32,6 +32,14 @@ import {
   processedWebhooks,
   referrals,
   coinEvents,
+  userStreaks,
+  usageCoinFallbacks,
+  invoicePayments,
+  paymentMethods,
+  coinPurchasePayments,
+  planMetadata,
+  planUpgradeRules,
+  planAuditLogs,
 } from './billing';
 import {
   toolCategories,
@@ -43,6 +51,7 @@ import {
   apiKeys,
   anonymousUsage,
   apiRateLimits,
+  dailyProTrials,
 } from './tools';
 import {
   fileUploads,
@@ -54,6 +63,7 @@ import {
   emailTemplates,
   emailLogs,
   adminSettings,
+  userOnboarding,
 } from './misc';
 import {
   apiRequestLogs,
@@ -97,11 +107,20 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   loginRewardClaims: many(loginRewardClaims),
   userDailyRewardCaps: many(userDailyRewardCaps),
   referralsSent: many(referrals),
+  paymentMethods: many(paymentMethods),
+  planAuditLogs: many(planAuditLogs),
+
+  // 1:1 billing
+  streak: one(userStreaks, {
+    fields: [users.id],
+    references: [userStreaks.userId],
+  }),
 
   // 1:M tools
   toolExecutions: many(toolExecutions),
   usageCounters: many(usageCounters),
   apiKeys: many(apiKeys),
+  dailyProTrials: many(dailyProTrials),
 
   // 1:M misc
   fileUploads: many(fileUploads),
@@ -110,6 +129,12 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   favorites: many(favorites),
   activityLogs: many(activityLogs),
   emailLogs: many(emailLogs),
+
+  // 1:1 misc
+  onboarding: one(userOnboarding, {
+    fields: [users.id],
+    references: [userOnboarding.userId],
+  }),
 }));
 
 export const userPreferencesRelations = relations(userPreferences, ({ one }) => ({
@@ -214,6 +239,10 @@ export const plansRelations = relations(plans, ({ many }) => ({
   features: many(planFeatures),
   coinRules: many(planCoinRules),
   subscriptions: many(subscriptions),
+  metadata: many(planMetadata),
+  upgradeRulesFrom: many(planUpgradeRules),
+  usageCoinFallbacks: many(usageCoinFallbacks),
+  auditLogs: many(planAuditLogs),
 }));
 
 export const planLimitsRelations = relations(planLimits, ({ one }) => ({
@@ -349,6 +378,7 @@ export const toolsRelations = relations(tools, ({ one, many }) => ({
   executions: many(toolExecutions),
   coinCosts: many(toolCoinCosts),
   anonymousUsage: many(anonymousUsage),
+  dailyProTrials: many(dailyProTrials),
 }));
 
 export const toolLimitsRelations = relations(toolLimits, ({ one }) => ({
@@ -495,6 +525,102 @@ export const userPermissionOverridesRelations = relations(userPermissionOverride
 export const adminSettingsRelations = relations(adminSettings, ({ one }) => ({
   updatedByUser: one(users, {
     fields: [adminSettings.updatedBy],
+    references: [users.id],
+  }),
+}));
+
+// ═══════════════════════════════════════════════════════════════
+// MISSING RELATIONS (P2-14)
+// ═══════════════════════════════════════════════════════════════
+
+export const userStreaksRelations = relations(userStreaks, ({ one }) => ({
+  user: one(users, {
+    fields: [userStreaks.userId],
+    references: [users.id],
+  }),
+}));
+
+export const usageCoinFallbacksRelations = relations(usageCoinFallbacks, ({ one }) => ({
+  plan: one(plans, {
+    fields: [usageCoinFallbacks.planId],
+    references: [plans.id],
+  }),
+}));
+
+export const invoicePaymentsRelations = relations(invoicePayments, ({ one }) => ({
+  invoice: one(invoices, {
+    fields: [invoicePayments.invoiceId],
+    references: [invoices.id],
+  }),
+  payment: one(payments, {
+    fields: [invoicePayments.paymentId],
+    references: [payments.id],
+  }),
+}));
+
+export const paymentMethodsRelations = relations(paymentMethods, ({ one }) => ({
+  user: one(users, {
+    fields: [paymentMethods.userId],
+    references: [users.id],
+  }),
+}));
+
+export const coinPurchasePaymentsRelations = relations(coinPurchasePayments, ({ one }) => ({
+  payment: one(payments, {
+    fields: [coinPurchasePayments.paymentId],
+    references: [payments.id],
+  }),
+  coinPack: one(coinPacks, {
+    fields: [coinPurchasePayments.coinPackId],
+    references: [coinPacks.id],
+  }),
+}));
+
+export const planMetadataRelations = relations(planMetadata, ({ one }) => ({
+  plan: one(plans, {
+    fields: [planMetadata.planId],
+    references: [plans.id],
+  }),
+}));
+
+export const planUpgradeRulesRelations = relations(planUpgradeRules, ({ one }) => ({
+  fromPlan: one(plans, {
+    fields: [planUpgradeRules.fromPlanId],
+    references: [plans.id],
+    relationName: 'upgradeRulesFrom',
+  }),
+  toPlan: one(plans, {
+    fields: [planUpgradeRules.toPlanId],
+    references: [plans.id],
+    relationName: 'upgradeRulesTo',
+  }),
+}));
+
+export const planAuditLogsRelations = relations(planAuditLogs, ({ one }) => ({
+  plan: one(plans, {
+    fields: [planAuditLogs.planId],
+    references: [plans.id],
+  }),
+  changedByUser: one(users, {
+    fields: [planAuditLogs.changedBy],
+    references: [users.id],
+  }),
+}));
+
+export const dailyProTrialsRelations = relations(dailyProTrials, ({ one }) => ({
+  user: one(users, {
+    fields: [dailyProTrials.userId],
+    references: [users.id],
+  }),
+  tool: one(tools, {
+    fields: [dailyProTrials.toolId],
+    references: [tools.id],
+  }),
+}));
+
+export const userOnboardingRelations = relations(userOnboarding, ({ one }) => ({
+  user: one(users, {
+    fields: [userOnboarding.userId],
     references: [users.id],
   }),
 }));

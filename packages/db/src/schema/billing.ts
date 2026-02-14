@@ -26,7 +26,7 @@ export const subscriptionStatusEnum = pgEnum('subscription_status', [
 ]);
 
 export const coinTransactionTypeEnum = pgEnum('coin_transaction_type', [
-  'grant', 'purchase', 'spend', 'refund', 'adjustment', 'reward',
+  'grant', 'purchase', 'spend', 'refund', 'adjustment', 'reward', 'referral',
 ]);
 
 export const invoiceStatusEnum = pgEnum('invoice_status', [
@@ -108,7 +108,7 @@ export const subscriptions = pgTable('subscriptions', {
     .notNull()
     .references(() => plans.id),
   status: subscriptionStatusEnum('status').notNull(),
-  billingCycle: text('billing_cycle').notNull(), // 'monthly', 'yearly'
+  billingCycle: billingIntervalEnum('billing_cycle').notNull(),
   currentPeriodStart: timestamp('current_period_start').notNull(),
   currentPeriodEnd: timestamp('current_period_end').notNull(),
   cancelAtPeriodEnd: boolean('cancel_at_period_end').notNull().default(false),
@@ -248,7 +248,9 @@ export const toolCoinCosts = pgTable('tool_coin_costs', {
   baWeight: decimal('ba_weight', { precision: 4, scale: 2 }).notNull().default('1.0'),
   overrideCost: integer('override_cost'), // null = use BA weight formula
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
-});
+}, (t) => [
+  uniqueIndex('tcc_tool_id_idx').on(t.toolId),
+]);
 
 /**
  * Plan Features - Admin-configurable feature flags per plan
@@ -509,7 +511,7 @@ export const referrals = pgTable('referrals', {
 }, (t) => [
   index('ref_referrer_id_idx').on(t.referrerId),
   index('ref_referred_user_idx').on(t.referredUserId),
-  index('ref_code_idx').on(t.referralCode),
+  uniqueIndex('ref_code_unique_idx').on(t.referralCode),
 ]);
 
 /**
