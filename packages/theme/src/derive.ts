@@ -63,11 +63,9 @@ export function deriveColors(
   intent: ThemeIntent,
   mode: 'light' | 'dark'
 ): ResolvedColors {
-  // Parse primary color from intent
-  const primaryOklch = parseToOklch(intent.brand.primary);
-  if (!primaryOklch) {
-    throw new Error(`Invalid primary color: ${intent.brand.primary}`);
-  }
+  // Parse primary color from intent (fallback to neutral indigo on invalid input)
+  const primaryOklch = parseToOklch(intent.brand.primary)
+    ?? { l: 0.55, c: 0.25, h: 264 };
 
   const isLight = mode === 'light';
   const hue = primaryOklch.h;
@@ -269,8 +267,8 @@ export function deriveRadius(roundness: number): ResolvedRadius {
 
   return {
     radius: `${base}rem`,
-    radiusSm: `calc(${base}rem - 4px)`,
-    radiusMd: `calc(${base}rem - 2px)`,
+    radiusSm: `max(calc(${base}rem - 4px), 0px)`,
+    radiusMd: `max(calc(${base}rem - 2px), 0px)`,
     radiusLg: `${base}rem`,
     radiusXl: `calc(${base}rem + 4px)`,
   };

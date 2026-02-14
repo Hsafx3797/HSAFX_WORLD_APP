@@ -157,9 +157,12 @@ export function ensureContrast(
   let adjusted = { ...foreground };
   const bgLightness = background.l;
   const direction = bgLightness > 0.5 ? -1 : 1; // Darken on light bg, lighten on dark bg
+  const bgHex = oklchToHex(background); // Cache — background doesn't change
   
   let iterations = 0;
-  while (getContrastRatio(adjusted, background) < minRatio && iterations < maxIterations) {
+  while (iterations < maxIterations) {
+    const fgHex = oklchToHex(adjusted);
+    if (wcagHex(fgHex, bgHex) >= minRatio) break;
     adjusted = adjustLightness(adjusted, direction * 0.05);
     iterations++;
   }

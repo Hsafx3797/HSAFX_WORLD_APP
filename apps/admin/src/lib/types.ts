@@ -102,7 +102,7 @@ export interface UserActivity {
 
 // ==================== SUBSCRIPTIONS ====================
 
-export type SubscriptionStatus = 'active' | 'canceled' | 'cancelled' | 'expired' | 'paused' | 'past_due' | 'trialing';
+export type SubscriptionStatus = 'active' | 'canceled' | 'expired' | 'paused' | 'past_due' | 'trialing';
 export type SubscriptionPlan = 'free' | 'starter' | 'pro' | 'pro_monthly' | 'pro_yearly' | 'enterprise' | 'advance_monthly' | 'advance_yearly';
 export type BillingCycle = 'monthly' | 'yearly' | 'lifetime';
 

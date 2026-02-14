@@ -34,7 +34,7 @@ export function hasAllPermissions(role: AdminRole, permissions: Permission[]): b
  */
 export function getRolePermissions(role: AdminRole): Permission[] {
   if (role === 'super_admin') {
-    return Object.values(ROLE_PERMISSIONS).flat() as Permission[];
+    return [...new Set(Object.values(ROLE_PERMISSIONS).flat())] as Permission[];
   }
   return ROLE_PERMISSIONS[role] || [];
 }

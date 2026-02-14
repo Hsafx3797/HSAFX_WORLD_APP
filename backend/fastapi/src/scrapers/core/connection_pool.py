@@ -6,6 +6,7 @@ Tool 446 - Seaport Terminal Container Activity Tracker
 Performance: 40-50% speedup via connection reuse + HTTP/2 multiplexing
 """
 
+import asyncio
 import os
 from typing import Dict, Optional, Union
 
@@ -13,6 +14,7 @@ import httpx
 
 # Global connection pool: terminal name -> persistent AsyncClient
 _TERMINAL_CLIENTS: Dict[str, httpx.AsyncClient] = {}
+_CLIENT_LOCK = asyncio.Lock()
 
 # Connection pool configuration (optimized for performance)
 DEFAULT_MAX_KEEPALIVE = 50  # Increased from 20 for better connection reuse
@@ -103,16 +105,17 @@ async def get_terminal_client(
     """
     terminal_key = terminal.upper()
 
-    if terminal_key not in _TERMINAL_CLIENTS:
-        _TERMINAL_CLIENTS[terminal_key] = create_client_for_terminal(
-            terminal=terminal_key,
-            timeout=timeout,
-            headers=headers,
-            verify=verify,
-            http2=http2
-        )
+    async with _CLIENT_LOCK:
+        if terminal_key not in _TERMINAL_CLIENTS:
+            _TERMINAL_CLIENTS[terminal_key] = create_client_for_terminal(
+                terminal=terminal_key,
+                timeout=timeout,
+                headers=headers,
+                verify=verify,
+                http2=http2
+            )
 
-    return _TERMINAL_CLIENTS[terminal_key]
+        return _TERMINAL_CLIENTS[terminal_key]
 
 
 async def close_terminal_client(terminal: str) -> None:

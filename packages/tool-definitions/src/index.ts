@@ -32,6 +32,18 @@ import { toolRegistry } from './registry';
 import type { ToolMetadata, ToolCategory, ToolTier, ToolExecution } from './types';
 
 // =====================================================
+// Pre-built indexes for O(1) lookup
+// =====================================================
+
+const _toolByIdMap = new Map<string, ToolMetadata>(toolRegistry.map(t => [t.id, t]));
+const _toolBySlugMap = new Map<string, ToolMetadata>();
+for (const t of toolRegistry) {
+  _toolBySlugMap.set(t.id, t);
+  const slugVariant = t.id.replace(/_/g, '-');
+  if (slugVariant !== t.id) _toolBySlugMap.set(slugVariant, t);
+}
+
+// =====================================================
 // Helper Functions
 // =====================================================
 
@@ -39,15 +51,14 @@ import type { ToolMetadata, ToolCategory, ToolTier, ToolExecution } from './type
  * Get a tool by its unique ID
  */
 export function getToolById(id: string): ToolMetadata | undefined {
-  return toolRegistry.find(t => t.id === id);
+  return _toolByIdMap.get(id);
 }
 
 /**
  * Get a tool by its URL slug (same as ID in this implementation)
  */
 export function getToolBySlug(slug: string): ToolMetadata | undefined {
-  // Slug is the same as id, or convert from URL-friendly slug
-  return toolRegistry.find(t => t.id === slug || t.id === slug.replace(/-/g, '_'));
+  return _toolBySlugMap.get(slug) ?? _toolBySlugMap.get(slug.replace(/-/g, '_'));
 }
 
 /**

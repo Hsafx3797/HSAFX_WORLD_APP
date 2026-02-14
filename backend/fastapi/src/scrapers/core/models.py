@@ -11,8 +11,7 @@ from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
-# Container number regex pattern
-CONTAINER_PATTERN = re.compile(r'^[A-Z]{4}\d{7}$')
+from .utils import CONTAINER_PATTERN
 
 
 class VesselSchedule(BaseModel):

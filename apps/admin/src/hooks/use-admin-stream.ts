@@ -82,6 +82,7 @@ export function useAdminStream() {
   const [data, setData] = useState<StreamData>(INITIAL_STATE);
   const esRef = useRef<EventSource | null>(null);
   const retryRef = useRef(0);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const connect = useCallback(() => {
     if (esRef.current) {
@@ -181,13 +182,17 @@ export function useAdminStream() {
       // Exponential backoff: 1s, 2s, 4s, 8s, max 30s
       const delay = Math.min(1000 * 2 ** retryRef.current, 30000);
       retryRef.current++;
-      setTimeout(connect, delay);
+      reconnectTimeoutRef.current = setTimeout(connect, delay);
     };
   }, []);
 
   useEffect(() => {
     connect();
     return () => {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
       esRef.current?.close();
     };
   }, [connect]);

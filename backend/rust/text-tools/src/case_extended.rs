@@ -172,7 +172,11 @@ pub fn leet_speak(text: &str) -> String {
         .collect()
 }
 
-/// Studly case (random capitalization)
+/// Studly case — deterministic pseudo-random capitalization.
+///
+/// Uses `DefaultHasher` seeded by `(index, char)`, so the same input always
+/// produces the same output.  This is intentional for a text-transform tool
+/// (reproducible results), but the output is NOT cryptographically random.
 #[wasm_bindgen]
 pub fn studly_case(text: &str) -> String {
     use std::collections::hash_map::DefaultHasher;

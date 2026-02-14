@@ -1,7 +1,7 @@
 # HSAFX World App — Comprehensive Codebase Review
 
 > **Audit Date:** June 2025  
-> **Last Updated:** February 2026  
+> **Last Updated:** July 2025  
 > **Scope:** Full monorepo — 8 packages, 2 apps, 2 backend services, infrastructure  
 > **Files Analyzed:** 200+ source files across TypeScript, Python, Rust, Docker, Kubernetes
 
@@ -55,14 +55,18 @@ HSAFX World App is an ambitious, well-structured monorepo delivering 446+ profes
 | **P0**   |  18   |  15   |       2        |        1        |    0     |
 | **P1**   |  22   |  20   |       0        |        1        |    1     |
 | **P2**   |  27   |  18   |       2        |        0        |    7     |
-| **P3**   |  21   |   —   |       —        |        —        |    —     |
+| **P3**   |  21   |  16   |       3        |        1        |    1     |
 
-> **All P0, P1, and P2 issues have been addressed.** P0+P1 fixes committed at `e741a73`. P2 fixes committed at Q3.
+> **All P0, P1, P2, and P3 issues have been addressed.** P0+P1 fixes committed at `e741a73`. P2 fixes committed at Q3 (`620f03a`). P3 fixes committed at Q4.
+>
 > - **P0-02, P0-03**: Verified as false positives (code already handles these correctly)
 > - **P0-11 / P1-03**: Documented design decision — TOTP/OAuth encryption deferred to dedicated encryption sprint
 > - **P1-19**: N+1 query optimization — not a security issue, deferred to performance sprint
 > - **P2-05, P2-20**: Verified as false positives (stub file doesn't exist; FFmpeg transpose is valid)
 > - **P2-03, P2-04, P2-06, P2-11, P2-18, P2-25, P2-26**: Deferred — performance optimizations, architectural changes, or separate sprint items
+> - **P3-02, P3-16, P3-21**: Verified as false positives (React Query properly imported; only one DEFAULT_INTENT; PythonToolExecutor correctly defines execute())
+> - **P3-19**: Design decision — POST for 2FA status check is by design (action discriminator pattern)
+> - **P3-09**: Deferred — in-memory scraper cache needs Redis infrastructure for cross-worker sharing
 
 ### Key Findings
 
@@ -443,29 +447,29 @@ HSAFX World App is an ambitious, well-structured monorepo delivering 446+ profes
 
 ## 6. Low-Priority Issues (P3)
 
-| #   | Issue                                                          | Location                                                   |
-| --- | -------------------------------------------------------------- | ---------------------------------------------------------- |
-| 1   | `canceled`/`cancelled` inconsistent spelling                   | `apps/admin/src/lib/types.ts`                              |
-| 2   | React Query imported but SWR is used                           | `apps/admin/src/components/providers.tsx`                  |
-| 3   | `getRolePermissions('super_admin')` returns duplicates         | `apps/admin/src/lib/permissions.ts`                        |
-| 4   | SSE reconnect timeout not cleaned on unmount                   | `apps/admin/src/hooks/use-admin-stream.ts`                 |
-| 5   | `startMetricsCollector()` called at module top level           | `apps/admin/src/app/api/admin/stream/route.ts`             |
-| 6   | Duplicate URL encoding implementations in Rust                 | `backend/rust/text-tools/src/encoding.rs`                  |
-| 7   | `get_available_tools()` lists only 19 of 100+ functions        | `backend/rust/text-tools/src/lib.rs`                       |
-| 8   | Deterministic "random" in `studly_case`, `shuffle_lines`       | `backend/rust/text-tools/src/case_extended.rs`             |
-| 9   | In-memory scraper cache not shared across workers              | `backend/fastapi/src/scrapers/services/cache_service.py`   |
-| 10  | Connection pool TOCTOU race                                    | `backend/fastapi/src/scrapers/core/connection_pool.py`     |
-| 11  | `CONTAINER_PATTERN` regex duplicated                           | `backend/fastapi/src/scrapers/core/utils.py` + `models.py` |
-| 12  | Dead PDF code in `document_converter.py`                       | `backend/fastapi/src/tools/document_converter.py`          |
-| 13  | Tool helper functions use O(n) linear search on 446+ items     | `packages/tool-definitions/src/index.ts`                   |
-| 14  | `deriveColors` throws on invalid color — crashes React         | `packages/theme/src/color.ts`                              |
-| 15  | Negative `radiusSm` when `roundness=0`                         | `packages/theme/src/derive.ts`                             |
-| 16  | Two conflicting default theme intents                          | `packages/theme/src/`                                      |
-| 17  | `canPerformAction` defaults to `allowed: true` for unknowns    | `packages/theme/src/access.ts`                             |
-| 18  | `ensureContrast` does 40+ color conversions in a loop          | `packages/theme/src/color.ts`                              |
-| 19  | `export2FA` in admin uses POST for status check                | `apps/admin/src/lib/api.ts`                                |
-| 20  | Admin export functions don't check `res.ok`                    | `apps/admin/src/lib/api.ts`                                |
-| 21  | `PythonToolExecutor` uses `execute()` vs `convert()` interface | `backend/fastapi/src/tools/executor.py`                    |
+| #   | Issue                                                          | Location                                                    | Status             |
+| --- | -------------------------------------------------------------- | ----------------------------------------------------------- | ------------------ |
+| 1   | `canceled`/`cancelled` inconsistent spelling                   | `apps/admin/src/lib/types.ts`                               | ✅ Fixed           |
+| 2   | React Query imported but SWR is used                           | `apps/admin/src/components/providers.tsx`                   | ❌ False Positive  |
+| 3   | `getRolePermissions('super_admin')` returns duplicates         | `apps/admin/src/lib/permissions.ts`                         | ✅ Fixed           |
+| 4   | SSE reconnect timeout not cleaned on unmount                   | `apps/admin/src/hooks/use-admin-stream.ts`                  | ✅ Fixed           |
+| 5   | `startMetricsCollector()` called at module top level           | `apps/admin/src/app/api/admin/stream/route.ts`              | ✅ Fixed           |
+| 6   | Duplicate URL encoding implementations in Rust                 | `backend/rust/text-tools/src/encoding.rs`                   | ✅ Fixed (docs)    |
+| 7   | `get_available_tools()` lists only 19 of 100+ functions        | `backend/rust/text-tools/src/lib.rs`                        | ✅ Fixed (~151)    |
+| 8   | Deterministic "random" in `studly_case`, `shuffle_lines`       | `backend/rust/text-tools/src/case_extended.rs`              | ✅ Fixed (docs)    |
+| 9   | In-memory scraper cache not shared across workers              | `backend/fastapi/src/scrapers/services/cache_service.py`    | ⏳ Deferred        |
+| 10  | Connection pool TOCTOU race                                    | `backend/fastapi/src/scrapers/core/connection_pool.py`      | ✅ Fixed           |
+| 11  | `CONTAINER_PATTERN` regex duplicated                           | `backend/fastapi/src/scrapers/core/utils.py` + `models.py`  | ✅ Fixed           |
+| 12  | Dead PDF code in `document_converter.py`                       | `backend/fastapi/src/tools/document_converter.py`           | ✅ Fixed (deprecated) |
+| 13  | Tool helper functions use O(n) linear search on 446+ items     | `packages/tool-definitions/src/index.ts`                    | ✅ Fixed (Map)     |
+| 14  | `deriveColors` throws on invalid color — crashes React         | `packages/theme/src/derive.ts`                              | ✅ Fixed           |
+| 15  | Negative `radiusSm` when `roundness=0`                         | `packages/theme/src/derive.ts`                              | ✅ Fixed           |
+| 16  | Two conflicting default theme intents                          | `packages/theme/src/`                                       | ❌ False Positive  |
+| 17  | `canPerformAction` defaults to `allowed: true` for unknowns    | `packages/theme/src/access.ts`                              | ✅ Fixed           |
+| 18  | `ensureContrast` does 40+ color conversions in a loop          | `packages/theme/src/utils.ts`                               | ✅ Fixed           |
+| 19  | `export2FA` in admin uses POST for status check                | `apps/admin/src/lib/api.ts`                                 | 📋 Design Decision |
+| 20  | Admin export functions don't check `res.ok`                    | `apps/admin/src/lib/api.ts`                                 | ✅ Fixed           |
+| 21  | `PythonToolExecutor` uses `execute()` vs `convert()` interface | `backend/fastapi/src/tools/executor.py`                     | ❌ False Positive  |
 
 ---
 
@@ -973,18 +977,18 @@ Multiple auth implementations coexist:
 
 ### OWASP Top 10 Mapping
 
-| OWASP Category                     | Status  | Findings                                                                                                         |
-| ---------------------------------- | :-----: | ---------------------------------------------------------------------------------------------------------------- |
-| **A01: Broken Access Control**     | ✅ PASS | ~~Admin routes have no auth~~ Fixed (P0-01); ~~impersonation guard unused~~ Fixed (P1-05)                        |
-| **A02: Cryptographic Failures**    | ⚠️ WARN | OAuth tokens still plaintext (P0-11 deferred); ~~`Math.random()`~~ Fixed (P1-12); ~~timing-unsafe HMAC~~ Fixed (P1-08) |
+| OWASP Category                     | Status  | Findings                                                                                                                                     |
+| ---------------------------------- | :-----: | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| **A01: Broken Access Control**     | ✅ PASS | ~~Admin routes have no auth~~ Fixed (P0-01); ~~impersonation guard unused~~ Fixed (P1-05)                                                    |
+| **A02: Cryptographic Failures**    | ⚠️ WARN | OAuth tokens still plaintext (P0-11 deferred); ~~`Math.random()`~~ Fixed (P1-12); ~~timing-unsafe HMAC~~ Fixed (P1-08)                       |
 | **A03: Injection**                 | ✅ PASS | ~~FFmpeg injection~~ False positive (P0-03); ~~`new Function()`~~ Fixed (P0-10); ~~SQL injection~~ Fixed (P0-12); ~~ZIP slip~~ Fixed (P0-13) |
-| **A04: Insecure Design**           | ✅ PASS | ~~Fake PDF redaction~~ Fixed (P0-04); ~~deterministic passwords~~ Fixed (P0-05); ~~coin lifecycle~~ Verified OK (P0-02) |
-| **A05: Security Misconfiguration** | ✅ PASS | ~~Hardcoded secrets~~ Fixed (P0-07); ~~SSL disabled~~ Fixed (P1-07); ~~weak ciphers~~ Fixed (P1-20)              |
-| **A06: Vulnerable Components**     | ✅ PASS | ~~gcc/g++ in image~~ Fixed (P1-17, multi-stage build)                                                            |
-| **A07: Auth Failures**             | ✅ PASS | ~~No 2FA rate limit~~ Fixed (P1-04); ~~timing-unsafe HMAC~~ Fixed (P1-08); ~~session invalidation~~ Fixed (P1-01) |
-| **A08: Data Integrity**            | ✅ PASS | ~~Rate limiter bypass~~ Fixed (P0-06); ~~backup corruption~~ Fixed (P0-14)                                       |
-| **A09: Logging Failures**          | ⚠️ WARN | PII leak via unsanitized arrays (P1-11 not yet fixed); error stacks in SSE events                                |
-| **A10: SSRF**                      | ⚠️ WARN | `wkhtmltopdf` can fetch internal URLs; scraper URLs not validated                                                |
+| **A04: Insecure Design**           | ✅ PASS | ~~Fake PDF redaction~~ Fixed (P0-04); ~~deterministic passwords~~ Fixed (P0-05); ~~coin lifecycle~~ Verified OK (P0-02)                      |
+| **A05: Security Misconfiguration** | ✅ PASS | ~~Hardcoded secrets~~ Fixed (P0-07); ~~SSL disabled~~ Fixed (P1-07); ~~weak ciphers~~ Fixed (P1-20)                                          |
+| **A06: Vulnerable Components**     | ✅ PASS | ~~gcc/g++ in image~~ Fixed (P1-17, multi-stage build)                                                                                        |
+| **A07: Auth Failures**             | ✅ PASS | ~~No 2FA rate limit~~ Fixed (P1-04); ~~timing-unsafe HMAC~~ Fixed (P1-08); ~~session invalidation~~ Fixed (P1-01)                            |
+| **A08: Data Integrity**            | ✅ PASS | ~~Rate limiter bypass~~ Fixed (P0-06); ~~backup corruption~~ Fixed (P0-14)                                                                   |
+| **A09: Logging Failures**          | ⚠️ WARN | PII leak via unsanitized arrays (P1-11 not yet fixed); error stacks in SSE events                                                            |
+| **A10: SSRF**                      | ⚠️ WARN | `wkhtmltopdf` can fetch internal URLs; scraper URLs not validated                                                                            |
 
 ### Recommendations
 
@@ -1027,58 +1031,80 @@ Multiple auth implementations coexist:
 
 ### Sprint 1 — Security (Immediate, ~3-5 days) ✅ COMPLETED
 
-| Task                                                                     | Priority | Effort | Status |
-| ------------------------------------------------------------------------ | :------: | :----: | :----: |
-| Add auth middleware to all admin API routes                              |  P0-01   |  Low   | ✅ Done |
-| Fix coin reservation lifecycle (confirm on complete, release on failure) |  P0-02   | Medium | ✅ N/A  |
-| Validate FFmpeg parameters (whitelist, type-check)                       |  P0-03   | Medium | ✅ N/A  |
-| Implement actual PDF redaction or update tool description                |  P0-04   | Medium | ✅ Done |
-| Replace `DefaultHasher` with `getrandom` in Rust                         |  P0-05   |  Low   | ✅ Done |
-| Fix rate limiter to check before processing                              |  P0-06   |  Low   | ✅ Done |
-| Remove default secrets, fail-fast on missing env vars                    |  P0-07   |  Low   | ✅ Done |
-| Insert payments row in Stripe webhook                                    |  P0-08   |  Low   | ✅ Done |
-| Fix index name collisions in auth schema                                 |  P0-09   |  Low   | ✅ Done |
-| Remove `new Function()`, use Shunting-Yard parser                        |  P0-10   |  Low   | ✅ Done |
+| Task                                                                     | Priority | Effort |   Status    |
+| ------------------------------------------------------------------------ | :------: | :----: | :---------: |
+| Add auth middleware to all admin API routes                              |  P0-01   |  Low   |   ✅ Done   |
+| Fix coin reservation lifecycle (confirm on complete, release on failure) |  P0-02   | Medium |   ✅ N/A    |
+| Validate FFmpeg parameters (whitelist, type-check)                       |  P0-03   | Medium |   ✅ N/A    |
+| Implement actual PDF redaction or update tool description                |  P0-04   | Medium |   ✅ Done   |
+| Replace `DefaultHasher` with `getrandom` in Rust                         |  P0-05   |  Low   |   ✅ Done   |
+| Fix rate limiter to check before processing                              |  P0-06   |  Low   |   ✅ Done   |
+| Remove default secrets, fail-fast on missing env vars                    |  P0-07   |  Low   |   ✅ Done   |
+| Insert payments row in Stripe webhook                                    |  P0-08   |  Low   |   ✅ Done   |
+| Fix index name collisions in auth schema                                 |  P0-09   |  Low   |   ✅ Done   |
+| Remove `new Function()`, use Shunting-Yard parser                        |  P0-10   |  Low   |   ✅ Done   |
 | Encrypt OAuth tokens and 2FA secrets at rest                             |  P0-11   | Medium | 📋 Deferred |
-| Restrict `sortBy` to enum of allowed columns                             |  P0-12   |  Low   | ✅ Done |
-| Add ZIP path traversal validation                                        |  P0-13   |  Low   | ✅ Done |
+| Restrict `sortBy` to enum of allowed columns                             |  P0-12   |  Low   |   ✅ Done   |
+| Add ZIP path traversal validation                                        |  P0-13   |  Low   |   ✅ Done   |
 
 ### Sprint 2 — Reliability (~3-5 days) ✅ COMPLETED
 
-| Task                                                | Priority | Effort | Status |
-| --------------------------------------------------- | :------: | :----: | :----: |
-| Fix `pg_backup.sh` double-compression               |  P0-14   |  Low   | ✅ Done |
-| Remove `packages/config` reference from Dockerfiles |  P0-15   |  Low   | ✅ Done |
-| Fix `NEXT_PUBLIC_FASTAPI_URL` for production        |  P0-16   |  Low   | ✅ Done |
+| Task                                                | Priority | Effort |   Status   |
+| --------------------------------------------------- | :------: | :----: | :--------: |
+| Fix `pg_backup.sh` double-compression               |  P0-14   |  Low   |  ✅ Done   |
+| Remove `packages/config` reference from Dockerfiles |  P0-15   |  Low   |  ✅ Done   |
+| Fix `NEXT_PUBLIC_FASTAPI_URL` for production        |  P0-16   |  Low   |  ✅ Done   |
 | Fix K8s staging overlay selectors                   |  P0-17   |  Low   | ⚠️ Partial |
-| Make `users.passwordHash` nullable for OAuth        |  P0-18   |  Low   | ✅ Done |
-| Fix session invalidation (exclude current session)  |  P1-01   |  Low   | ✅ Done |
-| Fix tool execution refund ID                        |  P1-02   |  Low   | ✅ Done |
-| Add 2FA rate limiting                               |  P1-04   |  Low   | ✅ Done |
-| Export and integrate impersonation guard            |  P1-05   | Medium | ✅ Done |
-| Fix `date_trunc` interval parameterization          |  P1-18   |  Low   | ✅ Done |
+| Make `users.passwordHash` nullable for OAuth        |  P0-18   |  Low   |  ✅ Done   |
+| Fix session invalidation (exclude current session)  |  P1-01   |  Low   |  ✅ Done   |
+| Fix tool execution refund ID                        |  P1-02   |  Low   |  ✅ Done   |
+| Add 2FA rate limiting                               |  P1-04   |  Low   |  ✅ Done   |
+| Export and integrate impersonation guard            |  P1-05   | Medium |  ✅ Done   |
+| Fix `date_trunc` interval parameterization          |  P1-18   |  Low   |  ✅ Done   |
 
 ### Sprint 3 — Performance & Quality (~5-7 days) ✅ COMPLETED
 
-| Task                                     | Priority | Effort | Status |
-| ---------------------------------------- | :------: | :----: | :----: |
-| Fix N+1 queries in admin routes          |  P1-19   | Medium | ⏳ Deferred |
-| Update nginx cipher config, add CSP      |  P1-20   |  Low   | ✅ Done |
-| Pin K8s image tags                       |  P1-21   |  Low   | ✅ Done |
-| Fix `activity_logs.metadata` column type |  P1-22   |  Low   | ✅ Done |
-| Cache Whisper model as singleton         |  P2-22   |  Low   | ✅ Done |
-| Add missing DB indexes                   | P2-12/13 |  Low   | ✅ Done |
-| Add missing DB relations                 |  P2-14   |  Low   | ✅ Done |
-| Fix schema types/constraints             | P2-01/07/08/09/10 |  Low   | ✅ Done |
-| Fix auth/middleware bugs                 | P2-15/16/17 |  Low   | ✅ Done |
-| Fix Python tool bugs                     | P2-19/21 |  Low   | ✅ Done |
-| Fix Rust text-tool bugs                  | P2-23/24 |  Low   | ✅ Done |
-| Wire search param in user list           |  P2-02   |  Low   | ✅ Done |
-| Fix session refetch on navigation        |  P2-27   |  Low   | ✅ Done |
-| Cache `getUserPlan()` result             |  P2-04   | Medium | ⏳ Deferred |
-| Index tool registry into Map             |    P3    |  Low   | Not started |
+| Task                                     |     Priority      | Effort |   Status    |
+| ---------------------------------------- | :---------------: | :----: | :---------: |
+| Fix N+1 queries in admin routes          |       P1-19       | Medium | ⏳ Deferred |
+| Update nginx cipher config, add CSP      |       P1-20       |  Low   |   ✅ Done   |
+| Pin K8s image tags                       |       P1-21       |  Low   |   ✅ Done   |
+| Fix `activity_logs.metadata` column type |       P1-22       |  Low   |   ✅ Done   |
+| Cache Whisper model as singleton         |       P2-22       |  Low   |   ✅ Done   |
+| Add missing DB indexes                   |     P2-12/13      |  Low   |   ✅ Done   |
+| Add missing DB relations                 |       P2-14       |  Low   |   ✅ Done   |
+| Fix schema types/constraints             | P2-01/07/08/09/10 |  Low   |   ✅ Done   |
+| Fix auth/middleware bugs                 |    P2-15/16/17    |  Low   |   ✅ Done   |
+| Fix Python tool bugs                     |     P2-19/21      |  Low   |   ✅ Done   |
+| Fix Rust text-tool bugs                  |     P2-23/24      |  Low   |   ✅ Done   |
+| Wire search param in user list           |       P2-02       |  Low   |   ✅ Done   |
+| Fix session refetch on navigation        |       P2-27       |  Low   |   ✅ Done   |
+| Cache `getUserPlan()` result             |       P2-04       | Medium | ⏳ Deferred |
+| Index tool registry into Map             |      P3-13        |  Low   |   ✅ Done   |
 
-### Sprint 4 — Accessibility & Testing (~5-7 days)
+### Sprint 4 — Low-Priority Fixes (P3) ✅ COMPLETED
+
+| Task                                                              | Priority | Effort |    Status      |
+| ----------------------------------------------------------------- | :------: | :----: | :------------: |
+| Remove duplicate `'cancelled'` from `SubscriptionStatus`          |  P3-01   |  Low   |    ✅ Done     |
+| Deduplicate `super_admin` permissions                             |  P3-03   |  Low   |    ✅ Done     |
+| Clean SSE reconnect timeout on unmount                            |  P3-04   |  Low   |    ✅ Done     |
+| Lazy-init `startMetricsCollector()`                               |  P3-05   |  Low   |    ✅ Done     |
+| Add clarifying docs to `url_encode_alt`/`url_decode_alt`          |  P3-06   |  Low   |    ✅ Done     |
+| Update `get_available_tools()` to list all ~151 exports           |  P3-07   | Medium |    ✅ Done     |
+| Document deterministic pseudo-random behavior in Rust text tools  |  P3-08   |  Low   |    ✅ Done     |
+| Add `asyncio.Lock()` to connection pool TOCTOU check              |  P3-10   |  Low   |    ✅ Done     |
+| Import `CONTAINER_PATTERN` from utils instead of redefining       |  P3-11   |  Low   |    ✅ Done     |
+| Add deprecation notices to legacy PDF methods                     |  P3-12   |  Low   |    ✅ Done     |
+| Build `Map` indexes for O(1) tool lookup                          |  P3-13   |  Low   |    ✅ Done     |
+| Add fallback for invalid color in `deriveColors`                  |  P3-14   |  Low   |    ✅ Done     |
+| Prevent negative `radiusSm`/`radiusMd` with CSS `max()`          |  P3-15   |  Low   |    ✅ Done     |
+| Default `canPerformAction()` to `allowed: false` for unknowns    |  P3-17   |  Low   |    ✅ Done     |
+| Cache `bgHex` outside loop in `ensureContrast()`                  |  P3-18   |  Low   |    ✅ Done     |
+| Add `res.ok` checks to admin export functions                     |  P3-20   |  Low   |    ✅ Done     |
+| Migrate scraper cache to Redis                                    |  P3-09   | Medium |  ⏳ Deferred   |
+
+### Sprint 5 — Accessibility & Testing (~5-7 days)
 
 | Task                                         | Priority | Effort |
 | -------------------------------------------- | :------: | :----: |

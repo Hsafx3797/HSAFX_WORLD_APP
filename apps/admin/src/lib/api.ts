@@ -242,6 +242,7 @@ export async function exportTransactions(filters: TransactionFilters = {}): Prom
   const res = await fetch(`${API_BASE}/billing/transactions/export?${params}`, {
     credentials: 'include',
   });
+  if (!res.ok) throw new Error(`Export failed: ${res.status} ${res.statusText}`);
   return res.blob();
 }
 
@@ -371,6 +372,7 @@ export async function exportAuditLogs(filters: AuditFilters = {}): Promise<Blob>
   const res = await fetch(`${API_BASE}/audit/export?${params}`, {
     credentials: 'include',
   });
+  if (!res.ok) throw new Error(`Export failed: ${res.status} ${res.statusText}`);
   return res.blob();
 }
 
@@ -645,5 +647,6 @@ export async function exportAnalyticsCSV(
   const res = await fetch(`${API_BASE}/analytics/${type}/export?startDate=${startDate}&endDate=${endDate}&format=csv`, {
     credentials: 'include',
   });
+  if (!res.ok) throw new Error(`Export failed: ${res.status} ${res.statusText}`);
   return res.blob();
 }

@@ -280,7 +280,7 @@ export function canPerformAction(
       return { allowed: true };
 
     default:
-      return { allowed: true };
+      return { allowed: false, reason: 'Unknown action' };
   }
 }
 

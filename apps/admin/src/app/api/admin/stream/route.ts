@@ -114,10 +114,9 @@ function encodeSSE(msg: SSEMessage): string {
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-// Start the centralized metrics collector (idempotent)
-startMetricsCollector();
-
 export async function GET(_request: NextRequest) {
+  // Start the centralized metrics collector (idempotent, lazy init on first request)
+  startMetricsCollector();
   // Auth check
   const headersList = await headers();
   const session = await auth.api.getSession({ headers: headersList });

@@ -53,13 +53,20 @@ pub fn url_decode(encoded: &str) -> Result<String, JsValue> {
 // Need to add urlencoding crate
 use percent_encoding::{utf8_percent_encode, percent_decode_str, NON_ALPHANUMERIC};
 
-/// URL encode (alternative implementation)
+/// URL encode — aggressive variant (encodes ALL non-alphanumeric characters).
+///
+/// Unlike `url_encode` (RFC 3986, which preserves `-._~`), this uses
+/// `percent_encoding::NON_ALPHANUMERIC`, so characters like `-`, `.`, `_`, `~`
+/// are also percent-encoded. Use when maximum encoding is desired.
 #[wasm_bindgen]
 pub fn url_encode_alt(text: &str) -> String {
     utf8_percent_encode(text, NON_ALPHANUMERIC).to_string()
 }
 
-/// URL decode (alternative implementation)
+/// URL decode — counterpart to `url_encode_alt`.
+///
+/// Functionally identical to `url_decode` for well-formed input; provided as a
+/// symmetric pair with `url_encode_alt`.
 #[wasm_bindgen]
 pub fn url_decode_alt(encoded: &str) -> Result<String, JsValue> {
     percent_decode_str(encoded)

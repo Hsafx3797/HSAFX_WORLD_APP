@@ -81,12 +81,15 @@ class DocumentConverter:
             )
         return {"success": False, "error": f"Unknown document tool: {tool_id}"}
 
-    # ── PDF Operations ───────────────────────────────────────────
+    # ── Legacy PDF Operations (DEPRECATED — use pdf_handler.py) ──
 
     async def _handle_pdf_merge(
         self, *, text_input: str | None, input_path: Path | None, opts: dict, out_dir: Path
     ) -> dict[str, Any]:
-        """Merge multiple PDFs into one."""
+        """Merge multiple PDFs into one.
+
+        .. deprecated:: Use pdf_handler.py for canonical PDF routing.
+        """
         try:
             from PyPDF2 import PdfMerger  # type: ignore
 
@@ -112,7 +115,10 @@ class DocumentConverter:
     async def _handle_pdf_split(
         self, *, text_input: str | None, input_path: Path | None, opts: dict, out_dir: Path
     ) -> dict[str, Any]:
-        """Split PDF into individual pages or ranges."""
+        """Split PDF into individual pages or ranges.
+
+        .. deprecated:: Use pdf_handler.py for canonical PDF routing.
+        """
         if not input_path:
             return {"success": False, "error": "No PDF file provided"}
         try:
@@ -151,7 +157,10 @@ class DocumentConverter:
     async def _handle_pdf_compress(
         self, *, text_input: str | None, input_path: Path | None, opts: dict, out_dir: Path
     ) -> dict[str, Any]:
-        """Compress PDF to reduce file size."""
+        """Compress PDF to reduce file size.
+
+        .. deprecated:: Use pdf_handler.py for canonical PDF routing.
+        """
         if not input_path:
             return {"success": False, "error": "No PDF file provided"}
         try:
@@ -186,7 +195,10 @@ class DocumentConverter:
     async def _handle_pdf_to_text(
         self, *, text_input: str | None, input_path: Path | None, opts: dict, out_dir: Path
     ) -> dict[str, Any]:
-        """Extract text from PDF."""
+        """Extract text from PDF.
+
+        .. deprecated:: Use pdf_handler.py for canonical PDF routing.
+        """
         if not input_path:
             return {"success": False, "error": "No PDF file provided"}
         try:
@@ -206,7 +218,10 @@ class DocumentConverter:
     async def _handle_pdf_rotate(
         self, *, text_input: str | None, input_path: Path | None, opts: dict, out_dir: Path
     ) -> dict[str, Any]:
-        """Rotate PDF pages."""
+        """Rotate PDF pages.
+
+        .. deprecated:: Use pdf_handler.py for canonical PDF routing.
+        """
         if not input_path:
             return {"success": False, "error": "No PDF file provided"}
         try:
@@ -238,7 +253,10 @@ class DocumentConverter:
     async def _handle_pdf_ocr(
         self, *, text_input: str | None, input_path: Path | None, opts: dict, out_dir: Path
     ) -> dict[str, Any]:
-        """OCR a PDF (convert to images, then tesseract)."""
+        """OCR a PDF (convert to images, then tesseract).
+
+        .. deprecated:: Use pdf_handler.py for canonical PDF routing.
+        """
         if not input_path:
             return {"success": False, "error": "No PDF file provided"}
 
@@ -332,7 +350,10 @@ class DocumentConverter:
     async def _handle_pdf_to_image(
         self, *, text_input: str | None, input_path: Path | None, opts: dict, out_dir: Path
     ) -> dict[str, Any]:
-        """Convert PDF pages to images."""
+        """Convert PDF pages to images.
+
+        .. deprecated:: Use pdf_handler.py for canonical PDF routing.
+        """
         if not input_path:
             return {"success": False, "error": "No PDF file provided"}
 

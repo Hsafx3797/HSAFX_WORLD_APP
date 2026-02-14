@@ -219,7 +219,11 @@ pub fn split_lines_by_length(text: &str, max_length: usize) -> String {
     result.join("\n")
 }
 
-/// Shuffle lines randomly
+/// Shuffle lines — deterministic pseudo-random reorder.
+///
+/// Uses `DefaultHasher` seeded by `(index, text.len())`, so the same input
+/// always produces the same output.  Suitable for a text tool (reproducible),
+/// but NOT cryptographically random.
 #[wasm_bindgen]
 pub fn shuffle_lines(text: &str) -> String {
     use std::collections::hash_map::DefaultHasher;
@@ -238,7 +242,11 @@ pub fn shuffle_lines(text: &str) -> String {
     lines.join("\n")
 }
 
-/// Scramble words in text
+/// Scramble words — deterministic pseudo-random letter reorder within each word.
+///
+/// Keeps first and last characters fixed; middle characters are shuffled using
+/// `DefaultHasher` seeded by `(word_index, char_index, word)`.  Same input →
+/// same output (reproducible, not cryptographically random).
 #[wasm_bindgen]
 pub fn scramble_words(text: &str) -> String {
     use std::collections::hash_map::DefaultHasher;
@@ -269,7 +277,10 @@ pub fn scramble_words(text: &str) -> String {
         .join(" ")
 }
 
-/// Pick random line
+/// Pick a line — deterministic pseudo-random selection.
+///
+/// Uses `DefaultHasher` of the full text to choose an index, so the same input
+/// always returns the same line.  Suitable for a text tool; NOT random.
 #[wasm_bindgen]
 pub fn pick_random_line(text: &str) -> String {
     use std::collections::hash_map::DefaultHasher;
