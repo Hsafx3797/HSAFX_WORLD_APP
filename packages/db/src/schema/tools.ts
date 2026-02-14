@@ -215,6 +215,26 @@ export const apiRateLimits = pgTable('api_rate_limits', {
 });
 
 /**
+ * Daily Pro Trials - Track free users' daily pro tool trial usage
+ * Reference: IMPLEMENTATION_ROADMAP T2.6 "Try Before You Buy"
+ *
+ * Free users get 1 free Pro tool trial per day. Unique constraint ensures
+ * each (user, tool, date) combination can only exist once.
+ */
+export const dailyProTrials = pgTable('daily_pro_trials', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  toolId: text('tool_id').notNull(),
+  trialDate: text('trial_date').notNull(), // YYYY-MM-DD
+  usedAt: timestamp('used_at').notNull().defaultNow(),
+}, (t) => [
+  index('dpt_user_date_idx').on(t.userId, t.trialDate),
+  uniqueIndex('dpt_user_tool_date_idx').on(t.userId, t.toolId, t.trialDate),
+]);
+
+/**
  * Tool Class Policy - Billing behavior and execution requirements per tool class
  * Reference: 13_DATABASE_SCHEMA.dbml Section "tool_class_policy"
  *
@@ -249,6 +269,8 @@ export type AnonymousUsage = InferSelectModel<typeof anonymousUsage>;
 export type NewAnonymousUsage = InferInsertModel<typeof anonymousUsage>;
 export type ApiRateLimit = InferSelectModel<typeof apiRateLimits>;
 export type NewApiRateLimit = InferInsertModel<typeof apiRateLimits>;
+export type DailyProTrial = InferSelectModel<typeof dailyProTrials>;
+export type NewDailyProTrial = InferInsertModel<typeof dailyProTrials>;
 export type ToolClassPolicyRow = InferSelectModel<typeof toolClassPolicy>;
 export type NewToolClassPolicyRow = InferInsertModel<typeof toolClassPolicy>;
 
@@ -263,3 +285,4 @@ export const insertApiKeySchema = createInsertSchema(apiKeys) as unknown as z.Zo
 export const insertAnonymousUsageSchema = createInsertSchema(anonymousUsage) as unknown as z.ZodType<NewAnonymousUsage>;
 export const insertApiRateLimitSchema = createInsertSchema(apiRateLimits) as unknown as z.ZodType<NewApiRateLimit>;
 export const insertToolClassPolicySchema = createInsertSchema(toolClassPolicy) as unknown as z.ZodType<NewToolClassPolicyRow>;
+export const insertDailyProTrialSchema = createInsertSchema(dailyProTrials) as unknown as z.ZodType<NewDailyProTrial>;

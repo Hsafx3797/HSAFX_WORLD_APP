@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
 import { authClient } from '@/lib/auth-client';
 import { toast } from 'sonner';
+import QRCode from 'qrcode';
 
 interface SessionData {
   id: string;
@@ -46,19 +47,47 @@ function timeAgo(date: Date): string {
   return `${days}d ago`;
 }
 
+type TwoFAStep = 'idle' | 'setup' | 'backup' | 'verify';
+
 export default function SecuritySettingsPage() {
   const { user } = useAuth();
+  // Password change
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
+
+  // 2FA
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
-  const [showQRCode, setShowQRCode] = useState(false);
+  const [twoFAStep, setTwoFAStep] = useState<TwoFAStep>('idle');
+  const [totpQRDataUrl, setTotpQRDataUrl] = useState('');
+  const [totpURI, setTotpURI] = useState('');
+  const [backupCodes, setBackupCodes] = useState<string[]>([]);
   const [verificationCode, setVerificationCode] = useState('');
+  const [twoFAPassword, setTwoFAPassword] = useState('');
+  const [twoFALoading, setTwoFALoading] = useState(false);
+
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // Sessions
   const [sessions, setSessions] = useState<SessionData[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(true);
+
+  // Fetch 2FA status from session
+  useEffect(() => {
+    async function check2FAStatus() {
+      try {
+        const session = await authClient.getSession();
+        if (session.data?.user) {
+          const u = session.data.user as Record<string, unknown>;
+          setTwoFactorEnabled(!!u.twoFactorEnabled);
+        }
+      } catch {
+        // ignore
+      }
+    }
+    check2FAStatus();
+  }, []);
 
   const fetchSessions = useCallback(async () => {
     try {
@@ -83,9 +112,10 @@ export default function SecuritySettingsPage() {
     fetchSessions();
   }, [fetchSessions]);
 
+  // ─── Password Change ────────────────────────────────────────
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (newPassword !== confirmPassword) {
       setMessage({ type: 'error', text: 'New passwords do not match.' });
       return;
@@ -100,11 +130,19 @@ export default function SecuritySettingsPage() {
     setMessage(null);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setMessage({ type: 'success', text: 'Password changed successfully!' });
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
+      const res = await authClient.changePassword({
+        currentPassword,
+        newPassword,
+        revokeOtherSessions: false,
+      });
+      if (res.error) {
+        setMessage({ type: 'error', text: res.error.message ?? 'Failed to change password.' });
+      } else {
+        setMessage({ type: 'success', text: 'Password changed successfully!' });
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+      }
     } catch {
       setMessage({ type: 'error', text: 'Failed to change password. Please try again.' });
     } finally {
@@ -112,8 +150,51 @@ export default function SecuritySettingsPage() {
     }
   };
 
+  // ─── 2FA Enable Flow ───────────────────────────────────────
   const handleEnable2FA = async () => {
-    setShowQRCode(true);
+    if (!twoFAPassword) {
+      setMessage({ type: 'error', text: 'Please enter your password to enable 2FA.' });
+      return;
+    }
+
+    setTwoFALoading(true);
+    setMessage(null);
+
+    try {
+      const res = await authClient.twoFactor.enable({
+        password: twoFAPassword,
+      });
+      if (res.error) {
+        setMessage({ type: 'error', text: res.error.message ?? 'Failed to enable 2FA.' });
+        setTwoFALoading(false);
+        return;
+      }
+
+      const data = res.data as { totpURI: string; backupCodes: string[] };
+      setTotpURI(data.totpURI);
+      setBackupCodes(data.backupCodes);
+
+      // Generate QR code from TOTP URI
+      const qrDataUrl = await QRCode.toDataURL(data.totpURI, {
+        width: 200,
+        margin: 2,
+        color: { dark: '#000000', light: '#ffffff' },
+      });
+      setTotpQRDataUrl(qrDataUrl);
+      setTwoFAStep('setup');
+    } catch {
+      setMessage({ type: 'error', text: 'Failed to enable 2FA. Please try again.' });
+    } finally {
+      setTwoFALoading(false);
+    }
+  };
+
+  const handleShowBackupCodes = () => {
+    setTwoFAStep('backup');
+  };
+
+  const handleProceedToVerify = () => {
+    setTwoFAStep('verify');
   };
 
   const handleVerify2FA = async () => {
@@ -122,27 +203,73 @@ export default function SecuritySettingsPage() {
       return;
     }
 
+    setTwoFALoading(true);
+    setMessage(null);
+
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const res = await authClient.twoFactor.verifyTotp({
+        code: verificationCode,
+      });
+      if (res.error) {
+        setMessage({ type: 'error', text: res.error.message ?? 'Invalid verification code.' });
+        setTwoFALoading(false);
+        return;
+      }
+
       setTwoFactorEnabled(true);
-      setShowQRCode(false);
+      setTwoFAStep('idle');
       setVerificationCode('');
+      setTwoFAPassword('');
+      setTotpQRDataUrl('');
+      setTotpURI('');
+      setBackupCodes([]);
       setMessage({ type: 'success', text: 'Two-factor authentication enabled successfully!' });
     } catch {
       setMessage({ type: 'error', text: 'Invalid verification code. Please try again.' });
+    } finally {
+      setTwoFALoading(false);
     }
   };
 
   const handleDisable2FA = async () => {
+    if (!twoFAPassword) {
+      setMessage({ type: 'error', text: 'Please enter your password to disable 2FA.' });
+      return;
+    }
+
+    setTwoFALoading(true);
+    setMessage(null);
+
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const res = await authClient.twoFactor.disable({
+        password: twoFAPassword,
+      });
+      if (res.error) {
+        setMessage({ type: 'error', text: res.error.message ?? 'Failed to disable 2FA.' });
+        setTwoFALoading(false);
+        return;
+      }
+
       setTwoFactorEnabled(false);
+      setTwoFAPassword('');
       setMessage({ type: 'success', text: 'Two-factor authentication disabled.' });
     } catch {
       setMessage({ type: 'error', text: 'Failed to disable 2FA. Please try again.' });
+    } finally {
+      setTwoFALoading(false);
     }
   };
 
+  const handleCancelSetup = () => {
+    setTwoFAStep('idle');
+    setVerificationCode('');
+    setTwoFAPassword('');
+    setTotpQRDataUrl('');
+    setTotpURI('');
+    setBackupCodes([]);
+  };
+
+  // ─── Sessions ──────────────────────────────────────────────
   const handleRevokeSession = async (sessionToken: string) => {
     try {
       await authClient.revokeSession({ token: sessionToken });
@@ -162,6 +289,9 @@ export default function SecuritySettingsPage() {
       toast.error('Failed to revoke sessions.');
     }
   };
+
+  // Extract manual entry secret from TOTP URI
+  const manualSecret = totpURI ? new URL(totpURI).searchParams.get('secret') ?? '' : '';
 
   return (
     <div className="min-h-screen bg-background">
@@ -273,37 +403,129 @@ export default function SecuritySettingsPage() {
               )}
             </div>
 
-            {!twoFactorEnabled && !showQRCode && (
-              <button
-                onClick={handleEnable2FA}
-                className="px-6 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
-              >
-                Enable 2FA
-              </button>
+            {/* Idle state — not enabled */}
+            {!twoFactorEnabled && twoFAStep === 'idle' && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Enter your password to enable 2FA
+                  </label>
+                  <input
+                    type="password"
+                    value={twoFAPassword}
+                    onChange={(e) => setTwoFAPassword(e.target.value)}
+                    className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    placeholder="Your account password"
+                  />
+                </div>
+                <button
+                  onClick={handleEnable2FA}
+                  disabled={twoFALoading || !twoFAPassword}
+                  className="px-6 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  {twoFALoading ? 'Setting up...' : 'Enable 2FA'}
+                </button>
+              </div>
             )}
 
-            {showQRCode && (
+            {/* Step 1: QR code setup */}
+            {twoFAStep === 'setup' && (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
                   Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)
                 </p>
-                
-                <div className="w-48 h-48 bg-muted rounded-lg flex items-center justify-center mx-auto">
-                  <span className="text-6xl">📱</span>
+
+                <div className="flex justify-center">
+                  {totpQRDataUrl ? (
+                    <img src={totpQRDataUrl} alt="TOTP QR Code" className="w-48 h-48 rounded-lg" />
+                  ) : (
+                    <div className="w-48 h-48 bg-muted rounded-lg flex items-center justify-center">
+                      <span className="text-muted-foreground text-sm">Loading...</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground mb-2">
                     Or enter this code manually:
                   </p>
-                  <code className="px-4 py-2 bg-muted rounded font-mono text-sm">
-                    JBSWY3DPEHPK3PXP
+                  <code className="px-4 py-2 bg-muted rounded font-mono text-sm select-all">
+                    {manualSecret}
                   </code>
                 </div>
 
+                <button
+                  onClick={handleShowBackupCodes}
+                  className="w-full px-6 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                >
+                  Next: View Backup Codes
+                </button>
+
+                <button
+                  onClick={handleCancelSetup}
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+
+            {/* Step 2: Backup codes */}
+            {twoFAStep === 'backup' && (
+              <div className="space-y-4">
+                <div className="p-4 bg-warning/10 border border-warning/20 rounded-lg">
+                  <p className="text-sm font-medium text-warning">
+                    Save these backup codes in a secure location
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Each code can only be used once. You won&apos;t be able to see them again.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 p-4 bg-muted rounded-lg">
+                  {backupCodes.map((code, i) => (
+                    <code key={i} className="font-mono text-sm text-center py-1 select-all">
+                      {code}
+                    </code>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(backupCodes.join('\n'));
+                    toast.success('Backup codes copied to clipboard.');
+                  }}
+                  className="w-full px-6 py-2 border border-border rounded-lg font-medium hover:bg-muted transition-colors text-sm"
+                >
+                  Copy All Codes
+                </button>
+
+                <button
+                  onClick={handleProceedToVerify}
+                  className="w-full px-6 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                >
+                  I&apos;ve Saved My Codes — Continue
+                </button>
+
+                <button
+                  onClick={handleCancelSetup}
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+
+            {/* Step 3: Verify TOTP code */}
+            {twoFAStep === 'verify' && (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Enter the 6-digit code from your authenticator app to verify setup.
+                </p>
+
                 <div>
                   <label className="block text-sm font-medium mb-2">
-                    Enter verification code
+                    Verification code
                   </label>
                   <div className="flex gap-2">
                     <input
@@ -316,15 +538,16 @@ export default function SecuritySettingsPage() {
                     />
                     <button
                       onClick={handleVerify2FA}
-                      className="px-6 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                      disabled={twoFALoading || verificationCode.length !== 6}
+                      className="px-6 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
                     >
-                      Verify
+                      {twoFALoading ? 'Verifying...' : 'Verify'}
                     </button>
                   </div>
                 </div>
 
                 <button
-                  onClick={() => setShowQRCode(false)}
+                  onClick={handleCancelSetup}
                   className="text-sm text-muted-foreground hover:text-foreground"
                 >
                   Cancel
@@ -332,13 +555,29 @@ export default function SecuritySettingsPage() {
               </div>
             )}
 
-            {twoFactorEnabled && (
-              <button
-                onClick={handleDisable2FA}
-                className="px-6 py-2 border border-destructive text-destructive rounded-lg font-medium hover:bg-destructive/10 transition-colors"
-              >
-                Disable 2FA
-              </button>
+            {/* Enabled state — option to disable */}
+            {twoFactorEnabled && twoFAStep === 'idle' && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Enter your password to disable 2FA
+                  </label>
+                  <input
+                    type="password"
+                    value={twoFAPassword}
+                    onChange={(e) => setTwoFAPassword(e.target.value)}
+                    className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    placeholder="Your account password"
+                  />
+                </div>
+                <button
+                  onClick={handleDisable2FA}
+                  disabled={twoFALoading || !twoFAPassword}
+                  className="px-6 py-2 border border-destructive text-destructive rounded-lg font-medium hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                >
+                  {twoFALoading ? 'Disabling...' : 'Disable 2FA'}
+                </button>
+              </div>
             )}
           </section>
 

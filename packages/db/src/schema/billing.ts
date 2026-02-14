@@ -53,6 +53,10 @@ export const planChangeTypeEnum = pgEnum('plan_change_type', [
   'feature_toggle', 'limit_update', 'metadata_add', 'metadata_remove',
 ]);
 
+export const referralStatusEnum = pgEnum('referral_status', [
+  'pending', 'activated', 'rewarded',
+]);
+
 /**
  * Plans Table - Subscription tier definitions
  * Reference: 13_DATABASE_SCHEMA.md Section 4.5, 20_BILLING_SYSTEM.md
@@ -315,6 +319,24 @@ export const userDailyRewardCaps = pgTable('user_daily_reward_caps', {
 ]);
 
 /**
+ * User Streaks - Track consecutive daily login streaks for reward multipliers
+ * Reference: IMPLEMENTATION_ROADMAP.md T2.2
+ *
+ * Multiplier tiers: 3-day=1.5×, 7-day=2×, 14-day=3×, 30-day=5×
+ */
+export const userStreaks = pgTable('user_streaks', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' })
+    .unique(),
+  currentStreak: integer('current_streak').notNull().default(0),
+  longestStreak: integer('longest_streak').notNull().default(0),
+  lastActiveDate: timestamp('last_active_date'), // Midnight UTC of last daily claim
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+/**
  * Processed Webhooks - Idempotency tracking for Stripe/Polar webhooks (C-11)
  * Reference: 15_SECURITY_MODEL.md, 24_ERROR_HANDLING.md
  */
@@ -465,6 +487,54 @@ export const planAuditLogs = pgTable('plan_audit_logs', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
+/**
+ * Referrals - Track user referral invitations and rewards
+ * Reference: IMPLEMENTATION_ROADMAP T3.1
+ *
+ * Status flow: pending → activated (referred user signs up) → rewarded (coins granted)
+ */
+export const referrals = pgTable('referrals', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  referrerId: uuid('referrer_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  referredUserId: uuid('referred_user_id')
+    .references(() => users.id, { onDelete: 'set null' }),
+  referralCode: text('referral_code').notNull(),
+  status: referralStatusEnum('status').notNull().default('pending'),
+  coinsEarned: integer('coins_earned').notNull().default(0),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  activatedAt: timestamp('activated_at'),
+  rewardedAt: timestamp('rewarded_at'),
+}, (t) => [
+  index('ref_referrer_id_idx').on(t.referrerId),
+  index('ref_referred_user_idx').on(t.referredUserId),
+  index('ref_code_idx').on(t.referralCode),
+]);
+
+/**
+ * Coin Events - Time-limited coin multiplier events
+ * Reference: IMPLEMENTATION_ROADMAP T3.7
+ *
+ * Admins create events that multiply coin rewards for a period.
+ * Backend checks for active events when granting coins.
+ */
+export const coinEvents = pgTable('coin_events', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull(),
+  description: text('description'),
+  multiplier: decimal('multiplier', { precision: 4, scale: 2 }).notNull().default('1.0'),
+  startsAt: timestamp('starts_at').notNull(),
+  endsAt: timestamp('ends_at').notNull(),
+  isActive: boolean('is_active').notNull().default(true),
+  createdBy: uuid('created_by')
+    .references(() => users.id, { onDelete: 'set null' }),
+  metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (t) => [
+  index('ce_active_period_idx').on(t.isActive, t.startsAt, t.endsAt),
+]);
+
 // Types inferred from tables using InferSelectModel and InferInsertModel
 export type Plan = InferSelectModel<typeof plans>;
 export type NewPlan = InferInsertModel<typeof plans>;
@@ -492,6 +562,8 @@ export type LoginRewardClaim = InferSelectModel<typeof loginRewardClaims>;
 export type NewLoginRewardClaim = InferInsertModel<typeof loginRewardClaims>;
 export type UserDailyRewardCap = InferSelectModel<typeof userDailyRewardCaps>;
 export type NewUserDailyRewardCap = InferInsertModel<typeof userDailyRewardCaps>;
+export type UserStreak = InferSelectModel<typeof userStreaks>;
+export type NewUserStreak = InferInsertModel<typeof userStreaks>;
 export type ProcessedWebhook = InferSelectModel<typeof processedWebhooks>;
 export type NewProcessedWebhook = InferInsertModel<typeof processedWebhooks>;
 export type UsageCoinFallback = InferSelectModel<typeof usageCoinFallbacks>;
@@ -508,6 +580,10 @@ export type PlanUpgradeRule = InferSelectModel<typeof planUpgradeRules>;
 export type NewPlanUpgradeRule = InferInsertModel<typeof planUpgradeRules>;
 export type PlanAuditLog = InferSelectModel<typeof planAuditLogs>;
 export type NewPlanAuditLog = InferInsertModel<typeof planAuditLogs>;
+export type Referral = InferSelectModel<typeof referrals>;
+export type NewReferral = InferInsertModel<typeof referrals>;
+export type CoinEvent = InferSelectModel<typeof coinEvents>;
+export type NewCoinEvent = InferInsertModel<typeof coinEvents>;
 
 // Zod schemas - use 'as unknown as' for drizzle-zod compatibility
 export const insertPlanSchema = createInsertSchema(plans) as unknown as z.ZodType<NewPlan>;
@@ -523,6 +599,7 @@ export const insertPlanFeatureSchema = createInsertSchema(planFeatures) as unkno
 export const insertPlanCoinRuleSchema = createInsertSchema(planCoinRules) as unknown as z.ZodType<NewPlanCoinRule>;
 export const insertLoginRewardClaimSchema = createInsertSchema(loginRewardClaims) as unknown as z.ZodType<NewLoginRewardClaim>;
 export const insertUserDailyRewardCapSchema = createInsertSchema(userDailyRewardCaps) as unknown as z.ZodType<NewUserDailyRewardCap>;
+export const insertUserStreakSchema = createInsertSchema(userStreaks) as unknown as z.ZodType<NewUserStreak>;
 export const insertProcessedWebhookSchema = createInsertSchema(processedWebhooks) as unknown as z.ZodType<NewProcessedWebhook>;
 export const insertUsageCoinFallbackSchema = createInsertSchema(usageCoinFallbacks) as unknown as z.ZodType<NewUsageCoinFallback>;
 export const insertInvoicePaymentSchema = createInsertSchema(invoicePayments) as unknown as z.ZodType<NewInvoicePayment>;
@@ -531,3 +608,5 @@ export const insertCoinPurchasePaymentSchema = createInsertSchema(coinPurchasePa
 export const insertPlanMetadataSchema = createInsertSchema(planMetadata) as unknown as z.ZodType<NewPlanMetadataRow>;
 export const insertPlanUpgradeRuleSchema = createInsertSchema(planUpgradeRules) as unknown as z.ZodType<NewPlanUpgradeRule>;
 export const insertPlanAuditLogSchema = createInsertSchema(planAuditLogs) as unknown as z.ZodType<NewPlanAuditLog>;
+export const insertReferralSchema = createInsertSchema(referrals) as unknown as z.ZodType<NewReferral>;
+export const insertCoinEventSchema = createInsertSchema(coinEvents) as unknown as z.ZodType<NewCoinEvent>;

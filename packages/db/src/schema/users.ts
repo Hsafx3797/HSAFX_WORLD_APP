@@ -17,6 +17,8 @@ export const users = pgTable('users', {
   phoneNumber: text('phone_number'),
   isActive: boolean('is_active').notNull().default(true),
   isEmailVerified: boolean('is_email_verified').notNull().default(false),
+  twoFactorEnabled: boolean('two_factor_enabled').notNull().default(false),
+  referralCode: text('referral_code').unique(),
   lastLogin: timestamp('last_login'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),

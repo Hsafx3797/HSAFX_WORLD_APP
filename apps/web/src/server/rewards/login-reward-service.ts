@@ -16,19 +16,35 @@ import {
   userDailyRewardCaps,
   coinTransactions,
   userCoinWallets,
+  userStreaks,
   eq,
   and,
   sql,
   gte,
 } from '@hsafx/db';
 import { LoginRewardError } from './types';
-import type { ClaimRewardResult, RewardStats, RewardType } from './types';
+import type { ClaimRewardResult, RewardStats, StreakInfo, RewardType } from './types';
 
 // ─── Constants ────────────────────────────────────────────────
 
-const COINS_PER_REWARD = 10;
+const BASE_COINS_PER_REWARD = 10;
 const DAILY_COIN_CAP = 50;
 const HOURLY_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
+
+/** Streak multiplier tiers per roadmap T2.2 */
+const STREAK_TIERS = [
+  { days: 30, multiplier: 5 },
+  { days: 14, multiplier: 3 },
+  { days: 7, multiplier: 2 },
+  { days: 3, multiplier: 1.5 },
+] as const;
+
+function getStreakMultiplier(streak: number): number {
+  for (const tier of STREAK_TIERS) {
+    if (streak >= tier.days) return tier.multiplier;
+  }
+  return 1;
+}
 
 // ─── Helpers ──────────────────────────────────────────────────
 
@@ -75,10 +91,20 @@ async function getLastClaim(userId: string, rewardType: RewardType) {
   return claim;
 }
 
+async function getUserStreakInternal(userId: string) {
+  const [streak] = await db
+    .select()
+    .from(userStreaks)
+    .where(eq(userStreaks.userId, userId))
+    .limit(1);
+  return streak;
+}
+
 // ─── Public API ───────────────────────────────────────────────
 
 /**
  * Claim a login reward (daily or hourly).
+ * Daily rewards apply a streak multiplier (T2.2).
  */
 export async function claimLoginReward(
   userId: string,
@@ -116,7 +142,31 @@ export async function claimLoginReward(
     }
   }
 
-  // 3. Credit coins atomically
+  // 3. Compute reward amount (streak multiplier for daily only)
+  let streakMultiplier = 1;
+  if (rewardType === 'daily') {
+    const streak = await getUserStreakInternal(userId);
+    // The streak will be incremented inside the tx, so use streak+1 for multiplier
+    const today = getTodayMidnightUTC();
+    const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+    const isConsecutive = streak?.lastActiveDate?.getTime() === yesterday.getTime();
+    const newStreak = isConsecutive ? (streak?.currentStreak ?? 0) + 1 : 1;
+    streakMultiplier = getStreakMultiplier(newStreak);
+  }
+
+  const coinsToAward = Math.min(
+    Math.floor(BASE_COINS_PER_REWARD * streakMultiplier),
+    DAILY_COIN_CAP - (dailyCap?.totalCoinsEarned ?? 0),
+  );
+
+  if (coinsToAward <= 0) {
+    throw new LoginRewardError(
+      'Daily coin limit reached.',
+      'DAILY_CAP_REACHED',
+    );
+  }
+
+  // 4. Credit coins atomically
   const result = await db.transaction(async (tx) => {
     // Lock wallet
     const [wallet] = await tx
@@ -147,19 +197,19 @@ export async function claimLoginReward(
     }
 
     const currentBalance = wallet?.balance ?? 0;
-    const newBalance = currentBalance + COINS_PER_REWARD;
+    const newBalance = currentBalance + coinsToAward;
 
     // Create coin transaction
     const [coinTx] = await tx
       .insert(coinTransactions)
       .values({
         userId,
-        amount: COINS_PER_REWARD,
+        amount: coinsToAward,
         type: 'reward',
-        reason: `${rewardType === 'daily' ? 'Daily' : 'Hourly'} login reward`,
+        reason: `${rewardType === 'daily' ? 'Daily' : 'Hourly'} login reward${streakMultiplier > 1 ? ` (${streakMultiplier}× streak)` : ''}`,
         resourceType: 'login_reward',
         balanceAfter: newBalance,
-        metadata: { rewardType },
+        metadata: { rewardType, streakMultiplier },
       })
       .returning({ id: coinTransactions.id });
 
@@ -167,7 +217,7 @@ export async function claimLoginReward(
     await tx.insert(loginRewardClaims).values({
       userId,
       rewardType,
-      coinsAwarded: COINS_PER_REWARD,
+      coinsAwarded: coinsToAward,
       coinTransactionId: coinTx?.id,
     });
 
@@ -177,7 +227,7 @@ export async function claimLoginReward(
         .update(userCoinWallets)
         .set({
           balance: newBalance,
-          lifetimeEarned: sql`${userCoinWallets.lifetimeEarned} + ${COINS_PER_REWARD}`,
+          lifetimeEarned: sql`${userCoinWallets.lifetimeEarned} + ${coinsToAward}`,
           updatedAt: new Date(),
         })
         .where(eq(userCoinWallets.userId, userId));
@@ -185,7 +235,7 @@ export async function claimLoginReward(
       await tx.insert(userCoinWallets).values({
         userId,
         balance: newBalance,
-        lifetimeEarned: COINS_PER_REWARD,
+        lifetimeEarned: coinsToAward,
       });
     }
 
@@ -195,17 +245,52 @@ export async function claimLoginReward(
       .values({
         userId,
         date: today,
-        totalCoinsEarned: COINS_PER_REWARD,
+        totalCoinsEarned: coinsToAward,
         claimsCount: 1,
       })
       .onConflictDoUpdate({
         target: [userDailyRewardCaps.userId, userDailyRewardCaps.date],
         set: {
-          totalCoinsEarned: sql`${userDailyRewardCaps.totalCoinsEarned} + ${COINS_PER_REWARD}`,
+          totalCoinsEarned: sql`${userDailyRewardCaps.totalCoinsEarned} + ${coinsToAward}`,
           claimsCount: sql`${userDailyRewardCaps.claimsCount} + 1`,
           updatedAt: new Date(),
         },
       });
+
+    // Update streak (daily claims only)
+    let streakInfo = { currentStreak: 0, longestStreak: 0 };
+    if (rewardType === 'daily') {
+      const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+      const [existing] = await tx
+        .select()
+        .from(userStreaks)
+        .where(eq(userStreaks.userId, userId))
+        .limit(1);
+
+      const isConsecutive = existing?.lastActiveDate?.getTime() === yesterday.getTime();
+      const newStreak = isConsecutive ? (existing?.currentStreak ?? 0) + 1 : 1;
+      const newLongest = Math.max(newStreak, existing?.longestStreak ?? 0);
+
+      await tx
+        .insert(userStreaks)
+        .values({
+          userId,
+          currentStreak: newStreak,
+          longestStreak: newLongest,
+          lastActiveDate: today,
+        })
+        .onConflictDoUpdate({
+          target: [userStreaks.userId],
+          set: {
+            currentStreak: newStreak,
+            longestStreak: newLongest,
+            lastActiveDate: today,
+            updatedAt: new Date(),
+          },
+        });
+
+      streakInfo = { currentStreak: newStreak, longestStreak: newLongest };
+    }
 
     // Get updated cap
     const [updatedCap] = await tx
@@ -221,19 +306,22 @@ export async function claimLoginReward(
 
     return {
       newBalance,
-      dailyCoinsEarned: updatedCap?.totalCoinsEarned ?? COINS_PER_REWARD,
+      dailyCoinsEarned: updatedCap?.totalCoinsEarned ?? coinsToAward,
       dailyClaimsCount: updatedCap?.claimsCount ?? 1,
+      streakInfo,
     };
   });
 
   return {
     success: true,
     rewardType,
-    coinsAwarded: COINS_PER_REWARD,
+    coinsAwarded: coinsToAward,
     newBalance: result.newBalance,
     dailyCoinsEarned: result.dailyCoinsEarned,
     dailyClaimsCount: result.dailyClaimsCount,
     dailyCoinCap: DAILY_COIN_CAP,
+    streakMultiplier,
+    streak: result.streakInfo,
   };
 }
 
@@ -246,6 +334,7 @@ export async function getLoginRewardStats(
   const dailyCap = await getDailyCap(userId);
   const lastDaily = await getLastClaim(userId, 'daily');
   const lastHourly = await getLastClaim(userId, 'hourly');
+  const streakRow = await getUserStreakInternal(userId);
 
   const canClaimDaily = !lastDaily;
   let canClaimHourly = true;
@@ -261,16 +350,30 @@ export async function getLoginRewardStats(
     }
   }
 
+  // Build streak info
+  const currentStreak = streakRow?.currentStreak ?? 0;
+  const multiplier = getStreakMultiplier(currentStreak);
+  const nextTier = STREAK_TIERS.slice()
+    .reverse()
+    .find((t) => currentStreak < t.days);
+  const streak: StreakInfo = {
+    currentStreak,
+    longestStreak: streakRow?.longestStreak ?? 0,
+    multiplier,
+    nextTier: nextTier ? { days: nextTier.days, multiplier: nextTier.multiplier } : null,
+  };
+
   // If daily cap is reached, neither can be claimed
   if (dailyCap && dailyCap.totalCoinsEarned >= DAILY_COIN_CAP) {
     return {
       dailyCoinsEarned: dailyCap.totalCoinsEarned,
       dailyClaimsCount: dailyCap.claimsCount,
       dailyCoinCap: DAILY_COIN_CAP,
-      coinsPerReward: COINS_PER_REWARD,
+      coinsPerReward: BASE_COINS_PER_REWARD,
       canClaimDaily: false,
       canClaimHourly: false,
       nextHourlyClaimAt,
+      streak,
     };
   }
 
@@ -278,9 +381,29 @@ export async function getLoginRewardStats(
     dailyCoinsEarned: dailyCap?.totalCoinsEarned ?? 0,
     dailyClaimsCount: dailyCap?.claimsCount ?? 0,
     dailyCoinCap: DAILY_COIN_CAP,
-    coinsPerReward: COINS_PER_REWARD,
+    coinsPerReward: BASE_COINS_PER_REWARD,
     canClaimDaily,
     canClaimHourly,
     nextHourlyClaimAt,
+    streak,
+  };
+}
+
+/**
+ * Get streak info for a user (public API for tRPC).
+ */
+export async function getUserStreak(userId: string): Promise<StreakInfo> {
+  const streakRow = await getUserStreakInternal(userId);
+  const currentStreak = streakRow?.currentStreak ?? 0;
+  const multiplier = getStreakMultiplier(currentStreak);
+  const nextTier = STREAK_TIERS.slice()
+    .reverse()
+    .find((t) => currentStreak < t.days);
+
+  return {
+    currentStreak,
+    longestStreak: streakRow?.longestStreak ?? 0,
+    multiplier,
+    nextTier: nextTier ? { days: nextTier.days, multiplier: nextTier.multiplier } : null,
   };
 }

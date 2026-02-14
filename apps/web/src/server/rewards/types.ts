@@ -5,6 +5,13 @@
 
 export type RewardType = 'daily' | 'hourly';
 
+export interface StreakInfo {
+  currentStreak: number;
+  longestStreak: number;
+  multiplier: number;
+  nextTier: { days: number; multiplier: number } | null;
+}
+
 export interface ClaimRewardResult {
   success: boolean;
   rewardType: RewardType;
@@ -13,6 +20,8 @@ export interface ClaimRewardResult {
   dailyCoinsEarned: number;
   dailyClaimsCount: number;
   dailyCoinCap: number;
+  streakMultiplier?: number;
+  streak?: { currentStreak: number; longestStreak: number };
 }
 
 export interface RewardStats {
@@ -23,6 +32,7 @@ export interface RewardStats {
   canClaimDaily: boolean;
   canClaimHourly: boolean;
   nextHourlyClaimAt: Date | null;
+  streak?: StreakInfo;
 }
 
 export class LoginRewardError extends Error {

@@ -150,6 +150,8 @@ export interface ToolExecutionContext {
   isAuthenticated: boolean;
   tier: 'guest' | 'free' | 'pro' | 'advance';
   coinsAvailable: number;
+  /** When true, bypass pro tier check (free daily trial) */
+  isTrialExecution?: boolean;
 }
 
 // =====================================================

@@ -669,4 +669,24 @@ export const billingRouter = router({
       return { claimed: true, amount: DAILY_BONUS_AMOUNT, newBalance };
     });
   }),
+
+  // ─── Coin Multiplier Events (T3.7) ───────────────────────
+
+  getActiveCoinEvents: protectedProcedure.query(async ({ ctx }) => {
+    // @ts-expect-error — @/ alias resolves at Next.js runtime
+    const { getActiveCoinEvents } = await import('@/server/coin-events/coin-events-service');
+    return getActiveCoinEvents();
+  }),
+
+  getCurrentMultiplier: protectedProcedure.query(async ({ ctx }) => {
+    // @ts-expect-error — @/ alias resolves at Next.js runtime
+    const { getCurrentMultiplier } = await import('@/server/coin-events/coin-events-service');
+    return getCurrentMultiplier();
+  }),
+
+  getUpcomingCoinEvents: protectedProcedure.query(async ({ ctx }) => {
+    // @ts-expect-error — @/ alias resolves at Next.js runtime
+    const { getUpcomingEvents } = await import('@/server/coin-events/coin-events-service');
+    return getUpcomingEvents();
+  }),
 });

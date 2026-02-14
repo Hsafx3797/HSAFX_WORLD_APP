@@ -1,5 +1,37 @@
 # Feature Enhancement Analysis — HSAFX WORLD (454 tools, 52 DB tables)
 
+> **⚠️ IMPLEMENTATION STATUS UPDATE (2026-02-14)**
+>
+> Many features analyzed below have been **implemented**. See `IMPLEMENTATION_ROADMAP.md` for full details.
+>
+> | Feature                         | Section | Status                |
+> | ------------------------------- | ------- | --------------------- |
+> | Command Palette (⌘K)            | §1.3    | ✅ IMPLEMENTED (T2.1) |
+> | Streak Rewards                  | §2.1    | ✅ IMPLEMENTED (T2.2) |
+> | Pro Badge + Visible Perks       | §3.1    | ✅ IMPLEMENTED (T2.5) |
+> | "Try Before You Buy" Pro Trials | §3.2    | ✅ IMPLEMENTED (T2.6) |
+> | Trust Badges                    | §4.1    | ✅ IMPLEMENTED (T1.2) |
+> | Social Proof Counters           | §4.2    | ✅ IMPLEMENTED (T1.3) |
+> | Changelog Page                  | §4.3    | ✅ IMPLEMENTED (T1.4) |
+> | Onboarding Welcome Wizard       | §5.1    | ✅ IMPLEMENTED (T2.3) |
+> | Onboarding Checklist            | §5.2    | ✅ IMPLEMENTED (T2.4) |
+> | Auth-Aware Header + User Menu   | §6.1    | ✅ IMPLEMENTED (T1.0) |
+> | Active Sessions Management      | §9.2    | ✅ IMPLEMENTED (T1.5) |
+> | Two-Factor Authentication       | §9.3    | ✅ IMPLEMENTED (T2.7) |
+> | Account Deletion + Grace Period | §9.4    | ✅ IMPLEMENTED (T2.8) |
+> | ActivityFeed wiring             | §6.3    | ✅ IMPLEMENTED (T1.7) |
+> | Live Dashboard Stats            | §6.4    | ✅ IMPLEMENTED (T1.8) |
+> | Re-Run from History             | §7.1    | ✅ IMPLEMENTED (T1.6) |
+> | NotificationBell wiring         | §6.2    | ✅ IMPLEMENTED (T1.1) |
+> | Referral Program                | §3.3    | ✅ IMPLEMENTED (T3.1) |
+> | User Analytics Dashboard        | §6.5    | ✅ IMPLEMENTED (T3.2) |
+> | GDPR Data Export                | §9.5    | ✅ IMPLEMENTED (T3.3) |
+> | Streak Break Warning Emails     | §2.2    | ✅ IMPLEMENTED (T3.4) |
+> | Status Page                     | §4.4    | ✅ IMPLEMENTED (T3.5) |
+> | API Rate Limit Dashboard        | §8.1    | ✅ IMPLEMENTED (T3.6) |
+> | Coin Multiplier Events          | §3.4    | ✅ IMPLEMENTED (T3.7) |
+> | Batch Processing                | §7.2    | ✅ IMPLEMENTED (T3.8) |
+
 ## Current State Summary
 
 | Status       | Count | Features                                                                                                                  |

@@ -31,8 +31,8 @@ export async function executeClientTool(
       return { success: false, error: 'This tool requires server-side execution' };
     }
 
-    // SECURITY: Check tier access for client-side tools
-    if (tool.tier === 'pro' && (!context || context.tier === 'guest' || context.tier === 'free')) {
+    // SECURITY: Check tier access for client-side tools (skip for trial executions)
+    if (tool.tier === 'pro' && (!context || (context.tier === 'guest' || context.tier === 'free') && !context.isTrialExecution)) {
       return { success: false, error: 'This tool requires a Pro subscription' };
     }
 
@@ -1084,8 +1084,8 @@ export async function executeServerTool(
     return { success: false, error: 'This tool does not require server execution' };
   }
 
-  // Check tier access
-  if (tool.tier === 'pro' && (!context || context.tier === 'guest' || context.tier === 'free')) {
+  // Check tier access (skip for trial executions)
+  if (tool.tier === 'pro' && (!context || (context.tier === 'guest' || context.tier === 'free') && !context.isTrialExecution)) {
     return { success: false, error: 'This tool requires a Pro subscription' };
   }
 

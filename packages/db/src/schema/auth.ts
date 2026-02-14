@@ -51,6 +51,21 @@ export const oauthConnections = pgTable('oauth_connections', {
 ]);
 
 /**
+ * Two-Factor Authentication Secrets - TOTP secrets & backup codes
+ * Used by Better Auth twoFactor plugin
+ */
+export const twoFactor = pgTable('two_factor', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  secret: text('secret').notNull(),
+  backupCodes: text('backup_codes').notNull(),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+}, (t) => [
+  uniqueIndex('two_factor_user_id_idx').on(t.userId),
+]);
+
+/**
  * Roles Table - RBAC role definitions
  * Reference: 13_DATABASE_SCHEMA.md Section 4.4
  */
@@ -221,6 +236,8 @@ export type Session = InferSelectModel<typeof sessions>;
 export type NewSession = InferInsertModel<typeof sessions>;
 export type OauthConnection = InferSelectModel<typeof oauthConnections>;
 export type NewOauthConnection = InferInsertModel<typeof oauthConnections>;
+export type TwoFactor = InferSelectModel<typeof twoFactor>;
+export type NewTwoFactor = InferInsertModel<typeof twoFactor>;
 export type Role = InferSelectModel<typeof roles>;
 export type NewRole = InferInsertModel<typeof roles>;
 export type Permission = InferSelectModel<typeof permissions>;
@@ -241,6 +258,7 @@ export type NewPermissionGroup = InferInsertModel<typeof permissionGroups>;
 // Zod schemas - use 'as unknown as' for drizzle-zod compatibility
 export const insertSessionSchema = createInsertSchema(sessions) as unknown as z.ZodType<NewSession>;
 export const insertOauthConnectionSchema = createInsertSchema(oauthConnections) as unknown as z.ZodType<NewOauthConnection>;
+export const insertTwoFactorSchema = createInsertSchema(twoFactor) as unknown as z.ZodType<NewTwoFactor>;
 export const insertRoleSchema = createInsertSchema(roles) as unknown as z.ZodType<NewRole>;
 export const insertPermissionSchema = createInsertSchema(permissions) as unknown as z.ZodType<NewPermission>;
 export const insertActivityLogSchema = createInsertSchema(activityLogs) as unknown as z.ZodType<NewActivityLog>;

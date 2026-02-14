@@ -9,6 +9,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ActivityFeed, ActivityFeedSkeleton, type ActivityItem } from '@/components/activity-feed';
+import { OnboardingWizard } from '@/components/onboarding-wizard';
+import { OnboardingChecklist } from '@/components/onboarding-checklist';
+import { ReferralCard } from '@/components/referral-card';
+import { CoinEventBanner } from '@/components/coin-event-banner';
 import { trpc } from '@/lib/trpc';
 import { toolCounts } from '@/lib/tools/registry';
 import { toast } from 'sonner';
@@ -23,6 +27,19 @@ export default function DashboardPage() {
     { page: 1, pageSize: 10 },
     { enabled: !!user }
   );
+
+  const streakQuery = trpc.rewards.getStreak.useQuery(undefined, {
+    enabled: !!user,
+  });
+
+  const onboardingQuery = trpc.user.getOnboarding.useQuery(undefined, {
+    enabled: !!user,
+  });
+
+  const showOnboarding =
+    onboardingQuery.data &&
+    !onboardingQuery.data.completed &&
+    !onboardingQuery.data.skipped;
 
   const activityItems: ActivityItem[] = (executionsQuery.data?.items ?? []).map((exec) => ({
     id: exec.id,
@@ -66,9 +83,20 @@ export default function DashboardPage() {
 
   return (
     <div className="container py-8">
+      {showOnboarding && (
+        <OnboardingWizard onComplete={() => onboardingQuery.refetch()} />
+      )}
+
       {/* Welcome Section */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Welcome back, {user.name || user.email.split('@')[0]}!</h1>
+        <h1 className="text-3xl font-bold flex items-center gap-2 flex-wrap">
+          Welcome back, {user.name || user.email.split('@')[0]}!
+          {isPro && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-linear-to-r from-yellow-400 to-amber-500 px-2.5 py-1 text-sm font-semibold text-white">
+              ✨ {subscription?.plan === 'advance' ? 'Advance' : 'Pro'} Member
+            </span>
+          )}
+        </h1>
         <p className="text-muted-foreground mt-1">
           Here&apos;s what&apos;s happening with your account
         </p>
@@ -90,6 +118,31 @@ export default function DashboardPage() {
             )}
             {!dailyBonusAvailable && (
               <p className="text-sm text-muted-foreground">Daily bonus claimed</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Login Streak */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Login Streak</CardDescription>
+            <CardTitle className="text-3xl flex items-center gap-2">
+              <span>🔥</span> {streakQuery.data?.currentStreak ?? 0}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {streakQuery.data && streakQuery.data.multiplier > 1 ? (
+              <p className="text-sm font-medium text-orange-500">
+                {streakQuery.data.multiplier}× coin bonus active
+              </p>
+            ) : streakQuery.data?.nextTier ? (
+              <p className="text-sm text-muted-foreground">
+                {streakQuery.data.nextTier.days - (streakQuery.data.currentStreak)} days to {streakQuery.data.nextTier.multiplier}× bonus
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Claim daily to start a streak
+              </p>
             )}
           </CardContent>
         </Card>
@@ -150,6 +203,19 @@ export default function DashboardPage() {
             </Link>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Onboarding Checklist */}
+      <OnboardingChecklist />
+
+      {/* Coin Multiplier Event Banner */}
+      <div className="mb-8">
+        <CoinEventBanner />
+      </div>
+
+      {/* Referral Program */}
+      <div className="mb-8">
+        <ReferralCard />
       </div>
 
       {/* Quick Actions */}

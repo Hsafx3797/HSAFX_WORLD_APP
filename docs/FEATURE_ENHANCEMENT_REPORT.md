@@ -3,6 +3,12 @@
 > **Research Method**: 8 deep web research queries synthesized with codebase knowledge  
 > **Focus**: Logic · Function · UI/UX · User Engagement · Trust · Retention
 
+> **⚠️ IMPLEMENTATION STATUS UPDATE (2026-02-14)**
+>
+> TIER 1 (9 items), TIER 2 (8 items), and TIER 3 (8 items) have been fully implemented.
+> See `docs/IMPLEMENTATION_ROADMAP.md` for detailed implementation notes per feature.
+> Features marked in this document as "not built" or "partial" may now be complete — cross-reference the roadmap.
+
 ---
 
 ## 1. 🧠 Intelligent Tool Discovery & Personalization

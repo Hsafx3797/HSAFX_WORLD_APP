@@ -30,6 +30,8 @@ import {
   loginRewardClaims,
   userDailyRewardCaps,
   processedWebhooks,
+  referrals,
+  coinEvents,
 } from './billing';
 import {
   toolCategories,
@@ -94,6 +96,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   payments: many(payments),
   loginRewardClaims: many(loginRewardClaims),
   userDailyRewardCaps: many(userDailyRewardCaps),
+  referralsSent: many(referrals),
 
   // 1:M tools
   toolExecutions: many(toolExecutions),
@@ -304,6 +307,26 @@ export const loginRewardClaimsRelations = relations(loginRewardClaims, ({ one })
 export const userDailyRewardCapsRelations = relations(userDailyRewardCaps, ({ one }) => ({
   user: one(users, {
     fields: [userDailyRewardCaps.userId],
+    references: [users.id],
+  }),
+}));
+
+export const referralsRelations = relations(referrals, ({ one }) => ({
+  referrer: one(users, {
+    fields: [referrals.referrerId],
+    references: [users.id],
+    relationName: 'referralsSent',
+  }),
+  referredUser: one(users, {
+    fields: [referrals.referredUserId],
+    references: [users.id],
+    relationName: 'referralsReceived',
+  }),
+}));
+
+export const coinEventsRelations = relations(coinEvents, ({ one }) => ({
+  createdByUser: one(users, {
+    fields: [coinEvents.createdBy],
     references: [users.id],
   }),
 }));

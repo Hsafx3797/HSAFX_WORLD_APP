@@ -16,6 +16,7 @@ import {
 import { CompactModeToggle } from './appearance-panel';
 import { NotificationBell } from './notification-bell';
 import { useAuth } from '@/hooks/use-auth';
+import { useSubscription } from '@/hooks/use-subscription';
 import {
   User,
   LayoutDashboard,
@@ -26,6 +27,7 @@ import {
   Coins,
   Search,
 } from 'lucide-react';
+import { CommandPalette, useCommandPalette } from '@/components/command-palette';
 
 interface NavItem {
   label: string;
@@ -84,6 +86,8 @@ export function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const { isPro, isAdvance } = useSubscription();
+  const { open: openPalette } = useCommandPalette();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   const handleLogout = async () => {
@@ -191,9 +195,9 @@ export function Header() {
         <div className="flex items-center gap-2">
           <CompactModeToggle />
 
-          <Button variant="ghost" size="icon" className="h-9 w-9">
+          <Button variant="ghost" size="icon" className="h-9 w-9" onClick={openPalette}>
             <Search className="h-5 w-5" />
-            <span className="sr-only">Search</span>
+            <span className="sr-only">Search (Ctrl+K)</span>
           </Button>
 
           {isAuthenticated && user ? (
@@ -209,7 +213,14 @@ export function Header() {
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel>
                     <div className="flex flex-col">
-                      <span className="text-sm font-medium">{user.name}</span>
+                      <span className="text-sm font-medium flex items-center gap-1.5">
+                        {user.name}
+                        {(isPro || isAdvance) && (
+                          <span className="inline-flex items-center gap-0.5 rounded-full bg-linear-to-r from-yellow-400 to-amber-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                            ✨ {isAdvance ? 'Advance' : 'Pro'}
+                          </span>
+                        )}
+                      </span>
                       <span className="text-xs text-muted-foreground">{user.email}</span>
                     </div>
                   </DropdownMenuLabel>
@@ -337,7 +348,14 @@ export function Header() {
                   <div className="flex items-center gap-3 px-1 py-2">
                     <UserAvatar name={user.name} avatarUrl={user.avatarUrl} />
                     <div>
-                      <p className="text-sm font-medium">{user.name}</p>
+                      <p className="text-sm font-medium flex items-center gap-1.5">
+                        {user.name}
+                        {(isPro || isAdvance) && (
+                          <span className="inline-flex items-center gap-0.5 rounded-full bg-linear-to-r from-yellow-400 to-amber-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                            ✨ {isAdvance ? 'Advance' : 'Pro'}
+                          </span>
+                        )}
+                      </p>
                       <p className="text-xs text-muted-foreground">{user.email}</p>
                     </div>
                   </div>
@@ -379,6 +397,8 @@ export function Header() {
           </div>
         </div>
       )}
+
+      <CommandPalette />
     </header>
   );
 }

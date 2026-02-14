@@ -191,6 +191,24 @@ export const adminSettings = pgTable('admin_settings', {
 });
 
 /**
+ * User Onboarding - Tracks wizard completion and selected categories
+ * Reference: T2.3 Onboarding Welcome Wizard
+ */
+export const userOnboarding = pgTable('user_onboarding', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' })
+    .unique(),
+  completedAt: timestamp('completed_at'),
+  selectedCategories: text('selected_categories').array().default([]),
+  firstToolUsed: text('first_tool_used'),
+  skippedAt: timestamp('skipped_at'),
+  checklistProgress: jsonb('checklist_progress').$type<Record<string, boolean>>().default({}),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+/**
  * Email Usage Tracking - Tracks email volume per provider/period
  * Reference: 13_DATABASE_SCHEMA.dbml Section "email_usage_tracking"
  *
@@ -232,6 +250,8 @@ export type AdminSetting = InferSelectModel<typeof adminSettings>;
 export type NewAdminSetting = InferInsertModel<typeof adminSettings>;
 export type EmailUsageTracking = InferSelectModel<typeof emailUsageTracking>;
 export type NewEmailUsageTracking = InferInsertModel<typeof emailUsageTracking>;
+export type UserOnboarding = InferSelectModel<typeof userOnboarding>;
+export type NewUserOnboarding = InferInsertModel<typeof userOnboarding>;
 
 // Zod schemas - use 'as unknown as' for drizzle-zod compatibility
 export const insertFileUploadSchema = createInsertSchema(fileUploads) as unknown as z.ZodType<NewFileUpload>;
@@ -244,3 +264,4 @@ export const insertEmailTemplateSchema = createInsertSchema(emailTemplates) as u
 export const insertEmailLogSchema = createInsertSchema(emailLogs) as unknown as z.ZodType<NewEmailLog>;
 export const insertAdminSettingSchema = createInsertSchema(adminSettings) as unknown as z.ZodType<NewAdminSetting>;
 export const insertEmailUsageTrackingSchema = createInsertSchema(emailUsageTracking) as unknown as z.ZodType<NewEmailUsageTracking>;
+export const insertUserOnboardingSchema = createInsertSchema(userOnboarding) as unknown as z.ZodType<NewUserOnboarding>;

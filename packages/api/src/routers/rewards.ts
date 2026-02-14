@@ -16,6 +16,13 @@ import { router, protectedProcedure } from '../trpc';
 // ── Local type declarations for lazy-imported login-reward-service ──
 type RewardType = 'daily' | 'hourly';
 
+type StreakInfo = {
+  currentStreak: number;
+  longestStreak: number;
+  multiplier: number;
+  nextTier: { days: number; multiplier: number } | null;
+};
+
 type ClaimRewardResult = {
   success: boolean;
   rewardType: RewardType;
@@ -24,6 +31,8 @@ type ClaimRewardResult = {
   dailyCoinsEarned: number;
   dailyClaimsCount: number;
   dailyCoinCap: number;
+  streakMultiplier?: number;
+  streak?: { currentStreak: number; longestStreak: number };
 };
 
 type RewardStats = {
@@ -34,11 +43,13 @@ type RewardStats = {
   canClaimDaily: boolean;
   canClaimHourly: boolean;
   nextHourlyClaimAt: Date | null;
+  streak?: StreakInfo;
 };
 
 type LoginRewardServiceModule = {
   claimLoginReward: (userId: string, rewardType: RewardType) => Promise<ClaimRewardResult>;
   getLoginRewardStats: (userId: string) => Promise<RewardStats>;
+  getUserStreak: (userId: string) => Promise<StreakInfo>;
 };
 
 /** Lazy-load login-reward-service (resolves via @/ alias at Next.js runtime) */
@@ -68,6 +79,14 @@ export const rewardsRouter = router({
   getStats: protectedProcedure.query(async ({ ctx }) => {
     const mod = await loadLoginRewardService();
     return mod.getLoginRewardStats(ctx.user.id);
+  }),
+
+  /**
+   * Get the user's current streak info.
+   */
+  getStreak: protectedProcedure.query(async ({ ctx }) => {
+    const mod = await loadLoginRewardService();
+    return mod.getUserStreak(ctx.user.id);
   }),
 
   /**

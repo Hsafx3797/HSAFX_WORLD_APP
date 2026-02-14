@@ -1,5 +1,6 @@
 import { betterAuth } from 'better-auth';
 import { createAuthMiddleware } from 'better-auth/api';
+import { twoFactor } from 'better-auth/plugins';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { db } from '@hsafx/db';
 import * as schema from '@hsafx/db/schema';
@@ -31,8 +32,14 @@ function createAuth() {
         user: schema.users,
         session: schema.sessions,
         account: schema.oauthConnections,
+        twoFactor: schema.twoFactor,
       },
     }),
+    plugins: [
+      twoFactor({
+        issuer: 'HSAFX World',
+      }),
+    ],
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: true,
@@ -122,6 +129,7 @@ function createAuth() {
         '/api/auth/sign-up/email': { window: 60, max: 3 },
         '/api/auth/forgot-password': { window: 300, max: 3 }, // 3 per 5 min
         '/api/auth/reset-password': { window: 300, max: 5 },
+        '/api/auth/two-factor/*': { window: 10, max: 3 },
       },
     },
     secret: process.env.BETTER_AUTH_SECRET,

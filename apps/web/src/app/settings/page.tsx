@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
+import { DangerZone } from '@/components/danger-zone';
+import { GdprExportButton } from '@/components/gdpr-export-button';
 
 export const metadata: Metadata = {
   title: 'Settings - HSAFX World',
@@ -59,6 +61,12 @@ export default function SettingsPage() {
                 className="block px-4 py-2 rounded-lg hover:bg-muted transition-colors"
               >
                 Billing
+              </a>
+              <a
+                href="#privacy"
+                className="block px-4 py-2 rounded-lg hover:bg-muted transition-colors"
+              >
+                Privacy & Data
               </a>
               <a
                 href="#danger"
@@ -329,36 +337,24 @@ export default function SettingsPage() {
               </div>
             </section>
 
-            {/* Danger Zone */}
-            <section id="danger" className="bg-card border border-destructive/30 rounded-lg p-6">
-              <h2 className="text-xl font-semibold mb-6 text-destructive">Danger Zone</h2>
+            {/* Privacy & Data Section */}
+            <section id="privacy" className="bg-card border border-border rounded-lg p-6">
+              <h2 className="text-xl font-semibold mb-6">Privacy & Data</h2>
               
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-medium">Export Data</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Download all your data in JSON format
-                    </p>
-                  </div>
-                  <button className="px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors">
-                    Export
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between border-t border-border pt-4">
-                  <div>
-                    <h3 className="font-medium text-destructive">Delete Account</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Permanently delete your account and all data
-                    </p>
-                  </div>
-                  <button className="px-4 py-2 bg-destructive text-destructive-foreground rounded-lg text-sm font-medium hover:bg-destructive/90 transition-colors">
-                    Delete Account
-                  </button>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="font-medium mb-2">Export Your Data</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Download a copy of all your personal data (GDPR compliant).
+                    This includes your profile, preferences, tool executions, and transaction history.
+                  </p>
+                  <GdprExportButton />
                 </div>
               </div>
             </section>
+
+            {/* Danger Zone */}
+            <DangerZone />
           </div>
         </div>
       </div>

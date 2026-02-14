@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ToolExecutor } from './tool-executor';
+import { ToolPageContent } from './tool-page-content';
 
 // Tools that should have individual pages (not redirected)
 const INDIVIDUAL_PAGE_TOOLS = new Set([
@@ -120,8 +121,8 @@ export default async function ToolPage({ params }: ToolPageProps) {
         </div>
       </div>
 
-      {/* Tool Interface */}
-      <ToolExecutor tool={tool} />
+      {/* Tool Interface with Trial Banner */}
+      <ToolPageContent tool={tool} />
 
       {/* Related Tools */} 
       {/* Todo remaining make this dynamic */}

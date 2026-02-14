@@ -7,6 +7,7 @@ import {
   toolExecutions,
   usageCounters,
   coinTransactions,
+  dailyProTrials,
   eq,
   and,
   desc,
@@ -158,6 +159,7 @@ export const toolsRouter = router({
       toolId: z.string().uuid(),
       inputs: z.record(z.unknown()),
       idempotencyKey: z.string().optional(),
+      isTrialExecution: z.boolean().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       const [tool] = await ctx.db
@@ -175,11 +177,26 @@ export const toolsRouter = router({
       }
 
       // Plan-based access check: premium tools require 'pro' or higher
+      // Allow trial executions for free/guest users (1 per day)
       if (tool.isPremium && !isPlanAtLeast(ctx.plan as UserPlan, 'pro')) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'This tool requires a Pro or Advance subscription',
-        });
+        if (input.isTrialExecution) {
+          // @ts-expect-error — @/ alias resolved by Next.js bundler at runtime
+          const { consumeTrial } = (await import('@/server/limits/pro-trial-service')) as {
+            consumeTrial: (userId: string, toolId: string) => Promise<{ success: boolean; reason?: string }>;
+          };
+          const trialResult = await consumeTrial(ctx.user!.id, input.toolId);
+          if (!trialResult.success) {
+            throw new TRPCError({
+              code: 'FORBIDDEN',
+              message: trialResult.reason ?? 'No free trials remaining today',
+            });
+          }
+        } else {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'This tool requires a Pro or Advance subscription',
+          });
+        }
       }
 
       try {
@@ -263,6 +280,33 @@ export const toolsRouter = router({
       return { items, page: input.page, pageSize: input.pageSize };
     }),
 
+  // ─── Pro Trial Endpoints (T2.6) ─────────────────────────────
+
+  getTrialStatus: protectedProcedure.query(async ({ ctx }) => {
+    // @ts-expect-error — @/ alias resolved by Next.js bundler at runtime
+    const { getTrialStatus } = (await import('@/server/limits/pro-trial-service')) as {
+      getTrialStatus: (userId: string) => Promise<{ trialsUsedToday: number; trialsRemaining: number; maxTrialsPerDay: number }>;
+    };
+    return getTrialStatus(ctx.user!.id);
+  }),
+
+  useProTrial: protectedProcedure
+    .input(z.object({ toolId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      // @ts-expect-error — @/ alias resolved by Next.js bundler at runtime
+      const { consumeTrial } = (await import('@/server/limits/pro-trial-service')) as {
+        consumeTrial: (userId: string, toolId: string) => Promise<{ success: boolean; remaining?: number; reason?: string }>;
+      };
+      const result = await consumeTrial(ctx.user!.id, input.toolId);
+      if (!result.success) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: result.reason ?? 'No free trials remaining today',
+        });
+      }
+      return { remaining: result.remaining ?? 0 };
+    }),
+
   create: adminProcedure
     .input(z.object({
       categoryId: z.string().uuid(),
@@ -321,4 +365,43 @@ export const toolsRouter = router({
 
       return deleted;
     }),
+
+  // ─── User Analytics (T3.2) ────────────────────────────────
+
+  getAnalytics: protectedProcedure.query(async ({ ctx }) => {
+    // @ts-expect-error — @/ alias resolves at Next.js runtime
+    const { getUserAnalytics } = await import('@/server/analytics/analytics-service');
+    return getUserAnalytics(ctx.user!.id);
+  }),
+
+  // ─── Batch Processing (T3.8) ─────────────────────────────
+
+  createBatchJob: planGatedProcedure
+    .input(z.object({
+      toolId: z.string().uuid(),
+      inputs: z.array(z.record(z.unknown())).min(1).max(100),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // @ts-expect-error — @/ alias resolves at Next.js runtime
+      const { createBatchJob } = await import('@/server/batch/batch-service');
+      return createBatchJob({
+        userId: ctx.user!.id,
+        toolId: input.toolId,
+        inputs: input.inputs,
+      });
+    }),
+
+  getBatchJobStatus: protectedProcedure
+    .input(z.object({ jobId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      // @ts-expect-error — @/ alias resolves at Next.js runtime
+      const { getBatchJobStatus } = await import('@/server/batch/batch-service');
+      return getBatchJobStatus(input.jobId, ctx.user!.id);
+    }),
+
+  getMyBatchJobs: protectedProcedure.query(async ({ ctx }) => {
+    // @ts-expect-error — @/ alias resolves at Next.js runtime
+    const { getUserBatchJobs } = await import('@/server/batch/batch-service');
+    return getUserBatchJobs(ctx.user!.id);
+  }),
 });

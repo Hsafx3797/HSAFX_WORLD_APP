@@ -328,6 +328,86 @@ export default function ApiKeysPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Rate Limits Dashboard (T3.6) */}
+      <Card className="mt-8">
+        <CardHeader>
+          <CardTitle>Rate Limits</CardTitle>
+          <CardDescription>Your current API usage and rate limit quotas</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            {/* Per-Minute Limit */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium">Requests per Minute</span>
+                <span className="text-sm text-muted-foreground">
+                  {apiKeys.length > 0 ? '— / 60' : 'No active keys'}
+                </span>
+              </div>
+              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary rounded-full transition-all"
+                  style={{ width: '0%' }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Resets every minute. Real-time tracking available via response headers.
+              </p>
+            </div>
+
+            {/* Daily Limit */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium">Daily Requests</span>
+                <span className="text-sm text-muted-foreground">
+                  {apiKeys.length > 0 ? '— / 1,000' : 'No active keys'}
+                </span>
+              </div>
+              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary rounded-full transition-all"
+                  style={{ width: '0%' }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Resets at midnight UTC. Upgrade your plan for higher limits.
+              </p>
+            </div>
+
+            {/* Monthly Limit */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium">Monthly Requests</span>
+                <span className="text-sm text-muted-foreground">
+                  {apiKeys.length > 0 ? '— / 10,000' : 'No active keys'}
+                </span>
+              </div>
+              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary rounded-full transition-all"
+                  style={{ width: '0%' }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Resets on the 1st of each month.
+              </p>
+            </div>
+
+            <div className="pt-4 border-t border-border">
+              <h4 className="text-sm font-medium mb-2">Rate Limit Headers</h4>
+              <p className="text-xs text-muted-foreground mb-3">
+                Every API response includes rate limit info in headers:
+              </p>
+              <div className="bg-muted/50 rounded-lg p-3 font-mono text-xs space-y-1">
+                <p><span className="text-primary">X-RateLimit-Limit:</span> 60</p>
+                <p><span className="text-primary">X-RateLimit-Remaining:</span> 58</p>
+                <p><span className="text-primary">X-RateLimit-Reset:</span> 1704067200</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { scrypt, randomBytes, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import { router, protectedProcedure, adminProcedure } from '../trpc';
-import { users, userPreferences, userSettings, sessions, eq, and } from '@hsafx/db/schema';
+import { users, userPreferences, userSettings, sessions, userOnboarding, eq, and } from '@hsafx/db/schema';
 import { TRPCError } from '@trpc/server';
 import { getUserPlan } from '../helpers/get-user-plan';
 
@@ -241,4 +241,205 @@ export const userRouter = router({
 
       return { success: true };
     }),
+
+  // ─── Onboarding ───────────────────────────────────────────
+
+  getOnboarding: protectedProcedure.query(async ({ ctx }) => {
+    const [row] = await ctx.db
+      .select()
+      .from(userOnboarding)
+      .where(eq(userOnboarding.userId, ctx.user!.id))
+      .limit(1);
+
+    return {
+      completed: !!row?.completedAt,
+      skipped: !!row?.skippedAt,
+      selectedCategories: (row?.selectedCategories ?? []) as string[],
+      firstToolUsed: row?.firstToolUsed ?? null,
+    };
+  }),
+
+  completeOnboarding: protectedProcedure
+    .input(
+      z.object({
+        selectedCategories: z.array(z.string()).min(1).max(8),
+        firstToolUsed: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.user!.id;
+
+      await ctx.db
+        .insert(userOnboarding)
+        .values({
+          userId,
+          completedAt: new Date(),
+          selectedCategories: input.selectedCategories,
+          firstToolUsed: input.firstToolUsed ?? null,
+        })
+        .onConflictDoUpdate({
+          target: [userOnboarding.userId],
+          set: {
+            completedAt: new Date(),
+            selectedCategories: input.selectedCategories,
+            firstToolUsed: input.firstToolUsed ?? null,
+          },
+        });
+
+      // Award 25 bonus coins via lazy-loaded reward service
+      try {
+        // @ts-expect-error — @/ alias resolves at Next.js runtime
+        const { claimOnboardingBonus } = await import('@/server/rewards/onboarding-bonus');
+        await claimOnboardingBonus(userId);
+      } catch {
+        // Coin award is best-effort; don't fail the onboarding
+      }
+
+      return { success: true };
+    }),
+
+  skipOnboarding: protectedProcedure.mutation(async ({ ctx }) => {
+    await ctx.db
+      .insert(userOnboarding)
+      .values({
+        userId: ctx.user!.id,
+        skippedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: [userOnboarding.userId],
+        set: { skippedAt: new Date() },
+      });
+
+    return { success: true };
+  }),
+
+  getChecklist: protectedProcedure.query(async ({ ctx }) => {
+    const [row] = await ctx.db
+      .select()
+      .from(userOnboarding)
+      .where(eq(userOnboarding.userId, ctx.user!.id))
+      .limit(1);
+
+    return (row?.checklistProgress ?? {}) as Record<string, boolean>;
+  }),
+
+  completeChecklistStep: protectedProcedure
+    .input(z.object({ step: z.string().min(1).max(50) }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.user!.id;
+
+      // Ensure onboarding row exists
+      const [row] = await ctx.db
+        .select()
+        .from(userOnboarding)
+        .where(eq(userOnboarding.userId, userId))
+        .limit(1);
+
+      const current = (row?.checklistProgress ?? {}) as Record<string, boolean>;
+      if (current[input.step]) return { alreadyCompleted: true, coinsAwarded: 0 };
+
+      const updated = { ...current, [input.step]: true };
+
+      if (row) {
+        await ctx.db
+          .update(userOnboarding)
+          .set({ checklistProgress: updated })
+          .where(eq(userOnboarding.userId, userId));
+      } else {
+        await ctx.db
+          .insert(userOnboarding)
+          .values({ userId, checklistProgress: updated });
+      }
+
+      // Award 5 coins
+      try {
+        // @ts-expect-error — @/ alias resolves at Next.js runtime
+        const { claimChecklistBonus } = await import('@/server/rewards/checklist-bonus');
+        await claimChecklistBonus(userId, input.step);
+      } catch {
+        // Best-effort
+      }
+
+      return { alreadyCompleted: false, coinsAwarded: 5 };
+    }),
+
+  // ─── Account Deletion ────────────────────────────────────
+
+  getDeletionStatus: protectedProcedure.query(async ({ ctx }) => {
+    // @ts-expect-error — @/ alias resolves at Next.js runtime
+    const { getDeletionStatus } = await import('@/server/account/deletion-service');
+    return getDeletionStatus(ctx.user!.id);
+  }),
+
+  requestDeletion: protectedProcedure
+    .input(z.object({ password: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.user!.id;
+
+      // Verify password before allowing deletion
+      const [user] = await ctx.db
+        .select({ passwordHash: users.passwordHash })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      if (!user?.passwordHash) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'No password set on this account.' });
+      }
+
+      const [storedHash, storedSalt] = user.passwordHash.split(':');
+      if (!storedHash || !storedSalt) {
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Invalid password hash format' });
+      }
+
+      const saltBuffer = Buffer.from(storedSalt, 'base64');
+      const derivedKey = (await scryptAsync(input.password, saltBuffer, 64)) as Buffer;
+      const storedKey = Buffer.from(storedHash, 'base64');
+
+      if (!timingSafeEqual(derivedKey, storedKey)) {
+        throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Incorrect password.' });
+      }
+
+      // @ts-expect-error — @/ alias resolves at Next.js runtime
+      const { requestAccountDeletion } = await import('@/server/account/deletion-service');
+      return requestAccountDeletion(userId);
+    }),
+
+  cancelDeletion: protectedProcedure.mutation(async ({ ctx }) => {
+    // @ts-expect-error — @/ alias resolves at Next.js runtime
+    const { cancelAccountDeletion } = await import('@/server/account/deletion-service');
+    await cancelAccountDeletion(ctx.user!.id);
+    return { success: true };
+  }),
+
+  // ─── Referral Program (T3.1) ─────────────────────────────
+
+  getReferralStats: protectedProcedure.query(async ({ ctx }) => {
+    // @ts-expect-error — @/ alias resolves at Next.js runtime
+    const { getReferralStats } = await import('@/server/referral/referral-service');
+    return getReferralStats(ctx.user!.id);
+  }),
+
+  getMyReferralCode: protectedProcedure.query(async ({ ctx }) => {
+    // @ts-expect-error — @/ alias resolves at Next.js runtime
+    const { getOrCreateReferralCode } = await import('@/server/referral/referral-service');
+    const code = await getOrCreateReferralCode(ctx.user!.id);
+    return { code };
+  }),
+
+  trackReferral: protectedProcedure
+    .input(z.object({ referralCode: z.string().min(1).max(20) }))
+    .mutation(async ({ ctx, input }) => {
+      // @ts-expect-error — @/ alias resolves at Next.js runtime
+      const { trackReferralSignup } = await import('@/server/referral/referral-service');
+      return trackReferralSignup(input.referralCode, ctx.user!.id);
+    }),
+
+  // ─── GDPR Data Export (T3.3) ──────────────────────────────
+
+  requestDataExport: protectedProcedure.mutation(async ({ ctx }) => {
+    // @ts-expect-error — @/ alias resolves at Next.js runtime
+    const { requestDataExport } = await import('@/server/gdpr/gdpr-export-service');
+    return requestDataExport(ctx.user!.id, ctx.user!.email);
+  }),
 });
