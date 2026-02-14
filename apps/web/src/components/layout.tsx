@@ -26,6 +26,13 @@ import {
   LogOut,
   Coins,
   Search,
+  BarChart3,
+  CreditCard,
+  UserCircle,
+  BookOpen,
+  DollarSign,
+  UserPlus,
+  LogIn,
 } from 'lucide-react';
 import { CommandPalette, useCommandPalette } from '@/components/command-palette';
 
@@ -232,6 +239,12 @@ export function Header() {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
+                    <Link href="/settings#profile" className="flex items-center gap-2">
+                      <UserCircle className="h-4 w-4" />
+                      Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
                     <Link href="/dashboard/history" className="flex items-center gap-2">
                       <History className="h-4 w-4" />
                       History
@@ -241,6 +254,21 @@ export function Header() {
                     <Link href="/dashboard/coins" className="flex items-center gap-2">
                       <Coins className="h-4 w-4" />
                       Coins
+                    </Link>
+                  </DropdownMenuItem>
+                  {(isPro || isAdvance) && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard/analytics" className="flex items-center gap-2">
+                        <BarChart3 className="h-4 w-4" />
+                        Analytics
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings#billing" className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4" />
+                      Billing
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
@@ -267,14 +295,40 @@ export function Header() {
               </DropdownMenu>
             </>
           ) : !isLoading ? (
-            <>
-              <Button variant="ghost" asChild className="hidden sm:inline-flex">
-                <Link href="/login">Sign In</Link>
-              </Button>
-              <Button asChild className="hidden sm:inline-flex">
-                <Link href="/register">Get Started</Link>
-              </Button>
-            </>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-2 rounded-full p-1.5 outline-none ring-offset-background hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                  <User className="h-5 w-5 text-muted-foreground" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem asChild>
+                  <Link href="/login" className="flex items-center gap-2">
+                    <LogIn className="h-4 w-4" />
+                    Sign In
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/register" className="flex items-center gap-2">
+                    <UserPlus className="h-4 w-4" />
+                    Create Account
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/pricing" className="flex items-center gap-2">
+                    <DollarSign className="h-4 w-4" />
+                    Pricing
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/api-docs" className="flex items-center gap-2">
+                    <BookOpen className="h-4 w-4" />
+                    API Docs
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : null}
 
           {/* Mobile menu button */}
@@ -365,6 +419,26 @@ export function Header() {
                       Dashboard
                     </Button>
                   </Link>
+                  <Link href="/settings#profile" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="outline" className="w-full justify-start gap-2">
+                      <UserCircle className="h-4 w-4" />
+                      Profile
+                    </Button>
+                  </Link>
+                  {(isPro || isAdvance) && (
+                    <Link href="/dashboard/analytics" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="outline" className="w-full justify-start gap-2">
+                        <BarChart3 className="h-4 w-4" />
+                        Analytics
+                      </Button>
+                    </Link>
+                  )}
+                  <Link href="/settings#billing" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="outline" className="w-full justify-start gap-2">
+                      <CreditCard className="h-4 w-4" />
+                      Billing
+                    </Button>
+                  </Link>
                   <Link href="/settings" onClick={() => setMobileMenuOpen(false)}>
                     <Button variant="outline" className="w-full justify-start gap-2">
                       <Settings className="h-4 w-4" />
@@ -386,11 +460,23 @@ export function Header() {
               ) : (
                 <>
                   <Button variant="outline" asChild>
-                    <Link href="/login">Sign In</Link>
+                    <Link href="/login" onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
                   </Button>
                   <Button asChild>
-                    <Link href="/register">Get Started</Link>
+                    <Link href="/register" onClick={() => setMobileMenuOpen(false)}>Create Account</Link>
                   </Button>
+                  <Link href="/pricing" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start gap-2">
+                      <DollarSign className="h-4 w-4" />
+                      Pricing
+                    </Button>
+                  </Link>
+                  <Link href="/api-docs" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start gap-2">
+                      <BookOpen className="h-4 w-4" />
+                      API Docs
+                    </Button>
+                  </Link>
                 </>
               )}
             </div>

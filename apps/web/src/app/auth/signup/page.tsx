@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { PasswordStrengthMeter, isPasswordValid } from '@/components/password-strength-meter';
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -14,6 +15,10 @@ export default function SignUpPage() {
 
   const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isPasswordValid(password)) {
+      toast.error('Password does not meet all requirements');
+      return;
+    }
     setIsLoading(true);
 
     try {
@@ -94,17 +99,16 @@ export default function SignUpPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={8}
+              maxLength={128}
               className="w-full px-3 py-2 border rounded-md bg-background"
               placeholder="••••••••"
             />
-            <p className="text-xs text-muted-foreground mt-1">
-              Must be at least 8 characters
-            </p>
+            <PasswordStrengthMeter password={password} />
           </div>
 
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || !isPasswordValid(password)}
             className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
           >
             {isLoading ? 'Creating account...' : 'Create Account'}

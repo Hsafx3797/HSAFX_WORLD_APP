@@ -528,3 +528,117 @@ export interface ApiKeyRecord {
   createdAt: string;
   revokedAt?: string;
 }
+
+// ==================== STREAK TIERS ====================
+
+export interface StreakTier {
+  id: string;
+  minDays: number;
+  maxDays?: number | null;
+  name: string;
+  coinsReward: number;
+  badgeIcon?: string | null;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ==================== REFERRAL CONFIG ====================
+
+export interface ReferralConfigEntry {
+  id: string;
+  key: string;
+  value: number;
+  description?: string | null;
+  isActive: boolean;
+  updatedBy?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ==================== RATE LIMIT CONFIG ====================
+
+export interface RateLimitConfigEntry {
+  id: string;
+  planSlug: string;
+  endpoint: string;
+  requestsPerMinute: number;
+  requestsPerHour?: number | null;
+  requestsPerDay?: number | null;
+  burstLimit?: number | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ==================== PLAN FEATURE ====================
+
+export interface PlanFeature {
+  id: string;
+  planId: string;
+  featureKey: string;
+  enabled: boolean;
+  limitValue?: number | null;
+  metadata?: Record<string, unknown> | null;
+}
+
+// ==================== ADMIN SETTING ====================
+
+export interface AdminSetting {
+  id: string;
+  key: string;
+  value: unknown;
+  description?: string | null;
+  category?: string | null;
+  updatedBy?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ==================== ANALYTICS ====================
+
+export interface AnalyticsOverview {
+  userGrowth: { total: number; newInRange: number };
+  executions: { total: number; inRange: number };
+  revenue: { total: number; inRange: number };
+}
+
+export interface CohortRow {
+  cohort: string;
+  users_count: number;
+  active_users: number;
+}
+
+export interface FunnelData {
+  steps: Array<{ name: string; count: number }>;
+}
+
+export interface ToolUsageRow {
+  toolId: string;
+  toolName: string;
+  categoryName: string;
+  count: number;
+  uniqueUsers: number;
+}
+
+export interface RevenueRow {
+  period: string;
+  revenue: number;
+  transactions: number;
+}
+
+export interface ChurnData {
+  totalUsers: number;
+  activeUsers: number;
+  churnedUsers: number;
+  churnRate: string;
+  daysInactive: number;
+}
+
+export interface SystemHealth {
+  recentExecutions: number;
+  avgResponseTime: number;
+  errorRate: string;
+  timestamp: string;
+}

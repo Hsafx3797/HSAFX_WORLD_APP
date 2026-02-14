@@ -5,6 +5,7 @@ export * from './billing';
 export * from './tools';
 export * from './misc';
 export * from './audit';
+export * from './config';
 export * from './relations';
 
 // Re-export Drizzle utilities

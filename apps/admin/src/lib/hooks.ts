@@ -19,6 +19,9 @@ import type {
   AdminUser,
   Plan, CoinPack, ApiKeyRecord,
   PaginatedResponse,
+  StreakTier, ReferralConfigEntry, PlanFeature, PlanLimit,
+  AnalyticsOverview, CohortRow, FunnelData, ToolUsageRow, RevenueRow, ChurnData, SystemHealth,
+  AdminSetting, RateLimitConfigEntry,
 } from './types';
 import * as api from './api';
 
@@ -1046,4 +1049,278 @@ export function use2FAMutations() {
   }, []);
 
   return { loading, error, setup, enable, verify, disable };
+}
+
+// ==================== STREAK TIERS ====================
+
+export function useStreakTiers() {
+  const { data, error, isLoading, mutate: refresh } = useSWR<StreakTier[]>(
+    '/admin/streak-tiers',
+    async () => {
+      const res = await api.getStreakTiers();
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    }
+  );
+  return { tiers: data || [], error, isLoading, refresh };
+}
+
+export function useStreakTierMutations() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const create = useCallback(async (data: Partial<StreakTier>) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.createStreakTier(data);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate('/admin/streak-tiers');
+      return res.data;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to create streak tier');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const update = useCallback(async (id: string, data: Partial<StreakTier>) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.updateStreakTier(id, data);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate('/admin/streak-tiers');
+      return res.data;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to update streak tier');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const remove = useCallback(async (id: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.deleteStreakTier(id);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate('/admin/streak-tiers');
+      return true;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to delete streak tier');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { loading, error, create, update, remove };
+}
+
+// ==================== REFERRAL CONFIG ====================
+
+export function useReferralConfig() {
+  const { data, error, isLoading, mutate: refresh } = useSWR<ReferralConfigEntry[]>(
+    '/admin/referral-config',
+    async () => {
+      const res = await api.getReferralConfig();
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    }
+  );
+
+  const upsert = useCallback(async (entry: Partial<ReferralConfigEntry>) => {
+    const res = await api.upsertReferralConfig(entry);
+    if (!res.success) throw new Error(res.error?.message);
+    refresh();
+    return res.data;
+  }, [refresh]);
+
+  return { config: data || [], error, isLoading, refresh, upsert };
+}
+
+// ==================== PLAN LIMITS & FEATURES ====================
+
+export function usePlanLimits(planId: string | null) {
+  const { data, error, isLoading, mutate: refresh } = useSWR<PlanLimit[]>(
+    planId ? `/admin/plans/${planId}/limits` : null,
+    async () => {
+      const res = await api.getPlanLimits(planId!);
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    }
+  );
+  return { limits: data || [], error, isLoading, refresh };
+}
+
+export function usePlanFeatures(planId: string | null) {
+  const { data, error, isLoading, mutate: refresh } = useSWR<PlanFeature[]>(
+    planId ? `/admin/plans/${planId}/features` : null,
+    async () => {
+      const res = await api.getPlanFeatures(planId!);
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    }
+  );
+  return { features: data || [], error, isLoading, refresh };
+}
+
+export function usePlanLimitMutations() {
+  const [loading, setLoading] = useState(false);
+
+  const create = useCallback(async (data: Partial<PlanLimit>) => {
+    setLoading(true);
+    try {
+      const res = await api.createPlanLimit(data);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate((key: string) => typeof key === 'string' && key.includes('/limits'), undefined, { revalidate: true });
+      return res.data;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const update = useCallback(async (id: string, data: Partial<PlanLimit>) => {
+    setLoading(true);
+    try {
+      const res = await api.updatePlanLimit(id, data);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate((key: string) => typeof key === 'string' && key.includes('/limits'), undefined, { revalidate: true });
+      return res.data;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const remove = useCallback(async (id: string) => {
+    setLoading(true);
+    try {
+      const res = await api.deletePlanLimit(id);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate((key: string) => typeof key === 'string' && key.includes('/limits'), undefined, { revalidate: true });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { loading, create, update, remove };
+}
+
+export function usePlanFeatureMutations() {
+  const [loading, setLoading] = useState(false);
+
+  const upsert = useCallback(async (data: Partial<PlanFeature>) => {
+    setLoading(true);
+    try {
+      const res = await api.upsertPlanFeature(data);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate((key: string) => typeof key === 'string' && key.includes('/features'), undefined, { revalidate: true });
+      return res.data;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const remove = useCallback(async (id: string) => {
+    setLoading(true);
+    try {
+      const res = await api.deletePlanFeature(id);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate((key: string) => typeof key === 'string' && key.includes('/features'), undefined, { revalidate: true });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { loading, upsert, remove };
+}
+
+// ==================== ANALYTICS ====================
+
+export function useAnalyticsOverview(startDate: string, endDate: string) {
+  const { data, error, isLoading } = useSWR<AnalyticsOverview>(
+    `/admin/analytics/overview?${startDate}-${endDate}`,
+    async () => {
+      const res = await api.getAnalyticsOverview(startDate, endDate);
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    }
+  );
+  return { overview: data, error, isLoading };
+}
+
+export function useCohortAnalysis(startDate: string, endDate: string, interval = 'week') {
+  const { data, error, isLoading } = useSWR<CohortRow[]>(
+    `/admin/analytics/cohorts?${startDate}-${endDate}-${interval}`,
+    async () => {
+      const res = await api.getCohortAnalysis(startDate, endDate, interval);
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    }
+  );
+  return { cohorts: data || [], error, isLoading };
+}
+
+export function useFunnelAnalysis() {
+  const { data, error, isLoading } = useSWR<FunnelData>(
+    '/admin/analytics/funnel',
+    async () => {
+      const res = await api.getFunnelAnalysis();
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    }
+  );
+  return { funnel: data, error, isLoading };
+}
+
+export function useToolUsageBreakdown(startDate: string, endDate: string, limit = 20) {
+  const { data, error, isLoading } = useSWR<ToolUsageRow[]>(
+    `/admin/analytics/tool-usage?${startDate}-${endDate}`,
+    async () => {
+      const res = await api.getToolUsageBreakdown(startDate, endDate, limit);
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    }
+  );
+  return { breakdown: data || [], error, isLoading };
+}
+
+export function useRevenueTimeSeries(startDate: string, endDate: string, interval = 'day') {
+  const { data, error, isLoading } = useSWR<RevenueRow[]>(
+    `/admin/analytics/revenue?${startDate}-${endDate}-${interval}`,
+    async () => {
+      const res = await api.getRevenueTimeSeries(startDate, endDate, interval);
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    }
+  );
+  return { series: data || [], error, isLoading };
+}
+
+export function useChurnAnalysis(daysInactive = 30) {
+  const { data, error, isLoading } = useSWR<ChurnData>(
+    `/admin/analytics/churn?days=${daysInactive}`,
+    async () => {
+      const res = await api.getChurnAnalysis(daysInactive);
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    }
+  );
+  return { churn: data, error, isLoading };
+}
+
+export function useSystemHealth() {
+  const { data, error, isLoading } = useSWR<SystemHealth>(
+    '/admin/analytics/health',
+    async () => {
+      const res = await api.getSystemHealth();
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data!;
+    },
+    { refreshInterval: 10000 }
+  );
+  return { health: data, error, isLoading };
 }

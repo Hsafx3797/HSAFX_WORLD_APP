@@ -15,6 +15,9 @@ import type {
   AdminUser,
   Plan, CoinPack, ApiKeyRecord,
   PaginatedResponse, ApiResponse,
+  StreakTier, ReferralConfigEntry, PlanFeature, PlanLimit,
+  AnalyticsOverview, CohortRow, FunnelData, ToolUsageRow, RevenueRow, ChurnData, SystemHealth,
+  AdminSetting, RateLimitConfigEntry,
 } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api/admin';
@@ -495,4 +498,152 @@ export async function get2FAStatus(): Promise<ApiResponse<{ enabled: boolean }>>
     method: 'POST',
     body: JSON.stringify({ action: 'status' }),
   });
+}
+
+// ==================== STREAK TIERS ====================
+
+export async function getStreakTiers(): Promise<ApiResponse<StreakTier[]>> {
+  return fetchApi('/streak-tiers');
+}
+
+export async function createStreakTier(data: Partial<StreakTier>): Promise<ApiResponse<StreakTier>> {
+  return fetchApi('/streak-tiers', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateStreakTier(id: string, data: Partial<StreakTier>): Promise<ApiResponse<StreakTier>> {
+  return fetchApi(`/streak-tiers/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteStreakTier(id: string): Promise<ApiResponse<void>> {
+  return fetchApi(`/streak-tiers/${id}`, { method: 'DELETE' });
+}
+
+// ==================== REFERRAL CONFIG ====================
+
+export async function getReferralConfig(): Promise<ApiResponse<ReferralConfigEntry[]>> {
+  return fetchApi('/referral-config');
+}
+
+export async function upsertReferralConfig(data: Partial<ReferralConfigEntry>): Promise<ApiResponse<ReferralConfigEntry>> {
+  return fetchApi('/referral-config', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+// ==================== PLAN LIMITS ====================
+
+export async function getPlanLimits(planId: string): Promise<ApiResponse<PlanLimit[]>> {
+  return fetchApi(`/plans/${planId}/limits`);
+}
+
+export async function createPlanLimit(data: Partial<PlanLimit>): Promise<ApiResponse<PlanLimit>> {
+  return fetchApi('/plan-limits', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updatePlanLimit(id: string, data: Partial<PlanLimit>): Promise<ApiResponse<PlanLimit>> {
+  return fetchApi(`/plan-limits/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deletePlanLimit(id: string): Promise<ApiResponse<void>> {
+  return fetchApi(`/plan-limits/${id}`, { method: 'DELETE' });
+}
+
+// ==================== PLAN FEATURES ====================
+
+export async function getPlanFeatures(planId: string): Promise<ApiResponse<PlanFeature[]>> {
+  return fetchApi(`/plans/${planId}/features`);
+}
+
+export async function upsertPlanFeature(data: Partial<PlanFeature>): Promise<ApiResponse<PlanFeature>> {
+  return fetchApi('/plan-features', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deletePlanFeature(id: string): Promise<ApiResponse<void>> {
+  return fetchApi(`/plan-features/${id}`, { method: 'DELETE' });
+}
+
+// ==================== ADMIN SETTINGS ====================
+
+export async function getAdminSettings(category?: string): Promise<ApiResponse<AdminSetting[]>> {
+  const params = category ? `?category=${category}` : '';
+  return fetchApi(`/admin-settings${params}`);
+}
+
+export async function upsertAdminSetting(data: { key: string; value: unknown; description?: string; category?: string }): Promise<ApiResponse<AdminSetting>> {
+  return fetchApi('/admin-settings', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+// ==================== RATE LIMIT CONFIG ====================
+
+export async function getRateLimitConfigs(): Promise<ApiResponse<RateLimitConfigEntry[]>> {
+  return fetchApi('/rate-limit-config');
+}
+
+export async function upsertRateLimitConfig(data: Partial<RateLimitConfigEntry>): Promise<ApiResponse<RateLimitConfigEntry>> {
+  return fetchApi('/rate-limit-config', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+// ==================== ANALYTICS ====================
+
+export async function getAnalyticsOverview(startDate: string, endDate: string): Promise<ApiResponse<AnalyticsOverview>> {
+  return fetchApi(`/analytics/overview?startDate=${startDate}&endDate=${endDate}`);
+}
+
+export async function getCohortAnalysis(startDate: string, endDate: string, interval: string = 'week'): Promise<ApiResponse<CohortRow[]>> {
+  return fetchApi(`/analytics/cohorts?startDate=${startDate}&endDate=${endDate}&interval=${interval}`);
+}
+
+export async function getFunnelAnalysis(): Promise<ApiResponse<FunnelData>> {
+  return fetchApi('/analytics/funnel');
+}
+
+export async function getToolUsageBreakdown(startDate: string, endDate: string, limit = 20): Promise<ApiResponse<ToolUsageRow[]>> {
+  return fetchApi(`/analytics/tool-usage?startDate=${startDate}&endDate=${endDate}&limit=${limit}`);
+}
+
+export async function getRevenueTimeSeries(startDate: string, endDate: string, interval: string = 'day'): Promise<ApiResponse<RevenueRow[]>> {
+  return fetchApi(`/analytics/revenue?startDate=${startDate}&endDate=${endDate}&interval=${interval}`);
+}
+
+export async function getChurnAnalysis(daysInactive = 30): Promise<ApiResponse<ChurnData>> {
+  return fetchApi(`/analytics/churn?daysInactive=${daysInactive}`);
+}
+
+export async function getSystemHealth(): Promise<ApiResponse<SystemHealth>> {
+  return fetchApi('/analytics/health');
+}
+
+// ==================== CSV EXPORT ====================
+
+export async function exportAnalyticsCSV(
+  type: 'cohorts' | 'tool-usage' | 'revenue',
+  startDate: string,
+  endDate: string,
+): Promise<Blob> {
+  const res = await fetch(`${API_BASE}/analytics/${type}/export?startDate=${startDate}&endDate=${endDate}&format=csv`, {
+    credentials: 'include',
+  });
+  return res.blob();
 }
