@@ -86,7 +86,7 @@ export function ActivityFeed({ items, loading, maxItems = 10, className }: Activ
         ) : (
           <div className="relative space-y-0">
             {/* Timeline line */}
-            <div className="absolute left-[15px] top-2 bottom-2 w-px bg-border" />
+            <div className="absolute left-3.75 top-2 bottom-2 w-px bg-border" />
 
             {visible.map((item, i) => {
               const cfg = statusConfig[item.status];

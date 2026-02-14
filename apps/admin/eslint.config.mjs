@@ -14,6 +14,11 @@ const eslintConfig = [
   ...compat.extends('next/core-web-vitals'),
   ...tseslint.configs.recommended,
   {
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: __dirname,
+      },
+    },
     rules: {
       '@next/next/no-img-element': 'warn',
       'react/no-unescaped-entities': 'warn',

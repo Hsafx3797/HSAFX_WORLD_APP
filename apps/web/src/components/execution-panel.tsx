@@ -125,7 +125,7 @@ export function ExecutionPanel({
         {/* Output display */}
         {currentOutput && (
           <div className="relative">
-            <pre className="max-h-64 overflow-auto rounded-md bg-muted p-3 text-sm whitespace-pre-wrap break-words">
+            <pre className="max-h-64 overflow-auto rounded-md bg-muted p-3 text-sm whitespace-pre-wrap wrap-break-word">
               {currentOutput}
             </pre>
             <div className="absolute right-2 top-2 flex gap-1">

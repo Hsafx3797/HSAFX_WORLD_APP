@@ -10,7 +10,7 @@ import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { useStreakTiers, useStreakTierMutations } from '@/lib/hooks';
 import type { StreakTier } from '@/lib/types';
 import {
-  Card, CardHeader, CardContent,
+  Card, CardContent,
   Button, Modal, ConfirmModal,
   FormGroup, Input, Toggle, Badge,
   DataTable,

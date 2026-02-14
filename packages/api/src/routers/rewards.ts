@@ -54,7 +54,7 @@ type LoginRewardServiceModule = {
 
 /** Lazy-load login-reward-service (resolves via @/ alias at Next.js runtime) */
 async function loadLoginRewardService(): Promise<LoginRewardServiceModule> {
-  // @ts-expect-error — @/ alias resolves at Next.js runtime, not during standalone tsc
+  // @ts-ignore — @/ alias resolves at Next.js runtime, not during standalone tsc
   return (await import('@/server/rewards/login-reward-service')) as LoginRewardServiceModule;
 }
 

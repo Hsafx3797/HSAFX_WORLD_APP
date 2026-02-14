@@ -64,7 +64,7 @@ export async function requestDataExport(userId: string, email: string) {
     keyPrefix: k.keyPrefix,
     scopes: k.scopes,
     isActive: k.isActive,
-    lastUsedAt: k.lastUsedAt,
+    lastUsedAt: k.lastUsed,
     expiresAt: k.expiresAt,
     createdAt: k.createdAt,
   }));

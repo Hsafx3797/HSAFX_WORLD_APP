@@ -174,7 +174,7 @@ export default function AnalyticsPage() {
           <CardHeader title="Conversion Funnel" description="Registered → Verified → Used Tool → Subscribed" />
           <CardContent>
             <div className="space-y-3">
-              {funnelChartData.map((step, i) => {
+              {funnelChartData.map((step) => {
                 const max = funnelChartData[0]?.value || 1;
                 const pct = ((step.value / max) * 100).toFixed(1);
                 return (

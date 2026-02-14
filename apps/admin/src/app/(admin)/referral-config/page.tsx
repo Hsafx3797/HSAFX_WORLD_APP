@@ -10,7 +10,7 @@ import { Plus, Save } from 'lucide-react';
 import { useReferralConfig } from '@/lib/hooks';
 import type { ReferralConfigEntry } from '@/lib/types';
 import {
-  Card, CardHeader, CardContent,
+  Card, CardContent,
   Button, Modal, FormGroup, Input, Toggle, Badge,
   DataTable,
   type Column,

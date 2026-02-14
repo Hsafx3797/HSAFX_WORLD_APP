@@ -292,7 +292,7 @@ export const userRouter = router({
 
       // Award 25 bonus coins via lazy-loaded reward service
       try {
-        // @ts-expect-error — @/ alias resolves at Next.js runtime
+        // @ts-ignore — @/ alias resolves at Next.js runtime
         const { claimOnboardingBonus } = await import('@/server/rewards/onboarding-bonus');
         await claimOnboardingBonus(userId);
       } catch {
@@ -357,7 +357,7 @@ export const userRouter = router({
 
       // Award 5 coins
       try {
-        // @ts-expect-error — @/ alias resolves at Next.js runtime
+        // @ts-ignore — @/ alias resolves at Next.js runtime
         const { claimChecklistBonus } = await import('@/server/rewards/checklist-bonus');
         await claimChecklistBonus(userId, input.step);
       } catch {
@@ -370,7 +370,7 @@ export const userRouter = router({
   // ─── Account Deletion ────────────────────────────────────
 
   getDeletionStatus: protectedProcedure.query(async ({ ctx }) => {
-    // @ts-expect-error — @/ alias resolves at Next.js runtime
+    // @ts-ignore — @/ alias resolves at Next.js runtime
     const { getDeletionStatus } = await import('@/server/account/deletion-service');
     return getDeletionStatus(ctx.user!.id);
   }),
@@ -404,13 +404,13 @@ export const userRouter = router({
         throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Incorrect password.' });
       }
 
-      // @ts-expect-error — @/ alias resolves at Next.js runtime
+      // @ts-ignore — @/ alias resolves at Next.js runtime
       const { requestAccountDeletion } = await import('@/server/account/deletion-service');
       return requestAccountDeletion(userId);
     }),
 
   cancelDeletion: protectedProcedure.mutation(async ({ ctx }) => {
-    // @ts-expect-error — @/ alias resolves at Next.js runtime
+    // @ts-ignore — @/ alias resolves at Next.js runtime
     const { cancelAccountDeletion } = await import('@/server/account/deletion-service');
     await cancelAccountDeletion(ctx.user!.id);
     return { success: true };
@@ -419,13 +419,13 @@ export const userRouter = router({
   // ─── Referral Program (T3.1) ─────────────────────────────
 
   getReferralStats: protectedProcedure.query(async ({ ctx }) => {
-    // @ts-expect-error — @/ alias resolves at Next.js runtime
+    // @ts-ignore — @/ alias resolves at Next.js runtime
     const { getReferralStats } = await import('@/server/referral/referral-service');
     return getReferralStats(ctx.user!.id);
   }),
 
   getMyReferralCode: protectedProcedure.query(async ({ ctx }) => {
-    // @ts-expect-error — @/ alias resolves at Next.js runtime
+    // @ts-ignore — @/ alias resolves at Next.js runtime
     const { getOrCreateReferralCode } = await import('@/server/referral/referral-service');
     const code = await getOrCreateReferralCode(ctx.user!.id);
     return { code };
@@ -434,7 +434,7 @@ export const userRouter = router({
   trackReferral: protectedProcedure
     .input(z.object({ referralCode: z.string().min(1).max(20) }))
     .mutation(async ({ ctx, input }) => {
-      // @ts-expect-error — @/ alias resolves at Next.js runtime
+      // @ts-ignore — @/ alias resolves at Next.js runtime
       const { trackReferralSignup } = await import('@/server/referral/referral-service');
       return trackReferralSignup(input.referralCode, ctx.user!.id);
     }),
@@ -442,7 +442,7 @@ export const userRouter = router({
   // ─── GDPR Data Export (T3.3) ──────────────────────────────
 
   requestDataExport: protectedProcedure.mutation(async ({ ctx }) => {
-    // @ts-expect-error — @/ alias resolves at Next.js runtime
+    // @ts-ignore — @/ alias resolves at Next.js runtime
     const { requestDataExport } = await import('@/server/gdpr/gdpr-export-service');
     return requestDataExport(ctx.user!.id, ctx.user!.email);
   }),

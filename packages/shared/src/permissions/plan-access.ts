@@ -163,7 +163,7 @@ export function loadPlanFeaturesCache(
   for (const row of rows) {
     if (!row.enabled) continue;
     if (!map[row.planSlug]) map[row.planSlug] = new Set();
-    map[row.planSlug].add(row.featureKey);
+    map[row.planSlug]!.add(row.featureKey);
   }
   cache.features = map;
   cache.lastUpdated = Date.now();
@@ -179,7 +179,7 @@ export function loadPlanLimitsCache(
   const map: Record<string, Record<string, number>> = {};
   for (const row of rows) {
     if (!map[row.planSlug]) map[row.planSlug] = {};
-    map[row.planSlug][row.limitKey] = row.limitValue;
+    map[row.planSlug]![row.limitKey] = row.limitValue;
   }
   cache.limits = map;
   cache.lastUpdated = Date.now();
@@ -256,7 +256,7 @@ export function isPlanAtLeast(current: UserPlan, required: UserPlan): boolean {
 export function getPlanLimit(plan: UserPlan, limitType: keyof UsageLimits): number {
   if (isCacheValid() && cache.limits) {
     const cached = cache.limits[plan];
-    if (cached && limitType in cached) return cached[limitType];
+    if (cached && limitType in cached) return cached[limitType] as number;
   }
   return DEFAULT_PLAN_LIMITS[plan]?.[limitType] ?? 0;
 }

@@ -635,7 +635,7 @@ export const adminRouter = router({
     const [verified] = await ctx.db
       .select({ count: sql<number>`count(*)` })
       .from(users)
-      .where(eq(users.emailVerified, true));
+      .where(eq(users.isEmailVerified, true));
 
     const [executed] = await ctx.db
       .select({ count: sql<number>`count(distinct ${toolExecutions.userId})` })
@@ -786,7 +786,7 @@ export const adminRouter = router({
     const [recentExecs] = await ctx.db
       .select({
         count: sql<number>`count(*)`,
-        avgDuration: sql<number>`coalesce(avg(${toolExecutions.durationMs}), 0)`,
+        avgDuration: sql<number>`coalesce(avg(${toolExecutions.executionTime}), 0)`,
         errorCount: sql<number>`count(*) filter (where ${toolExecutions.status} = 'error')`,
       })
       .from(toolExecutions)

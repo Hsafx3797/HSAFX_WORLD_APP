@@ -34,7 +34,7 @@ export async function getCurrentMultiplier(): Promise<number> {
 }
 
 /** Apply multiplier to a coin amount */
-export function applyMultiplier(baseCoins: number, multiplier: number): number {
+export async function applyMultiplier(baseCoins: number, multiplier: number): Promise<number> {
   return Math.floor(baseCoins * multiplier);
 }
 

@@ -159,7 +159,7 @@ export default function ApiKeysPage() {
           <CardContent className="pt-6">
             <div className="flex items-start gap-4">
               <svg
-                className="w-6 h-6 text-success flex-shrink-0"
+                className="w-6 h-6 text-success shrink-0"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
