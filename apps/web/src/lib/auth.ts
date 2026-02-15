@@ -25,6 +25,10 @@ function createAuth() {
     throw new Error('NEXT_PUBLIC_APP_URL environment variable is required');
   }
 
+  // Helper: check if email sending is properly configured
+  const isEmailConfigured = !!process.env.RESEND_API_KEY && 
+    !process.env.RESEND_API_KEY.includes('placeholder');
+
   return betterAuth({
     database: drizzleAdapter(db, {
       provider: 'pg',
@@ -42,15 +46,19 @@ function createAuth() {
     ],
     emailAndPassword: {
       enabled: true,
-      requireEmailVerification: true,
+      requireEmailVerification: isEmailConfigured,
       // Password reset configuration
       sendResetPassword: async ({ user, url }) => {
-        await sendEmail({
-          to: user.email,
-          template: 'password-reset',
-          variables: { resetLink: url, userName: user.name ?? user.email.split('@')[0] },
-          userId: user.id,
-        });
+        try {
+          await sendEmail({
+            to: user.email,
+            template: 'password-reset',
+            variables: { resetLink: url, userName: user.name ?? user.email.split('@')[0] },
+            userId: user.id,
+          });
+        } catch (e) {
+          console.error('[auth] Failed to send password reset email:', e);
+        }
       },
     },
     // Redis-backed secondary storage for session caching (graceful degradation)
@@ -75,15 +83,19 @@ function createAuth() {
         }
       : undefined,
     emailVerification: {
-      sendOnSignUp: true,
+      sendOnSignUp: isEmailConfigured,
       autoSignInAfterVerification: true,
       sendVerificationEmail: async ({ user, url }) => {
-        await sendEmail({
-          to: user.email,
-          template: 'email-verification',
-          variables: { verifyLink: url, userName: user.name ?? user.email.split('@')[0] },
-          userId: user.id,
-        });
+        try {
+          await sendEmail({
+            to: user.email,
+            template: 'email-verification',
+            variables: { verifyLink: url, userName: user.name ?? user.email.split('@')[0] },
+            userId: user.id,
+          });
+        } catch (e) {
+          console.error('[auth] Failed to send verification email:', e);
+        }
       },
     },
     account: {
@@ -139,79 +151,83 @@ function createAuth() {
       before: createAuthMiddleware(async (ctx) => {
         if (ctx.path !== '/sign-in/email') return;
 
-        const ip =
-          ctx.headers?.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-          ctx.headers?.get('x-real-ip') ||
-          '127.0.0.1';
-        const body = ctx.body as { email?: string; captchaToken?: string } | undefined;
-        const email = body?.email;
+        try {
+          const ip =
+            ctx.headers?.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+            ctx.headers?.get('x-real-ip') ||
+            '127.0.0.1';
+          const body = ctx.body as { email?: string; captchaToken?: string } | undefined;
+          const email = body?.email;
 
-        if (!email) return; // Let better-auth handle validation
+          if (!email) return; // Let better-auth handle validation
 
-        const check = await checkLoginAttempt(ip, email);
+          const check = await checkLoginAttempt(ip, email);
 
-        if (!check.allowed) {
-          return new Response(
-            JSON.stringify({
-              error: 'Too many failed attempts. Please try again later.',
-              code: 'LOGIN_LOCKED',
-              retryAfter: check.retryAfterSeconds,
-            }),
-            {
-              status: 429,
-              headers: {
-                'Content-Type': 'application/json',
-                'Retry-After': String(check.retryAfterSeconds),
+          if (!check.allowed) {
+            return new Response(
+              JSON.stringify({
+                error: 'Too many failed attempts. Please try again later.',
+                code: 'LOGIN_LOCKED',
+                retryAfter: check.retryAfterSeconds,
+              }),
+              {
+                status: 429,
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Retry-After': String(check.retryAfterSeconds),
+                },
               },
-            },
-          );
-        }
+            );
+          }
 
-        if (check.requiresCaptcha) {
-          const captchaToken = body?.captchaToken;
-          if (!captchaToken) {
-            return new Response(
-              JSON.stringify({
-                error: 'CAPTCHA verification required.',
-                code: 'CAPTCHA_REQUIRED',
-              }),
-              { status: 403, headers: { 'Content-Type': 'application/json' } },
-            );
+          if (check.requiresCaptcha) {
+            const captchaToken = body?.captchaToken;
+            if (!captchaToken) {
+              return new Response(
+                JSON.stringify({
+                  error: 'CAPTCHA verification required.',
+                  code: 'CAPTCHA_REQUIRED',
+                }),
+                { status: 403, headers: { 'Content-Type': 'application/json' } },
+              );
+            }
+            const valid = await verifyCaptcha(captchaToken);
+            if (!valid) {
+              return new Response(
+                JSON.stringify({
+                  error: 'CAPTCHA verification failed.',
+                  code: 'CAPTCHA_INVALID',
+                }),
+                { status: 403, headers: { 'Content-Type': 'application/json' } },
+              );
+            }
           }
-          const valid = await verifyCaptcha(captchaToken);
-          if (!valid) {
-            return new Response(
-              JSON.stringify({
-                error: 'CAPTCHA verification failed.',
-                code: 'CAPTCHA_INVALID',
-              }),
-              { status: 403, headers: { 'Content-Type': 'application/json' } },
-            );
-          }
+        } catch (e) {
+          console.error('[auth] Login security check failed:', e);
+          // Allow login to proceed if security check fails
         }
       }),
       after: createAuthMiddleware(async (ctx) => {
         if (ctx.path !== '/sign-in/email') return;
 
-        const ip =
-          ctx.headers?.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-          ctx.headers?.get('x-real-ip') ||
-          '127.0.0.1';
-        const body = ctx.body as { email?: string } | undefined;
-        const email = body?.email;
+        try {
+          const ip =
+            ctx.headers?.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+            ctx.headers?.get('x-real-ip') ||
+            '127.0.0.1';
+          const body = ctx.body as { email?: string } | undefined;
+          const email = body?.email;
 
-        if (!email) return;
+          if (!email) return;
 
-        // Check if sign-in succeeded (2xx) or failed (4xx)
-        // Use returned context status; a 2FA challenge returns a specific code,
-        // not a final success, so don't count it as a failure.
-        const status = ctx.context.returned?.status ?? 0;
-        if (status >= 200 && status < 300) {
-          // Success — session was created
-          await resetLoginFailures(ip, email);
-        } else if (status >= 400) {
-          // Failure — bad credentials (but NOT a 2FA redirect)
-          await recordFailedLogin(ip, email);
+          const status = ctx.context.returned?.status ?? 0;
+          if (status >= 200 && status < 300) {
+            await resetLoginFailures(ip, email);
+          } else if (status >= 400) {
+            await recordFailedLogin(ip, email);
+          }
+        } catch (e) {
+          console.error('[auth] Login security recording failed:', e);
         }
       }),
     },

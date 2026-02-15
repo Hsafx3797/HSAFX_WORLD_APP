@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { getToolById, getToolBySlug } from '@/lib/tools/registry';
 import { TextToolLayout, TextToolInput, TextToolOutput } from '@/components/text-tool-layout';
 import { FileUpload } from '@/components/file-upload';
@@ -8,25 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ToolExecutor } from './tool-executor';
 import { ToolPageContent } from './tool-page-content';
-
-// Tools that should have individual pages (not redirected)
-const INDIVIDUAL_PAGE_TOOLS = new Set([
-  'text-converter',           // Unified text converter
-  'db-schema-visualizer',     // Interactive diagram
-  'file-tree-generator',      // Directory tree visualization
-  'cheque-generator',         // Full cheque preview
-  'container-vessel-tracker', // Live container/vessel tracking with maps
-]);
-
-// Category to redirect URL mapping
-const CATEGORY_REDIRECTS: Record<string, string> = {
-  'text': '/tools/text-converter',
-  'data': '/tools/category/converters',
-  'media': '/tools/category/media',
-  'generator': '/tools/category/generators',
-  'calculator': '/tools/category/calculators',
-  'converter': '/tools/category/unit-converters',
-};
 
 interface ToolPageProps {
   params: Promise<{ slug: string }>;
@@ -56,16 +37,6 @@ export default async function ToolPage({ params }: ToolPageProps) {
   
   if (!tool) {
     notFound();
-  }
-  
-  // Check if this tool should be redirected to a category page
-  if (!INDIVIDUAL_PAGE_TOOLS.has(slug)) {
-    const categoryKey = tool.category.toLowerCase();
-    const redirectUrl = CATEGORY_REDIRECTS[categoryKey];
-    
-    if (redirectUrl) {
-      redirect(redirectUrl);
-    }
   }
 
   const isTextTool = tool.category === 'Text' || tool.category === 'Data';

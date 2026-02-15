@@ -6,6 +6,11 @@ import { Command } from 'cmdk';
 import { toolRegistry, categories } from '@hsafx/tool-definitions';
 import { useAuth } from '@/hooks/use-auth';
 import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   Search,
   Wrench,
   LayoutDashboard,
@@ -76,139 +81,130 @@ export function CommandPalette() {
   }, []);
 
   return (
-    <Command.Dialog
-      open={open}
-      onOpenChange={setOpen}
-      label="Command Palette"
-      className="fixed inset-0 z-100"
-    >
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={() => setOpen(false)}
-      />
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="p-0 gap-0 overflow-hidden max-w-xl top-[20%] translate-y-0">
+        <DialogTitle className="sr-only">Command Palette</DialogTitle>
+        <Command label="Command Palette">
+          <div className="flex items-center gap-2 border-b px-4">
+            <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <Command.Input
+              placeholder="Search 454+ tools, pages, actions..."
+              className="flex h-12 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            />
+            <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
+              ESC
+            </kbd>
+          </div>
 
-      {/* Dialog */}
-      <div className="fixed left-1/2 top-[20%] z-101 w-full max-w-xl -translate-x-1/2 rounded-xl border bg-background shadow-2xl">
-        <div className="flex items-center gap-2 border-b px-4">
-          <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
-          <Command.Input
-            placeholder="Search 454+ tools, pages, actions..."
-            className="flex h-12 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-          />
-          <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
-            ESC
-          </kbd>
-        </div>
+          <Command.List className="max-h-[min(400px,50vh)] overflow-y-auto p-2">
+            <Command.Empty className="py-6 text-center text-sm text-muted-foreground">
+              No results found.
+            </Command.Empty>
 
-        <Command.List className="max-h-[min(400px,50vh)] overflow-y-auto p-2">
-          <Command.Empty className="py-6 text-center text-sm text-muted-foreground">
-            No results found.
-          </Command.Empty>
-
-          {/* Pages */}
-          <Command.Group heading="Pages" className="**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1.5 **:[[cmdk-group-heading]]:text-xs **:[[cmdk-group-heading]]:font-medium **:[[cmdk-group-heading]]:text-muted-foreground">
-            {pages.map((page) => (
-              <Command.Item
-                key={page.href}
-                value={page.name}
-                onSelect={() => runCommand(() => router.push(page.href))}
-                className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm aria-selected:bg-accent aria-selected:text-accent-foreground"
-              >
-                <page.icon className="h-4 w-4 text-muted-foreground" />
-                <span>{page.name}</span>
-                <ArrowRight className="ml-auto h-3 w-3 text-muted-foreground opacity-0 aria-selected:opacity-100" />
-              </Command.Item>
-            ))}
-          </Command.Group>
-
-          {/* Actions */}
-          <Command.Group heading="Actions" className="**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1.5 **:[[cmdk-group-heading]]:text-xs **:[[cmdk-group-heading]]:font-medium **:[[cmdk-group-heading]]:text-muted-foreground">
-            {isAuthenticated ? (
-              <Command.Item
-                value="Sign Out Logout"
-                onSelect={() =>
-                  runCommand(async () => {
-                    await logout();
-                    router.push('/');
-                  })
-                }
-                className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm aria-selected:bg-accent aria-selected:text-accent-foreground"
-              >
-                <LogOut className="h-4 w-4 text-muted-foreground" />
-                <span>Sign Out</span>
-              </Command.Item>
-            ) : (
-              <>
+            {/* Pages */}
+            <Command.Group heading="Pages" className="**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1.5 **:[[cmdk-group-heading]]:text-xs **:[[cmdk-group-heading]]:font-medium **:[[cmdk-group-heading]]:text-muted-foreground">
+              {pages.map((page) => (
                 <Command.Item
-                  value="Sign In Login"
-                  onSelect={() => runCommand(() => router.push('/login'))}
+                  key={page.href}
+                  value={page.name}
+                  onSelect={() => runCommand(() => router.push(page.href))}
                   className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm aria-selected:bg-accent aria-selected:text-accent-foreground"
                 >
-                  <LogIn className="h-4 w-4 text-muted-foreground" />
-                  <span>Sign In</span>
-                </Command.Item>
-                <Command.Item
-                  value="Register Get Started Sign Up"
-                  onSelect={() => runCommand(() => router.push('/register'))}
-                  className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm aria-selected:bg-accent aria-selected:text-accent-foreground"
-                >
-                  <LogIn className="h-4 w-4 text-muted-foreground" />
-                  <span>Get Started</span>
-                </Command.Item>
-              </>
-            )}
-          </Command.Group>
-
-          {/* Tools grouped by category */}
-          {Array.from(toolsByCategory.entries()).map(([category, tools]) => (
-            <Command.Group
-              key={category}
-              heading={`${category} Tools (${tools.length})`}
-              className="**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1.5 **:[[cmdk-group-heading]]:text-xs **:[[cmdk-group-heading]]:font-medium **:[[cmdk-group-heading]]:text-muted-foreground"
-            >
-              {tools.map((tool) => (
-                <Command.Item
-                  key={tool.id}
-                  value={`${tool.name} ${tool.description} ${tool.category} ${tool.keywords?.join(' ') ?? ''}`}
-                  onSelect={() =>
-                    runCommand(() => router.push(`/tools/${tool.id}`))
-                  }
-                  className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm aria-selected:bg-accent aria-selected:text-accent-foreground"
-                >
-                  <Wrench className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  <div className="flex flex-col overflow-hidden">
-                    <span className="truncate">{tool.name}</span>
-                    <span className="truncate text-xs text-muted-foreground">
-                      {tool.description}
-                    </span>
-                  </div>
-                  {tool.tier !== 'free' && (
-                    <span className="ml-auto shrink-0 rounded bg-yellow-500/10 px-1.5 py-0.5 text-[10px] font-medium text-yellow-600">
-                      {tool.tier.toUpperCase()}
-                    </span>
-                  )}
+                  <page.icon className="h-4 w-4 text-muted-foreground" />
+                  <span>{page.name}</span>
+                  <ArrowRight className="ml-auto h-3 w-3 text-muted-foreground opacity-0 aria-selected:opacity-100" />
                 </Command.Item>
               ))}
             </Command.Group>
-          ))}
-        </Command.List>
 
-        <div className="flex items-center justify-between border-t px-4 py-2 text-xs text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <kbd className="rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px]">↑↓</kbd>
-            <span>Navigate</span>
-            <kbd className="rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px]">↵</kbd>
-            <span>Select</span>
+            {/* Actions */}
+            <Command.Group heading="Actions" className="**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1.5 **:[[cmdk-group-heading]]:text-xs **:[[cmdk-group-heading]]:font-medium **:[[cmdk-group-heading]]:text-muted-foreground">
+              {isAuthenticated ? (
+                <Command.Item
+                  value="Sign Out Logout"
+                  onSelect={() =>
+                    runCommand(async () => {
+                      await logout();
+                      router.push('/');
+                    })
+                  }
+                  className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm aria-selected:bg-accent aria-selected:text-accent-foreground"
+                >
+                  <LogOut className="h-4 w-4 text-muted-foreground" />
+                  <span>Sign Out</span>
+                </Command.Item>
+              ) : (
+                <>
+                  <Command.Item
+                    value="Sign In Login"
+                    onSelect={() => runCommand(() => router.push('/login'))}
+                    className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm aria-selected:bg-accent aria-selected:text-accent-foreground"
+                  >
+                    <LogIn className="h-4 w-4 text-muted-foreground" />
+                    <span>Sign In</span>
+                  </Command.Item>
+                  <Command.Item
+                    value="Register Get Started Sign Up"
+                    onSelect={() => runCommand(() => router.push('/register'))}
+                    className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm aria-selected:bg-accent aria-selected:text-accent-foreground"
+                  >
+                    <LogIn className="h-4 w-4 text-muted-foreground" />
+                    <span>Get Started</span>
+                  </Command.Item>
+                </>
+              )}
+            </Command.Group>
+
+            {/* Tools grouped by category */}
+            {Array.from(toolsByCategory.entries()).map(([category, tools]) => (
+              <Command.Group
+                key={category}
+                heading={`${category} Tools (${tools.length})`}
+                className="**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1.5 **:[[cmdk-group-heading]]:text-xs **:[[cmdk-group-heading]]:font-medium **:[[cmdk-group-heading]]:text-muted-foreground"
+              >
+                {tools.map((tool) => (
+                  <Command.Item
+                    key={tool.id}
+                    value={`${tool.name} ${tool.description} ${tool.category} ${tool.keywords?.join(' ') ?? ''}`}
+                    onSelect={() =>
+                      runCommand(() => router.push(`/tools/${tool.id}`))
+                    }
+                    className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm aria-selected:bg-accent aria-selected:text-accent-foreground"
+                  >
+                    <Wrench className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <div className="flex flex-col overflow-hidden">
+                      <span className="truncate">{tool.name}</span>
+                      <span className="truncate text-xs text-muted-foreground">
+                        {tool.description}
+                      </span>
+                    </div>
+                    {tool.tier !== 'free' && (
+                      <span className="ml-auto shrink-0 rounded bg-yellow-500/10 px-1.5 py-0.5 text-[10px] font-medium text-yellow-600">
+                        {tool.tier.toUpperCase()}
+                      </span>
+                    )}
+                  </Command.Item>
+                ))}
+              </Command.Group>
+            ))}
+          </Command.List>
+
+          <div className="flex items-center justify-between border-t px-4 py-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <kbd className="rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px]">↑↓</kbd>
+              <span>Navigate</span>
+              <kbd className="rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px]">↵</kbd>
+              <span>Select</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <kbd className="rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px]">Ctrl</kbd>
+              <span>+</span>
+              <kbd className="rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px]">K</kbd>
+            </div>
           </div>
-          <div className="flex items-center gap-1">
-            <kbd className="rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px]">Ctrl</kbd>
-            <span>+</span>
-            <kbd className="rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px]">K</kbd>
-          </div>
-        </div>
-      </div>
-    </Command.Dialog>
+        </Command>
+      </DialogContent>
+    </Dialog>
   );
 }
 
