@@ -129,7 +129,13 @@ export async function POST(request: NextRequest, { params }: Params) {
         402,
       );
     }
-    throw err;
+    console.error('[api/v1] Coin cost calculation failed:', err);
+    return apiErrorResponse(
+      'S001',
+      'Failed to process billing for this tool execution',
+      ctx,
+      500,
+    );
   }
 
   // 7. Create async job

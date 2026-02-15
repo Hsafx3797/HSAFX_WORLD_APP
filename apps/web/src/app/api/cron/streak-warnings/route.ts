@@ -62,27 +62,30 @@ export async function GET(request: NextRequest) {
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
       const name = user.fullName || user.email.split('@')[0];
 
-      await sendRawEmail({
-        to: user.email,
-        subject: `🔥 Your ${user.currentStreak}-day streak is about to break!`,
-        html: `
-          <div style="font-family: -apple-system, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h2>Hey ${name}!</h2>
-            <p>Your <strong>${user.currentStreak}-day</strong> login streak is about to break! 😱</p>
-            <p>Log in today to keep your streak alive and maintain your coin multiplier bonus.</p>
-            <a href="${appUrl}/dashboard" style="display: inline-block; padding: 12px 24px; background: #f97316; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 16px 0;">
-              Keep My Streak 🔥
-            </a>
-            <p style="color: #666; font-size: 13px; margin-top: 24px;">
-              You can disable streak emails in your <a href="${appUrl}/settings#notifications">notification settings</a>.
-            </p>
-          </div>
-        `,
-        text: `Your ${user.currentStreak}-day streak is about to break! Log in today: ${appUrl}/dashboard`,
-        userId: user.userId,
-      });
-
-      sentCount++;
+      try {
+        await sendRawEmail({
+          to: user.email,
+          subject: `🔥 Your ${user.currentStreak}-day streak is about to break!`,
+          html: `
+            <div style="font-family: -apple-system, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h2>Hey ${name}!</h2>
+              <p>Your <strong>${user.currentStreak}-day</strong> login streak is about to break! 😱</p>
+              <p>Log in today to keep your streak alive and maintain your coin multiplier bonus.</p>
+              <a href="${appUrl}/dashboard" style="display: inline-block; padding: 12px 24px; background: #f97316; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 16px 0;">
+                Keep My Streak 🔥
+              </a>
+              <p style="color: #666; font-size: 13px; margin-top: 24px;">
+                You can disable streak emails in your <a href="${appUrl}/settings#notifications">notification settings</a>.
+              </p>
+            </div>
+          `,
+          text: `Your ${user.currentStreak}-day streak is about to break! Log in today: ${appUrl}/dashboard`,
+          userId: user.userId,
+        });
+        sentCount++;
+      } catch (emailErr) {
+        console.error(`[Cron] Failed to send streak warning to ${user.email}:`, emailErr);
+      }
     }
 
     return NextResponse.json({

@@ -21,6 +21,7 @@ export const {
 } = authClient;
 
 // Re-export password reset and email verification helpers
-export const forgotPassword = authClient.forgetPassword;
+// better-auth uses "forgetPassword" (known naming quirk)
+export const forgotPassword = authClient.forgetPassword as typeof authClient.forgetPassword;
 export const resetPassword = authClient.resetPassword;
 export const verifyEmail = authClient.verifyEmail;

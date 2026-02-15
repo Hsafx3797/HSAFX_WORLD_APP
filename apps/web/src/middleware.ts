@@ -38,7 +38,7 @@ function getClientIp(request: NextRequest): string {
     const idx = Math.max(0, ips.length - depth);
     return ips[idx] ?? '127.0.0.1';
   }
-  return request.headers.get('x-real-ip') ?? request.ip ?? '127.0.0.1';
+  return request.headers.get('x-real-ip') ?? '127.0.0.1';
 }
 
 async function handleRateLimit(
