@@ -11,12 +11,6 @@ export const auditActionEnum = pgEnum('audit_action', [
   'create', 'update', 'delete', 'grant', 'revoke', 'login', 'logout', 'payment', 'refund',
 ]);
 
-// UNUSED: permissionTargetEnum — defined but never referenced by any table column.
-// Kept commented to avoid breaking existing DB migrations.
-// export const permissionTargetEnum = pgEnum('permission_target', [
-//   'role_permission', 'user_override', 'plan_feature',
-// ]);
-
 /**
  * API Request Logs - High-volume append-only request audit trail
  * Reference: 13_DATABASE_SCHEMA.md Section 4.12, SOLUTION_ROADMAP Sprint 3.1

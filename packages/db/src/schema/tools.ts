@@ -20,12 +20,6 @@ import { users } from './users';
 
 // ─── Enums ────────────────────────────────────────────────────
 
-// UNUSED: identifierTypeEnum — defined but never referenced by any table column.
-// Kept commented to avoid breaking existing DB migrations that created this enum.
-// export const identifierTypeEnum = pgEnum('identifier_type', [
-//   'ip_hash', 'fingerprint',
-// ]);
-
 /**
  * Tool Categories - Hierarchical organization of tools
  * Reference: 13_DATABASE_SCHEMA.md Section 4.8, 30_TOOLS_CATALOG.md
@@ -108,7 +102,6 @@ export const toolVersions = pgTable('tool_versions', {
   version: text('version').notNull(), // Semantic version e.g., '1.2.3'
   changelog: text('changelog'),
   isActive: boolean('is_active').notNull().default(false),
-  wasmUrl: text('wasm_url'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
