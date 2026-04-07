@@ -31,6 +31,7 @@ const navItems: { href: string; label: string; icon: string; permission?: Permis
   { href: '/admins', label: 'Admin Users', icon: '🛡️', permission: 'admin.view' },
   { href: '/activity', label: 'Activity Logs', icon: '📜', permission: 'audit.view' },
   { href: '/settings', label: 'Settings', icon: '⚙️', permission: 'system.config' },
+  { href: '/email-templates', label: 'Email Templates', icon: '✉️', permission: 'system.config' },
 ];
 
 // Menu icon for mobile

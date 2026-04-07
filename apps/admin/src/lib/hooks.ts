@@ -23,6 +23,7 @@ import type {
   AnalyticsOverview, CohortRow, FunnelData, ToolUsageRow, RevenueRow, ChurnData, SystemHealth,
   AdminSetting, RateLimitConfigEntry,
   B2bPlan, B2bSuite, B2bPlanQuota, B2bSubscription, B2bUsageRow,
+  EmailTemplate,
 } from './types';
 import * as api from './api';
 
@@ -1579,5 +1580,51 @@ export function useB2bUsage(params?: { userId?: string; suiteId?: string; from?:
     isLoading,
     refresh,
   };
+}
+
+// ==================== EMAIL TEMPLATES ====================
+
+export function useEmailTemplates() {
+  const { data, error, isLoading, mutate: refresh } = useSWR<EmailTemplate[]>(
+    '/admin/email-templates',
+    async () => {
+      const res = await api.getEmailTemplates();
+      if (!res.success) throw new Error(res.error?.message);
+      return res.data as unknown as EmailTemplate[];
+    }
+  );
+  return { templates: data || [], error, isLoading, refresh };
+}
+
+export function useEmailTemplateMutations() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const save = useCallback(async (data: {
+    slug: string;
+    name: string;
+    subject: string;
+    htmlBody: string;
+    textBody?: string;
+    variables?: string[];
+    isActive?: boolean;
+  }) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.saveEmailTemplate(data);
+      if (!res.success) throw new Error(res.error?.message || 'Failed to save template');
+      await mutate('/admin/email-templates');
+      return res.data;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Unknown error';
+      setError(msg);
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { loading, error, save };
 }
 

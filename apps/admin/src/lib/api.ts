@@ -19,6 +19,7 @@ import type {
   AnalyticsOverview, CohortRow, FunnelData, ToolUsageRow, RevenueRow, ChurnData, SystemHealth,
   AdminSetting, RateLimitConfigEntry,
   B2bPlan, B2bSuite, B2bPlanQuota, B2bSubscription, B2bUsageRow,
+  EmailTemplate,
 } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api/admin';
@@ -688,6 +689,40 @@ export async function getB2bUsage(params?: { userId?: string; suiteId?: string; 
   sp.set('limit', String(params?.limit ?? 50));
   return fetchApi(`/b2b/usage?${sp.toString()}`);
 }
+
+// ==================== EMAIL TEMPLATES ====================
+
+export async function getEmailTemplates(): Promise<ApiResponse<EmailTemplate[]>> {
+  return fetchApi('/email-templates');
+}
+
+export async function saveEmailTemplate(data: {
+  slug: string;
+  name: string;
+  subject: string;
+  htmlBody: string;
+  textBody?: string;
+  variables?: string[];
+  isActive?: boolean;
+}): Promise<ApiResponse<{ action: string; id: string }>> {
+  return fetchApi('/email-templates', { method: 'POST', body: JSON.stringify(data) });
+}
+
+// ==================== IMPERSONATION ====================
+
+export async function startImpersonation(userId: string, reason: string): Promise<ApiResponse<{ success: boolean; impersonating: { userId: string; name: string; email: string }; expiresIn: number }>> {
+  return fetchApi('/impersonate', { method: 'POST', body: JSON.stringify({ userId, reason }) });
+}
+
+export async function stopImpersonation(): Promise<ApiResponse<{ success: boolean }>> {
+  return fetchApi('/impersonate', { method: 'DELETE' });
+}
+
+export async function getImpersonationStatus(): Promise<ApiResponse<{ impersonating: { userId: string; name: string; email: string; startedAt: string; expiresAt: string } | null }>> {
+  return fetchApi('/impersonate');
+}
+
+// ==================== ANALYTICS ====================
 
 export async function getAnalyticsOverview(startDate: string, endDate: string): Promise<ApiResponse<AnalyticsOverview>> {
   return fetchApi(`/analytics/overview?startDate=${startDate}&endDate=${endDate}`);

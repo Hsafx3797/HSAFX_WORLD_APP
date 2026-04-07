@@ -671,6 +671,21 @@ export interface B2bUsageRow {
   updatedAt: string;
 }
 
+// ==================== EMAIL TEMPLATES ====================
+
+export interface EmailTemplate {
+  id: string;
+  slug: string;
+  name: string;
+  subject: string;
+  htmlBody: string;
+  textBody: string | null;
+  variables: string[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ==================== ANALYTICS ====================
 
 export interface AnalyticsOverview {
