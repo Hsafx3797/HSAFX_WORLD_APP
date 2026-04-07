@@ -95,6 +95,7 @@ const MOCK_DB_ROW = {
   name: 'Test Key',
   keyHash: VALID_KEY_HASH,
   keyPrefix: 'hsafx_test_AB',
+  scopes: ['tools:read', 'tools:execute'],
   isActive: true,
   revokedAt: null,
   expiresAt: null,
@@ -302,9 +303,10 @@ describe('authenticateApiKey', () => {
       expect((result as ApiContext).keyId).toBe('key_123');
     });
 
-    it('uses default scopes when metadata.scopes is missing', async () => {
+    it('uses default scopes when scopes column is empty', async () => {
       mockFindFirst.mockResolvedValue({
         ...MOCK_DB_ROW,
+        scopes: [],
         metadata: {},
       });
       const req = makeRequest(VALID_KEY);
@@ -313,9 +315,10 @@ describe('authenticateApiKey', () => {
       expect(ctx.scopes).toEqual(['tools:read', 'tools:execute']);
     });
 
-    it('uses default scopes when metadata is null', async () => {
+    it('uses default scopes when scopes column is null', async () => {
       mockFindFirst.mockResolvedValue({
         ...MOCK_DB_ROW,
+        scopes: null,
         metadata: null,
       });
       const req = makeRequest(VALID_KEY);

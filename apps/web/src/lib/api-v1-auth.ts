@@ -16,8 +16,8 @@ import { db, eq, apiKeys } from '@hsafx/db';
 import {
   extractApiKeyFromHeaders,
   validateApiKeyFormat,
-  parseScopesFromMetadata,
   hasScope,
+  DEFAULT_SCOPES,
   RATE_LIMIT_TIERS,
   type ApiKeyScope,
   type RateLimitTier,
@@ -202,8 +202,10 @@ export async function authenticateApiKey(
     return errorResponse(ApiErrorCode.AUTH_KEY_REVOKED, requestId);
   }
 
-  // 6. Parse scopes from metadata
-  const scopes = parseScopesFromMetadata(keyRow.metadata as Record<string, unknown>);
+  // 6. Read scopes from column (text[] in DB)
+  const scopes = (keyRow.scopes as string[] | null)?.length
+    ? (keyRow.scopes as ApiKeyScope[])
+    : [...DEFAULT_SCOPES];
 
   // 7. Rate limit
   const tier = (keyRow.rateLimitTier ?? 'free') as RateLimitTier;

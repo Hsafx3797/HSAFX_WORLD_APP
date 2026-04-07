@@ -143,8 +143,8 @@ export function hasScope(
 }
 
 /**
- * Parse the scopes stored in the `apiKeys.metadata.scopes` JSON field.
- * Falls back to DEFAULT_SCOPES if missing or malformed.
+ * @deprecated Use the `scopes` column directly instead of metadata.scopes.
+ * Kept temporarily for backward compatibility with any external callers.
  */
 export function parseScopesFromMetadata(
   metadata: Record<string, unknown> | null | undefined,
