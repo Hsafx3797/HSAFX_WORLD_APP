@@ -13,8 +13,38 @@ import {
 } from '@/lib/login-security';
 import { getRedis } from '@/lib/redis';
 import { createLogger } from '@hsafx/shared/logger';
+import { createHmac } from 'crypto';
 
 const log = createLogger('auth');
+
+/**
+ * Sign a value with HMAC-SHA256 using BETTER_AUTH_SECRET.
+ * Returns `value.signature` format for cookie storage.
+ */
+export function signValue(value: string): string {
+  const secret = process.env.BETTER_AUTH_SECRET!;
+  const sig = createHmac('sha256', secret).update(value).digest('hex');
+  return `${value}.${sig}`;
+}
+
+/**
+ * Verify and extract a signed value. Returns null if signature is invalid.
+ */
+export function verifySignedValue(signed: string): string | null {
+  const lastDot = signed.lastIndexOf('.');
+  if (lastDot === -1) return null;
+  const value = signed.slice(0, lastDot);
+  const sig = signed.slice(lastDot + 1);
+  const secret = process.env.BETTER_AUTH_SECRET!;
+  const expected = createHmac('sha256', secret).update(value).digest('hex');
+  // Timing-safe comparison
+  if (sig.length !== expected.length) return null;
+  let mismatch = 0;
+  for (let i = 0; i < sig.length; i++) {
+    mismatch |= sig.charCodeAt(i) ^ expected.charCodeAt(i);
+  }
+  return mismatch === 0 ? value : null;
+}
 
 // Lazy initialization to avoid build-time errors
 let _auth: ReturnType<typeof betterAuth> | undefined;
@@ -213,6 +243,8 @@ function createAuth() {
       after: createAuthMiddleware(async (ctx) => {
         if (ctx.path !== '/sign-in/email') return;
 
+        let uidCookieHeader: Headers | undefined;
+
         try {
           const ip =
             ctx.headers?.get('x-forwarded-for')?.split(',')[0]?.trim() ||
@@ -227,11 +259,31 @@ function createAuth() {
           const status = returned?.status ?? 0;
           if (status >= 200 && status < 300) {
             await resetLoginFailures(ip, email);
+
+            // Set signed __hsafx.uid cookie for rate-limit keying by userId
+            // (persists across logout/login cycles unlike session token)
+            const user = await db.query.users.findFirst({
+              where: (u, { eq }) => eq(u.email, email),
+              columns: { id: true },
+            });
+            if (user) {
+              const signed = signValue(user.id);
+              const isSecure = process.env.NODE_ENV === 'production';
+              uidCookieHeader = new Headers();
+              uidCookieHeader.append(
+                'Set-Cookie',
+                `__hsafx.uid=${signed}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${60 * 60 * 24 * 30}${isSecure ? '; Secure' : ''}`,
+              );
+            }
           } else if (status >= 400) {
             await recordFailedLogin(ip, email);
           }
         } catch (e) {
           log.error('Login security recording failed', { error: e instanceof Error ? e.message : String(e) });
+        }
+
+        if (uidCookieHeader) {
+          return { headers: uidCookieHeader };
         }
       }),
     },

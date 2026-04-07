@@ -19,6 +19,50 @@ import {
 } from '@/lib/rate-limit';
 import { redis, keys } from '@/lib/redis';
 
+// ─── Edge-compatible HMAC verification for __hsafx.uid cookie ─────────────────
+
+let _cryptoKey: CryptoKey | null = null;
+
+async function getCryptoKey(): Promise<CryptoKey> {
+  if (_cryptoKey) return _cryptoKey;
+  const secret = process.env.BETTER_AUTH_SECRET ?? '';
+  const enc = new TextEncoder();
+  _cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    enc.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  return _cryptoKey;
+}
+
+async function verifyUidCookie(signed: string): Promise<string | null> {
+  const lastDot = signed.lastIndexOf('.');
+  if (lastDot === -1) return null;
+  const value = signed.slice(0, lastDot);
+  const sig = signed.slice(lastDot + 1);
+  if (!value || !sig) return null;
+
+  try {
+    const key = await getCryptoKey();
+    const enc = new TextEncoder();
+    const sigBuf = await crypto.subtle.sign('HMAC', key, enc.encode(value));
+    const expected = Array.from(new Uint8Array(sigBuf))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+    // Timing-safe comparison
+    if (sig.length !== expected.length) return null;
+    let mismatch = 0;
+    for (let i = 0; i < sig.length; i++) {
+      mismatch |= sig.charCodeAt(i) ^ expected.charCodeAt(i);
+    }
+    return mismatch === 0 ? value : null;
+  } catch {
+    return null;
+  }
+}
+
 // ─── Rate Limiting ────────────────────────────────────────────────────────────
 
 /**
@@ -129,15 +173,13 @@ async function handleRateLimit(
     }
 
     // ── Session-based rate limit (500 req / hr for authenticated users) ──
-    // NOTE: Keyed by session token because Edge Middleware cannot resolve userId
-    // (better-auth uses opaque tokens, not JWTs). This means a user who logs out
-    // and back in gets a new rate limit window. This is a known limitation —
-    // the real billing protection is the coin reservation system (server-side),
-    // and B2B API key rate limiting (keyed by key ID) is unaffected.
-    // TODO: Add a signed __hsafx.uid cookie at login time to key by userId here.
-    const sessionToken = request.cookies.get(SESSION_COOKIE)?.value;
-    if (sessionToken) {
-      const userResult = await checkUserRateLimit(sessionToken);
+    // Keyed by userId via signed __hsafx.uid cookie (persists across logout/login).
+    // Falls back to session token if uid cookie is missing or invalid.
+    const uidCookie = request.cookies.get('__hsafx.uid')?.value;
+    const userId = uidCookie ? await verifyUidCookie(uidCookie) : null;
+    const rateLimitKey = userId ?? request.cookies.get(SESSION_COOKIE)?.value;
+    if (rateLimitKey) {
+      const userResult = await checkUserRateLimit(rateLimitKey);
       if (!userResult.allowed) {
         return NextResponse.json(
           {
