@@ -42,11 +42,20 @@
     "@turbo/gen": "^2.0.0",
     "@vitest/coverage-v8": "^4.0.18",
     "@vitest/ui": "^4.0.18",
-    "happy-dom": "^20.6.0",
+    "happy-dom": "^20.8.9",
     "prettier": "^3.2.5",
     "turbo": "^2.0.0",
     "typescript": "^5.4.5",
     "vitest": "^4.0.18"
+  },
+  "pnpm": {
+    "overrides": {
+      "basic-ftp": ">=5.2.0",
+      "fast-xml-parser": ">=5.3.6",
+      "rollup": ">=4.40.0",
+      "esbuild": ">=0.25.0",
+      "handlebars": ">=4.7.9"
+    }
   },
   "workspaces": [
     "apps/*",

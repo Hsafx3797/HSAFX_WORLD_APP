@@ -3,7 +3,7 @@
 # FastAPI Framework
 fastapi==0.115.0
 uvicorn[standard]==0.32.0
-python-multipart==0.0.20
+python-multipart==0.0.22
 
 # Pydantic & Settings
 pydantic==2.11.0
@@ -17,7 +17,7 @@ email-validator==2.2.0
 
 # HTTP Client
 httpx[http2]==0.28.1
-aiohttp==3.11.0
+aiohttp==3.11.18
 
 # Seaport Terminal Scraper (Tool 446)
 msgspec==0.20.0
@@ -32,7 +32,7 @@ boto3==1.34.25
 aioboto3==12.3.0
 
 # Image Processing
-pillow==11.0.0
+pillow==11.2.1
 pillow-heif==0.21.0       # HEIC/HEIF support
 python-magic==0.4.27
 pyvips==2.2.3
@@ -40,17 +40,17 @@ pyvips==2.2.3
 # PDF Processing
 pdfkit==1.0.0
 reportlab==4.0.9
-pypdf==5.4.0              # Modern replacement for PyPDF2
+pypdf==5.6.0
 PyPDF2==3.0.1             # Legacy compat (document_converter)
-markdown==3.7
+markdown==3.8
 
 # Document Processing (new — Phase 1.4)
 python-docx==1.1.2        # DOCX read/write
 openpyxl==3.1.5           # XLSX/XLS → CSV
 
 # Font Conversion (new — Phase 1.4)
-fonttools[woff]==4.55.8   # TTF/OTF/WOFF conversion
-brotli==1.1.0             # WOFF2 support for fonttools
+fonttools[woff]==4.57.0
+brotli==1.1.0
 
 # Archive Handling (new — Phase 1.4)
 py7zr==0.22.0             # 7z archive support
@@ -85,7 +85,7 @@ pytest-cov==6.0.0
 httpx-sse==0.4.0
 
 # Code Quality
-black==24.1.1
-ruff==0.1.14
-mypy==1.8.0
+black==25.1.0
+ruff==0.11.0
+mypy==1.155.0
 
