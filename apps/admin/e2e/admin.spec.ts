@@ -5,17 +5,17 @@
  * Auth setup project (auth.setup.ts) logs in once and stores session
  * state at e2e/.auth/admin.json. Authenticated tests reuse it automatically.
  *
- * TODO [G18]: Only 4 smoke tests exist. Need comprehensive E2E coverage for:
- * - User CRUD (create, edit, delete, search, filter)
- * - Subscription management (view, cancel, refund)
- * - Tool management (enable/disable, edit metadata)
- * - Feature flag CRUD (create, toggle, delete)
- * - 2FA verification flow
- * - Impersonation flow (once UI is wired — see G16)
- * - Billing page (webhooks, transactions)
- * - Settings page (rate limits, maintenance mode)
- * - Analytics page (charts load, date range filter)
- * - RBAC (verify non-super_admin can't access restricted pages)
+ * Coverage overview (split across spec files):
+ * - admin.spec.ts: Login + dashboard smoke
+ * - users.spec.ts: User CRUD, detail, impersonation
+ * - subscriptions.spec.ts: Subscription management
+ * - tools.spec.ts: Tool management + categories
+ * - feature-flags.spec.ts: Feature flag CRUD
+ * - billing.spec.ts: Billing + transactions
+ * - settings.spec.ts: Settings page
+ * - analytics.spec.ts: Analytics charts + export
+ * - rbac.spec.ts: Admin users, activity logs, RBAC nav verification
+ * - b2b.spec.ts: B2B plans, suites, quotas, subscriptions, usage
  */
 
 import { test, expect } from '@playwright/test';
