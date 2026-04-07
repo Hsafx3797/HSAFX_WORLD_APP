@@ -13,6 +13,7 @@ import asyncio
 import json
 import logging
 import os
+import shutil
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -38,6 +39,7 @@ class AudioConverter:
         output_dir: str | None = None,
     ) -> dict[str, Any]:
         opts = options or {}
+        _created_tmp = output_dir is None
         out_dir = Path(output_dir or tempfile.mkdtemp(prefix="hsafx_aud_"))
         out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -48,12 +50,26 @@ class AudioConverter:
             data = await self._download(input_file_url)
             input_path.write_bytes(data)
         else:
+            if _created_tmp:
+                shutil.rmtree(out_dir, ignore_errors=True)
             return {"success": False, "error": "No input audio provided"}
 
         handler = getattr(self, f"_handle_{tool_id.replace('-', '_')}", None)
-        if handler:
-            return await handler(input_path, opts, out_dir)
-        return {"success": False, "error": f"Unknown audio tool: {tool_id}"}
+        if not handler:
+            if _created_tmp:
+                shutil.rmtree(out_dir, ignore_errors=True)
+            return {"success": False, "error": f"Unknown audio tool: {tool_id}"}
+
+        try:
+            result = await handler(input_path, opts, out_dir)
+            if _created_tmp:
+                result["_tmp_dir"] = str(out_dir)
+            return result
+        except Exception as e:
+            logger.exception("Audio tool %s failed", tool_id)
+            if _created_tmp:
+                shutil.rmtree(out_dir, ignore_errors=True)
+            return {"success": False, "error": str(e)}
 
     # ── Handlers ─────────────────────────────────────────────────
 

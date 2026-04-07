@@ -1236,6 +1236,7 @@ class PythonToolExecutor:
             language = opts.get("language", None)
 
             # Input can be file path or base64 audio
+            _tmp_audio = None
             if isinstance(input_data, str):
                 if len(input_data) < 500 and not input_data.startswith("data:"):
                     # Probably a file path
@@ -1249,15 +1250,21 @@ class PythonToolExecutor:
                     tmp.write(raw)
                     tmp.close()
                     audio_path = tmp.name
+                    _tmp_audio = tmp.name
             else:
                 return {"success": False, "error": "Provide audio file path or base64 data"}
 
-            if model_size not in self._whisper_models:
-                self._whisper_models[model_size] = whisper.load_model(model_size)
-            model = self._whisper_models[model_size]
-            result = model.transcribe(
-                audio_path, language=language, verbose=False
-            )
+            try:
+                if model_size not in self._whisper_models:
+                    self._whisper_models[model_size] = whisper.load_model(model_size)
+                model = self._whisper_models[model_size]
+                result = model.transcribe(
+                    audio_path, language=language, verbose=False
+                )
+            finally:
+                if _tmp_audio:
+                    from pathlib import Path
+                    Path(_tmp_audio).unlink(missing_ok=True)
 
             segments = [
                 {

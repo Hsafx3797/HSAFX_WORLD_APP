@@ -60,23 +60,31 @@ class PdfHandler:
     ) -> dict[str, Any]:
         """Dispatch to the correct PDF operation."""
         opts = options or {}
+        _created_tmp = output_dir is None
         out_dir = Path(output_dir or tempfile.mkdtemp(prefix="hsafx_pdf_"))
         out_dir.mkdir(parents=True, exist_ok=True)
 
         handler = getattr(self, f"_handle_{tool_id.replace('-', '_')}", None)
         if not handler:
+            if _created_tmp:
+                shutil.rmtree(out_dir, ignore_errors=True)
             return {"success": False, "error": f"Unknown PDF tool: {tool_id}"}
 
         try:
-            return await handler(
+            result = await handler(
                 input_data=input_data,
                 input_file_url=input_file_url,
                 input_file_urls=input_file_urls,
                 opts=opts,
                 out_dir=out_dir,
             )
+            if _created_tmp:
+                result["_tmp_dir"] = str(out_dir)
+            return result
         except Exception as e:
             logger.exception("PDF tool %s failed", tool_id)
+            if _created_tmp:
+                shutil.rmtree(out_dir, ignore_errors=True)
             return {"success": False, "error": str(e)}
 
     # ── Helpers ────────────────────────────────────────────────────

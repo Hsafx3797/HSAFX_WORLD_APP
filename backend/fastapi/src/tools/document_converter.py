@@ -51,6 +51,7 @@ class DocumentConverter:
         output_dir: str | None = None,
     ) -> dict[str, Any]:
         opts = options or {}
+        _created_tmp = output_dir is None
         out_dir = Path(output_dir or tempfile.mkdtemp(prefix="hsafx_doc_"))
         out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -72,14 +73,26 @@ class DocumentConverter:
             input_path.write_bytes(input_data)
 
         handler = getattr(self, f"_handle_{tool_id.replace('-', '_')}", None)
-        if handler:
-            return await handler(
+        if not handler:
+            if _created_tmp:
+                shutil.rmtree(out_dir, ignore_errors=True)
+            return {"success": False, "error": f"Unknown document tool: {tool_id}"}
+
+        try:
+            result = await handler(
                 text_input=text_input,
                 input_path=input_path,
                 opts=opts,
                 out_dir=out_dir,
             )
-        return {"success": False, "error": f"Unknown document tool: {tool_id}"}
+            if _created_tmp:
+                result["_tmp_dir"] = str(out_dir)
+            return result
+        except Exception as e:
+            logger.exception("Document tool %s failed", tool_id)
+            if _created_tmp:
+                shutil.rmtree(out_dir, ignore_errors=True)
+            return {"success": False, "error": str(e)}
 
     # ── Legacy PDF Operations (DEPRECATED — use pdf_handler.py) ──
 

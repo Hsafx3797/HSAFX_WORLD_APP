@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import io
 import logging
+import shutil
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -52,6 +53,7 @@ class ImageConverter:
     ) -> dict[str, Any]:
         """Dispatch to the correct image operation."""
         opts = options or {}
+        _created_tmp = output_dir is None
         out_dir = Path(output_dir or tempfile.mkdtemp(prefix="hsafx_img_"))
         out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -60,19 +62,31 @@ class ImageConverter:
         if not img_bytes and input_file_url:
             img_bytes = await self._download(input_file_url)
         if not img_bytes:
+            if _created_tmp:
+                shutil.rmtree(out_dir, ignore_errors=True)
             return {"success": False, "error": "No input image provided"}
 
         try:
             img = Image.open(io.BytesIO(img_bytes))
         except Exception as e:
+            if _created_tmp:
+                shutil.rmtree(out_dir, ignore_errors=True)
             return {"success": False, "error": f"Cannot open image: {e}"}
 
         handler = getattr(self, f"_handle_{tool_id.replace('-', '_')}", None)
-        if handler:
-            return await handler(img, opts, out_dir)
-
-        # Default: format conversion
-        return await self._handle_raster_to_raster(img, opts, out_dir)
+        try:
+            if handler:
+                result = await handler(img, opts, out_dir)
+            else:
+                result = await self._handle_raster_to_raster(img, opts, out_dir)
+            if _created_tmp:
+                result["_tmp_dir"] = str(out_dir)
+            return result
+        except Exception as e:
+            logger.exception("Image tool %s failed", tool_id)
+            if _created_tmp:
+                shutil.rmtree(out_dir, ignore_errors=True)
+            return {"success": False, "error": str(e)}
 
     # ── Handlers ─────────────────────────────────────────────────
 

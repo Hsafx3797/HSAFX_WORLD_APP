@@ -421,6 +421,7 @@ async def _process_engine_and_callback(
             metadata=result.get("metadata"),
         )
     except Exception as exc:
+        result = None
         logger.error(
             "engine.execute.failed",
             job_id=job_id,
@@ -435,6 +436,11 @@ async def _process_engine_and_callback(
         )
 
     await _send_callback(callback)
+
+    # Clean up temp directory created by handler (tagged as _tmp_dir)
+    if result and result.get("_tmp_dir"):
+        import shutil
+        shutil.rmtree(result["_tmp_dir"], ignore_errors=True)
 
 
 async def _execute_engine(

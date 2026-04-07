@@ -7,6 +7,7 @@ Python deps: fonttools[woff], brotli (for WOFF2 support)
 from __future__ import annotations
 
 import logging
+import shutil
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -28,17 +29,25 @@ class FontHandler:
         output_dir: str | None = None,
     ) -> dict[str, Any]:
         opts = options or {}
+        _created_tmp = output_dir is None
         out_dir = Path(output_dir or tempfile.mkdtemp(prefix="hsafx_font_"))
         out_dir.mkdir(parents=True, exist_ok=True)
 
         handler = getattr(self, f"_handle_{tool_id.replace('-', '_')}", None)
         if not handler:
+            if _created_tmp:
+                shutil.rmtree(out_dir, ignore_errors=True)
             return {"success": False, "error": f"Unknown font tool: {tool_id}"}
 
         try:
-            return await handler(input_file_url=input_file_url, opts=opts, out_dir=out_dir)
+            result = await handler(input_file_url=input_file_url, opts=opts, out_dir=out_dir)
+            if _created_tmp:
+                result["_tmp_dir"] = str(out_dir)
+            return result
         except Exception as e:
             logger.exception("Font tool %s failed", tool_id)
+            if _created_tmp:
+                shutil.rmtree(out_dir, ignore_errors=True)
             return {"success": False, "error": str(e)}
 
     # ── Helpers ────────────────────────────────────────────────────
