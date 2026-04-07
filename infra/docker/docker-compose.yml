@@ -3,9 +3,10 @@
 # Reference: SOLUTION_ROADMAP Sprint 5.2
 #
 # Services:
-#   - fastapi:  Python compute backend (hot-reload)
-#   - redis:    Job queue + caching
-#   - postgres: Local database for Next.js (Drizzle)
+#   - fastapi:        Python compute backend (hot-reload)
+#   - rust-engine:    Rust text/data engine service
+#   - redis:          Job queue + caching
+#   - postgres:       Local database for Next.js (Drizzle)
 #
 # Usage:
 #   docker-compose up          # Start all services
@@ -13,7 +14,7 @@
 #   docker-compose down        # Stop all services
 #   docker-compose logs -f     # Follow logs
 #
-# Environment: Copy .env.example → .env and fill in values.
+# Environment: Copy .env.dev.example → .env and fill in values.
 # Next.js apps run natively (pnpm dev) and connect to these services.
 # ═══════════════════════════════════════════════════════════════
 
@@ -87,6 +88,27 @@ services:
       --port 8000
       --reload
       --reload-dir /app/src
+
+  # ── Rust Engine Service ──────────────────────────────────────
+  rust-engine:
+    build:
+      context: ../../backend/rust
+      dockerfile: engine-service/Dockerfile
+    container_name: hsafx-rust-engine
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=3001
+      - INTERNAL_API_SECRET=${INTERNAL_SECRET:?INTERNAL_SECRET is required}
+      - RUST_LOG=info
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:3001/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
 
 volumes:
   postgres_data:

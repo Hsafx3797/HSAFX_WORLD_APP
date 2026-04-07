@@ -40,6 +40,13 @@ patches:
       - op: replace
         path: /spec/replicas
         value: 1
+  - target:
+      kind: Deployment
+      name: rust-engine
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 1
   # Lower resource limits for staging
   - target:
       kind: Deployment
@@ -61,6 +68,16 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/0/resources/limits/cpu
         value: 500m
+  - target:
+      kind: Deployment
+      name: rust-engine
+    patch: |
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: 128Mi
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: 250m
 
 configMapGenerator:
   - name: hsafx-config

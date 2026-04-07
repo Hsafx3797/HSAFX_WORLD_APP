@@ -4,7 +4,8 @@ FROM rust:1.82-slim AS builder
 WORKDIR /app
 
 # Copy workspace manifests
-COPY Cargo.toml Cargo.lock ./
+COPY Cargo.toml ./
+COPY Cargo.loc[k] ./
 COPY text-tools/Cargo.toml text-tools/Cargo.toml
 COPY engine-service/Cargo.toml engine-service/Cargo.toml
 
@@ -29,7 +30,7 @@ RUN cargo build --release -p engine-service
 # -- Runtime stage --
 FROM debian:bookworm-slim
 
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && \
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl && \
     rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/target/release/engine-service /usr/local/bin/engine-service

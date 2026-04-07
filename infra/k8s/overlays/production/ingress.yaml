@@ -20,17 +20,11 @@ spec:
         - admin.hsafx.world
       secretName: hsafx-tls
   rules:
-    # Web app
+    # Web app — all traffic including /api/v1 goes through Next.js
+    # (Next.js handles auth + billing, then dispatches to FastAPI/Rust internally)
     - host: hsafx.world
       http:
         paths:
-          - path: /api/v1
-            pathType: Prefix
-            backend:
-              service:
-                name: fastapi
-                port:
-                  number: 8000
           - path: /
             pathType: Prefix
             backend:

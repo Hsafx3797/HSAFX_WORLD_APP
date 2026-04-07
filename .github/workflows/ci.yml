@@ -218,3 +218,29 @@ jobs:
       - name: Audit Python dependencies (block on critical)
         working-directory: backend/fastapi
         run: pip-audit -r requirements.txt --strict
+
+  rust:
+    name: Rust Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: backend/rust
+
+      - name: Check (compile)
+        working-directory: backend/rust
+        run: cargo check --release -p engine-service
+
+      - name: Clippy lint
+        working-directory: backend/rust
+        run: cargo clippy -p engine-service -- -D warnings
+        continue-on-error: true
+
+      - name: Run Rust tests
+        working-directory: backend/rust
+        run: cargo test --release

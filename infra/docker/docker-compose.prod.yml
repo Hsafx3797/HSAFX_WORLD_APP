@@ -6,6 +6,7 @@
 #   - postgres: PostgreSQL 16 database
 #   - redis:    Caching + rate limiting + sessions
 #   - fastapi:  Python compute backend (4 workers)
+#   - rust-engine: Rust text/data engine service
 #   - web:      Next.js public app (standalone)
 #   - admin:    Next.js admin panel (standalone)
 #
@@ -95,6 +96,31 @@ services:
         limits:
           memory: 1G
 
+  # ── Rust Engine Service ─────────────────────────────────────
+  rust-engine:
+    build:
+      context: ../../backend/rust
+      dockerfile: engine-service/Dockerfile
+    container_name: hsafx-rust-engine
+    restart: unless-stopped
+    expose:
+      - "3001"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=3001
+      - INTERNAL_API_SECRET=${INTERNAL_SECRET:?INTERNAL_SECRET is required}
+      - RUST_LOG=warn
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:3001/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
   # ── Web App (Next.js) ───────────────────────────────────────
   web:
     build:
@@ -122,6 +148,11 @@ services:
       - META_CLIENT_SECRET=${META_CLIENT_SECRET:-}
       - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-https://hsafx.world}
       - NEXT_PUBLIC_FASTAPI_URL=${NEXT_PUBLIC_FASTAPI_URL:-https://api.hsafx.world}
+      - INTERNAL_API_SECRET=${INTERNAL_SECRET:?INTERNAL_SECRET is required}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:?ENCRYPTION_KEY is required}
+      - CRON_SECRET=${CRON_SECRET:?CRON_SECRET is required}
+      - RUST_ENGINE_URL=http://rust-engine:3001
+      - FASTAPI_URL=http://fastapi:8000
       - POLAR_ACCESS_TOKEN=${POLAR_ACCESS_TOKEN:-}
       - POLAR_WEBHOOK_SECRET=${POLAR_WEBHOOK_SECRET:-}
     depends_on:
@@ -130,6 +161,8 @@ services:
       redis:
         condition: service_healthy
       fastapi:
+        condition: service_healthy
+      rust-engine:
         condition: service_healthy
     deploy:
       resources:
@@ -180,6 +213,7 @@ services:
       - web
       - admin
       - fastapi
+      - rust-engine
     deploy:
       resources:
         limits:
