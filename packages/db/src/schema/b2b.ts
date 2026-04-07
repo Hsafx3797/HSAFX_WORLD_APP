@@ -99,7 +99,9 @@ export const b2bSuites = pgTable('b2b_suites', {
   sortOrder: integer('sort_order').notNull().default(0),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
-});
+}, (t) => [
+  index('b2b_suites_is_active_idx').on(t.isActive),
+]);
 
 // ─── B2B Plan Quotas ─────────────────────────────────────────
 
