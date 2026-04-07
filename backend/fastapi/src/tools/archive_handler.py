@@ -74,30 +74,13 @@ class ArchiveHandler:
     # ── Helpers ────────────────────────────────────────────────────
 
     async def _download(self, url: str) -> bytes:
-        from src.core.url_validation import validate_download_url
-        err = validate_download_url(url)
-        if err:
-            raise ValueError(f"Blocked download: {err}")
-        async with httpx.AsyncClient(timeout=120) as client:
-            r = await client.get(url)
-            r.raise_for_status()
-            return r.content
+        from src.core.safe_download import MAX_DOWNLOAD_BYTES, safe_download
+        return await safe_download(url, max_bytes=MAX_DOWNLOAD_BYTES["archive"])
 
     async def _download_multi(self, urls: list[str]) -> list[tuple[str, bytes]]:
         """Download files, returning (filename, bytes) tuples."""
-        from src.core.url_validation import validate_download_url
-        async with httpx.AsyncClient(timeout=120) as client:
-            results = []
-            for url in urls:
-                err = validate_download_url(url)
-                if err:
-                    raise ValueError(f"Blocked download: {err}")
-                r = await client.get(url)
-                r.raise_for_status()
-                # Extract filename from URL
-                name = url.rsplit("/", 1)[-1].split("?")[0] or f"file_{len(results)}"
-                results.append((name, r.content))
-            return results
+        from src.core.safe_download import MAX_DOWNLOAD_BYTES, safe_download_multi
+        return await safe_download_multi(urls, max_bytes=MAX_DOWNLOAD_BYTES["archive"])
 
     async def _run_cmd(self, cmd: list[str], timeout: int = 300):
         return await asyncio.to_thread(

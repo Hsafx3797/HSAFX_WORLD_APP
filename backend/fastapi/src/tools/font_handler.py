@@ -53,15 +53,10 @@ class FontHandler:
     # ── Helpers ────────────────────────────────────────────────────
 
     async def _download(self, url: str) -> tuple[str, bytes]:
-        from src.core.url_validation import validate_download_url
-        err = validate_download_url(url)
-        if err:
-            raise ValueError(f"Blocked download: {err}")
-        async with httpx.AsyncClient(timeout=120) as client:
-            r = await client.get(url)
-            r.raise_for_status()
-            name = url.rsplit("/", 1)[-1].split("?")[0] or "font"
-            return name, r.content
+        from src.core.safe_download import MAX_DOWNLOAD_BYTES, safe_download
+        data = await safe_download(url, max_bytes=MAX_DOWNLOAD_BYTES["font"])
+        name = url.rsplit("/", 1)[-1].split("?")[0] or "font"
+        return name, data
 
     def _load_font(self, data: bytes, flavour: str | None = None):
         """Load raw bytes into a fontTools TTFont object."""

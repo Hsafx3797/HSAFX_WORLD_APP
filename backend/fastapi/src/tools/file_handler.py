@@ -65,29 +65,14 @@ class FileHandler:
 
     async def _download(self, url: str) -> tuple[str, bytes]:
         """Download file, return (filename, data)."""
-        from src.core.url_validation import validate_download_url
-        err = validate_download_url(url)
-        if err:
-            raise ValueError(f"Blocked download: {err}")
-        async with httpx.AsyncClient(timeout=120) as client:
-            r = await client.get(url)
-            r.raise_for_status()
-            name = url.rsplit("/", 1)[-1].split("?")[0] or "file"
-            return name, r.content
+        from src.core.safe_download import MAX_DOWNLOAD_BYTES, safe_download
+        data = await safe_download(url, max_bytes=MAX_DOWNLOAD_BYTES["file"])
+        name = url.rsplit("/", 1)[-1].split("?")[0] or "file"
+        return name, data
 
     async def _download_multi(self, urls: list[str]) -> list[tuple[str, bytes]]:
-        from src.core.url_validation import validate_download_url
-        results = []
-        async with httpx.AsyncClient(timeout=120) as client:
-            for url in urls:
-                err = validate_download_url(url)
-                if err:
-                    raise ValueError(f"Blocked download: {err}")
-                r = await client.get(url)
-                r.raise_for_status()
-                name = url.rsplit("/", 1)[-1].split("?")[0] or f"file_{len(results)}"
-                results.append((name, r.content))
-        return results
+        from src.core.safe_download import MAX_DOWNLOAD_BYTES, safe_download_multi
+        return await safe_download_multi(urls, max_bytes=MAX_DOWNLOAD_BYTES["file"])
 
     # ── Bulk Rename ────────────────────────────────────────────────
 
