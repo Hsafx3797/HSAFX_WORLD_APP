@@ -105,9 +105,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // No-op — session refetch handles auth state updates.
     },
 
-    // TODO (Phase 5): Wire to tRPC user.updateProfile mutation
-    updateProfile: async (_data: Partial<User>) => {
-      return { success: false, error: 'Profile update not yet implemented' };
+    // Update profile via better-auth updateUser endpoint
+    updateProfile: async (data: Partial<User>) => {
+      try {
+        const payload: Record<string, string> = {};
+        if (data.name) payload.name = data.name;
+        if (data.avatarUrl) payload.image = data.avatarUrl;
+
+        await authClient.updateUser(payload);
+        await refetch();
+        return { success: true };
+      } catch (err) {
+        return { success: false, error: err instanceof Error ? err.message : 'Profile update failed' };
+      }
     },
   }), [user, isPending, session, refetch]);
 
