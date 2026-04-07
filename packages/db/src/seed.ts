@@ -7,6 +7,7 @@
  * - Coin packs
  * - Feature flags
  * - Tool categories
+ * - B2B plans, suites, engine→suite mappings, and plan quotas
  *
  * Usage: DATABASE_URL=... pnpm --filter @hsafx/db seed
  */
@@ -25,6 +26,10 @@ const {
   coinPacks,
   featureFlags,
   toolCategories,
+  b2bPlans,
+  b2bSuites,
+  b2bSuiteCategories,
+  b2bPlanQuotas,
 } = schema;
 
 async function seed() {
@@ -282,6 +287,71 @@ async function seed() {
       .onConflictDoNothing({ target: toolCategories.slug })
       .returning();
     console.log(`    ✓ ${insertedCategories.length} tool categories`);
+
+    // ── 8. B2B Plans ─────────────────────────────────────────
+    console.log('  → B2B Plans');
+    const b2bPlanData = [
+      { name: 'Basic', slug: 'basic', description: 'Starter API plan', priceMonthlyCents: 4900, priceYearlyCents: 49000 },
+      { name: 'Pro', slug: 'pro', description: 'Professional API plan', priceMonthlyCents: 14900, priceYearlyCents: 149000 },
+      { name: 'Enterprise', slug: 'enterprise', description: 'Enterprise API plan', priceMonthlyCents: 49900, priceYearlyCents: 499000 },
+    ];
+    await tx.insert(b2bPlans).values(b2bPlanData).onConflictDoNothing({ target: b2bPlans.slug });
+    const allB2bPlans = await tx.select().from(b2bPlans);
+    const b2bPlanMap = Object.fromEntries(allB2bPlans.map((p) => [p.slug, p.id]));
+    console.log(`    ✓ ${allB2bPlans.length} B2B plans`);
+
+    // ── 9. B2B Suites ────────────────────────────────────────
+    console.log('  → B2B Suites');
+    const b2bSuiteData = [
+      { slug: 'text-processing', name: 'Text Processing', description: 'Case, wrap, filter, transform, comment, markup', sortOrder: 1 },
+      { slug: 'data-encoding', name: 'Data & Encoding', description: 'Encode, hash, counter, unicode', sortOrder: 2 },
+      { slug: 'data-conversion', name: 'Data Conversion', description: 'Convert, format, schema, diff, api', sortOrder: 3 },
+      { slug: 'generation', name: 'Generation & Validation', description: 'Generate-data, generate-web, calculate, unit, validate', sortOrder: 4 },
+      { slug: 'media-processing', name: 'Media Processing', description: 'Image, video, audio, pdf, document, archive, file, font', sortOrder: 5 },
+    ];
+    await tx.insert(b2bSuites).values(b2bSuiteData).onConflictDoNothing({ target: b2bSuites.slug });
+    const allB2bSuites = await tx.select().from(b2bSuites);
+    const suiteMap = Object.fromEntries(allB2bSuites.map((s) => [s.slug, s.id]));
+    console.log(`    ✓ ${allB2bSuites.length} B2B suites`);
+
+    // ── 10. B2B Suite Categories (engine → suite mapping) ────
+    console.log('  → B2B Suite Categories');
+    const engineSuiteMapping: Record<string, string[]> = {
+      'text-processing': ['case', 'wrap', 'filter', 'transform', 'comment', 'markup'],
+      'data-encoding': ['encode', 'hash', 'counter', 'unicode'],
+      'data-conversion': ['convert', 'format', 'schema', 'diff', 'api'],
+      'generation': ['generate-data', 'generate-web', 'calculate', 'unit', 'validate'],
+      'media-processing': ['image', 'video', 'audio', 'pdf', 'document', 'archive', 'file', 'font'],
+    };
+    const suiteCategoryValues: { b2bSuiteId: string; category: string }[] = [];
+    for (const [suiteSlug, engines] of Object.entries(engineSuiteMapping)) {
+      for (const engine of engines) {
+        if (suiteMap[suiteSlug]) {
+          suiteCategoryValues.push({ b2bSuiteId: suiteMap[suiteSlug], category: engine });
+        }
+      }
+    }
+    await tx.insert(b2bSuiteCategories).values(suiteCategoryValues).onConflictDoNothing({ target: b2bSuiteCategories.category });
+    console.log(`    ✓ ${suiteCategoryValues.length} engine→suite mappings`);
+
+    // ── 11. B2B Plan Quotas (suite × plan) ───────────────────
+    console.log('  → B2B Plan Quotas');
+    // monthlyLimit: -1 = unlimited (enforced as MAX_SAFE_INTEGER in quota service)
+    const quotaGrid: Record<string, Record<string, number>> = {
+      basic:      { 'text-processing': 5000, 'data-encoding': 3000, 'data-conversion': 2000, 'generation': 1000, 'media-processing': 500 },
+      pro:        { 'text-processing': 50000, 'data-encoding': 30000, 'data-conversion': 20000, 'generation': 10000, 'media-processing': 5000 },
+      enterprise: { 'text-processing': 999999999, 'data-encoding': 999999999, 'data-conversion': 999999999, 'generation': 999999999, 'media-processing': 50000 },
+    };
+    const quotaValues: { b2bPlanId: string; b2bSuiteId: string; monthlyLimit: number }[] = [];
+    for (const [planSlug, suites] of Object.entries(quotaGrid)) {
+      for (const [suiteSlug, limit] of Object.entries(suites)) {
+        if (b2bPlanMap[planSlug] && suiteMap[suiteSlug]) {
+          quotaValues.push({ b2bPlanId: b2bPlanMap[planSlug], b2bSuiteId: suiteMap[suiteSlug], monthlyLimit: limit });
+        }
+      }
+    }
+    await tx.insert(b2bPlanQuotas).values(quotaValues).onConflictDoNothing();
+    console.log(`    ✓ ${quotaValues.length} plan-suite quotas`);
   });
 
   // ── Done ──────────────────────────────────────────────────
@@ -292,6 +362,10 @@ async function seed() {
   console.log(`   Coin Packs: ${coinPackData.length}`);
   console.log(`   Feature Flags: ${flagData.length}`);
   console.log(`   Tool Categories: ${categoryData.length}`);
+  console.log(`   B2B Plans: 3`);
+  console.log(`   B2B Suites: 5`);
+  console.log(`   B2B Engine→Suite Mappings: 28`);
+  console.log(`   B2B Plan Quotas: 15`);
 }
 
 seed().catch((err) => {
