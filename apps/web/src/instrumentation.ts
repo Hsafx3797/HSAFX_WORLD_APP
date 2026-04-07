@@ -42,6 +42,11 @@ export async function register() {
       name: 'CRON_SECRET',
       condition: () => !!process.env.CRON_SECRET,
     },
+    // ── Encryption ──
+    {
+      name: 'ENCRYPTION_KEY (64-char hex)',
+      condition: () => /^[0-9a-f]{64}$/i.test(process.env.ENCRYPTION_KEY ?? ''),
+    },
   ];
 
   // Optional but recommended — warn if missing so bad config doesn't hide at runtime
