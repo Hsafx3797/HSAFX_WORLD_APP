@@ -78,9 +78,10 @@ class VideoConverter:
         self, input_path: Path, opts: dict, out_dir: Path
     ) -> dict[str, Any]:
         """Transcode video to different format/codec."""
+        from src.core.param_validation import clamp_int
         fmt = opts.get("outputFormat", "mp4")
         codec = opts.get("codec", "libx264")
-        crf = opts.get("crf", 23)
+        crf = clamp_int(opts.get("crf", 23), min_val=0, max_val=51, name="crf")
         out_path = out_dir / f"output.{fmt}"
 
         cmd = [
@@ -114,8 +115,9 @@ class VideoConverter:
         self, input_path: Path, opts: dict, out_dir: Path
     ) -> dict[str, Any]:
         """Resize video dimensions."""
-        width = opts.get("width", 1280)
-        height = opts.get("height", 720)
+        from src.core.param_validation import clamp_int
+        width = clamp_int(opts.get("width", 1280), min_val=16, max_val=7680, name="width")
+        height = clamp_int(opts.get("height", 720), min_val=16, max_val=4320, name="height")
         fmt = opts.get("outputFormat", "mp4")
         out_path = out_dir / f"resized.{fmt}"
 
@@ -135,7 +137,8 @@ class VideoConverter:
         self, input_path: Path, opts: dict, out_dir: Path
     ) -> dict[str, Any]:
         """Compress video to reduce file size."""
-        crf = opts.get("crf", 28)
+        from src.core.param_validation import clamp_int
+        crf = clamp_int(opts.get("crf", 28), min_val=0, max_val=51, name="crf")
         preset = opts.get("preset", "medium")
         fmt = opts.get("outputFormat", "mp4")
         out_path = out_dir / f"compressed.{fmt}"
@@ -168,7 +171,8 @@ class VideoConverter:
         self, input_path: Path, opts: dict, out_dir: Path
     ) -> dict[str, Any]:
         """Extract frames from video at specified intervals."""
-        fps = opts.get("fps", 1)
+        from src.core.param_validation import clamp_float
+        fps = clamp_float(opts.get("fps", 1), min_val=0.01, max_val=60, name="fps")
         fmt = opts.get("imageFormat", "png")
         frames_dir = out_dir / "frames"
         frames_dir.mkdir(exist_ok=True)
@@ -188,8 +192,9 @@ class VideoConverter:
         self, input_path: Path, opts: dict, out_dir: Path
     ) -> dict[str, Any]:
         """Convert video to animated GIF."""
-        fps = opts.get("fps", 10)
-        width = opts.get("width", 480)
+        from src.core.param_validation import clamp_int
+        fps = clamp_int(opts.get("fps", 10), min_val=1, max_val=30, name="fps")
+        width = clamp_int(opts.get("width", 480), min_val=16, max_val=1920, name="width")
         out_path = out_dir / "output.gif"
 
         # Two-pass for high quality
@@ -229,7 +234,8 @@ class VideoConverter:
         self, input_path: Path, opts: dict, out_dir: Path
     ) -> dict[str, Any]:
         """Change video playback speed."""
-        speed = float(opts.get("speed", 2.0))
+        from src.core.param_validation import clamp_float
+        speed = clamp_float(opts.get("speed", 2.0), min_val=0.25, max_val=4.0, name="speed")
         fmt = opts.get("outputFormat", "mp4")
         out_path = out_dir / f"speed.{fmt}"
 
@@ -249,6 +255,8 @@ class VideoConverter:
     ) -> dict[str, Any]:
         """Rotate video by 90/180/270 degrees."""
         angle = int(opts.get("angle", 90))
+        if angle not in (90, 180, 270):
+            return {"success": False, "error": "angle must be 90, 180, or 270"}
         fmt = opts.get("outputFormat", "mp4")
         out_path = out_dir / f"rotated.{fmt}"
 

@@ -153,8 +153,9 @@ class AudioConverter:
         self, input_path: Path, opts: dict, out_dir: Path
     ) -> dict[str, Any]:
         """Apply fade in/out effects."""
-        fade_in = float(opts.get("fadeIn", 0))
-        fade_out = float(opts.get("fadeOut", 0))
+        from src.core.param_validation import clamp_float
+        fade_in = clamp_float(opts.get("fadeIn", 0), min_val=0, max_val=300, name="fadeIn")
+        fade_out = clamp_float(opts.get("fadeOut", 0), min_val=0, max_val=300, name="fadeOut")
         fmt = opts.get("outputFormat", "mp3")
         out_path = out_dir / f"faded.{fmt}"
 
@@ -177,7 +178,8 @@ class AudioConverter:
         self, input_path: Path, opts: dict, out_dir: Path
     ) -> dict[str, Any]:
         """Change audio playback speed."""
-        speed = float(opts.get("speed", 1.5))
+        from src.core.param_validation import clamp_float
+        speed = clamp_float(opts.get("speed", 1.5), min_val=0.25, max_val=4.0, name="speed")
         fmt = opts.get("outputFormat", "mp3")
         out_path = out_dir / f"speed.{fmt}"
 
@@ -253,8 +255,9 @@ class AudioConverter:
         self, input_path: Path, opts: dict, out_dir: Path
     ) -> dict[str, Any]:
         """Generate waveform image from audio."""
-        width = int(opts.get("width", 800))
-        height = int(opts.get("height", 200))
+        from src.core.param_validation import clamp_int
+        width = clamp_int(opts.get("width", 800), min_val=100, max_val=8000, name="width")
+        height = clamp_int(opts.get("height", 200), min_val=50, max_val=4000, name="height")
         color = opts.get("color", "0x1DB954")
         out_path = out_dir / "waveform.png"
 
