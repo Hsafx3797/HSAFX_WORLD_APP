@@ -7,3 +7,4 @@ export { useCoins, type CoinTransaction, type UseCoinsReturn } from './use-coins
 export { useSubscription, type Subscription, type UseSubscriptionReturn } from './use-subscription';
 export { useCodeEditor, type UseCodeEditorConfig, type UseCodeEditorReturn, type CodeEditorDirection, type TransformFunction } from './use-code-editor';
 export { useToolSearch } from './use-tool-search';
+export { FeatureFlagProvider, useFeatureFlags, useFeatureFlag } from './use-feature-flags';

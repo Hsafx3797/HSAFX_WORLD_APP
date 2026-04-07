@@ -149,6 +149,7 @@ export const keys = {
   system: {
     maintenanceMode: () => key('system', 'maintenance_mode'),
     concurrentJobs: () => key('system', 'concurrent_jobs'),
+    featureFlags: () => key('system', 'feature_flags'),
   },
 } as const;
 
