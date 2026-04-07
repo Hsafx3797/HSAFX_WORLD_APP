@@ -22,9 +22,13 @@ import {
   plans,
   eq,
   and,
+  lt,
   sql,
   desc,
 } from '@hsafx/db';
+import { createLogger } from '@hsafx/shared/logger';
+
+const log = createLogger('coin-service');
 
 // ─── Types ────────────────────────────────────────────────────
 
@@ -479,6 +483,47 @@ export async function grantCoins(
 
     return { transactionId: txn!.id, balanceAfter: newBalance };
   });
+}
+
+// ─── Stale Reservation Cleanup ────────────────────────────────
+
+/**
+ * Release coin reservations stuck in 'reserved' status for longer than the threshold.
+ * This happens when a process crashes between reserve and confirm/release.
+ * Should be called periodically via cron.
+ */
+export async function releaseStaleReservations(olderThanMinutes = 30): Promise<number> {
+  const cutoff = new Date(Date.now() - olderThanMinutes * 60 * 1000);
+
+  // Find stale reservations: type = 'spend', metadata.status = 'reserved', created before cutoff
+  const stale = await db
+    .select({ id: coinTransactions.id })
+    .from(coinTransactions)
+    .where(
+      and(
+        eq(coinTransactions.type, 'spend'),
+        sql`${coinTransactions.metadata}->>'status' = 'reserved'`,
+        lt(coinTransactions.createdAt, cutoff),
+      ),
+    )
+    .limit(100); // Process in batches to avoid locking too many rows
+
+  let released = 0;
+  for (const row of stale) {
+    try {
+      await releaseReservation(row.id);
+      released++;
+    } catch (err) {
+      // Log but continue — one bad reservation shouldn't block others
+      log.warn('Failed to release stale reservation', { reservationId: row.id, err });
+    }
+  }
+
+  if (released > 0) {
+    log.info('Released stale coin reservations', { found: stale.length, released });
+  }
+
+  return released;
 }
 
 // ─── Errors ───────────────────────────────────────────────────

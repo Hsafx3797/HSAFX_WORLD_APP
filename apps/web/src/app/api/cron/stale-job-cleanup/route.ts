@@ -14,12 +14,10 @@ import {
   db,
   asyncJobs,
   fileUploads,
-  coinTransactions,
-  eq,
   sql,
 } from '@hsafx/db';
 import { redis, keys, TTL } from '@/lib/redis';
-import { releaseReservation } from '@/server/limits/coin-service';
+import { releaseStaleReservations } from '@/server/limits/coin-service';
 
 // ─── Auth guard ─────────────────────────────────────────────
 
@@ -126,27 +124,11 @@ export async function GET(req: NextRequest) {
 
     // ── 4. Release orphaned coin reservations ─────────────────
 
-    const reservationCutoff = new Date();
-    reservationCutoff.setMinutes(reservationCutoff.getMinutes() - STALE_RESERVATION_MINUTES);
-
-    const orphanedReservations = await db
-      .select({ id: coinTransactions.id })
-      .from(coinTransactions)
-      .where(
-        sql`${coinTransactions.type} = 'spend'
-            AND ${coinTransactions.metadata}->>'status' = 'reserved'
-            AND ${coinTransactions.createdAt} < ${reservationCutoff}`,
-      )
-      .limit(100); // Cap per run to avoid long-running transactions
-
-    for (const reservation of orphanedReservations) {
-      try {
-        await releaseReservation(reservation.id);
-        result.orphanedReservationsReleased++;
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        result.errors.push(`reservation:${reservation.id} → ${msg}`);
-      }
+    try {
+      result.orphanedReservationsReleased = await releaseStaleReservations(STALE_RESERVATION_MINUTES);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      result.errors.push(`reservations → ${msg}`);
     }
 
     const durationMs = Date.now() - startTime;
