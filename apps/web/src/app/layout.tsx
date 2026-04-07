@@ -1,4 +1,3 @@
-// TODO [G12]: Add SEO infrastructure files — sitemap.ts, robots.ts, manifest.ts, opengraph-image.tsx in app/ root.
 import type { Metadata } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
@@ -66,7 +65,6 @@ export const metadata: Metadata = {
     shortcut: '/favicon-16x16.png',
     apple: '/apple-touch-icon.png',
   },
-  manifest: '/site.webmanifest',
 };
 
 export default function RootLayout({
