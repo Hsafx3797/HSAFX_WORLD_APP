@@ -66,6 +66,10 @@ class ArchiveHandler:
     # ── Helpers ────────────────────────────────────────────────────
 
     async def _download(self, url: str) -> bytes:
+        from src.core.url_validation import validate_download_url
+        err = validate_download_url(url)
+        if err:
+            raise ValueError(f"Blocked download: {err}")
         async with httpx.AsyncClient(timeout=120) as client:
             r = await client.get(url)
             r.raise_for_status()
@@ -73,9 +77,13 @@ class ArchiveHandler:
 
     async def _download_multi(self, urls: list[str]) -> list[tuple[str, bytes]]:
         """Download files, returning (filename, bytes) tuples."""
+        from src.core.url_validation import validate_download_url
         async with httpx.AsyncClient(timeout=120) as client:
             results = []
             for url in urls:
+                err = validate_download_url(url)
+                if err:
+                    raise ValueError(f"Blocked download: {err}")
                 r = await client.get(url)
                 r.raise_for_status()
                 # Extract filename from URL

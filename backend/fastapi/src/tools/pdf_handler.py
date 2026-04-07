@@ -82,12 +82,21 @@ class PdfHandler:
     # ── Helpers ────────────────────────────────────────────────────
 
     async def _download(self, url: str) -> bytes:
+        from src.core.url_validation import validate_download_url
+        err = validate_download_url(url)
+        if err:
+            raise ValueError(f"Blocked download: {err}")
         async with httpx.AsyncClient(timeout=120) as client:
             r = await client.get(url)
             r.raise_for_status()
             return r.content
 
     async def _download_multi(self, urls: list[str]) -> list[bytes]:
+        from src.core.url_validation import validate_download_url
+        for u in urls:
+            err = validate_download_url(u)
+            if err:
+                raise ValueError(f"Blocked download: {err}")
         async with httpx.AsyncClient(timeout=120) as client:
             tasks = [client.get(u) for u in urls]
             responses = await asyncio.gather(*tasks)

@@ -454,6 +454,10 @@ class ImageConverter:
 
     async def _download(self, url: str) -> bytes:
         """Download file from URL (R2 signed URL)."""
+        from src.core.url_validation import validate_download_url
+        err = validate_download_url(url)
+        if err:
+            raise ValueError(f"Blocked download: {err}")
         async with httpx.AsyncClient(timeout=60.0) as client:
             resp = await client.get(url)
             resp.raise_for_status()

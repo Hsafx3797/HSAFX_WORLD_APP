@@ -299,6 +299,10 @@ class AudioConverter:
             return {"success": False, "error": f"FFmpeg not found at '{FFMPEG}'. Install FFmpeg."}
 
     async def _download(self, url: str) -> bytes:
+        from src.core.url_validation import validate_download_url
+        err = validate_download_url(url)
+        if err:
+            raise ValueError(f"Blocked download: {err}")
         async with httpx.AsyncClient(timeout=120.0) as client:
             resp = await client.get(url)
             resp.raise_for_status()
