@@ -303,7 +303,8 @@ class AudioConverter:
             stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
 
             if proc.returncode != 0:
-                return {"success": False, "error": f"FFmpeg error: {stderr.decode()[-500:]}"}
+                logger.error("FFmpeg error: %s", stderr.decode()[-500:])
+                return {"success": False, "error": "Audio processing failed"}
 
             if output_path.exists():
                 return {

@@ -338,7 +338,8 @@ class PdfHandler:
         ])
 
         if result.returncode != 0:
-            return {"success": False, "error": f"Ghostscript failed: {result.stderr.decode(errors='replace')[:500]}"}
+            logger.error("Ghostscript failed: %s", result.stderr.decode(errors='replace')[:500])
+            return {"success": False, "error": "PDF compression failed"}
 
         orig_size = len(data)
         new_size = output_path.stat().st_size

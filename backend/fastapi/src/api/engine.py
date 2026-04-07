@@ -37,6 +37,27 @@ logger = structlog.get_logger()
 
 router = APIRouter()
 
+
+def _sanitize_error(error: str | Exception) -> str:
+    """Return a generic message for client-facing errors.
+
+    Detailed error information (file paths, library versions, stderr
+    output) is logged server-side but never sent to callers.
+    """
+    msg = str(error)
+    # Keep short, known-safe messages as-is (e.g. validation errors)
+    safe_prefixes = (
+        "Unsupported",
+        "Missing",
+        "Invalid",
+        "No input",
+        "angle must be",
+        "Engine '",
+    )
+    if msg.startswith(safe_prefixes) and len(msg) < 200:
+        return msg
+    return "Processing failed. Please check your input and try again."
+
 # ─── Config ─────────────────────────────────────────────────────
 
 INTERNAL_SECRET = os.getenv("INTERNAL_API_SECRET", "")
@@ -432,7 +453,7 @@ async def _process_engine_and_callback(
         callback = JobCompleteCallback(
             jobId=job_id,
             status="failed",
-            error=str(exc),
+            error=_sanitize_error(exc),
         )
 
     await _send_callback(callback)
@@ -531,7 +552,7 @@ async def _execute_engine(
         return {"success": False, "error": f"Engine '{engine_name}' operation timed out"}
     except Exception as e:
         logger.exception("Engine %s operation %s failed", engine_name, tool_slug)
-        return {"success": False, "error": str(e)}
+        return {"success": False, "error": _sanitize_error(e)}
 
 
 async def _send_callback(callback: JobCompleteCallback):

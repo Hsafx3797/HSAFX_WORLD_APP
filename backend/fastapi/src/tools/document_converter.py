@@ -308,7 +308,8 @@ class DocumentConverter:
                 if txt_file.exists():
                     text_parts.append(txt_file.read_text())
             except Exception as e:
-                text_parts.append(f"[OCR Error: {e}]")
+                logger.warning("OCR failed for %s: %s", img_path.name, e)
+                text_parts.append("[OCR Error]")
 
         return {"success": True, "output": "\n\n".join(text_parts)}
 
@@ -385,7 +386,8 @@ class DocumentConverter:
             )
             stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=120)
             if proc.returncode != 0:
-                return {"success": False, "error": f"pdftoppm error: {stderr.decode()[-300:]}"}
+                logger.error("pdftoppm error: %s", stderr.decode()[-300:])
+                return {"success": False, "error": "PDF to image conversion failed"}
 
             images = sorted(images_dir.glob(f"*.{fmt}"))
             return {
@@ -525,7 +527,8 @@ class DocumentConverter:
             candidates = list(out_dir.glob("*.html"))
             if candidates:
                 return {"success": True, "output": str(candidates[0])}
-            return {"success": False, "error": f"pdftohtml produced no output: {stderr.decode()[-300:]}"}
+            logger.error("pdftohtml produced no output: %s", stderr.decode()[-300:])
+            return {"success": False, "error": "PDF to HTML conversion failed"}
         except FileNotFoundError:
             return {"success": False, "error": "pdftohtml not found — install poppler-utils"}
 
@@ -579,7 +582,8 @@ class DocumentConverter:
             )
             _, stderr = await asyncio.wait_for(proc.communicate(), timeout=180)
             if proc.returncode != 0:
-                return {"success": False, "error": f"LibreOffice error: {stderr.decode()[-300:]}"}
+                logger.error("LibreOffice error: %s", stderr.decode()[-300:])
+                return {"success": False, "error": "Document conversion failed"}
 
             # Find the output file
             candidates = list(out_dir.glob(f"*.{target_format}"))
@@ -601,7 +605,8 @@ class DocumentConverter:
             )
             _, stderr = await asyncio.wait_for(proc.communicate(), timeout=300)
             if proc.returncode != 0:
-                return {"success": False, "error": f"ebook-convert error: {stderr.decode()[-300:]}"}
+                logger.error("ebook-convert error: %s", stderr.decode()[-300:])
+                return {"success": False, "error": "eBook conversion failed"}
             if out_path.exists():
                 return {"success": True, "output": str(out_path), "metadata": {"format": target_format}}
             return {"success": False, "error": "ebook-convert produced no output"}

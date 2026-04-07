@@ -332,7 +332,8 @@ class VideoConverter:
 
             if proc.returncode != 0:
                 err = stderr.decode()[-500:]
-                return {"success": False, "error": f"FFmpeg error: {err}"}
+                logger.error("FFmpeg error: %s", err)
+                return {"success": False, "error": "Video processing failed"}
 
             if output_path.exists():
                 return {
