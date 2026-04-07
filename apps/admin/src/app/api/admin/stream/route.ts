@@ -144,7 +144,7 @@ export async function GET(_request: NextRequest) {
 
       // Send initial connected event
       send('connected', {
-        userId: session.user.id,
+        userId: adminAuth.userId,
         timestamp: new Date().toISOString(),
       });
 

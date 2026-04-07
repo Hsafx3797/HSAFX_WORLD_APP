@@ -42,7 +42,7 @@ export const b2bPlans = pgTable('b2b_plans', {
   isActive: boolean('is_active').notNull().default(true),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
 }, (t) => [
   index('b2b_plans_slug_idx').on(t.slug),
 ]);
@@ -71,7 +71,7 @@ export const b2bSubscriptions = pgTable('b2b_subscriptions', {
   canceledAt: timestamp('canceled_at'),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
 }, (t) => [
   uniqueIndex('b2b_sub_user_active_idx')
     .on(t.userId)
@@ -98,7 +98,7 @@ export const b2bSuites = pgTable('b2b_suites', {
   isActive: boolean('is_active').notNull().default(true),
   sortOrder: integer('sort_order').notNull().default(0),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
 }, (t) => [
   index('b2b_suites_is_active_idx').on(t.isActive),
 ]);
@@ -119,7 +119,7 @@ export const b2bPlanQuotas = pgTable('b2b_plan_quotas', {
     .references(() => b2bSuites.id, { onDelete: 'cascade' }),
   monthlyLimit: integer('monthly_limit').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
 }, (t) => [
   uniqueIndex('b2b_pq_plan_suite_idx').on(t.b2bPlanId, t.b2bSuiteId),
   check('b2b_pq_limit_positive', sql`monthly_limit > 0`),
@@ -159,7 +159,7 @@ export const b2bToolSuiteOverrides = pgTable('b2b_tool_suite_overrides', {
     .notNull()
     .references(() => b2bSuites.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
 }, (t) => [
   uniqueIndex('b2b_tso_tool_id_idx').on(t.toolId),
 ]);
@@ -183,7 +183,7 @@ export const b2bUsage = pgTable('b2b_usage', {
   periodEnd: timestamp('period_end').notNull(),
   usageCount: integer('usage_count').notNull().default(0),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
 }, (t) => [
   uniqueIndex('b2b_usage_user_suite_period_idx').on(t.userId, t.b2bSuiteId, t.periodStart),
   index('b2b_usage_user_id_idx').on(t.userId),

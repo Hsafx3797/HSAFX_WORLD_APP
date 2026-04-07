@@ -11,12 +11,18 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 // ─── CSRF Origin Validation ──────────────────────────────────────────────────
 
-const ALLOWED_ORIGINS = new Set([
+const DEFAULT_ORIGINS = [
   'http://localhost:3001',
   'http://localhost:3000',
   'https://admin.hsafx.world',
   'https://hsafx.world',
-]);
+];
+
+const ALLOWED_ORIGINS = new Set(
+  process.env.ADMIN_ALLOWED_ORIGINS
+    ? process.env.ADMIN_ALLOWED_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
+    : DEFAULT_ORIGINS,
+);
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 

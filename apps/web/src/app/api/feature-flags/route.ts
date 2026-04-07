@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@hsafx/db';
 import { featureFlags } from '@hsafx/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq } from '@hsafx/db';
 import { redis, keys, TTL } from '@/lib/redis';
 
 const CACHE_KEY = keys.system.featureFlags();

@@ -9,6 +9,9 @@ import { metricsRegistry } from '@/lib/telemetry';
  */
 export async function GET(req: Request): Promise<NextResponse> {
   const secret = process.env.METRICS_SECRET;
+  if (!secret && process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Metrics endpoint disabled — METRICS_SECRET not configured' }, { status: 403 });
+  }
   if (secret) {
     const auth = req.headers.get('authorization');
     if (auth !== `Bearer ${secret}`) {

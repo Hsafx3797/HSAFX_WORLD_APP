@@ -125,7 +125,7 @@ export default function EmailTemplatesPage() {
                 {t.variables && t.variables.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {t.variables.map((v) => (
-                      <Badge key={v} variant="outline">{`{{${v}}}`}</Badge>
+                      <Badge key={v} variant="muted">{`{{${v}}}`}</Badge>
                     ))}
                   </div>
                 )}

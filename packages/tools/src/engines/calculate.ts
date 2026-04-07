@@ -28,7 +28,8 @@ import {
   calculateZakat,
   calculateInheritance,
 } from '../calculators/islamic';
-import { calculateGpa } from '../calculators/web';
+import { calculateGPA } from '../specialized/gpa-calculator';
+import type { GradeSystem } from '../specialized/gpa-calculator';
 
 // ---------------------------------------------------------------------------
 // Timezone conversion helper
@@ -131,8 +132,12 @@ const CALCULATORS: Record<string, CalcFn> = {
     return { result: percentageOf(i.percent as number, i.value as number) };
   },
   'gpa': (i) => {
-    const grades = (i.grades as Array<{ course: string; grade: string; credits: number }>) ?? [];
-    return calculateGpa(grades);
+    const courses = (i.grades as Array<{ name?: string; course?: string; grade: string | number; credits: number }>) ?? [];
+    const system = (i.system as GradeSystem) ?? 'us-4.0';
+    return calculateGPA(
+      courses.map((c) => ({ name: c.name ?? c.course ?? '', grade: c.grade, credits: c.credits })),
+      system,
+    );
   },
   'zakat': (i) => {
     const assets = (i.assets as Record<string, number>) ?? {};

@@ -29,7 +29,7 @@ export const fileUploads = pgTable('file_uploads', {
   expiresAt: timestamp('expires_at').notNull(), // Auto-delete after TTL
   metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
   deletedAt: timestamp('deleted_at'),
 }, (t) => [
   index('fu_user_id_idx').on(t.userId),
@@ -117,7 +117,7 @@ export const featureFlags = pgTable('feature_flags', {
   killSwitchActivatedAt: timestamp('kill_switch_activated_at'), // When kill switch was triggered
   metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
 });
 
 /**
@@ -137,7 +137,7 @@ export const emailProviderConfig = pgTable('email_provider_config', {
   isActive: boolean('is_active').notNull().default(true),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
 });
 
 /**
@@ -154,7 +154,7 @@ export const emailTemplates = pgTable('email_templates', {
   variables: text('variables').array().default([]), // Template variable names: ['userName', 'resetLink', ...]
   isActive: boolean('is_active').notNull().default(true),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
 });
 
 /**
@@ -192,7 +192,7 @@ export const adminSettings = pgTable('admin_settings', {
   category: varchar('category', { length: 100 }), // 'general', 'billing', 'tools', 'security', etc.
   updatedBy: uuid('updated_by').references(() => users.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
 });
 
 /**
@@ -229,7 +229,7 @@ export const emailUsageTracking = pgTable('email_usage_tracking', {
   emailsSent: integer('emails_sent').notNull().default(0),
   emailsFailed: integer('emails_failed').notNull().default(0),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
 }, (t) => [
   index('eut_provider_period_idx').on(t.provider, t.periodStart),
 ]);

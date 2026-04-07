@@ -24,7 +24,7 @@ export interface Job {
   progress: number; // 0-100
   input: unknown;
   options?: Record<string, unknown>;
-  source: 'api_v1' | 'trpc' | 'web';
+  source: 'api_v1' | 'api_v1_batch' | 'trpc' | 'web';
   error?: string;
   createdAt: string;
   updatedAt: string;
@@ -47,5 +47,5 @@ export interface CreateJobInput {
   apiKeyId?: string;
   input: unknown;
   options?: Record<string, unknown>;
-  source: 'api_v1' | 'trpc' | 'web';
+  source: 'api_v1' | 'api_v1_batch' | 'trpc' | 'web';
 }

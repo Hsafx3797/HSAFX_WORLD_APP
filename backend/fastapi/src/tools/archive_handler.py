@@ -35,6 +35,19 @@ class ArchiveHandler:
         resolved = (extract_dir / member_name).resolve()
         return str(resolved).startswith(str(extract_dir.resolve()))
 
+    @staticmethod
+    def _validate_extracted_paths(extract_dir: Path) -> str | None:
+        """Post-extraction check: ensure ALL files resolve inside extract_dir.
+
+        Returns None if safe, or the offending path string if traversal detected.
+        Used after CLI fallbacks (unrar, 7z) that lack Python-level member validation.
+        """
+        root = extract_dir.resolve()
+        for path in extract_dir.rglob("*"):
+            if not str(path.resolve()).startswith(str(root)):
+                return str(path)
+        return None
+
     async def convert(
         self,
         tool_id: str,
@@ -150,6 +163,11 @@ class ArchiveHandler:
                 result = await self._run_cmd([unrar, "x", "-y", str(input_path), str(extract_dir) + "/"])
                 if result.returncode != 0:
                     return {"success": False, "error": "RAR extraction failed"}
+                # Post-extraction path traversal check for CLI fallback
+                bad_path = self._validate_extracted_paths(extract_dir)
+                if bad_path:
+                    shutil.rmtree(extract_dir, ignore_errors=True)
+                    return {"success": False, "error": f"Unsafe path in archive: {bad_path}"}
 
             files = [str(p) for p in extract_dir.rglob("*") if p.is_file()]
             return {"success": True, "output": files, "metadata": {"file_count": len(files)}}
@@ -200,6 +218,11 @@ class ArchiveHandler:
                 result = await self._run_cmd([bin_7z, "x", f"-o{extract_dir}", "-y", str(input_path)])
                 if result.returncode != 0:
                     return {"success": False, "error": "7z extraction failed"}
+                # Post-extraction path traversal check for CLI fallback
+                bad_path = self._validate_extracted_paths(extract_dir)
+                if bad_path:
+                    shutil.rmtree(extract_dir, ignore_errors=True)
+                    return {"success": False, "error": f"Unsafe path in archive: {bad_path}"}
 
             files = [str(p) for p in extract_dir.rglob("*") if p.is_file()]
             return {"success": True, "output": files, "metadata": {"file_count": len(files)}}

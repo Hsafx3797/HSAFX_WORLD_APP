@@ -209,10 +209,12 @@ async function recordUsage(
   }
 
   // Persist to DB (async, non-blocking for the user)
+  // Hash IP before storage for privacy — we only need it for abuse correlation
+  const ipHash = createHash('sha256').update(ipAddress).digest('hex').slice(0, 64);
   try {
     await db.insert(anonymousUsage).values({
       fingerprint,
-      ipAddress,
+      ipAddress: ipHash,
       toolId,
     });
   } catch (err) {

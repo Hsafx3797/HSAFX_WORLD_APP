@@ -34,7 +34,7 @@ export const toolCategories = pgTable('tool_categories', {
   sortOrder: integer('sort_order').notNull().default(0),
   isActive: boolean('is_active').notNull().default(true),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
 });
 
 /**
@@ -62,7 +62,7 @@ export const tools = pgTable('tools', {
   sortOrder: integer('sort_order').notNull().default(0),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
   deletedAt: timestamp('deleted_at'),
 }, (t) => [
   index('tools_category_id_idx').on(t.categoryId),
@@ -121,7 +121,7 @@ export const usageCounters = pgTable('usage_counters', {
   count: integer('count').notNull().default(0),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
 }, (t) => [
   uniqueIndex('uc_user_resource_period_idx').on(t.userId, t.resourceType, t.resourceId, t.periodStart),
 ]);
@@ -245,7 +245,7 @@ export const toolClassPolicy = pgTable('tool_class_policy', {
   executionMode: varchar('execution_mode', { length: 20 }).notNull().default('sync'),
   asyncRequired: boolean('async_required').notNull().default(false),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
 });
 
 // Types inferred from tables using InferSelectModel and InferInsertModel for better compatibility
@@ -270,7 +270,7 @@ export const webhookEndpoints = pgTable('webhook_endpoints', {
   isActive: boolean('is_active').notNull().default(true),
   description: text('description'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
 }, (t) => [
   index('wh_user_id_idx').on(t.userId),
   index('wh_user_active_idx').on(t.userId, t.isActive),

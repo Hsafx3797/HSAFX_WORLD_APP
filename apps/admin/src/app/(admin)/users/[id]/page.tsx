@@ -22,11 +22,9 @@ import {
   AlertTriangle,
   Trash2,
   UserCheck,
-  UserCheck,
 } from 'lucide-react';
 import * as api from '@/lib/api';
 import { useUser, useUserMutations, useUserActivity } from '@/lib/hooks';
-import * as api from '@/lib/api';
 import type { UserActivity } from '@/lib/types';
 import {
   Card,
@@ -61,9 +59,6 @@ export default function UserDetailPage() {
   const [impersonating, setImpersonating] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
-  const [showImpersonateModal, setShowImpersonateModal] = useState(false);
-  const [impersonateReason, setImpersonateReason] = useState('');
-  const [impersonating, setImpersonating] = useState(false);
 
   // Form states
   const [banReason, setBanReason] = useState('');
@@ -85,23 +80,7 @@ export default function UserDetailPage() {
   }, [user, mutations, refresh]);
 
   const handleResetPassword = useCallback(async () => {
-    if (!user)Impersonate = useCallback(async () => {
-    if (!user || !impersonateReason.trim()) return;
-    setImpersonating(true);
-    try {
-      const res = await api.startImpersonation(user.id, impersonateReason.trim());
-      if (!res.success) throw new Error(res.error?.message || 'Failed to start impersonation');
-      setShowImpersonateModal(false);
-      setImpersonateReason('');
-      window.open('/', '_blank');
-    } catch {
-      // Error handled by API response
-    } finally {
-      setImpersonating(false);
-    }
-  }, [user, impersonateReason]);
-
-  const handle return;
+    if (!user) return;
     await mutations.resetPassword(user.id);
     setShowResetPasswordModal(false);
   }, [user, mutations]);

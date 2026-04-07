@@ -74,7 +74,7 @@ export const plans = pgTable('plans', {
   polarProductId: text('polar_product_id').unique(), // Polar product mapping
   metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
 }, (t) => [
   index('plans_slug_idx').on(t.slug),
 ]);
@@ -119,7 +119,7 @@ export const subscriptions = pgTable('subscriptions', {
   polarSubscriptionId: text('polar_subscription_id').unique(),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
 }, (t) => [
   index('sub_user_id_idx').on(t.userId),
   index('sub_status_idx').on(t.status),
@@ -174,7 +174,7 @@ export const invoices = pgTable('invoices', {
   stripeInvoiceId: text('stripe_invoice_id').unique(),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
 }, (t) => [
   index('inv_user_id_idx').on(t.userId),
   index('inv_status_idx').on(t.status),
@@ -200,7 +200,7 @@ export const payments = pgTable('payments', {
   failureReason: text('failure_reason'),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
 }, (t) => [
   index('pay_user_id_idx').on(t.userId),
   index('pay_status_idx').on(t.status),
@@ -226,7 +226,7 @@ export const userCoinWallets = pgTable('user_coin_wallets', {
   disputeFrozen: boolean('dispute_frozen').notNull().default(false),
   lastRecalculatedAt: timestamp('last_recalculated_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
 }, (t) => [
   check('wallet_balance_nonneg', sql`${t.balance} >= 0`),
 ]);
@@ -256,7 +256,7 @@ export const toolCoinCosts = pgTable('tool_coin_costs', {
     .references(() => tools.id, { onDelete: 'cascade' }),
   baWeight: decimal('ba_weight', { precision: 4, scale: 2 }).notNull().default('1.0'),
   overrideCost: integer('override_cost'), // null = use BA weight formula
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
 }, (t) => [
   uniqueIndex('tcc_tool_id_idx').on(t.toolId),
 ]);
@@ -324,7 +324,7 @@ export const userDailyRewardCaps = pgTable('user_daily_reward_caps', {
   date: timestamp('date').notNull(), // Date at midnight UTC
   totalCoinsEarned: integer('total_coins_earned').notNull().default(0),
   claimsCount: integer('claims_count').notNull().default(0),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
 }, (t) => [
   uniqueIndex('udrc_user_date_idx').on(t.userId, t.date),
 ]);
@@ -344,7 +344,7 @@ export const userStreaks = pgTable('user_streaks', {
   currentStreak: integer('current_streak').notNull().default(0),
   longestStreak: integer('longest_streak').notNull().default(0),
   lastActiveDate: timestamp('last_active_date'), // Midnight UTC of last daily claim
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
 });
 
 /**
@@ -454,7 +454,7 @@ export const planMetadata = pgTable('plan_metadata', {
   metaKey: text('meta_key').notNull(),
   metaValue: jsonb('meta_value').$type<unknown>(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
 }, (t) => [
   uniqueIndex('pmd_plan_key_idx').on(t.planId, t.metaKey),
 ]);
@@ -475,7 +475,7 @@ export const planUpgradeRules = pgTable('plan_upgrade_rules', {
   conditions: jsonb('conditions').$type<Record<string, unknown>>().default({}),
   isActive: boolean('is_active').notNull().default(true),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
 });
 
 /**

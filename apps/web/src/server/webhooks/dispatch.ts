@@ -25,6 +25,7 @@ export interface WebhookPayload {
     jobId: string;
     toolId: string;
     status: 'completed' | 'failed';
+    engine?: string;
     output?: unknown;
     error?: string;
     executionTime?: number;

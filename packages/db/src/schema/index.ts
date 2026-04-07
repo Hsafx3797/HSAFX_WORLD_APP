@@ -3,7 +3,6 @@ export * from './users';
 export * from './auth';
 export * from './billing';
 export * from './b2b';
-export * from './organizations';
 export * from './tools';
 export * from './misc';
 export * from './audit';

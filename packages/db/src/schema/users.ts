@@ -22,7 +22,7 @@ export const users = pgTable('users', {
   stripeCustomerId: text('stripe_customer_id').unique(),
   lastLogin: timestamp('last_login'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
   deletedAt: timestamp('deleted_at'),
 }, (t) => [
   uniqueIndex('users_email_idx').on(t.email),
@@ -44,7 +44,7 @@ export const userPreferences = pgTable('user_preferences', {
   timezone: text('timezone').notNull().default('UTC'),
   preferences: jsonb('preferences').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
 });
 
 /**
@@ -62,7 +62,7 @@ export const userSettings = pgTable('user_settings', {
   marketingEmails: boolean('marketing_emails').notNull().default(false),
   settings: jsonb('settings').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
 });
 
 // Types inferred from tables using InferSelectModel and InferInsertModel

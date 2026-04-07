@@ -4,7 +4,6 @@ export default defineConfig({
   entry: {
     index: 'src/index.ts',
     'calculators/index': 'src/calculators/index.ts',
-    'calculators/web': 'src/calculators/web.ts',
     'converters/index': 'src/converters/index.ts',
     'data-converters/index': 'src/data-converters/index.ts',
     'encoders/index': 'src/encoders/index.ts',

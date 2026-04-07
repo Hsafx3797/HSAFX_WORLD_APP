@@ -28,7 +28,7 @@ export const streakTiers = pgTable('streak_tiers', {
   isActive: boolean('is_active').notNull().default(true),
   sortOrder: integer('sort_order').notNull().default(0),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
 }, (t) => [
   index('st_min_days_idx').on(t.minDays),
   index('st_active_sort_idx').on(t.isActive, t.sortOrder),
@@ -45,7 +45,7 @@ export const referralConfig = pgTable('referral_config', {
   isActive: boolean('is_active').notNull().default(true),
   updatedBy: uuid('updated_by').references(() => users.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
 });
 
 // ─── Rate Limit Config ────────────────────────────────────────
@@ -62,7 +62,7 @@ export const rateLimitConfig = pgTable('rate_limit_config', {
   isActive: boolean('is_active').notNull().default(true),
   updatedBy: uuid('updated_by').references(() => users.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
 }, (t) => [
   uniqueIndex('rlc_plan_endpoint_idx').on(t.planSlug, t.endpoint),
 ]);
@@ -80,7 +80,7 @@ export const notificationTemplates = pgTable('notification_templates', {
   variables: text('variables').array().default([]),
   isActive: boolean('is_active').notNull().default(true),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
 });
 
 // Types

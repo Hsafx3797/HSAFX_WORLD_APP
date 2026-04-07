@@ -77,8 +77,9 @@ class AudioConverter:
         self, input_path: Path, opts: dict, out_dir: Path
     ) -> dict[str, Any]:
         """Convert audio between formats (MP3, WAV, AAC, OGG, FLAC, M4A)."""
-        fmt = opts.get("outputFormat", "mp3")
-        bitrate = opts.get("bitrate", "192k")
+        from src.core.param_validation import validate_output_format, validate_bitrate
+        fmt = validate_output_format(opts.get("outputFormat", "mp3"))
+        bitrate = validate_bitrate(opts.get("bitrate", "192k"))
         sample_rate = opts.get("sampleRate", None)
         out_path = out_dir / f"output.{fmt}"
 
@@ -105,17 +106,18 @@ class AudioConverter:
         self, input_path: Path, opts: dict, out_dir: Path
     ) -> dict[str, Any]:
         """Trim audio to start/end timestamps."""
-        start = opts.get("start", "00:00:00")
+        from src.core.param_validation import validate_timestamp, validate_output_format
+        start = validate_timestamp(opts.get("start", "00:00:00"), name="start")
         end = opts.get("end", None)
         duration = opts.get("duration", None)
-        fmt = opts.get("outputFormat", "mp3")
+        fmt = validate_output_format(opts.get("outputFormat", "mp3"))
         out_path = out_dir / f"trimmed.{fmt}"
 
-        cmd = [FFMPEG, "-y", "-i", str(input_path), "-ss", str(start)]
+        cmd = [FFMPEG, "-y", "-i", str(input_path), "-ss", start]
         if end:
-            cmd.extend(["-to", str(end)])
+            cmd.extend(["-to", validate_timestamp(str(end), name="end")])
         elif duration:
-            cmd.extend(["-t", str(duration)])
+            cmd.extend(["-t", validate_timestamp(str(duration), name="duration")])
         cmd.extend(["-c", "copy", str(out_path)])
         return await self._run_ffmpeg(cmd, out_path)
 
@@ -123,8 +125,9 @@ class AudioConverter:
         self, input_path: Path, opts: dict, out_dir: Path
     ) -> dict[str, Any]:
         """Normalize audio levels (loudnorm filter)."""
-        target_lufs = opts.get("targetLufs", -16)
-        fmt = opts.get("outputFormat", "mp3")
+        from src.core.param_validation import clamp_float, validate_output_format
+        target_lufs = clamp_float(opts.get("targetLufs", -16), min_val=-70, max_val=0, name="targetLufs")
+        fmt = validate_output_format(opts.get("outputFormat", "mp3"))
         out_path = out_dir / f"normalized.{fmt}"
 
         cmd = [
@@ -138,8 +141,9 @@ class AudioConverter:
         self, input_path: Path, opts: dict, out_dir: Path
     ) -> dict[str, Any]:
         """Compress audio to reduce file size."""
-        bitrate = opts.get("bitrate", "96k")
-        fmt = opts.get("outputFormat", "mp3")
+        from src.core.param_validation import validate_bitrate, validate_output_format
+        bitrate = validate_bitrate(opts.get("bitrate", "96k"))
+        fmt = validate_output_format(opts.get("outputFormat", "mp3"))
         out_path = out_dir / f"compressed.{fmt}"
 
         cmd = [
@@ -207,9 +211,10 @@ class AudioConverter:
         self, input_path: Path, opts: dict, out_dir: Path
     ) -> dict[str, Any]:
         """Remove silence from audio."""
-        threshold = opts.get("threshold", "-30dB")
-        min_duration = opts.get("minDuration", "0.5")
-        fmt = opts.get("outputFormat", "mp3")
+        from src.core.param_validation import validate_db_value, clamp_float, validate_output_format
+        threshold = validate_db_value(opts.get("threshold", "-30dB"))
+        min_duration = clamp_float(opts.get("minDuration", 0.5), min_val=0.01, max_val=60, name="minDuration")
+        fmt = validate_output_format(opts.get("outputFormat", "mp3"))
         out_path = out_dir / f"no_silence.{fmt}"
 
         cmd = [
@@ -255,10 +260,10 @@ class AudioConverter:
         self, input_path: Path, opts: dict, out_dir: Path
     ) -> dict[str, Any]:
         """Generate waveform image from audio."""
-        from src.core.param_validation import clamp_int
+        from src.core.param_validation import clamp_int, validate_color
         width = clamp_int(opts.get("width", 800), min_val=100, max_val=8000, name="width")
         height = clamp_int(opts.get("height", 200), min_val=50, max_val=4000, name="height")
-        color = opts.get("color", "0x1DB954")
+        color = validate_color(opts.get("color", "0x1DB954"))
         out_path = out_dir / "waveform.png"
 
         cmd = [

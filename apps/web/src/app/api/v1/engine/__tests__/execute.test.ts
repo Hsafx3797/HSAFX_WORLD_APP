@@ -625,7 +625,7 @@ describe('POST /api/v1/engine/{name}', () => {
         },
       });
 
-      const createJobArg = mockCreateJob.mock.calls[0][0];
+      const createJobArg = mockCreateJob.mock.calls[0]![0];
       expect(createJobArg.options.style).toBe('camel');
       expect(createJobArg.options.keepThis).toBe('yes');
       // System internal keys should be set by route, not user
@@ -643,7 +643,7 @@ describe('POST /api/v1/engine/{name}', () => {
 
       await callPOST('case', { input: 'hello' });
 
-      const createJobArg = mockCreateJob.mock.calls[0][0];
+      const createJobArg = mockCreateJob.mock.calls[0]![0];
       // Only system keys, no user options
       expect(createJobArg.options._engineName).toBe('case');
       expect(createJobArg.options._isB2b).toBe(true);
@@ -659,7 +659,7 @@ describe('POST /api/v1/engine/{name}', () => {
         options: { operation: 'resize' },
       });
 
-      const createJobArg = mockCreateJob.mock.calls[0][0];
+      const createJobArg = mockCreateJob.mock.calls[0]![0];
       expect(createJobArg.options._runtime).toBe('python');
     });
   });

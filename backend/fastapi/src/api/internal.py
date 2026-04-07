@@ -147,7 +147,7 @@ async def _process_and_callback(
         callback = JobCompleteCallback(
             jobId=job_id,
             status="failed",
-            error=str(exc),
+            error="Tool processing failed",
         )
 
     # Send callback to Next.js

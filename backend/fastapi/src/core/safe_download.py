@@ -72,6 +72,11 @@ async def safe_download_multi(
     results: list[tuple[str, bytes]] = []
     for url in urls:
         data = await safe_download(url, max_bytes=max_bytes, timeout=timeout)
-        name = url.rsplit("/", 1)[-1].split("?")[0] or f"file_{len(results)}"
+        raw_name = url.rsplit("/", 1)[-1].split("?")[0] or f"file_{len(results)}"
+        # Sanitize: strip path separators, reject traversal components
+        import os
+        name = os.path.basename(raw_name.replace("\\", "/"))
+        if not name or name in (".", ".."):
+            name = f"file_{len(results)}"
         results.append((name, data))
     return results

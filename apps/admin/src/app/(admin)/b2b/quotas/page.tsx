@@ -119,7 +119,7 @@ export default function B2bQuotasPage() {
                   Plan \ Suite
                 </th>
                 {activeSuites.map((suite) => (
-                  <th key={suite.id} className="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider min-w-35
+                  <th key={suite.id} className="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider min-w-[140px]">
                     {suite.name}
                     <div className="text-[10px] font-normal normal-case">{suite.slug}</div>
                   </th>

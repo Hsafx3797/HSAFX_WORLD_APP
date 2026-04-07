@@ -41,55 +41,8 @@ export default function BillingSettingsPage() {
   const [showAddPayment, setShowAddPayment] = useState(false);
 
   useEffect(() => {
-    // Mock data loading
-    setTimeout(() => {
-      setInvoices([
-        {
-          id: 'inv_001',
-          date: '2024-01-15',
-          amount: 29.00,
-          status: 'paid',
-          description: 'Pro Plan - January 2024',
-          downloadUrl: '#',
-        },
-        {
-          id: 'inv_002',
-          date: '2024-01-10',
-          amount: 10.00,
-          status: 'paid',
-          description: '100 Coins Purchase',
-          downloadUrl: '#',
-        },
-        {
-          id: 'inv_003',
-          date: '2023-12-15',
-          amount: 29.00,
-          status: 'paid',
-          description: 'Pro Plan - December 2023',
-          downloadUrl: '#',
-        },
-      ]);
-
-      setPaymentMethods([
-        {
-          id: 'pm_001',
-          type: 'card',
-          last4: '4242',
-          brand: 'Visa',
-          expiryMonth: 12,
-          expiryYear: 2025,
-          isDefault: true,
-        },
-        {
-          id: 'pm_002',
-          type: 'paypal',
-          email: 'user@example.com',
-          isDefault: false,
-        },
-      ]);
-
-      setLoading(false);
-    }, 500);
+    // TODO: Fetch real invoices + payment methods from Stripe API when integration is built
+    setLoading(false);
   }, []);
 
   const handleSetDefault = async (methodId: string) => {
@@ -371,12 +324,8 @@ export default function BillingSettingsPage() {
               </button>
             </div>
 
-            <div className="p-4 bg-muted/50 rounded-lg">
-              <p className="font-medium">HSAFX World User</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                123 Tech Street<br />
-                Dubai, UAE 12345
-              </p>
+            <div className="p-4 bg-muted/50 rounded-lg text-center text-muted-foreground">
+              <p>No billing address on file.</p>
             </div>
           </section>
 

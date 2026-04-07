@@ -78,9 +78,9 @@ class VideoConverter:
         self, input_path: Path, opts: dict, out_dir: Path
     ) -> dict[str, Any]:
         """Transcode video to different format/codec."""
-        from src.core.param_validation import clamp_int
-        fmt = opts.get("outputFormat", "mp4")
-        codec = opts.get("codec", "libx264")
+        from src.core.param_validation import clamp_int, validate_video_codec, validate_output_format
+        fmt = validate_output_format(opts.get("outputFormat", "mp4"))
+        codec = validate_video_codec(opts.get("codec", "libx264"))
         crf = clamp_int(opts.get("crf", 23), min_val=0, max_val=51, name="crf")
         out_path = out_dir / f"output.{fmt}"
 
@@ -97,17 +97,18 @@ class VideoConverter:
         self, input_path: Path, opts: dict, out_dir: Path
     ) -> dict[str, Any]:
         """Trim video to start/end timestamps."""
-        start = opts.get("start", "00:00:00")
+        from src.core.param_validation import validate_timestamp, validate_output_format
+        start = validate_timestamp(opts.get("start", "00:00:00"), name="start")
         end = opts.get("end", None)
         duration = opts.get("duration", None)
-        fmt = opts.get("outputFormat", "mp4")
+        fmt = validate_output_format(opts.get("outputFormat", "mp4"))
         out_path = out_dir / f"trimmed.{fmt}"
 
         cmd = [FFMPEG, "-y", "-i", str(input_path), "-ss", str(start)]
         if end:
-            cmd.extend(["-to", str(end)])
+            cmd.extend(["-to", validate_timestamp(str(end), name="end")])
         elif duration:
-            cmd.extend(["-t", str(duration)])
+            cmd.extend(["-t", validate_timestamp(str(duration), name="duration")])
         cmd.extend(["-c", "copy", str(out_path)])
         return await self._run_ffmpeg(cmd, out_path)
 
@@ -137,10 +138,10 @@ class VideoConverter:
         self, input_path: Path, opts: dict, out_dir: Path
     ) -> dict[str, Any]:
         """Compress video to reduce file size."""
-        from src.core.param_validation import clamp_int
+        from src.core.param_validation import clamp_int, validate_preset, validate_output_format
         crf = clamp_int(opts.get("crf", 28), min_val=0, max_val=51, name="crf")
-        preset = opts.get("preset", "medium")
-        fmt = opts.get("outputFormat", "mp4")
+        preset = validate_preset(opts.get("preset", "medium"))
+        fmt = validate_output_format(opts.get("outputFormat", "mp4"))
         out_path = out_dir / f"compressed.{fmt}"
 
         cmd = [
@@ -155,13 +156,16 @@ class VideoConverter:
         self, input_path: Path, opts: dict, out_dir: Path
     ) -> dict[str, Any]:
         """Extract audio track from video."""
-        fmt = opts.get("audioFormat", "mp3")
-        bitrate = opts.get("bitrate", "192k")
+        from src.core.param_validation import validate_output_format, validate_bitrate, validate_audio_codec
+        fmt = validate_output_format(opts.get("audioFormat", "mp3"))
+        bitrate = validate_bitrate(opts.get("bitrate", "192k"))
         out_path = out_dir / f"audio.{fmt}"
+
+        codec = validate_audio_codec("libmp3lame" if fmt == "mp3" else "aac")
 
         cmd = [
             FFMPEG, "-y", "-i", str(input_path),
-            "-vn", "-acodec", "libmp3lame" if fmt == "mp3" else "aac",
+            "-vn", "-acodec", codec,
             "-b:a", bitrate,
             str(out_path),
         ]

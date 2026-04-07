@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
       .values({ b2bPlanId, b2bSuiteId, monthlyLimit })
       .onConflictDoUpdate({
         target: [b2bPlanQuotas.b2bPlanId, b2bPlanQuotas.b2bSuiteId],
-        set: { monthlyLimit, updatedAt: new Date() },
+        set: { monthlyLimit } as Record<string, unknown>,
       })
       .returning();
 
@@ -126,8 +126,7 @@ export async function PATCH(request: NextRequest) {
       .update(b2bPlanQuotas)
       .set({
         ...(monthlyLimit !== undefined && { monthlyLimit }),
-        updatedAt: new Date(),
-      })
+      } as Record<string, unknown>)
       .where(eq(b2bPlanQuotas.id, id))
       .returning();
 

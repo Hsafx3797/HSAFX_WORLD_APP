@@ -370,14 +370,14 @@ describe('POST /api/v1/batch', () => {
 
       expect(mockCreateJob).toHaveBeenCalledTimes(2);
 
-      const call1 = mockCreateJob.mock.calls[0][0];
+      const call1 = mockCreateJob.mock.calls[0]![0];
       expect(call1.engineName).toBe('case');
       expect(call1.input).toBe('a');
       expect(call1.options.style).toBe('camel');
       expect(call1.options._batchId).toMatch(/^batch_/);
       expect(call1.source).toBe('api_v1_batch');
 
-      const call2 = mockCreateJob.mock.calls[1][0];
+      const call2 = mockCreateJob.mock.calls[1]![0];
       expect(call2.engineName).toBe('hash');
       expect(call2.input).toBe('b');
     });
@@ -393,7 +393,7 @@ describe('POST /api/v1/batch', () => {
         ],
       });
 
-      const opts = mockCreateJob.mock.calls[0][0].options;
+      const opts = mockCreateJob.mock.calls[0]![0].options;
       expect(opts.style).toBe('camel');
       expect(opts._engineName).toBe('case');
       expect(opts._isB2b).toBe(true);

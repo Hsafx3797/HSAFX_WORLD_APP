@@ -8,6 +8,7 @@ use axum::{
     Router,
 };
 use serde::{Deserialize, Serialize};
+use subtle::ConstantTimeEq;
 use tower_http::cors::CorsLayer;
 use tracing::info;
 
@@ -49,7 +50,7 @@ fn verify_secret(headers: &HeaderMap) -> Result<(), (StatusCode, Json<ErrorRespo
         .and_then(|v| v.to_str().ok())
         .unwrap_or_default();
 
-    if provided != expected {
+    if provided.as_bytes().ct_eq(expected.as_bytes()).unwrap_u8() != 1 {
         return Err((
             StatusCode::UNAUTHORIZED,
             Json(ErrorResponse {

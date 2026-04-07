@@ -9,7 +9,7 @@
 
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
-import { Resource } from '@opentelemetry/resources';
+import { resourceFromAttributes } from '@opentelemetry/resources';
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
 import { trace, SpanStatusCode, type Span } from '@opentelemetry/api';
 import client from 'prom-client';
@@ -27,7 +27,7 @@ export function initTracing(): void {
 
   if (_sdk) return;
 
-  const resource = new Resource({
+  const resource = resourceFromAttributes({
     [ATTR_SERVICE_NAME]: 'hsafx-web',
     [ATTR_SERVICE_VERSION]: process.env.NEXT_PUBLIC_APP_VERSION ?? '1.0.0',
     'deployment.environment': process.env.NODE_ENV ?? 'development',
