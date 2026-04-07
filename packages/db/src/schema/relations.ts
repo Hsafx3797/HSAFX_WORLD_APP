@@ -78,6 +78,11 @@ import {
   b2bToolSuiteOverrides,
   b2bUsage,
 } from './b2b';
+import {
+  organizations,
+  organizationMembers,
+  organizationApiKeys,
+} from './organizations';
 
 // ═══════════════════════════════════════════════════════════════
 // USERS
@@ -148,6 +153,9 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   // 1:M B2B
   b2bSubscriptions: many(b2bSubscriptions),
   b2bUsage: many(b2bUsage),
+
+  // 1:M Organizations
+  organizationMemberships: many(organizationMembers),
 }));
 
 export const userPreferencesRelations = relations(userPreferences, ({ one }) => ({
@@ -702,6 +710,41 @@ export const dailyProTrialsRelations = relations(dailyProTrials, ({ one }) => ({
 export const userOnboardingRelations = relations(userOnboarding, ({ one }) => ({
   user: one(users, {
     fields: [userOnboarding.userId],
+    references: [users.id],
+  }),
+}));
+
+// ═══════════════════════════════════════════════════════════════
+// ORGANIZATIONS
+// ═══════════════════════════════════════════════════════════════
+
+export const organizationsRelations = relations(organizations, ({ one, many }) => ({
+  createdByUser: one(users, {
+    fields: [organizations.createdBy],
+    references: [users.id],
+  }),
+  members: many(organizationMembers),
+  apiKeys: many(organizationApiKeys),
+}));
+
+export const organizationMembersRelations = relations(organizationMembers, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [organizationMembers.organizationId],
+    references: [organizations.id],
+  }),
+  user: one(users, {
+    fields: [organizationMembers.userId],
+    references: [users.id],
+  }),
+}));
+
+export const organizationApiKeysRelations = relations(organizationApiKeys, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [organizationApiKeys.organizationId],
+    references: [organizations.id],
+  }),
+  createdByUser: one(users, {
+    fields: [organizationApiKeys.createdBy],
     references: [users.id],
   }),
 }));
