@@ -6,7 +6,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { db, users, subscriptions, tools, toolExecutions, coinTransactions, sql } from '@hsafx/db';
+import { db, users, subscriptions, tools, toolExecutions, coinTransactions, fileUploads, sql } from '@hsafx/db';
 import { createLogger } from '@hsafx/shared/logger';
 import { requireAdminRole } from '@/lib/require-admin';
 import { adminResponse, adminErrorResponse } from '@/lib/admin-response';
@@ -37,6 +37,7 @@ export async function GET() {
       errorCountResult,
       totalExecutionsResult,
       avgResponseTimeResult,
+      storageUsedResult,
     ] = await Promise.all([
       // Total users (excluding deleted)
       db.select({ count: sql<number>`COUNT(*)` })
@@ -102,6 +103,11 @@ export async function GET() {
       db.select({ avg: sql<number>`COALESCE(AVG(${toolExecutions.executionTime}), 0)` })
         .from(toolExecutions)
         .where(sql`${toolExecutions.status} = 'succeeded' AND ${toolExecutions.createdAt} >= ${thirtyDaysAgo}`),
+
+      // Storage used (sum of all non-deleted uploaded files, in bytes)
+      db.select({ sum: sql<number>`COALESCE(SUM(${fileUploads.fileSize}), 0)` })
+        .from(fileUploads)
+        .where(sql`${fileUploads.deletedAt} IS NULL AND ${fileUploads.status} != 'failed'`),
     ]);
 
     // Calculate metrics
@@ -118,6 +124,8 @@ export async function GET() {
     const errorCount = errorCountResult[0]?.count ?? 0;
     const totalExecutions = totalExecutionsResult[0]?.count ?? 0;
     const avgResponseTime = Math.round(avgResponseTimeResult[0]?.avg ?? 0);
+    const storageUsedBytes = storageUsedResult[0]?.sum ?? 0;
+    const storageUsedGB = Number((storageUsedBytes / (1024 * 1024 * 1024)).toFixed(2));
 
     // Calculate trends (percentage change)
     const calculateTrend = (current: number, previous: number): number => {
@@ -140,7 +148,7 @@ export async function GET() {
       dailyExecutions,
       errorRate,
       avgResponseTime,
-      storageUsed: 0, // TODO [G18-a]: Implement storage tracking — query R2/S3 bucket size or track via upload events.
+      storageUsed: storageUsedGB,
       trends: {
         users: usersTrend,
         subscriptions: subscriptionsTrend,
