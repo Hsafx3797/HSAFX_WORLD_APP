@@ -20,8 +20,12 @@
 
 import { test, expect } from '@playwright/test';
 
-const EMAIL = process.env.ADMIN_EMAIL ?? 'admin@hsafx.world';
-const PASSWORD = process.env.ADMIN_PASSWORD ?? 'admin123456';
+const EMAIL = process.env.ADMIN_EMAIL;
+const PASSWORD = process.env.ADMIN_PASSWORD;
+
+if (!EMAIL || !PASSWORD) {
+  throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD env vars are required for E2E tests');
+}
 
 test.describe('Login', () => {
   // These run without stored auth

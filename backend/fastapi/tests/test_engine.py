@@ -3,9 +3,11 @@ Tests for Engine API — POST /execute/{engine_name} and GET /engines.
 """
 
 import os
+import secrets
 
 # Set INTERNAL_API_SECRET before any app module is imported
-os.environ["INTERNAL_API_SECRET"] = "test-engine-secret"
+_engine_test_secret = secrets.token_hex(32)
+os.environ["INTERNAL_API_SECRET"] = _engine_test_secret
 
 import pytest
 from unittest.mock import AsyncMock, patch
@@ -15,10 +17,10 @@ from fastapi.testclient import TestClient
 @pytest.fixture
 def engine_client():
     """Create a test client with INTERNAL_API_SECRET set."""
-    os.environ["INTERNAL_API_SECRET"] = "test-engine-secret"
+    os.environ["INTERNAL_API_SECRET"] = _engine_test_secret
     # Re-import to pick up the env var
     from src.api import engine as engine_module
-    engine_module.INTERNAL_SECRET = "test-engine-secret"
+    engine_module.INTERNAL_SECRET = _engine_test_secret
 
     from src.main import create_app
     app = create_app()
@@ -29,7 +31,7 @@ def engine_client():
 def engine_headers():
     """Auth headers for engine endpoints."""
     return {
-        "X-Internal-Secret": "test-engine-secret",
+        "X-Internal-Secret": _engine_test_secret,
     }
 
 

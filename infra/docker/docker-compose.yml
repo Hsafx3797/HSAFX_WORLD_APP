@@ -28,7 +28,7 @@ services:
     environment:
       POSTGRES_DB: hsafx_dev
       POSTGRES_USER: hsafx
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hsafx_local_dev}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -69,8 +69,8 @@ services:
       - HOST=0.0.0.0
       - PORT=8000
       - SENTRY_DSN=${SENTRY_DSN:-}
-      - SECRET_KEY=${SECRET_KEY:-dev-secret-key}
-      - INTERNAL_SECRET=${INTERNAL_SECRET:-dev-internal-secret}
+      - SECRET_KEY=${SECRET_KEY:?SECRET_KEY is required}
+      - INTERNAL_SECRET=${INTERNAL_SECRET:?INTERNAL_SECRET is required}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
       - S3_BUCKET=${S3_BUCKET:-hsafx-uploads}
