@@ -14,7 +14,6 @@
  * Falls back to console logging when Sentry is not configured.
  *
  * TODO [G11]: Create error.tsx files at key route segments (app/, dashboard/, settings/) for proper error boundaries.
- * TODO [G17]: Add OpenTelemetry distributed tracing and Prometheus metrics endpoint for production observability.
  */
 
 // ─── Types ──────────────────────────────────────────────────

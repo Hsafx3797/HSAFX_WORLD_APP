@@ -10,6 +10,10 @@ export async function register() {
   // Only validate on the Node.js server runtime (not Edge)
   if (process.env.NEXT_RUNTIME !== 'nodejs') return;
 
+  // ── OpenTelemetry tracing (when OTEL_EXPORTER_OTLP_ENDPOINT is set) ──
+  const { initTracing } = await import('./lib/telemetry');
+  initTracing();
+
   const required: { name: string; condition: () => boolean }[] = [
     // ── Core infrastructure ──
     {
