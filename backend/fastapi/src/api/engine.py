@@ -65,6 +65,11 @@ NEXTJS_CALLBACK_URL = os.getenv(
     "NEXTJS_CALLBACK_URL", "http://localhost:3000/api/internal/job-complete"
 )
 
+# Production: callback URL must use HTTPS (carries internal secret)
+_env = os.getenv("ENVIRONMENT", "development")
+if _env == "production" and NEXTJS_CALLBACK_URL.startswith("http://") and not NEXTJS_CALLBACK_URL.startswith(("http://localhost", "http://127.0.0.1")):
+    raise RuntimeError("NEXTJS_CALLBACK_URL must use HTTPS in production")
+
 # ─── Handler singletons ────────────────────────────────────────
 
 _image_converter = ImageConverter()

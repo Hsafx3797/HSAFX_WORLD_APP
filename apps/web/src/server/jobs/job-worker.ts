@@ -26,6 +26,23 @@ import type { EngineRuntime } from '@/lib/engine-constants';
 
 const log = createLogger('job-worker');
 
+/**
+ * In production, internal service URLs MUST use HTTPS to prevent
+ * credentials (X-Internal-Secret) from being sent over plaintext.
+ */
+function validateServiceUrl(url: string, name: string): void {
+  if (
+    process.env.NODE_ENV === 'production' &&
+    url.startsWith('http://') &&
+    !url.startsWith('http://localhost') &&
+    !url.startsWith('http://127.0.0.1')
+  ) {
+    throw new Error(
+      `${name} must use HTTPS in production (got ${url.slice(0, 40)}...)`,
+    );
+  }
+}
+
 // ─── TTL extension for long-running jobs ──────────────────────
 
 async function extendJobTTL(jobId: string): Promise<void> {
@@ -290,6 +307,7 @@ async function executePythonEngine(job: Job, engineName: string): Promise<JobRes
 
   const fastApiUrl =
     process.env.FASTAPI_INTERNAL_URL ?? 'http://localhost:8000';
+  validateServiceUrl(fastApiUrl, 'FASTAPI_INTERNAL_URL');
   const internalSecret = process.env.INTERNAL_API_SECRET;
 
   if (!internalSecret) {
@@ -387,6 +405,8 @@ async function executeRustEngine(job: Job, engineName: string): Promise<JobResul
     log.info('RUST_SERVICE_URL not set, falling back to Node.js engine', { engineName });
     return executeNodeEngine(job, engineName);
   }
+
+  validateServiceUrl(rustServiceUrl, 'RUST_SERVICE_URL');
 
   await updateJob(job.id, { progress: 50 });
 
