@@ -12,8 +12,6 @@
  * Then wire into instrumentation.ts and error.tsx as needed.
  *
  * Falls back to console logging when Sentry is not configured.
- *
- * TODO [G11]: Create error.tsx files at key route segments (app/, dashboard/, settings/) for proper error boundaries.
  */
 
 // ─── Types ──────────────────────────────────────────────────
