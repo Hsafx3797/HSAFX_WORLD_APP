@@ -1,0 +1,80 @@
+{
+  "name": "e-commerce",
+  "tables": [
+    {
+      "name": "users",
+      "columns": [
+        { "name": "id", "type": "uuid", "nullable": false, "primaryKey": true, "unique": true, "default": "gen_random_uuid()" },
+        { "name": "email", "type": "varchar(255)", "nullable": false, "primaryKey": false, "unique": true },
+        { "name": "name", "type": "varchar(100)", "nullable": false, "primaryKey": false, "unique": false },
+        { "name": "password_hash", "type": "varchar(255)", "nullable": false, "primaryKey": false, "unique": false },
+        { "name": "role", "type": "varchar(20)", "nullable": false, "primaryKey": false, "unique": false, "default": "'customer'" },
+        { "name": "created_at", "type": "timestamp", "nullable": false, "primaryKey": false, "unique": false, "default": "now()" }
+      ],
+      "indexes": [
+        { "name": "idx_users_email", "columns": ["email"], "unique": true },
+        { "name": "idx_users_role", "columns": ["role"], "unique": false }
+      ],
+      "comment": "Registered users table"
+    },
+    {
+      "name": "products",
+      "columns": [
+        { "name": "id", "type": "serial", "nullable": false, "primaryKey": true, "unique": true },
+        { "name": "name", "type": "varchar(200)", "nullable": false, "primaryKey": false, "unique": false },
+        { "name": "description", "type": "text", "nullable": true, "primaryKey": false, "unique": false },
+        { "name": "price", "type": "decimal(10,2)", "nullable": false, "primaryKey": false, "unique": false },
+        { "name": "stock", "type": "integer", "nullable": false, "primaryKey": false, "unique": false, "default": "0" },
+        { "name": "category_id", "type": "integer", "nullable": true, "primaryKey": false, "unique": false, "references": { "table": "categories", "column": "id" } },
+        { "name": "created_at", "type": "timestamp", "nullable": false, "primaryKey": false, "unique": false, "default": "now()" }
+      ],
+      "indexes": [
+        { "name": "idx_products_category", "columns": ["category_id"], "unique": false },
+        { "name": "idx_products_price", "columns": ["price"], "unique": false }
+      ]
+    },
+    {
+      "name": "categories",
+      "columns": [
+        { "name": "id", "type": "serial", "nullable": false, "primaryKey": true, "unique": true },
+        { "name": "name", "type": "varchar(100)", "nullable": false, "primaryKey": false, "unique": true },
+        { "name": "parent_id", "type": "integer", "nullable": true, "primaryKey": false, "unique": false, "references": { "table": "categories", "column": "id" } }
+      ]
+    },
+    {
+      "name": "orders",
+      "columns": [
+        { "name": "id", "type": "serial", "nullable": false, "primaryKey": true, "unique": true },
+        { "name": "user_id", "type": "uuid", "nullable": false, "primaryKey": false, "unique": false, "references": { "table": "users", "column": "id" } },
+        { "name": "total", "type": "decimal(10,2)", "nullable": false, "primaryKey": false, "unique": false },
+        { "name": "status", "type": "varchar(20)", "nullable": false, "primaryKey": false, "unique": false, "default": "'pending'" },
+        { "name": "created_at", "type": "timestamp", "nullable": false, "primaryKey": false, "unique": false, "default": "now()" }
+      ],
+      "indexes": [
+        { "name": "idx_orders_user", "columns": ["user_id"], "unique": false },
+        { "name": "idx_orders_status", "columns": ["status"], "unique": false }
+      ]
+    },
+    {
+      "name": "order_items",
+      "columns": [
+        { "name": "id", "type": "serial", "nullable": false, "primaryKey": true, "unique": true },
+        { "name": "order_id", "type": "integer", "nullable": false, "primaryKey": false, "unique": false, "references": { "table": "orders", "column": "id" } },
+        { "name": "product_id", "type": "integer", "nullable": false, "primaryKey": false, "unique": false, "references": { "table": "products", "column": "id" } },
+        { "name": "quantity", "type": "integer", "nullable": false, "primaryKey": false, "unique": false },
+        { "name": "unit_price", "type": "decimal(10,2)", "nullable": false, "primaryKey": false, "unique": false }
+      ],
+      "indexes": [
+        { "name": "idx_order_items_order", "columns": ["order_id"], "unique": false },
+        { "name": "idx_order_items_product", "columns": ["product_id"], "unique": false }
+      ]
+    }
+  ],
+  "relationships": [
+    { "from": { "table": "products", "column": "category_id" }, "to": { "table": "categories", "column": "id" }, "type": "one-to-many" },
+    { "from": { "table": "categories", "column": "parent_id" }, "to": { "table": "categories", "column": "id" }, "type": "one-to-many" },
+    { "from": { "table": "orders", "column": "user_id" }, "to": { "table": "users", "column": "id" }, "type": "one-to-many" },
+    { "from": { "table": "order_items", "column": "order_id" }, "to": { "table": "orders", "column": "id" }, "type": "one-to-many" },
+    { "from": { "table": "order_items", "column": "product_id" }, "to": { "table": "products", "column": "id" }, "type": "one-to-many" }
+  ]
+}

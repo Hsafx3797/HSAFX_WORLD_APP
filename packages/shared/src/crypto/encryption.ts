@@ -11,7 +11,10 @@ const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12; // GCM standard
 const AUTH_TAG_LENGTH = 16;
 
+let _cachedKey: Buffer | null = null;
+
 function getKey(): Buffer {
+  if (_cachedKey) return _cachedKey;
   const hex = process.env.ENCRYPTION_KEY;
   if (!hex || hex.length !== 64) {
     throw new Error(
@@ -19,7 +22,8 @@ function getKey(): Buffer {
       'Generate one with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"',
     );
   }
-  return Buffer.from(hex, 'hex');
+  _cachedKey = Buffer.from(hex, 'hex');
+  return _cachedKey;
 }
 
 /**

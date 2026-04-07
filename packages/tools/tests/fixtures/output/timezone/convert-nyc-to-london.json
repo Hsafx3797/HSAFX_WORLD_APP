@@ -1,0 +1,19 @@
+{
+  "from": {
+    "timezone": "America/New_York",
+    "datetime": "2024-06-15 07:00:00",
+    "offset": "-05:00",
+    "abbr": "EST"
+  },
+  "to": {
+    "timezone": "Europe/London",
+    "datetime": "2024-06-15 12:00:00",
+    "offset": "+00:00",
+    "abbr": "GMT"
+  },
+  "difference": {
+    "hours": 5,
+    "minutes": 0,
+    "formatted": "+5h 0m"
+  }
+}

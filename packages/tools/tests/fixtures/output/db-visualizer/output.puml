@@ -1,0 +1,58 @@
+@startuml
+!theme plain
+hide circle
+skinparam linetype ortho
+
+entity "users" {
+  *id : uuid <<PK>>
+  --
+  *email : varchar(255)
+  *name : varchar(100)
+  *password_hash : varchar(255)
+  *role : varchar(20)
+  *created_at : timestamp
+}
+
+entity "products" {
+  *id : serial <<PK>>
+  --
+  *name : varchar(200)
+  description : text
+  *price : decimal(10,2)
+  *stock : integer
+  category_id : integer <<FK>>
+  *created_at : timestamp
+}
+
+entity "categories" {
+  *id : serial <<PK>>
+  --
+  *name : varchar(100)
+  parent_id : integer <<FK>>
+}
+
+entity "orders" {
+  *id : serial <<PK>>
+  --
+  *user_id : uuid <<FK>>
+  *total : decimal(10,2)
+  *status : varchar(20)
+  *created_at : timestamp
+}
+
+entity "order_items" {
+  *id : serial <<PK>>
+  --
+  *order_id : integer <<FK>>
+  *product_id : integer <<FK>>
+  *quantity : integer
+  *unit_price : decimal(10,2)
+}
+
+products ||--o{ categories
+categories ||--o{ categories
+orders ||--o{ users
+order_items ||--o{ orders
+order_items ||--o{ products
+
+@enduml

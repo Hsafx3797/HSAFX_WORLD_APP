@@ -21,7 +21,7 @@ export default function SignInPage() {
         password,
       });
       toast.success('Signed in successfully!');
-      router.push('/tools');
+      router.push('/dashboard');
     } catch (error) {
       toast.error('Failed to sign in. Please check your credentials.');
       console.error('Sign in error:', error);
@@ -34,7 +34,7 @@ export default function SignInPage() {
     try {
       await authClient.signIn.social({
         provider,
-        callbackURL: '/tools',
+        callbackURL: '/dashboard',
       });
     } catch (error) {
       toast.error(`Failed to sign in with ${provider}`);

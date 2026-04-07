@@ -51,6 +51,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     return (
       <button
+        type="button"
         className={classes}
         ref={ref}
         disabled={disabled || loading}

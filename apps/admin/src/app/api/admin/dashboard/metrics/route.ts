@@ -7,9 +7,16 @@
 
 import { NextResponse } from 'next/server';
 import { db, users, subscriptions, tools, toolExecutions, coinTransactions, sql } from '@hsafx/db';
+import { createLogger } from '@hsafx/shared/logger';
+import { requireAdminRole } from '@/lib/require-admin';
+import { adminResponse, adminErrorResponse } from '@/lib/admin-response';
+
+const log = createLogger('admin-metrics');
 
 export async function GET() {
   try {
+    const authResult = await requireAdminRole('admin.view');
+    if (authResult instanceof NextResponse) return authResult;
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
@@ -133,7 +140,7 @@ export async function GET() {
       dailyExecutions,
       errorRate,
       avgResponseTime,
-      storageUsed: 0, // TODO: Implement storage tracking
+      storageUsed: 0, // TODO [G18-a]: Implement storage tracking — query R2/S3 bucket size or track via upload events.
       trends: {
         users: usersTrend,
         subscriptions: subscriptionsTrend,
@@ -144,12 +151,9 @@ export async function GET() {
       },
     };
 
-    return NextResponse.json(metrics);
+    return adminResponse(metrics);
   } catch (error) {
-    console.error('Failed to fetch dashboard metrics:', error);
-    return NextResponse.json(
-      { code: 'FETCH_ERROR', message: 'Failed to fetch dashboard metrics' },
-      { status: 500 }
-    );
+    log.error('Failed to fetch dashboard metrics', { err: error });
+    return adminErrorResponse('FETCH_ERROR', 'Failed to fetch dashboard metrics');
   }
 }

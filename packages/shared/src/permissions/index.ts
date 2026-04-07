@@ -37,36 +37,13 @@ export {
 } from './plan-access';
 export type { UsageLimits } from './plan-access';
 
-// Admin RBAC
-export {
-  ROLE_LEVELS,
-  ROLE_PERMISSIONS,
-  ROLE_ASSIGNMENT_RULES,
-  DESTRUCTIVE_OPERATIONS,
-  ROLE_DISPLAY_NAMES,
-  ROLE_DESCRIPTIONS,
-  hasRolePermission,
-  hasAnyRolePermission,
-  getAllRolePermissions,
-  getCombinedPermissions,
-  canAssignRole,
-  getHighestRoleLevel,
-  isRoleLevelHigher,
-  requiresTwoFactor,
-} from './admin-rbac';
-
 // CASL Abilities
 export {
   buildUserAbility,
-  buildAdminAbility,
   canUseToolByCategory,
-  canAdminDo,
 } from './ability';
 export type {
   UserAbility,
-  AdminAbility,
   UserSubjects,
   UserActions,
-  AdminSubjects,
-  AdminActions,
 } from './ability';

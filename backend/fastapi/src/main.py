@@ -7,6 +7,12 @@ Stateless compute service. Per the Backend Ownership Matrix:
   - Internal secret auth for Next.js → FastAPI calls
   - Public endpoints for tool execution and capabilities
 
+TODO [G5]: 21 tool handlers still raise NotImplementedError (stubs).
+  Complete implementations for: video-transcode, video-metadata-strip,
+  audio-metadata-strip, pdf-deskew, pdf-remove-annotations, pdf-rename-content,
+  and others. Check each handler file for NotImplementedError.
+  See: docs/PLANNING/30_TOOLS_CATALOG.md
+
 Active routers: tools (compute), jobs (Redis), tracking (scraping)
 Internal router: /internal/* (callback from Next.js)
 """
@@ -111,6 +117,10 @@ def create_app() -> FastAPI:
     # Internal API for Next.js ↔ FastAPI communication (Task 3.5)
     from src.api.internal import router as internal_router
     app.include_router(internal_router, prefix="/internal", tags=["Internal"])
+
+    # Engine API — unified engine execution (B2B Phase 5)
+    from src.api.engine import router as engine_router
+    app.include_router(engine_router, tags=["Engine"])
 
     @app.get("/health")
     async def health_check():

@@ -18,5 +18,10 @@ export * from './schema';
 export * from './code';
 export * from './specialized';
 
-// Web app compatibility layer (includes all re-exports and additional functions)
-export * from './compat';
+// Utility functions (escape/unescape, encoding, color converters)
+export * from './utilities';
+
+// Compatibility aliases
+export { jsonSchemaToTypeScript as jsonSchemaToTypescript } from './schema';
+export { typeScriptToJavaScript as typescriptToJavascript } from './code';
+export { parseHttpHeaders as httpHeadersToJson } from './api';

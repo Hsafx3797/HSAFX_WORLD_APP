@@ -89,8 +89,8 @@ const TabsList = React.forwardRef<
         return;
     }
 
-    tabs[nextIndex].focus();
-    tabs[nextIndex].click();
+    tabs[nextIndex]!.focus();
+    tabs[nextIndex]!.click();
   };
 
   return (

@@ -13,6 +13,7 @@ import {
   apiErrorResponse,
   type ApiContext,
 } from '@/lib/api-v1-auth';
+import { ApiErrorCode } from '@hsafx/shared/errors';
 
 export async function GET(request: NextRequest) {
   const result = await authenticateApiKey(request);
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
     );
   } catch (err) {
     return apiErrorResponse(
-      'B001',
+      ApiErrorCode.SERVER_ERROR,
       'Failed to retrieve balance',
       ctx,
       500,

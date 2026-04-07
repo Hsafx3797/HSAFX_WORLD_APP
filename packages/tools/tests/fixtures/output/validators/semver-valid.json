@@ -1,0 +1,37 @@
+{
+  "1.0.0": {
+    "valid": true,
+    "details": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    }
+  },
+  "2.5.3-beta.1": {
+    "valid": true,
+    "details": {
+      "major": 2,
+      "minor": 5,
+      "patch": 3,
+      "prerelease": "beta.1"
+    }
+  },
+  "0.0.1-alpha+build.123": {
+    "valid": true,
+    "details": {
+      "major": 0,
+      "minor": 0,
+      "patch": 1,
+      "prerelease": "alpha",
+      "build": "build.123"
+    }
+  },
+  "10.20.30": {
+    "valid": true,
+    "details": {
+      "major": 10,
+      "minor": 20,
+      "patch": 30
+    }
+  }
+}

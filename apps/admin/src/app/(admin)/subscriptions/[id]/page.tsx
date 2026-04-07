@@ -145,7 +145,7 @@ export default function SubscriptionDetailPage() {
 
   const isActive = subscription.status === 'active' || subscription.status === 'trialing';
   const isPaused = subscription.status === 'paused';
-  const isCanceled = subscription.status === 'canceled' || subscription.status === 'cancelled';
+  const isCanceled = subscription.status === 'canceled';
 
   return (
     <div className="p-6 space-y-6">

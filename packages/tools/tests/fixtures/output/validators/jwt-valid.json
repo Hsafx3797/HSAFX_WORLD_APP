@@ -1,0 +1,10 @@
+{
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ...": {
+    "valid": true,
+    "details": {
+      "algorithm": "HS256",
+      "type": "JWT",
+      "subject": "1234567890"
+    }
+  }
+}

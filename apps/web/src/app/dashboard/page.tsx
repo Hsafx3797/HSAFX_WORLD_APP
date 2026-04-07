@@ -14,7 +14,7 @@ import { OnboardingChecklist } from '@/components/onboarding-checklist';
 import { ReferralCard } from '@/components/referral-card';
 import { CoinEventBanner } from '@/components/coin-event-banner';
 import { trpc } from '@/lib/trpc';
-import { toolCounts } from '@/lib/tools/registry';
+import { ALL_ENGINE_NAMES } from '@/lib/engine-constants';
 import { toast } from 'sonner';
 
 export default function DashboardPage() {
@@ -174,18 +174,15 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Tools Used */}
+        {/* Engines Available */}
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Tools Available</CardDescription>
-            <CardTitle className="text-3xl">{toolCounts.total}+</CardTitle>
+            <CardDescription>Engines Available</CardDescription>
+            <CardTitle className="text-3xl">{ALL_ENGINE_NAMES.length}</CardTitle>
           </CardHeader>
           <CardContent>
-            <Link href="/tools">
-              <Button size="sm" variant="outline">
-                Browse Tools
-              </Button>
-            </Link>
+            {/* TODO: Link to /tools once tool browse page is built (Task 1000) */}
+            <p className="text-sm text-muted-foreground">Browse via search (Ctrl+K)</p>
           </CardContent>
         </Card>
 
@@ -222,7 +219,8 @@ export default function DashboardPage() {
       <div className="mb-8">
         <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <Link href="/tools">
+          {/* TODO: Link to /tools once tool browse page is built (Task 1000) */}
+          <Link href="/dashboard">
             <Card className="hover:border-primary/50 transition-colors cursor-pointer h-full">
               <CardContent className="flex items-center gap-4 pt-6">
                 <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -230,7 +228,7 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <h3 className="font-semibold">Use a Tool</h3>
-                  <p className="text-sm text-muted-foreground">Browse {toolCounts.total}+ available tools</p>
+                  <p className="text-sm text-muted-foreground">Browse {ALL_ENGINE_NAMES.length} available engines</p>
                 </div>
               </CardContent>
             </Card>

@@ -140,7 +140,7 @@ export interface SubscriptionFilters {
 
 // ==================== BILLING ====================
 
-export type TransactionType = 'purchase' | 'reward' | 'deduction' | 'refund' | 'adjustment' | 'bonus' | 'usage';
+export type TransactionType = 'grant' | 'purchase' | 'spend' | 'refund' | 'adjustment' | 'reward' | 'referral';
 
 export interface CoinTransaction {
   id: string;

@@ -42,19 +42,9 @@ interface NavItem {
   children?: { label: string; href: string; description?: string }[];
 }
 
+// TODO: Re-add Tools nav item with children once tool routes are built (Task 1000)
+// Each child should link to /tools/category/<category> pages
 const navItems: NavItem[] = [
-  {
-    label: 'Tools',
-    href: '/tools',
-    children: [
-      { label: 'Text Tools', href: '/tools/category/text', description: 'Transform and manipulate text' },
-      { label: 'Data Converters', href: '/tools/category/converters', description: 'Convert between data formats' },
-      { label: 'Media Tools', href: '/tools/category/media', description: 'Process images, videos, PDFs' },
-      { label: 'Generators', href: '/tools/category/generators', description: 'Generate UUIDs, passwords, etc.' },
-      { label: 'Calculators', href: '/tools/category/calculators', description: 'Various calculations' },
-      { label: 'Developer Tools', href: '/tools/category/dev', description: 'Dev-focused utilities' },
-    ],
-  },
   { label: 'Pricing', href: '/pricing' },
   { label: 'API', href: '/api-docs' },
 ];
@@ -497,7 +487,7 @@ export function Footer() {
           <div>
             <h3 className="font-semibold mb-4">Product</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link href="/tools" className="hover:text-primary">All Tools</Link></li>
+              {/* TODO: Re-add "All Tools" link once /tools route is built (Task 1000) */}
               <li><Link href="/pricing" className="hover:text-primary">Pricing</Link></li>
               <li><Link href="/api-docs" className="hover:text-primary">API</Link></li>
               <li><Link href="/changelog" className="hover:text-primary">Changelog</Link></li>
@@ -506,10 +496,8 @@ export function Footer() {
           <div>
             <h3 className="font-semibold mb-4">Categories</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link href="/tools/category/text" className="hover:text-primary">Text Tools</Link></li>
-              <li><Link href="/tools/category/converters" className="hover:text-primary">Data Converters</Link></li>
-              <li><Link href="/tools/category/media" className="hover:text-primary">Media Tools</Link></li>
-              <li><Link href="/tools/category/generators" className="hover:text-primary">Generators</Link></li>
+              {/* TODO: Re-add category links once /tools/category/* routes are built (Task 1000) */}
+              <li className="text-muted-foreground/50 italic">Coming soon</li>
             </ul>
           </div>
           <div>

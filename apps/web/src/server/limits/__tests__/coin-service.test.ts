@@ -10,7 +10,7 @@ import { describe, it, expect } from 'vitest';
 import {
   calculateCoinCost,
   InsufficientCoinsError,
-} from '../../server/limits/coin-service';
+} from '../coin-service';
 
 // ─── calculateCoinCost ──────────────────────────────────────
 

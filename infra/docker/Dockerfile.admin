@@ -18,7 +18,6 @@ COPY packages/db/package.json ./packages/db/
 COPY packages/schemas/package.json ./packages/schemas/
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/theme/package.json ./packages/theme/
-COPY packages/tool-definitions/package.json ./packages/tool-definitions/
 COPY packages/ui/package.json ./packages/ui/
 RUN pnpm install --frozen-lockfile
 

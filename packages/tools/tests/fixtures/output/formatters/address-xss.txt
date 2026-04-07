@@ -1,0 +1,2 @@
+<script>alert('xss')</script>
+<img src=x onerror="alert('test')">, {{7*7}} ' OR '1'='1

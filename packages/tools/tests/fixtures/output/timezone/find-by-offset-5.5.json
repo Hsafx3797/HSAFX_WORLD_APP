@@ -1,0 +1,10 @@
+[
+  {
+    "id": "Asia/Kolkata",
+    "name": "Indian Standard Time",
+    "offset": 330,
+    "abbr": "IST",
+    "city": "Mumbai",
+    "country": "India"
+  }
+]

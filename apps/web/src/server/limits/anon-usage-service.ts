@@ -51,6 +51,50 @@ const TOOL_CLASS_LIMITS: Record<ToolClass, ToolClassConfig> = {
   intelligence: { name: 'Intelligence Tools', dailyLimit: 0 },
 };
 
+/**
+ * In-memory cache for Redis-backed anonymous limits.
+ * Synced from admin config via `syncAnonLimitsToRedis()`.
+ */
+let _cachedAnonLimits: Record<string, number> | null = null;
+let _anonCacheExpiry = 0;
+const ANON_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Load anonymous daily limits from Redis (set by admin panel).
+ * Falls back to the hardcoded defaults above.
+ */
+async function getAnonDailyLimit(toolClass: ToolClass): Promise<number> {
+  const now = Date.now();
+  if (!_cachedAnonLimits || _anonCacheExpiry <= now) {
+    try {
+      const redis = getRedis();
+      const raw = await redis.get('config:anon_limits:daily') as Record<string, number> | null;
+      if (raw && typeof raw === 'object') {
+        _cachedAnonLimits = raw;
+      } else {
+        _cachedAnonLimits = {};
+      }
+    } catch {
+      _cachedAnonLimits = {};
+    }
+    _anonCacheExpiry = now + ANON_CACHE_TTL_MS;
+  }
+  return _cachedAnonLimits[toolClass] ?? TOOL_CLASS_LIMITS[toolClass].dailyLimit;
+}
+
+/**
+ * Sync anonymous limits from admin panel to Redis.
+ * Call from admin config save handler.
+ */
+export async function syncAnonLimitsToRedis(
+  limits: Partial<Record<ToolClass, number>>,
+): Promise<void> {
+  const redis = getRedis();
+  await redis.set('config:anon_limits:daily', JSON.stringify(limits));
+  _cachedAnonLimits = null;
+  _anonCacheExpiry = 0;
+}
+
 // ─── Types ────────────────────────────────────────────────────
 
 export interface AnonUsageCheckResult {
@@ -171,9 +215,9 @@ async function recordUsage(
       ipAddress,
       toolId,
     });
-  } catch {
+  } catch (err) {
     // DB write failure is non-critical — Redis is source of truth for limits
-    log.warn('Failed to persist usage to DB', { fingerprint, toolId });
+    log.warn('Failed to persist usage to DB', { fingerprint, toolId, error: String(err) });
   }
 
   return newCount;
@@ -190,9 +234,10 @@ export async function checkAnonymousLimit(
   toolClass: ToolClass,
 ): Promise<AnonUsageCheckResult> {
   const config = TOOL_CLASS_LIMITS[toolClass];
+  const dailyLimit = await getAnonDailyLimit(toolClass);
 
   // Unlimited tool class
-  if (config.dailyLimit === -1) {
+  if (dailyLimit === -1) {
     return {
       allowed: true,
       usedToday: 0,
@@ -202,7 +247,7 @@ export async function checkAnonymousLimit(
   }
 
   // Blocked tool class (auth required)
-  if (config.dailyLimit === 0) {
+  if (dailyLimit === 0) {
     return {
       allowed: false,
       usedToday: 0,
@@ -217,26 +262,26 @@ export async function checkAnonymousLimit(
   const usedToday = await getRedisUsageCount(fingerprint, toolClass);
 
   // At or over limit
-  if (usedToday >= config.dailyLimit) {
+  if (usedToday >= dailyLimit) {
     return {
       allowed: false,
       usedToday,
-      dailyLimit: config.dailyLimit,
+      dailyLimit,
       toolClass,
       upgradePrompt: 'fullscreen',
-      message: `Daily limit reached for ${config.name}. Sign up for ${config.dailyLimit * 5}+ daily uses!`,
+      message: `Daily limit reached for ${config.name}. Sign up for ${dailyLimit * 5}+ daily uses!`,
     };
   }
 
   // Over 50% — show modal prompt
-  if (usedToday >= Math.floor(config.dailyLimit / 2)) {
+  if (usedToday >= Math.floor(dailyLimit / 2)) {
     return {
       allowed: true,
       usedToday,
-      dailyLimit: config.dailyLimit,
+      dailyLimit,
       toolClass,
       upgradePrompt: 'modal',
-      message: `You've used ${usedToday}/${config.dailyLimit} daily uses. Create a free account for more!`,
+      message: `You've used ${usedToday}/${dailyLimit} daily uses. Create a free account for more!`,
     };
   }
 
@@ -245,7 +290,7 @@ export async function checkAnonymousLimit(
     return {
       allowed: true,
       usedToday,
-      dailyLimit: config.dailyLimit,
+      dailyLimit,
       toolClass,
       upgradePrompt: 'soft',
       message: 'Enjoying the tools? Sign up for 5-10x more daily uses!',
@@ -255,7 +300,7 @@ export async function checkAnonymousLimit(
   return {
     allowed: true,
     usedToday,
-    dailyLimit: config.dailyLimit,
+    dailyLimit,
     toolClass,
   };
 }
@@ -272,10 +317,10 @@ export async function trackAnonymousUsage(
   toolId: string,
   toolClass: ToolClass,
 ): Promise<AnonUsageCheckResult> {
-  const config = TOOL_CLASS_LIMITS[toolClass];
+  const dailyLimit = await getAnonDailyLimit(toolClass);
 
   // Don't track unlimited tools
-  if (config.dailyLimit === -1) {
+  if (dailyLimit === -1) {
     return {
       allowed: true,
       usedToday: 0,

@@ -8,10 +8,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, tools, toolExecutions, eq, and, sql, desc } from '@hsafx/db';
 import { requireAdminRole } from '@/lib/require-admin';
+import { createLogger } from '@hsafx/shared/logger';
+import { adminResponse, adminErrorResponse } from '@/lib/admin-response';
+
+const log = createLogger('admin-recent-errors');
 
 export async function GET(request: NextRequest) {
   try {
-    const authResult = await requireAdminRole();
+    const authResult = await requireAdminRole('system.logs');
     if (authResult instanceof NextResponse) return authResult;
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '10', 10);
@@ -56,12 +60,9 @@ export async function GET(request: NextRequest) {
       severity: formatSeverity(err.count ?? 0),
     }));
 
-    return NextResponse.json(formattedErrors);
+    return adminResponse(formattedErrors);
   } catch (error) {
-    console.error('Failed to fetch recent errors:', error);
-    return NextResponse.json(
-      { code: 'FETCH_ERROR', message: 'Failed to fetch recent errors' },
-      { status: 500 }
-    );
+    log.error('Failed to fetch recent errors', { err: error });
+    return adminErrorResponse('FETCH_ERROR', 'Failed to fetch recent errors');
   }
 }

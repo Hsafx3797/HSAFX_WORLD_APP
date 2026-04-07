@@ -1,3 +1,5 @@
+// TODO [G12]: Add SEO infrastructure files — sitemap.ts, robots.ts, manifest.ts, opengraph-image.tsx in app/ root.
+// TODO [G13]: Feature flags table exists in DB but no flags are defined or consumed in the web app. Wire up middleware to read flags from Redis.
 import type { Metadata } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';

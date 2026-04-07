@@ -18,10 +18,11 @@ import {
   apiErrorResponse,
   type ApiContext,
 } from '@/lib/api-v1-auth';
+import { ApiErrorCode } from '@hsafx/shared/errors';
 
+// Must match actual types used in coin-service.ts
 const VALID_TYPES = [
-  'purchase', 'tool_usage', 'refund', 'admin_adjustment',
-  'subscription_grant', 'reward', 'bonus', 'expiry',
+  'spend', 'refund', 'grant', 'purchase', 'adjustment',
 ] as const;
 
 export async function GET(request: NextRequest) {
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
   const type = searchParams.get('type');
 
   if (type && !VALID_TYPES.includes(type as (typeof VALID_TYPES)[number])) {
-    return apiErrorResponse('B002', `Invalid type. Must be one of: ${VALID_TYPES.join(', ')}`, ctx, 400);
+    return apiErrorResponse(ApiErrorCode.INVALID_FIELD, `Invalid type. Must be one of: ${VALID_TYPES.join(', ')}`, ctx, 400);
   }
 
   try {
@@ -90,7 +91,7 @@ export async function GET(request: NextRequest) {
     );
   } catch (err) {
     return apiErrorResponse(
-      'B003',
+      ApiErrorCode.SERVER_ERROR,
       'Failed to retrieve transactions',
       ctx,
       500,

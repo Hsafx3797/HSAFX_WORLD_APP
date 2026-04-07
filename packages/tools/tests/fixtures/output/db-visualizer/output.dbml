@@ -1,0 +1,69 @@
+// Database Schema: e-commerce
+
+Table users {
+  id uuid [pk, not null, default: gen_random_uuid()]
+  email varchar(255) [unique, not null]
+  name varchar(100) [not null]
+  password_hash varchar(255) [not null]
+  role varchar(20) [not null, default: 'customer']
+  created_at timestamp [not null, default: now()]
+
+  indexes {
+    (email) [unique] [name: "idx_users_email"]
+    (role) [name: "idx_users_role"]
+  }
+}
+
+Table products {
+  id serial [pk, not null]
+  name varchar(200) [not null]
+  description text
+  price decimal(10,2) [not null]
+  stock integer [not null, default: 0]
+  category_id integer [ref: > categories.id]
+  created_at timestamp [not null, default: now()]
+
+  indexes {
+    (category_id) [name: "idx_products_category"]
+    (price) [name: "idx_products_price"]
+  }
+}
+
+Table categories {
+  id serial [pk, not null]
+  name varchar(100) [unique, not null]
+  parent_id integer [ref: > categories.id]
+}
+
+Table orders {
+  id serial [pk, not null]
+  user_id uuid [not null, ref: > users.id]
+  total decimal(10,2) [not null]
+  status varchar(20) [not null, default: 'pending']
+  created_at timestamp [not null, default: now()]
+
+  indexes {
+    (user_id) [name: "idx_orders_user"]
+    (status) [name: "idx_orders_status"]
+  }
+}
+
+Table order_items {
+  id serial [pk, not null]
+  order_id integer [not null, ref: > orders.id]
+  product_id integer [not null, ref: > products.id]
+  quantity integer [not null]
+  unit_price decimal(10,2) [not null]
+
+  indexes {
+    (order_id) [name: "idx_order_items_order"]
+    (product_id) [name: "idx_order_items_product"]
+  }
+}
+
+// Relationships
+Ref: products.category_id < categories.id
+Ref: categories.parent_id < categories.id
+Ref: orders.user_id < users.id
+Ref: order_items.order_id < orders.id
+Ref: order_items.product_id < products.id

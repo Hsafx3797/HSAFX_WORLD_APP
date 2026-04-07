@@ -1,0 +1,23 @@
+{
+  "SGVsbG8gV29ybGQ=": {
+    "valid": true,
+    "details": {
+      "length": 16,
+      "decodedLength": 12
+    }
+  },
+  "dGVzdA==": {
+    "valid": true,
+    "details": {
+      "length": 8,
+      "decodedLength": 6
+    }
+  },
+  "YWJjZGVmZw==": {
+    "valid": true,
+    "details": {
+      "length": 12,
+      "decodedLength": 9
+    }
+  }
+}

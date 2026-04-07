@@ -5,20 +5,20 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { trpc } from '@/lib/trpc';
-import { categories, getToolsByCategory } from '@/lib/tools/registry';
+import { CATEGORY_ENGINES } from '@/lib/engine-constants';
 import { toast } from 'sonner';
-import type { ToolCategory } from '@hsafx/tool-definitions';
 
 const CATEGORY_ICONS: Record<string, string> = {
-  Text: '📝',
-  Data: '📊',
-  Media: '🎨',
-  Generator: '⚡',
-  Calculator: '🔢',
-  Converter: '🔄',
-  Validator: '✅',
-  Specialized: '🧪',
+  text: '📝',
+  data: '📊',
+  media: '🎨',
+  generate: '⚡',
+  calculate: '🔢',
+  convert: '🔄',
+  validate: '✅',
 };
+
+const engineCategories = Object.keys(CATEGORY_ENGINES);
 
 interface OnboardingWizardProps {
   onComplete: () => void;
@@ -50,23 +50,21 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
   }, []);
 
   const goToStep2 = useCallback(() => {
-    // Build recommended tools from selected categories (up to 6)
-    const tools: typeof recommendedTools = [];
+    // Build recommended engines from selected categories (up to 6)
+    const engines: typeof recommendedTools = [];
     for (const cat of selectedCategories) {
-      const catTools = getToolsByCategory(cat as ToolCategory);
-      // Pick first 2 free tools per category
-      const free = catTools
-        .filter((t) => t.tier === 'free')
+      const catEngines = CATEGORY_ENGINES[cat] ?? [];
+      const picks = catEngines
         .slice(0, 2)
-        .map((t) => ({
-          id: t.id,
-          name: t.name,
-          category: t.category,
+        .map((e) => ({
+          id: e,
+          name: e,
+          category: cat,
         }));
-      tools.push(...free);
-      if (tools.length >= 6) break;
+      engines.push(...picks);
+      if (engines.length >= 6) break;
     }
-    setRecommendedTools(tools.slice(0, 6));
+    setRecommendedTools(engines.slice(0, 6));
     setStep(2);
   }, [selectedCategories]);
 
@@ -80,7 +78,8 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
         selectedCategories,
         firstToolUsed: toolId,
       });
-      router.push(`/tools/${toolId}`);
+      // TODO: Navigate to /tools/${toolId} once tool routes are built (Task 1000)
+      router.push('/dashboard');
     },
     [completeMutation, selectedCategories, router],
   );
@@ -116,7 +115,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
               What do you mainly work with? Pick one or more:
             </p>
             <div className="grid grid-cols-2 gap-3 mb-6">
-              {categories.map((cat) => (
+              {engineCategories.map((cat) => (
                 <button
                   key={cat}
                   type="button"

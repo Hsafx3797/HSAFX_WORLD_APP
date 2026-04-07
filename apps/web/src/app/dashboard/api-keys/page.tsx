@@ -1,138 +1,54 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
+import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
-interface ApiKey {
-  id: string;
-  name: string;
-  keyPrefix: string;
-  scopes: string[];
-  lastUsedAt?: string;
-  expiresAt?: string;
-  isActive: boolean;
-  createdAt: string;
-}
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
-
 export default function ApiKeysPage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
-  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newKeyName, setNewKeyName] = useState('');
   const [createdKey, setCreatedKey] = useState<string | null>(null);
-  const [isCreating, setIsCreating] = useState(false);
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/auth/login');
-    }
-  }, [authLoading, user, router]);
+  const utils = trpc.useUtils();
+  const { data: apiKeys = [], isLoading } = trpc.apiKeys.list.useQuery(undefined, { enabled: !!user });
 
-  useEffect(() => {
-    if (user) {
-      fetchApiKeys();
-    }
-  }, [user]);
+  const generateMutation = trpc.apiKeys.generate.useMutation({
+    onSuccess: (data) => {
+      setCreatedKey(data.key);
+      setNewKeyName('');
+      setShowCreateModal(false);
+      utils.apiKeys.list.invalidate();
+    },
+    onError: (error) => {
+      alert(error.message || 'Failed to create API key');
+    },
+  });
 
-  const fetchApiKeys = async () => {
-    try {
-      setIsLoading(true);
-      const token = localStorage.getItem('accessToken');
-      const response = await fetch(`${API_BASE}/users/me/api-keys`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+  const revokeMutation = trpc.apiKeys.revoke.useMutation({
+    onSuccess: () => {
+      utils.apiKeys.list.invalidate();
+    },
+    onError: (error) => {
+      alert(error.message || 'Failed to revoke API key');
+    },
+  });
 
-      if (response.ok) {
-        const data = await response.json();
-        setApiKeys(
-          data.keys.map((k: Record<string, unknown>) => ({
-            id: k.id,
-            name: k.name,
-            keyPrefix: k.key_prefix,
-            scopes: k.scopes || [],
-            lastUsedAt: k.last_used_at,
-            expiresAt: k.expires_at,
-            isActive: k.is_active,
-            createdAt: k.created_at,
-          }))
-        );
-      }
-    } catch (error) {
-      console.error('Failed to fetch API keys:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const createApiKey = async () => {
+  const createApiKey = () => {
     if (!newKeyName.trim()) return;
-
-    setIsCreating(true);
-    try {
-      const token = localStorage.getItem('accessToken');
-      const response = await fetch(`${API_BASE}/users/me/api-keys`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: newKeyName,
-          scopes: ['tools:read', 'tools:execute'],
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setCreatedKey(data.key);
-        await fetchApiKeys();
-        setNewKeyName('');
-      } else {
-        const error = await response.json();
-        alert(error.detail || 'Failed to create API key');
-      }
-    } catch (error) {
-      console.error('Failed to create API key:', error);
-      alert('Failed to create API key');
-    } finally {
-      setIsCreating(false);
-    }
+    generateMutation.mutate({ name: newKeyName, scopes: ['tools:read', 'tools:execute'] });
   };
 
-  const revokeApiKey = async (keyId: string) => {
+  const revokeApiKey = (keyId: string) => {
     if (!confirm('Are you sure you want to revoke this API key? This action cannot be undone.')) {
       return;
     }
-
-    try {
-      const token = localStorage.getItem('accessToken');
-      const response = await fetch(`${API_BASE}/users/me/api-keys/${keyId}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        await fetchApiKeys();
-      } else {
-        const error = await response.json();
-        alert(error.detail || 'Failed to revoke API key');
-      }
-    } catch (error) {
-      console.error('Failed to revoke API key:', error);
-      alert('Failed to revoke API key');
-    }
+    revokeMutation.mutate({ id: keyId });
   };
 
   if (authLoading || !user) {
@@ -223,8 +139,8 @@ export default function ApiKeysPage() {
                 <Button variant="outline" onClick={() => setShowCreateModal(false)}>
                   Cancel
                 </Button>
-                <Button onClick={createApiKey} disabled={isCreating || !newKeyName.trim()}>
-                  {isCreating ? 'Creating...' : 'Create'}
+                <Button onClick={createApiKey} disabled={generateMutation.isPending || !newKeyName.trim()}>
+                  {generateMutation.isPending ? 'Creating...' : 'Create'}
                 </Button>
               </div>
             </CardContent>
@@ -298,7 +214,7 @@ export default function ApiKeysPage() {
                       </p>
                       <p className="text-xs text-muted-foreground">
                         Created {new Date(key.createdAt).toLocaleDateString()}
-                        {key.lastUsedAt && ` • Last used ${new Date(key.lastUsedAt).toLocaleDateString()}`}
+                        {key.lastUsed && ` • Last used ${new Date(key.lastUsed).toLocaleDateString()}`}
                       </p>
                     </div>
                   </div>

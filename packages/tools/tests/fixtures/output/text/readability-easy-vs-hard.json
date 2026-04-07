@@ -1,0 +1,20 @@
+{
+  "easy": {
+    "fleschKincaid": -2.5,
+    "fleschReadingEase": 118.9,
+    "gunningFog": 1.3,
+    "automatedReadability": -4.7,
+    "colemanLiau": -5.9,
+    "averageGradeLevel": -2.9,
+    "difficulty": "very-easy"
+  },
+  "hard": {
+    "fleschKincaid": 49.5,
+    "fleschReadingEase": -244.1,
+    "gunningFog": 43.6,
+    "automatedReadability": 46.9,
+    "colemanLiau": 60.6,
+    "averageGradeLevel": 50.2,
+    "difficulty": "very-difficult"
+  }
+}

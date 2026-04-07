@@ -5,10 +5,33 @@
  * Tests the raw component markup output for correct a11y attributes
  * without requiring jest-axe (which needs a full DOM environment).
  */
-import { describe, it, expect } from 'vitest';
-import React from 'react';
+import { describe, it, expect, afterEach } from 'vitest';
+import React, { act } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { createRoot, type Root } from 'react-dom/client';
 import { Button } from '../button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../tabs';
+import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription } from '../dialog';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '../dropdown-menu';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../select';
+
+// ─── DOM render helper ───────────────────────────────────────
+
+let _container: HTMLElement;
+let _root: Root;
+
+function renderDOM(element: React.ReactElement): HTMLElement {
+  _container = document.createElement('div');
+  document.body.appendChild(_container);
+  _root = createRoot(_container);
+  act(() => { _root.render(element); });
+  return _container;
+}
+
+function cleanupDOM() {
+  if (_root) act(() => { _root.unmount(); });
+  _container?.remove();
+}
 
 // ─── Button ──────────────────────────────────────────────────
 
@@ -64,38 +87,137 @@ describe('Button accessibility', () => {
   });
 });
 
-// ─── Dialog (static markup test) ─────────────────────────────
-// Note: Dialog uses createPortal which doesn't work in SSR.
-// We test the component exports exist and have correct types.
+// ─── Tabs accessibility ──────────────────────────────────────
 
-describe('Dialog component exports', () => {
-  it('should export all compound components', async () => {
-    const dialogModule = await import('../dialog');
-    expect(dialogModule.Dialog).toBeDefined();
-    expect(dialogModule.DialogTrigger).toBeDefined();
-    expect(dialogModule.DialogContent).toBeDefined();
-    expect(dialogModule.DialogHeader).toBeDefined();
-    expect(dialogModule.DialogFooter).toBeDefined();
-    expect(dialogModule.DialogTitle).toBeDefined();
-    expect(dialogModule.DialogDescription).toBeDefined();
+describe('Tabs accessibility', () => {
+  afterEach(cleanupDOM);
+
+  it('should render tablist, tab, and tabpanel ARIA roles', () => {
+    renderDOM(
+      React.createElement(Tabs, { defaultValue: 'a' },
+        React.createElement(TabsList, null,
+          React.createElement(TabsTrigger, { value: 'a' }, 'Tab A'),
+          React.createElement(TabsTrigger, { value: 'b' }, 'Tab B'),
+        ),
+        React.createElement(TabsContent, { value: 'a' }, 'Panel A'),
+        React.createElement(TabsContent, { value: 'b' }, 'Panel B'),
+      ),
+    );
+    expect(_container.querySelector('[role="tablist"]')).toBeTruthy();
+    expect(_container.querySelectorAll('[role="tab"]')).toHaveLength(2);
+    expect(_container.querySelector('[role="tabpanel"]')).toBeTruthy();
+  });
+
+  it('should mark active tab with aria-selected="true"', () => {
+    renderDOM(
+      React.createElement(Tabs, { defaultValue: 'a' },
+        React.createElement(TabsList, null,
+          React.createElement(TabsTrigger, { value: 'a' }, 'Tab A'),
+          React.createElement(TabsTrigger, { value: 'b' }, 'Tab B'),
+        ),
+        React.createElement(TabsContent, { value: 'a' }, 'Panel A'),
+      ),
+    );
+    const tabs = _container.querySelectorAll('[role="tab"]');
+    expect(tabs[0]!.getAttribute('aria-selected')).toBe('true');
+    expect(tabs[1]!.getAttribute('aria-selected')).toBe('false');
+  });
+
+  it('should link tab to panel via aria-controls', () => {
+    renderDOM(
+      React.createElement(Tabs, { defaultValue: 'a' },
+        React.createElement(TabsList, null,
+          React.createElement(TabsTrigger, { value: 'a' }, 'Tab A'),
+        ),
+        React.createElement(TabsContent, { value: 'a' }, 'Panel A'),
+      ),
+    );
+    const tab = _container.querySelector('[role="tab"]');
+    const panelId = tab!.getAttribute('aria-controls');
+    expect(panelId).toBeTruthy();
+    expect(_container.querySelector(`#${panelId}`)).toBeTruthy();
+  });
+
+  it('should label tabpanel with aria-labelledby referencing its tab', () => {
+    renderDOM(
+      React.createElement(Tabs, { defaultValue: 'a' },
+        React.createElement(TabsList, null,
+          React.createElement(TabsTrigger, { value: 'a' }, 'Tab A'),
+        ),
+        React.createElement(TabsContent, { value: 'a' }, 'Panel A'),
+      ),
+    );
+    const panel = _container.querySelector('[role="tabpanel"]');
+    const labelledBy = panel!.getAttribute('aria-labelledby');
+    expect(labelledBy).toBeTruthy();
+    expect(_container.querySelector(`#${labelledBy}`)).toBeTruthy();
   });
 });
 
-// ─── Tabs (static markup test) ────────────────────────────────
+// ─── Dialog accessibility ────────────────────────────────────
 
-describe('Tabs component exports', () => {
-  it('should export all compound components', async () => {
-    const tabsModule = await import('../tabs');
-    expect(tabsModule.Tabs).toBeDefined();
-    expect(tabsModule.TabsList).toBeDefined();
-    expect(tabsModule.TabsTrigger).toBeDefined();
-    expect(tabsModule.TabsContent).toBeDefined();
+describe('Dialog accessibility', () => {
+  afterEach(cleanupDOM);
+
+  it('should render trigger as a button', () => {
+    renderDOM(
+      React.createElement(Dialog, null,
+        React.createElement(DialogTrigger, null, 'Open'),
+      ),
+    );
+    const trigger = _container.querySelector('button');
+    expect(trigger).toBeTruthy();
+    expect(trigger!.textContent).toBe('Open');
+  });
+
+  it('should render dialog with role="dialog" and aria-modal when open', () => {
+    renderDOM(
+      React.createElement(Dialog, { open: true },
+        React.createElement(DialogContent, null,
+          React.createElement(DialogTitle, null, 'Test Title'),
+          React.createElement(DialogDescription, null, 'Test Desc'),
+        ),
+      ),
+    );
+    const dialog = document.querySelector('[role="dialog"]');
+    expect(dialog).toBeTruthy();
+    expect(dialog!.getAttribute('aria-modal')).toBe('true');
+  });
+
+  it('should link dialog to title via aria-labelledby', () => {
+    renderDOM(
+      React.createElement(Dialog, { open: true },
+        React.createElement(DialogContent, null,
+          React.createElement(DialogTitle, null, 'My Title'),
+        ),
+      ),
+    );
+    const dialog = document.querySelector('[role="dialog"]');
+    const titleId = dialog!.getAttribute('aria-labelledby');
+    expect(titleId).toBeTruthy();
+    expect(document.getElementById(titleId!)?.textContent).toBe('My Title');
   });
 });
 
-// ─── DropdownMenu (exports check) ────────────────────────────
+// ─── DropdownMenu accessibility ──────────────────────────────
 
-describe('DropdownMenu component exports', () => {
+describe('DropdownMenu accessibility', () => {
+  afterEach(cleanupDOM);
+
+  it('should render trigger with aria-haspopup="menu"', () => {
+    renderDOM(
+      React.createElement(DropdownMenu, null,
+        React.createElement(DropdownMenuTrigger, null, 'Menu'),
+        React.createElement(DropdownMenuContent, null,
+          React.createElement(DropdownMenuItem, null, 'Item'),
+        ),
+      ),
+    );
+    const trigger = _container.querySelector('[aria-haspopup="menu"]');
+    expect(trigger).toBeTruthy();
+    expect(trigger!.getAttribute('aria-expanded')).toBe('false');
+  });
+
   it('should export all compound components', async () => {
     const menuModule = await import('../dropdown-menu');
     expect(menuModule.DropdownMenu).toBeDefined();
@@ -105,9 +227,28 @@ describe('DropdownMenu component exports', () => {
   });
 });
 
-// ─── Select (exports check) ──────────────────────────────────
+// ─── Select accessibility ────────────────────────────────────
 
-describe('Select component exports', () => {
+describe('Select accessibility', () => {
+  afterEach(cleanupDOM);
+
+  it('should render trigger with role="combobox"', () => {
+    renderDOM(
+      React.createElement(Select, { defaultValue: 'a' },
+        React.createElement(SelectTrigger, null,
+          React.createElement(SelectValue, null),
+        ),
+        React.createElement(SelectContent, null,
+          React.createElement(SelectItem, { value: 'a' }, 'Option A'),
+          React.createElement(SelectItem, { value: 'b' }, 'Option B'),
+        ),
+      ),
+    );
+    const trigger = _container.querySelector('[role="combobox"]');
+    expect(trigger).toBeTruthy();
+    expect(trigger!.getAttribute('aria-expanded')).toBe('false');
+  });
+
   it('should export all compound components', async () => {
     const selectModule = await import('../select');
     expect(selectModule.Select).toBeDefined();

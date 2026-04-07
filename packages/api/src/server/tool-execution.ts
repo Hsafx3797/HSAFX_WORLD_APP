@@ -1,15 +1,16 @@
 /**
  * Server-side tool execution layer.
  *
- * This module orchestrates real tool execution including:
- * - Cost calculation with Business-Analysis weights & plan discounts
- * - Atomic coin deduction / reservation
- * - Sync execution (wasm/node) or async job creation (python/native)
- * - Usage counter increment
- * - Execution audit logging
+ * Orchestrates tool execution via the engine architecture:
+ * - Sync execution via @hsafx/tool-execution engines (text/data tools)
+ * - Returns result with execution metadata
  *
- * TODO: Implement full execution pipeline in Sprint 4
+ * Billing (coin reservation/confirmation) and async dispatch (FastAPI)
+ * are handled by the API v1 route and job-worker respectively.
  */
+
+import { execute } from '@hsafx/tool-execution';
+import { randomUUID } from 'crypto';
 
 export type ExecuteToolInput = {
   toolId: string;
@@ -28,15 +29,31 @@ export type ExecuteToolResult = {
 };
 
 /**
- * Execute a tool on the server side.
- * Stub implementation — returns a placeholder result.
+ * Execute a tool on the server side using the engine architecture.
+ * Supports text/data tools that run inline (not native/python).
  */
 export async function executeToolServer(
   input: ExecuteToolInput
 ): Promise<ExecuteToolResult> {
-  // TODO: Replace with real execution pipeline
-  throw new Error(
-    `Tool execution not yet implemented. ` +
-    `Tool: ${input.toolId}, User: ${input.userId}`
-  );
+  const executionId = randomUUID();
+  const startTime = Date.now();
+
+  // Derive text input from inputs record
+  const textInput =
+    typeof input.inputs === 'string'
+      ? input.inputs
+      : (input.inputs.input as string) ??
+        (input.inputs.text as string) ??
+        JSON.stringify(input.inputs);
+
+  // Direct engine execution — toolId is the engine name, inputs are options
+  const output = await execute(input.toolId, textInput, input.inputs);
+
+  return {
+    status: 'completed',
+    result: output,
+    executionId,
+    coinsCharged: 0, // Billing handled by caller
+    duration: Date.now() - startTime,
+  };
 }

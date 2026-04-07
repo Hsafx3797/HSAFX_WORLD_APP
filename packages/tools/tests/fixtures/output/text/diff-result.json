@@ -1,0 +1,38 @@
+[
+  {
+    "type": "removed",
+    "value": "This is the original text with some shared content.\r"
+  },
+  {
+    "type": "added",
+    "value": "This is the modified text with some shared content.\r"
+  },
+  {
+    "type": "unchanged",
+    "value": "The second line stays the same in both versions.\r"
+  },
+  {
+    "type": "removed",
+    "value": "This line will be removed from the new version.\r"
+  },
+  {
+    "type": "added",
+    "value": "A brand new line was added here.\r"
+  },
+  {
+    "type": "unchanged",
+    "value": "The fourth line is present in both texts.\r"
+  },
+  {
+    "type": "removed",
+    "value": "And this fifth line is shared too."
+  },
+  {
+    "type": "added",
+    "value": "And this fifth line is shared too.\r"
+  },
+  {
+    "type": "added",
+    "value": "An extra line at the end."
+  }
+]

@@ -9,6 +9,7 @@ import {
   urlToOpenApiPath,
   parseUrl,
   buildUrl,
+  apiResponseToMock,
 } from '../api';
 
 // Helper: build a fake JWT from header/payload objects
@@ -374,5 +375,155 @@ describe('buildUrl', () => {
   it('handles empty params object', () => {
     const result = buildUrl('https://api.com/path', {});
     expect(result).toBe('https://api.com/path');
+  });
+});
+
+// ─── apiResponseToMock ────────────────────────────────────────────────────────
+
+describe('apiResponseToMock', () => {
+  it('preserves object structure with same keys', () => {
+    const input = JSON.stringify({ id: 1, name: 'Alice', active: true });
+    const mock = JSON.parse(apiResponseToMock(input));
+    expect(Object.keys(mock)).toEqual(['id', 'name', 'active']);
+  });
+
+  it('generates number for number fields', () => {
+    const input = JSON.stringify({ count: 42, price: 19.99 });
+    const mock = JSON.parse(apiResponseToMock(input));
+    expect(typeof mock.count).toBe('number');
+    expect(typeof mock.price).toBe('number');
+  });
+
+  it('generates boolean for boolean fields', () => {
+    const input = JSON.stringify({ active: true, deleted: false });
+    const mock = JSON.parse(apiResponseToMock(input));
+    expect(typeof mock.active).toBe('boolean');
+    expect(typeof mock.deleted).toBe('boolean');
+  });
+
+  it('generates string for string fields', () => {
+    const input = JSON.stringify({ title: 'Hello World', desc: 'A description' });
+    const mock = JSON.parse(apiResponseToMock(input));
+    expect(typeof mock.title).toBe('string');
+    expect(typeof mock.desc).toBe('string');
+  });
+
+  it('produces different values than original (randomized)', () => {
+    const input = JSON.stringify({ id: 999, name: 'SpecificUniqueName123' });
+    // Run multiple times — at least one should differ
+    const results = Array.from({ length: 5 }, () => JSON.parse(apiResponseToMock(input)));
+    const allSameId = results.every(r => r.id === 999);
+    const allSameName = results.every(r => r.name === 'SpecificUniqueName123');
+    // Statistically, not all 5 should match the original
+    expect(allSameId && allSameName).toBe(false);
+  });
+
+  it('preserves nested object structure', () => {
+    const input = JSON.stringify({
+      user: { id: 1, profile: { bio: 'Hello', age: 25 } },
+    });
+    const mock = JSON.parse(apiResponseToMock(input));
+    expect(mock).toHaveProperty('user');
+    expect(mock.user).toHaveProperty('id');
+    expect(mock.user).toHaveProperty('profile');
+    expect(mock.user.profile).toHaveProperty('bio');
+    expect(mock.user.profile).toHaveProperty('age');
+    expect(typeof mock.user.profile.age).toBe('number');
+  });
+
+  it('handles arrays — preserves element structure', () => {
+    const input = JSON.stringify({
+      items: [
+        { id: 1, name: 'Widget' },
+        { id: 2, name: 'Gadget' },
+      ],
+    });
+    const mock = JSON.parse(apiResponseToMock(input));
+    expect(Array.isArray(mock.items)).toBe(true);
+    expect(mock.items.length).toBeGreaterThanOrEqual(1);
+    expect(mock.items[0]).toHaveProperty('id');
+    expect(mock.items[0]).toHaveProperty('name');
+  });
+
+  it('generates UUID-like string for UUID values', () => {
+    const input = JSON.stringify({ id: '550e8400-e29b-41d4-a716-446655440000' });
+    const mock = JSON.parse(apiResponseToMock(input));
+    expect(mock.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{8,12}/i);
+  });
+
+  it('generates ISO date string for date values', () => {
+    const input = JSON.stringify({ createdAt: '2024-01-15T10:30:00.000Z' });
+    const mock = JSON.parse(apiResponseToMock(input));
+    expect(new Date(mock.createdAt).toString()).not.toBe('Invalid Date');
+  });
+
+  it('generates email-like string for email values', () => {
+    const input = JSON.stringify({ email: 'alice@company.com' });
+    const mock = JSON.parse(apiResponseToMock(input));
+    expect(mock.email).toMatch(/@/);
+  });
+
+  it('generates URL for URL values', () => {
+    const input = JSON.stringify({ website: 'https://example.com/page' });
+    const mock = JSON.parse(apiResponseToMock(input));
+    expect(mock.website).toMatch(/^https?:\/\//);
+  });
+
+  it('preserves null values', () => {
+    const input = JSON.stringify({ deletedAt: null, name: 'test' });
+    const mock = JSON.parse(apiResponseToMock(input));
+    expect(mock.deletedAt).toBeNull();
+  });
+
+  it('handles empty object', () => {
+    const mock = JSON.parse(apiResponseToMock('{}'));
+    expect(mock).toEqual({});
+  });
+
+  it('handles empty array', () => {
+    const mock = JSON.parse(apiResponseToMock('[]'));
+    expect(mock).toEqual([]);
+  });
+
+  it('returns error for invalid JSON', () => {
+    const result = JSON.parse(apiResponseToMock('not json'));
+    expect(result).toHaveProperty('error');
+  });
+
+  it('handles complex real-world API response', () => {
+    const response = {
+      data: {
+        users: [
+          {
+            id: 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d',
+            email: 'john@example.com',
+            name: 'John Doe',
+            age: 30,
+            active: true,
+            createdAt: '2024-06-15T08:00:00Z',
+            tags: ['admin', 'verified'],
+          },
+        ],
+      },
+      pagination: { page: 1, total: 100, hasMore: true },
+    };
+    const mock = JSON.parse(apiResponseToMock(JSON.stringify(response)));
+    // Structure preserved
+    expect(mock).toHaveProperty('data');
+    expect(mock.data).toHaveProperty('users');
+    expect(Array.isArray(mock.data.users)).toBe(true);
+    expect(mock.data.users[0]).toHaveProperty('id');
+    expect(mock.data.users[0]).toHaveProperty('email');
+    expect(mock.data.users[0]).toHaveProperty('tags');
+    expect(mock).toHaveProperty('pagination');
+    // Types preserved
+    expect(typeof mock.pagination.page).toBe('number');
+    expect(typeof mock.pagination.hasMore).toBe('boolean');
+  });
+
+  it('generates IP address for IP values', () => {
+    const input = JSON.stringify({ clientIp: '192.168.1.1' });
+    const mock = JSON.parse(apiResponseToMock(input));
+    expect(mock.clientIp).toMatch(/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/);
   });
 });

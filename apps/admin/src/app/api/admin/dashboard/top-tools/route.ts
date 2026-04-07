@@ -8,10 +8,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, tools, toolExecutions, eq, sql, desc } from '@hsafx/db';
 import { requireAdminRole } from '@/lib/require-admin';
+import { createLogger } from '@hsafx/shared/logger';
+import { adminResponse, adminErrorResponse } from '@/lib/admin-response';
+
+const log = createLogger('admin-top-tools');
 
 export async function GET(request: NextRequest) {
   try {
-    const authResult = await requireAdminRole();
+    const authResult = await requireAdminRole('tools.view');
     if (authResult instanceof NextResponse) return authResult;
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '5', 10);
@@ -59,12 +63,9 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    return NextResponse.json(topTools);
+    return adminResponse(topTools);
   } catch (error) {
-    console.error('Failed to fetch top tools:', error);
-    return NextResponse.json(
-      { code: 'FETCH_ERROR', message: 'Failed to fetch top tools' },
-      { status: 500 }
-    );
+    log.error('Failed to fetch top tools', { err: error });
+    return adminErrorResponse('FETCH_ERROR', 'Failed to fetch top tools');
   }
 }

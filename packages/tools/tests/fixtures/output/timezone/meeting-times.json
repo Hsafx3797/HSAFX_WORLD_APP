@@ -1,0 +1,27 @@
+{
+  "baseMeeting": {
+    "timezone": "America/New_York",
+    "time": "09:00"
+  },
+  "participants": [
+    {
+      "timezone": "Europe/London",
+      "time": "14:00",
+      "city": "London",
+      "isWorkingHours": true
+    },
+    {
+      "timezone": "Asia/Tokyo",
+      "time": "23:00",
+      "city": "Tokyo",
+      "isWorkingHours": false
+    },
+    {
+      "timezone": "Asia/Dubai",
+      "time": "18:00",
+      "city": "Dubai",
+      "isWorkingHours": false
+    }
+  ],
+  "bestTimes": []
+}

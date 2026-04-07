@@ -11,6 +11,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { db, eq, apiKeys } from '@hsafx/db';
 import {
   extractApiKeyFromHeaders,
@@ -22,6 +23,7 @@ import {
   type RateLimitTier,
 } from '@/lib/api-keys';
 import { redis, keys, TTL } from '@/lib/redis';
+import { ApiErrorCode } from '@hsafx/shared/errors';
 
 // ─── Types ─────────────────────────────────────────────────────
 
@@ -38,17 +40,21 @@ export interface ApiContext {
   rateLimitTier: RateLimitTier;
   /** Unique request id for tracing */
   requestId: string;
+  /** Rate-limit remaining (hourly) */
+  rateLimitRemaining: number;
+  /** Rate-limit reset timestamp (ms epoch) */
+  rateLimitReset: number;
 }
 
 // ─── Error helpers ─────────────────────────────────────────────
 
 const ERROR_CODES = {
-  A001: { status: 401, message: 'Missing API key. Include Authorization: Bearer <key> header.' },
-  A002: { status: 401, message: 'Invalid API key. Check key format and try again.' },
-  A003: { status: 401, message: 'API key has been revoked.' },
-  A004: { status: 403, message: 'Account suspended. Contact support.' },
-  A005: { status: 403, message: 'Insufficient API key permissions.' },
-  R004: { status: 429, message: 'Rate limit exceeded. Upgrade for higher limits.' },
+  [ApiErrorCode.AUTH_MISSING_KEY]:      { status: 401, message: 'Missing API key. Include Authorization: Bearer <key> header.' },
+  [ApiErrorCode.AUTH_INVALID_KEY]:      { status: 401, message: 'Invalid API key. Check key format and try again.' },
+  [ApiErrorCode.AUTH_KEY_REVOKED]:      { status: 401, message: 'API key has been revoked.' },
+  [ApiErrorCode.AUTH_ACCOUNT_SUSPENDED]:{ status: 403, message: 'Account suspended. Contact support.' },
+  [ApiErrorCode.AUTH_INSUFFICIENT_SCOPE]:{ status: 403, message: 'Insufficient API key permissions.' },
+  [ApiErrorCode.RATE_LIMIT]:            { status: 429, message: 'Rate limit exceeded. Upgrade for higher limits.' },
 } as const;
 
 function errorResponse(
@@ -75,9 +81,7 @@ function errorResponse(
 // ─── Request ID ────────────────────────────────────────────────
 
 function generateRequestId(): string {
-  const ts = Date.now().toString(36);
-  const rand = Math.random().toString(36).slice(2, 10);
-  return `req_${ts}_${rand}`;
+  return `req_${crypto.randomBytes(16).toString('hex')}`;
 }
 
 // ─── Rate Limiting (counter-based via Upstash) ────────────────
@@ -170,13 +174,13 @@ export async function authenticateApiKey(
   // 1. Extract key
   const rawKey = extractApiKeyFromHeaders(request.headers);
   if (!rawKey) {
-    return errorResponse('A001', requestId);
+    return errorResponse(ApiErrorCode.AUTH_MISSING_KEY, requestId);
   }
 
   // 2. Validate format
   const validation = validateApiKeyFormat(rawKey);
   if (!validation.valid || !validation.hash) {
-    return errorResponse('A002', requestId);
+    return errorResponse(ApiErrorCode.AUTH_INVALID_KEY, requestId);
   }
 
   // 3. DB lookup by hash
@@ -185,28 +189,28 @@ export async function authenticateApiKey(
   });
 
   if (!keyRow) {
-    return errorResponse('A002', requestId);
+    return errorResponse(ApiErrorCode.AUTH_INVALID_KEY, requestId);
   }
 
   // 4. Check revoked / inactive
   if (!keyRow.isActive || keyRow.revokedAt) {
-    return errorResponse('A003', requestId);
+    return errorResponse(ApiErrorCode.AUTH_KEY_REVOKED, requestId);
   }
 
   // 5. Check expiry
   if (keyRow.expiresAt && new Date(keyRow.expiresAt) < new Date()) {
-    return errorResponse('A003', requestId);
+    return errorResponse(ApiErrorCode.AUTH_KEY_REVOKED, requestId);
   }
 
   // 6. Parse scopes from metadata
   const scopes = parseScopesFromMetadata(keyRow.metadata as Record<string, unknown>);
 
   // 7. Rate limit
-  const tier = (keyRow.rateLimitTier ?? 'basic') as RateLimitTier;
+  const tier = (keyRow.rateLimitTier ?? 'free') as RateLimitTier;
   const rateResult = await checkRateLimit(keyRow.id, tier);
 
   if (!rateResult.allowed) {
-    const res = errorResponse('R004', requestId, {
+    const res = errorResponse(ApiErrorCode.RATE_LIMIT, requestId, {
       retryAfter: rateResult.retryAfter,
       tier,
       upgradeUrl: 'https://app.hsafx.com/settings/billing',
@@ -231,6 +235,8 @@ export async function authenticateApiKey(
     scopes,
     rateLimitTier: tier,
     requestId,
+    rateLimitRemaining: rateResult.remaining,
+    rateLimitReset: rateResult.reset,
   } satisfies ApiContext;
 }
 
@@ -248,10 +254,9 @@ export function requireScope(
       {
         success: false,
         error: {
-          code: 'A005',
+          code: ApiErrorCode.AUTH_INSUFFICIENT_SCOPE,
           message: `Insufficient API key permissions. Required scope: ${scope}`,
           missingScopes: [scope],
-          currentScopes: ctx.scopes,
           requestId: ctx.requestId,
         },
       },
@@ -277,6 +282,8 @@ export function apiResponse(
     { status },
   );
   res.headers.set('X-RateLimit-Limit', String(tier.requestsPerHour));
+  res.headers.set('X-RateLimit-Remaining', String(ctx.rateLimitRemaining));
+  res.headers.set('X-RateLimit-Reset', String(Math.floor(ctx.rateLimitReset / 1000)));
   res.headers.set('X-Request-Id', ctx.requestId);
   return res;
 }

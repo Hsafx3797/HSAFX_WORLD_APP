@@ -1,0 +1,6 @@
+This is the modified text with some shared content.
+The second line stays the same in both versions.
+A brand new line was added here.
+The fourth line is present in both texts.
+And this fifth line is shared too.
+An extra line at the end.

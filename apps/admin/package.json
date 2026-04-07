@@ -4,11 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev -p 3001",
+    "dev": "next dev -p 3001 -H 0.0.0.0",
     "build": "next build",
     "start": "next start -p 3001",
     "lint": "eslint src/",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@hsafx/api": "workspace:*",
@@ -16,7 +18,6 @@
     "@hsafx/schemas": "workspace:*",
     "@hsafx/shared": "workspace:*",
     "@hsafx/theme": "workspace:*",
-    "@hsafx/tool-definitions": "workspace:*",
     "@sentry/nextjs": "^10.38.0",
     "@tanstack/react-query": "^5.75.0",
     "better-auth": "^1.4.0",

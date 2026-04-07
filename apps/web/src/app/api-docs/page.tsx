@@ -267,8 +267,8 @@ const sdkExamples = {
   typescript: `import { HSAFXClient } from '@hsafx/sdk';
 
 const client = new HSAFXClient({
-  apiKey: process.env.HSAFX_API_KEY,
-  apiSecret: process.env.HSAFX_API_SECRET,
+  apiKey: 'your-api-key-here',
+  apiSecret: 'your-api-secret-here',
 });
 
 // Execute a tool

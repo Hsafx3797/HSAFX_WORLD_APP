@@ -40,7 +40,7 @@ cd hsafx_world_app
 pnpm install
 
 # Install Python dependencies (FastAPI)
-cd apps/server
+cd backend/fastapi
 python -m venv .venv
 .venv\Scripts\python.exe -m pip install -r requirements.txt
 cd ../..
@@ -91,14 +91,15 @@ cd ../..
 - Generate API token with R2 permissions
 - Copy account ID, access key, secret key, bucket name
 
-### 6. Background Jobs (Inngest)
+### 6. Background Jobs (Inngest) — Optional
 - Sign up at [inngest.com](https://inngest.com)
 - Create project
 - Copy event key and signing key
+- Note: The system uses a Redis-based job worker by default
 
-### 7. Search (Optional - Meilisearch)
+### 7. Search (Meilisearch) — Not Yet Integrated
+- Planned for future integration
 - Self-host or use [Meilisearch Cloud](https://cloud.meilisearch.com)
-- Copy host URL and master key
 
 ### 8. Monitoring
 
@@ -140,7 +141,7 @@ pnpm --filter @hsafx/db studio
 ## Step 6: Build WASM Tools
 
 ```bash
-cd packages/wasm/text-tools
+cd backend/rust/text-tools
 
 # Build WebAssembly package
 wasm-pack build --target web --out-dir ../../../apps/web/public/wasm
@@ -165,7 +166,7 @@ This starts:
 pnpm --filter @hsafx/web dev
 
 # Terminal 2: FastAPI
-cd apps/server
+cd backend/fastapi
 .venv\Scripts\python.exe -m uvicorn src.main:app --reload --port 8000
 ```
 
@@ -229,11 +230,11 @@ PORT=3001 pnpm --filter @hsafx/web dev
 
 ## Next Steps
 
-1. **Read Documentation**: Start with [DOCUMENTATION_INDEX.md](docs/planning/DOCUMENTATION_INDEX.md)
-2. **Implement Tools**: See [30_TOOLS_CATALOG.md](docs/planning/30_TOOLS_CATALOG.md) for all 446 tools
+1. **Read Documentation**: Start with [DOCUMENTATION_INDEX.md](docs/PLANNING/DOCUMENTATION_INDEX.md)
+2. **Implement Tools**: See [30_TOOLS_CATALOG.md](docs/PLANNING/30_TOOLS_CATALOG.md) for all 451 tools
 3. **Setup Admin Panel**: Configure at `/admin`
 4. **Test Billing Flow**: Create test subscription
-5. **Deploy**: Follow [49_DEPLOYMENT_GUIDE.md](docs/planning/49_DEPLOYMENT_GUIDE.md)
+5. **Deploy**: Follow [49_DEPLOYMENT_GUIDE.md](docs/PLANNING/49_DEPLOYMENT_GUIDE.md)
 
 ## Getting Help
 

@@ -8,13 +8,16 @@ import * as calculators from './calculators';
 import * as converters from './converters';
 import * as dataConverters from './data-converters';
 import * as encoders from './encoders';
-import * as formatters from './formatters';
 import * as generators from './generators';
 import * as text from './text';
 import * as validators from './validators';
 import * as specialized from './specialized';
 
-export { calculators, converters, dataConverters, encoders, formatters, generators, text, validators, specialized };
+export { calculators, converters, dataConverters, encoders, generators, text, validators, specialized };
+
+// Engine architecture — universal executor
+export * from './engines';
+export { execute, getEngine, listEngines } from './engines';
 
 // Also export specialized tools directly since they're unique
 export * from './specialized';

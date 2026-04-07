@@ -1,0 +1,9 @@
+Width: 40
+Input:
+word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word
+
+Output:
+word word word word word word word word
+word word word word word word word word
+word word word word word word word word
+word word word word word word

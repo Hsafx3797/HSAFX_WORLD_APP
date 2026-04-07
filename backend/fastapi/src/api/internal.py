@@ -11,6 +11,7 @@ native binaries (FFmpeg, libvips, Poppler, Tesseract) or Python dependencies.
 
 from typing import Any, Optional
 
+import hmac
 import httpx
 import structlog
 from fastapi import APIRouter, BackgroundTasks, Header, HTTPException
@@ -69,7 +70,7 @@ def verify_internal_secret(x_internal_secret: str = Header(...)):
             status_code=500,
             detail="INTERNAL_API_SECRET not configured on FastAPI side",
         )
-    if x_internal_secret != INTERNAL_SECRET:
+    if not hmac.compare_digest(x_internal_secret, INTERNAL_SECRET):
         raise HTTPException(status_code=401, detail="Invalid internal secret")
     return True
 
@@ -92,7 +93,7 @@ async def execute_tool(
     """
     # Verify secret manually (Header dependency doesn't auto-validate here)
     x_secret = _auth
-    if not INTERNAL_SECRET or x_secret != INTERNAL_SECRET:
+    if not INTERNAL_SECRET or not hmac.compare_digest(x_secret, INTERNAL_SECRET):
         raise HTTPException(status_code=401, detail="Invalid internal secret")
 
     logger.info(
@@ -172,20 +173,11 @@ async def _execute_native_tool(
         result = await execute_scraper(tool_slug, tool_input, options or {})
         return {"output": result}
 
-    # Check if tool is registered in the native tools module
-    try:
-        from src.tools.registry import get_tool_handler
-        handler = get_tool_handler(tool_slug)
-        if handler:
-            result = await handler(tool_input, options or {})
-            return result
-    except ImportError:
-        pass
+    # Dispatch to the tools executor (routes to correct handler by tool ID)
+    from src.tools import execute_tool
 
-    raise ValueError(
-        f"No native handler registered for tool '{tool_slug}'. "
-        f"Ensure it's registered in src/tools/registry.py."
-    )
+    result = await execute_tool(tool_slug, tool_input, options=options or {})
+    return result
 
 
 async def _send_callback(callback: JobCompleteCallback):

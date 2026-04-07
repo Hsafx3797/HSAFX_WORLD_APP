@@ -1,0 +1,126 @@
+{
+  "name": "Parsed Schema",
+  "tables": [
+    {
+      "name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "UUID",
+          "nullable": true,
+          "primaryKey": true,
+          "unique": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(255)",
+          "nullable": false,
+          "primaryKey": false,
+          "unique": true
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "primaryKey": false,
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "posts",
+      "columns": [
+        {
+          "name": "id",
+          "type": "SERIAL",
+          "nullable": true,
+          "primaryKey": true,
+          "unique": false
+        },
+        {
+          "name": "title",
+          "type": "VARCHAR(200)",
+          "nullable": false,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "body",
+          "type": "TEXT",
+          "nullable": true,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "author_id",
+          "type": "UUID",
+          "nullable": false,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "published",
+          "type": "BOOLEAN",
+          "nullable": true,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "primaryKey": false,
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "comments",
+      "columns": [
+        {
+          "name": "id",
+          "type": "SERIAL",
+          "nullable": true,
+          "primaryKey": true,
+          "unique": false
+        },
+        {
+          "name": "post_id",
+          "type": "INTEGER",
+          "nullable": false,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "user_id",
+          "type": "UUID",
+          "nullable": false,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "content",
+          "type": "TEXT",
+          "nullable": false,
+          "primaryKey": false,
+          "unique": false
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "primaryKey": false,
+          "unique": false
+        }
+      ]
+    }
+  ],
+  "relationships": []
+}

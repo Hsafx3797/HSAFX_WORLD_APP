@@ -1,0 +1,59 @@
+[
+  {
+    "from": {
+      "timezone": "UTC",
+      "datetime": "2024-06-15 05:00:00",
+      "offset": "+00:00",
+      "abbr": "UTC"
+    },
+    "to": {
+      "timezone": "America/New_York",
+      "datetime": "2024-06-15 00:00:00",
+      "offset": "-05:00",
+      "abbr": "EST"
+    },
+    "difference": {
+      "hours": 5,
+      "minutes": 0,
+      "formatted": "-5h 0m"
+    }
+  },
+  {
+    "from": {
+      "timezone": "UTC",
+      "datetime": "2024-06-15 05:00:00",
+      "offset": "+00:00",
+      "abbr": "UTC"
+    },
+    "to": {
+      "timezone": "Europe/London",
+      "datetime": "2024-06-15 05:00:00",
+      "offset": "+00:00",
+      "abbr": "GMT"
+    },
+    "difference": {
+      "hours": 0,
+      "minutes": 0,
+      "formatted": "+0h 0m"
+    }
+  },
+  {
+    "from": {
+      "timezone": "UTC",
+      "datetime": "2024-06-15 05:00:00",
+      "offset": "+00:00",
+      "abbr": "UTC"
+    },
+    "to": {
+      "timezone": "Asia/Tokyo",
+      "datetime": "2024-06-15 14:00:00",
+      "offset": "+09:00",
+      "abbr": "JST"
+    },
+    "difference": {
+      "hours": 9,
+      "minutes": 0,
+      "formatted": "+9h 0m"
+    }
+  }
+]

@@ -1,0 +1,8 @@
+{
+  "id": "America/New_York",
+  "name": "Eastern Time",
+  "offset": -300,
+  "abbr": "EST",
+  "city": "New York",
+  "country": "United States"
+}

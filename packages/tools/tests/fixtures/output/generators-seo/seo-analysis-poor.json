@@ -1,0 +1,71 @@
+{
+  "score": 16,
+  "maxScore": 100,
+  "percentage": 16,
+  "grade": "F",
+  "issues": [
+    {
+      "severity": "warning",
+      "message": "Title is too short (under 30 characters)"
+    },
+    {
+      "severity": "error",
+      "message": "Missing meta description"
+    },
+    {
+      "severity": "error",
+      "message": "Missing H1 heading"
+    },
+    {
+      "severity": "warning",
+      "message": "Content is thin (under 300 words)"
+    },
+    {
+      "severity": "error",
+      "message": "Many images missing alt text"
+    },
+    {
+      "severity": "warning",
+      "message": "No internal links found"
+    },
+    {
+      "severity": "info",
+      "message": "No external links found"
+    },
+    {
+      "severity": "warning",
+      "message": "Missing canonical URL"
+    },
+    {
+      "severity": "info",
+      "message": "No robots meta tag"
+    },
+    {
+      "severity": "warning",
+      "message": "Missing sitemap"
+    },
+    {
+      "severity": "error",
+      "message": "HTTPS not enabled"
+    },
+    {
+      "severity": "error",
+      "message": "Page load time is very slow"
+    },
+    {
+      "severity": "error",
+      "message": "Page is not mobile responsive"
+    }
+  ],
+  "recommendations": [
+    "Extend your title to 50-60 characters for better SEO",
+    "Add more content - aim for at least 500 words",
+    "Add descriptive alt text to all images",
+    "Add internal links to other pages on your site",
+    "Add a canonical URL to prevent duplicate content issues",
+    "Create and submit a sitemap",
+    "Enable HTTPS for your website",
+    "Urgently optimize page performance",
+    "Make your page mobile responsive"
+  ]
+}

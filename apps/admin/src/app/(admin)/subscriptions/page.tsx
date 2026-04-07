@@ -137,7 +137,7 @@ export default function SubscriptionsPage() {
   // Stats calculations
   const stats = {
     active: subscriptions.filter((s) => s.status === 'active').length,
-    cancelled: subscriptions.filter((s) => s.status === 'cancelled').length,
+    cancelled: subscriptions.filter((s) => s.status === 'canceled').length,
     pastDue: subscriptions.filter((s) => s.status === 'past_due').length,
     trialing: subscriptions.filter((s) => s.status === 'trialing').length,
     paused: subscriptions.filter((s) => s.status === 'paused').length,
@@ -262,7 +262,7 @@ export default function SubscriptionsPage() {
         setShowCancelModal(true);
       },
       variant: 'danger',
-      disabled: (sub) => sub.status === 'cancelled',
+      disabled: (sub) => sub.status === 'canceled',
     },
     {
       label: 'Refund',

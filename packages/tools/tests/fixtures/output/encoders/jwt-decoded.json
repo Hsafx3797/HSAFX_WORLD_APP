@@ -1,0 +1,14 @@
+{
+  "header": {
+    "alg": "HS256",
+    "typ": "JWT"
+  },
+  "payload": {
+    "sub": "1234567890",
+    "name": "Test User",
+    "iat": 1700000000,
+    "exp": 9999999999
+  },
+  "signature": "fakesig123",
+  "isExpired": false
+}

@@ -1,0 +1,15 @@
+{
+  "days": 365,
+  "weeks": 52,
+  "months": 11,
+  "years": 0,
+  "hours": 8760,
+  "minutes": 525600,
+  "seconds": 31536000,
+  "businessDays": 260,
+  "detailed": {
+    "years": 1,
+    "months": 0,
+    "days": 0
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "hello-world": {
+    "valid": true,
+    "details": {
+      "length": 11
+    }
+  },
+  "my-blog-post-123": {
+    "valid": true,
+    "details": {
+      "length": 16
+    }
+  },
+  "a-z-0-9": {
+    "valid": true,
+    "details": {
+      "length": 7
+    }
+  }
+}

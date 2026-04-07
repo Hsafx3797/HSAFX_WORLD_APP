@@ -12,7 +12,11 @@ export type JobStatus =
 
 export interface Job {
   id: string;
+  /** Engine name (new B2B route). When set, runtime is resolved from ENGINE_RUNTIME. */
+  engineName?: string;
+  /** @deprecated — kept for backward compat with old routes. New jobs use engineName. */
   toolId: string;
+  /** @deprecated — kept for backward compat with old routes. New jobs use engineName. */
   toolSlug: string;
   userId: string;
   apiKeyId?: string;
@@ -35,6 +39,8 @@ export interface JobResult {
 }
 
 export interface CreateJobInput {
+  /** Engine name (new B2B route). When set, runtime is resolved from ENGINE_RUNTIME. */
+  engineName?: string;
   toolId: string;
   toolSlug: string;
   userId: string;

@@ -1,0 +1,8 @@
+{
+  "valid": false,
+  "sealNumber": "ISO17712-12345",
+  "type": "unknown",
+  "errors": [
+    "Invalid seal number format (expected 6-10 alphanumeric characters)"
+  ]
+}

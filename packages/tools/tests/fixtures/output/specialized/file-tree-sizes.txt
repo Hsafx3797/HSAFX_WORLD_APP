@@ -1,0 +1,9 @@
+📁 project
+├── 📁 src
+│   ├── 📁 components
+│   │   ├── 📄 Button.tsx (2.0 KB)
+│   │   └── 📄 Modal.tsx (3.0 KB)
+│   ├── 📄 index.ts (1.0 KB)
+│   └── 📄 utils.ts (512 B)
+├── 📄 package.json (256 B)
+└── 📄 README.md (4.0 KB)

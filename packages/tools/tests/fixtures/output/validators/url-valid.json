@@ -1,0 +1,34 @@
+{
+  "https://www.example.com": {
+    "valid": true,
+    "details": {
+      "protocol": "https:",
+      "hostname": "www.example.com",
+      "pathname": "/"
+    }
+  },
+  "http://api.example.com/v1/users": {
+    "valid": true,
+    "details": {
+      "protocol": "http:",
+      "hostname": "api.example.com",
+      "pathname": "/v1/users"
+    }
+  },
+  "https://docs.example.org/guide?page=1#section": {
+    "valid": true,
+    "details": {
+      "protocol": "https:",
+      "hostname": "docs.example.org",
+      "pathname": "/guide"
+    }
+  },
+  "https://api.example.io:8080/items": {
+    "valid": true,
+    "details": {
+      "protocol": "https:",
+      "hostname": "api.example.io",
+      "pathname": "/items"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "4111111111111111": {
+    "valid": true,
+    "details": {
+      "cardType": "Visa",
+      "maskedNumber": "****1111"
+    }
+  },
+  "5500000000000004": {
+    "valid": true,
+    "details": {
+      "cardType": "Mastercard",
+      "maskedNumber": "****0004"
+    }
+  },
+  "340000000000009": {
+    "valid": true,
+    "details": {
+      "cardType": "American Express",
+      "maskedNumber": "****0009"
+    }
+  },
+  "6011000000000004": {
+    "valid": true,
+    "details": {
+      "cardType": "Discover",
+      "maskedNumber": "****0004"
+    }
+  }
+}

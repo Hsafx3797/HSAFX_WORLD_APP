@@ -177,10 +177,10 @@ async function handleCheckoutCompleted(
     // Insert payment record so refunds can find it
     await tx.insert(payments).values({
       userId,
-      amount: (data.amount_total as number) ?? 0,
+      amountCents: (data.amount_total as number) ?? 0,
       currency: (data.currency as string) ?? 'usd',
       status: 'succeeded',
-      provider: 'stripe',
+      paymentMethod: 'card',
       stripePaymentIntentId: paymentIntentId ?? null,
       metadata: { stripeEventId: eventId, packId, sessionId: data.id },
     });
@@ -379,6 +379,12 @@ async function handleDisputeCreated(
       message: `A payment dispute has been filed. Your account is under review.`,
       metadata: { stripeEventId: eventId, paymentIntentId },
     });
+
+    // Freeze wallet to prevent coin spending during dispute
+    await db
+      .update(userCoinWallets)
+      .set({ disputeFrozen: true, updatedAt: new Date() })
+      .where(eq(userCoinWallets.userId, userId));
   }
 }
 

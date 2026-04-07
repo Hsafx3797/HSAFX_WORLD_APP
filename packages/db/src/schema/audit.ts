@@ -11,9 +11,11 @@ export const auditActionEnum = pgEnum('audit_action', [
   'create', 'update', 'delete', 'grant', 'revoke', 'login', 'logout', 'payment', 'refund',
 ]);
 
-export const permissionTargetEnum = pgEnum('permission_target', [
-  'role_permission', 'user_override', 'plan_feature',
-]);
+// UNUSED: permissionTargetEnum — defined but never referenced by any table column.
+// Kept commented to avoid breaking existing DB migrations.
+// export const permissionTargetEnum = pgEnum('permission_target', [
+//   'role_permission', 'user_override', 'plan_feature',
+// ]);
 
 /**
  * API Request Logs - High-volume append-only request audit trail

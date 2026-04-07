@@ -12,6 +12,7 @@ import {
   apiErrorResponse,
   type ApiContext,
 } from '@/lib/api-v1-auth';
+import { ApiErrorCode } from '@hsafx/shared/errors';
 import { getJob, getJobResult } from '@/server/jobs/job-manager';
 
 interface Params {
@@ -33,18 +34,18 @@ export async function GET(request: NextRequest, { params }: Params) {
   const job = await getJob(jobId);
 
   if (!job) {
-    return apiErrorResponse('J001', `Job '${jobId}' not found`, ctx, 404);
+    return apiErrorResponse(ApiErrorCode.JOB_NOT_FOUND, `Job '${jobId}' not found`, ctx, 404);
   }
 
   // 4. Security: ensure job belongs to this API key's owner
   if (job.userId !== ctx.userId) {
-    return apiErrorResponse('J001', `Job '${jobId}' not found`, ctx, 404);
+    return apiErrorResponse(ApiErrorCode.JOB_NOT_FOUND, `Job '${jobId}' not found`, ctx, 404);
   }
 
   // 5. Check status
   if (job.status !== 'completed') {
     return apiErrorResponse(
-      'J002',
+      ApiErrorCode.JOB_NOT_COMPLETE,
       `Job is not completed yet. Current status: ${job.status}`,
       ctx,
       409,
@@ -57,7 +58,7 @@ export async function GET(request: NextRequest, { params }: Params) {
 
   if (!jobResult) {
     return apiErrorResponse(
-      'J003',
+      ApiErrorCode.JOB_FAILED,
       'Job result expired or unavailable',
       ctx,
       410,

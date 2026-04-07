@@ -3,6 +3,8 @@
  * Reference: 24_ERROR_HANDLING.md, 47_ERROR_HANDLING_IMPLEMENTATION.md
  */
 
+// ─── Application-level error codes (internal) ─────────────────
+
 export const ErrorCode = {
   // Authentication & Authorization (1xxx)
   AUTH_INVALID_CREDENTIALS: 'AUTH_1001',
@@ -123,6 +125,70 @@ export const ErrorMessage: Record<ErrorCodeType, string> = {
   [ErrorCode.NOT_IMPLEMENTED]: 'Feature not yet implemented',
   [ErrorCode.MAINTENANCE_MODE]: 'System is under maintenance',
 };
+
+// ─── B2B API v1 error codes (external-facing) ─────────────────
+
+/**
+ * API error codes returned in the `error.code` field of B2B API v1 responses.
+ * These are part of the public API contract — do not rename without versioning.
+ */
+export const ApiErrorCode = {
+  // Authentication (A0xx)
+  AUTH_MISSING_KEY: 'A001',
+  AUTH_INVALID_KEY: 'A002',
+  AUTH_KEY_REVOKED: 'A003',
+  AUTH_ACCOUNT_SUSPENDED: 'A004',
+  AUTH_INSUFFICIENT_SCOPE: 'A005',
+
+  // Rate Limiting (R0xx)
+  RATE_LIMIT: 'R004',
+
+  // Validation (V0xx)
+  INVALID_JSON: 'V001',
+  MISSING_FIELD: 'V002',
+  INVALID_FIELD: 'V003',
+  ENGINE_VALIDATION: 'V004',
+  INPUT_TOO_LARGE: 'V005',
+
+  // Engine (E0xx)
+  ENGINE_NOT_FOUND: 'E001',
+
+  // Plan (P0xx)
+  PLAN_REQUIRED: 'P001',
+
+  // Billing (B0xx)
+  INSUFFICIENT_COINS: 'B001',
+  QUOTA_EXHAUSTED: 'B002',
+  SUITE_NOT_AVAILABLE: 'B003',
+  B2B_NO_SUBSCRIPTION: 'B004',
+
+  // Tool (T0xx)
+  TOOL_NOT_FOUND: 'T001',
+
+  // Job (J0xx)
+  JOB_NOT_FOUND: 'J001',
+  JOB_NOT_COMPLETE: 'J002',
+  JOB_FAILED: 'J003',
+
+  // Account (U0xx)
+  USER_NOT_FOUND: 'U001',
+
+  // Webhook (W0xx)
+  WEBHOOK_NOT_FOUND: 'W001',
+  WEBHOOK_LIMIT: 'W002',
+  WEBHOOK_FAILED: 'W003',
+
+  // Key Management (A0xx extended)
+  AUTH_KEY_NOT_FOUND: 'A006',
+
+  // Limits (L0xx)
+  LIMIT_REACHED: 'L001',
+
+  // Server (S0xx)
+  SERVER_ERROR: 'S001',
+} as const;
+
+export type ApiErrorCodeType = (typeof ApiErrorCode)[keyof typeof ApiErrorCode];
 
 /**
  * Custom application error class

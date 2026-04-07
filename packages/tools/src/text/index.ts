@@ -221,51 +221,62 @@ export interface DiffResult {
   value: string;
 }
 
-export function diffText(oldText: string, newText: string): DiffResult[] {
-  const oldLines = oldText.split('\n');
-  const newLines = newText.split('\n');
+export function diffText(oldText: string, newText: string, mode: 'line' | 'word' | 'character' = 'line'): DiffResult[] {
+  // Split input based on mode
+  let oldTokens: string[];
+  let newTokens: string[];
+
+  switch (mode) {
+    case 'word':
+      oldTokens = oldText.split(/(\s+)/);
+      newTokens = newText.split(/(\s+)/);
+      break;
+    case 'character':
+      oldTokens = [...oldText];
+      newTokens = [...newText];
+      break;
+    case 'line':
+    default:
+      oldTokens = oldText.split('\n');
+      newTokens = newText.split('\n');
+      break;
+  }
   
   const results: DiffResult[] = [];
   
-  // Simple line-by-line diff
+  // Simple token-by-token diff
   let oldIndex = 0;
   let newIndex = 0;
   
-  while (oldIndex < oldLines.length || newIndex < newLines.length) {
-    if (oldIndex >= oldLines.length) {
-      // Remaining lines are additions
-      results.push({ type: 'added', value: newLines[newIndex] });
+  while (oldIndex < oldTokens.length || newIndex < newTokens.length) {
+    if (oldIndex >= oldTokens.length) {
+      results.push({ type: 'added', value: newTokens[newIndex] });
       newIndex++;
-    } else if (newIndex >= newLines.length) {
-      // Remaining lines are removals
-      results.push({ type: 'removed', value: oldLines[oldIndex] });
+    } else if (newIndex >= newTokens.length) {
+      results.push({ type: 'removed', value: oldTokens[oldIndex] });
       oldIndex++;
-    } else if (oldLines[oldIndex] === newLines[newIndex]) {
-      // Lines match
-      results.push({ type: 'unchanged', value: oldLines[oldIndex] });
+    } else if (oldTokens[oldIndex] === newTokens[newIndex]) {
+      results.push({ type: 'unchanged', value: oldTokens[oldIndex] });
       oldIndex++;
       newIndex++;
     } else {
       // Look ahead for match
-      let foundInNew = newLines.indexOf(oldLines[oldIndex], newIndex);
-      let foundInOld = oldLines.indexOf(newLines[newIndex], oldIndex);
+      let foundInNew = newTokens.indexOf(oldTokens[oldIndex], newIndex);
+      let foundInOld = oldTokens.indexOf(newTokens[newIndex], oldIndex);
       
       if (foundInNew !== -1 && (foundInOld === -1 || foundInNew - newIndex <= foundInOld - oldIndex)) {
-        // Add new lines until we find the old line
         while (newIndex < foundInNew) {
-          results.push({ type: 'added', value: newLines[newIndex] });
+          results.push({ type: 'added', value: newTokens[newIndex] });
           newIndex++;
         }
       } else if (foundInOld !== -1) {
-        // Remove old lines until we find the new line
         while (oldIndex < foundInOld) {
-          results.push({ type: 'removed', value: oldLines[oldIndex] });
+          results.push({ type: 'removed', value: oldTokens[oldIndex] });
           oldIndex++;
         }
       } else {
-        // No match found, treat as replacement
-        results.push({ type: 'removed', value: oldLines[oldIndex] });
-        results.push({ type: 'added', value: newLines[newIndex] });
+        results.push({ type: 'removed', value: oldTokens[oldIndex] });
+        results.push({ type: 'added', value: newTokens[newIndex] });
         oldIndex++;
         newIndex++;
       }

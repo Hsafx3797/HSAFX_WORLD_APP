@@ -8,10 +8,20 @@
 
 import { redis, keys, TTL, generateInputHash } from '@/lib/redis';
 import { db, toolExecutions } from '@hsafx/db';
+import crypto from 'crypto';
 import type { Job, JobResult, CreateJobInput, JobStatus } from './types';
 import { createLogger } from '@hsafx/shared/logger';
 
 const log = createLogger('job-manager');
+
+/** Max time a job can stay in 'queued' status before being considered stale (5 min). */
+const STALE_JOB_THRESHOLD_MS = 5 * 60 * 1000;
+
+/** Max time a job can stay in 'preparing' status (10 min). */
+const STALE_PREPARING_THRESHOLD_MS = 10 * 60 * 1000;
+
+/** Max time a job can stay in 'processing' status (30 min). */
+const STALE_PROCESSING_THRESHOLD_MS = 30 * 60 * 1000;
 
 // Re-export types so existing consumers don't break
 export type { Job, JobResult, CreateJobInput, JobStatus } from './types';
@@ -19,9 +29,8 @@ export type { Job, JobResult, CreateJobInput, JobStatus } from './types';
 // ─── Job ID generation ────────────────────────────────────────
 
 function generateJobId(): string {
-  const ts = Date.now().toString(36);
-  const rand = Math.random().toString(36).slice(2, 10);
-  return `job_${ts}_${rand}`;
+  const rand = crypto.randomBytes(16).toString('hex');
+  return `job_${rand}`;
 }
 
 // ─── CRUD ─────────────────────────────────────────────────────
@@ -35,6 +44,7 @@ export async function createJob(input: CreateJobInput): Promise<Job> {
 
   const job: Job = {
     id,
+    engineName: input.engineName,
     toolId: input.toolId,
     toolSlug: input.toolSlug,
     userId: input.userId,
@@ -70,9 +80,23 @@ export async function createJob(input: CreateJobInput): Promise<Job> {
     );
 
   // Dispatch to worker (imported lazily to avoid circular deps)
-  dispatchJob(job).catch((err: unknown) =>
-    log.error('Failed to dispatch job', { jobId: id, error: String(err) }),
-  );
+  dispatchJob(job).catch(async (err: unknown) => {
+    log.error('Failed to dispatch job', { jobId: id, error: String(err) });
+    // Release orphaned coin reservation to avoid locking user's coins forever
+    const reservationId = input.options?.reservationId as string | undefined;
+    if (reservationId) {
+      try {
+        const { releaseReservation } = await import('../limits/coin-service');
+        await releaseReservation(reservationId);
+      } catch (releaseErr) {
+        log.error('Failed to release orphaned reservation', {
+          jobId: id,
+          reservationId,
+          error: String(releaseErr),
+        });
+      }
+    }
+  });
 
   return job;
 }
@@ -84,18 +108,57 @@ export async function getJob(jobId: string): Promise<Job | null> {
   const redisKey = keys.job.state(jobId);
   const raw = await redis.get(redisKey);
   if (!raw) return null;
-  return typeof raw === 'string' ? JSON.parse(raw) : (raw as unknown as Job);
+  const job = typeof raw === 'string' ? JSON.parse(raw) : (raw as unknown as Job);
+
+  // Detect stale jobs: if stuck beyond threshold for their status, mark as failed
+  if (job.status === 'queued' || job.status === 'preparing' || job.status === 'processing') {
+    const age = Date.now() - new Date(job.createdAt).getTime();
+    const threshold =
+      job.status === 'queued' ? STALE_JOB_THRESHOLD_MS :
+      job.status === 'preparing' ? STALE_PREPARING_THRESHOLD_MS :
+      STALE_PROCESSING_THRESHOLD_MS;
+
+    if (age > threshold) {
+      log.warn('Stale job detected, marking as failed', { jobId, status: job.status, ageMs: age });
+      const failed = await updateJob(jobId, {
+        status: 'failed',
+        error: `Job timed out in '${job.status}' state (stale after ${Math.round(age / 1000)}s)`,
+        completedAt: new Date().toISOString(),
+      });
+
+      // Release orphaned coin reservation if present
+      const reservationId = job.options?.reservationId as string | undefined;
+      if (reservationId) {
+        try {
+          const { releaseReservation } = await import('../limits/coin-service');
+          await releaseReservation(reservationId);
+        } catch (releaseErr) {
+          log.error('Failed to release reservation for stale job', {
+            jobId, reservationId, error: String(releaseErr),
+          });
+        }
+      }
+
+      return failed ?? job;
+    }
+  }
+
+  return job;
 }
 
 /**
  * Update job fields in Redis.
+ * Reads Redis directly (not via getJob) to avoid infinite recursion
+ * when getJob detects stale jobs and calls updateJob.
  */
 export async function updateJob(
   jobId: string,
   updates: Partial<Pick<Job, 'status' | 'progress' | 'error' | 'completedAt'>>,
 ): Promise<Job | null> {
-  const job = await getJob(jobId);
-  if (!job) return null;
+  const redisKey = keys.job.state(jobId);
+  const raw = await redis.get(redisKey);
+  if (!raw) return null;
+  const job = typeof raw === 'string' ? JSON.parse(raw) : (raw as unknown as Job);
 
   const updated: Job = {
     ...job,
@@ -103,7 +166,6 @@ export async function updateJob(
     updatedAt: new Date().toISOString(),
   };
 
-  const redisKey = keys.job.state(jobId);
   await redis.set(redisKey, JSON.stringify(updated), { ex: TTL.JOB_STATE });
 
   return updated;
@@ -148,19 +210,45 @@ export async function setJobProgress(
 // ─── Dispatcher ───────────────────────────────────────────────
 
 /**
+ * Redis-based concurrency limiter — survives restarts, works across instances.
+ * Safety TTL on the counter key prevents permanent lockout if all instances crash.
+ */
+const MAX_CONCURRENT_JOBS = 50;
+
+/**
  * Dispatch a job to the appropriate worker.
- * For now, processes inline (Phase 3). In Phase 4+, this will push to BullMQ.
+ * Uses Redis atomic counter for concurrency tracking.
  */
 async function dispatchJob(job: Job): Promise<void> {
+  const concurrencyKey = keys.system.concurrentJobs();
+
+  // Atomically increment; if over limit, decrement and reject
+  const current = await redis.incr(concurrencyKey);
+  // Safety TTL: auto-cleanup if all instances crash (1 hour)
+  await redis.expire(concurrencyKey, 3600);
+
+  if (current > MAX_CONCURRENT_JOBS) {
+    await redis.decr(concurrencyKey);
+    throw new Error(
+      `Server at capacity (${current - 1}/${MAX_CONCURRENT_JOBS} concurrent jobs). Please retry later.`,
+    );
+  }
+
   // Dynamic import to avoid circular dependency (job-worker imports from job-manager)
   const { processJob } = await import('./job-worker') as { processJob: (job: Job) => Promise<void> };
   // Process asynchronously (don't block job creation)
-  processJob(job).catch((err: unknown) => {
-    log.error('Job failed', { jobId: job.id, error: String(err) });
-    updateJob(job.id, {
-      status: 'failed',
-      error: err instanceof Error ? err.message : 'Unknown error',
-      completedAt: new Date().toISOString(),
+  processJob(job)
+    .catch((err: unknown) => {
+      log.error('Job failed', { jobId: job.id, error: String(err) });
+      updateJob(job.id, {
+        status: 'failed',
+        error: err instanceof Error ? err.message : 'Unknown error',
+        completedAt: new Date().toISOString(),
+      });
+    })
+    .finally(async () => {
+      await redis.decr(concurrencyKey).catch((err: unknown) =>
+        log.error('Failed to decrement concurrent jobs counter', { error: String(err) }),
+      );
     });
-  });
 }

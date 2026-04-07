@@ -8,12 +8,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db, apiKeys, users, eq, desc, sql } from '@hsafx/db';
 import { createLogger } from '@hsafx/shared/logger';
 import { requireAdminRole } from '@/lib/require-admin';
+import { adminResponse, adminPaginatedResponse, adminErrorResponse } from '@/lib/admin-response';
 
 const log = createLogger('admin-api-keys');
 
 export async function GET(request: NextRequest) {
   try {
-    const authResult = await requireAdminRole();
+    const authResult = await requireAdminRole('admin.view');
     if (authResult instanceof NextResponse) return authResult;
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1', 10);
@@ -60,32 +61,23 @@ export async function GET(request: NextRequest) {
 
     const total = Number(countResult[0]?.count ?? 0);
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        data: keys,
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    });
+    return adminPaginatedResponse(keys, { page, limit, total });
   } catch (error) {
     log.error('GET error', { error: String(error) });
-    return NextResponse.json({ success: false, error: { code: 'INTERNAL', message: 'Failed to fetch API keys' } }, { status: 500 });
+    return adminErrorResponse('INTERNAL', 'Failed to fetch API keys', 500);
   }
 }
 
 export async function PATCH(request: NextRequest) {
   try {
-    const authResult = await requireAdminRole();
+    const authResult = await requireAdminRole('admin.manage');
     if (authResult instanceof NextResponse) return authResult;
 
     const body = await request.json();
     const { id, isActive, revokedAt } = body;
 
     if (!id) {
-      return NextResponse.json({ success: false, error: { code: 'VALIDATION', message: 'API key ID required' } }, { status: 400 });
+      return adminErrorResponse('VALIDATION', 'API key ID required', 400);
     }
 
     const updates: Record<string, unknown> = {};
@@ -105,12 +97,12 @@ export async function PATCH(request: NextRequest) {
       .returning();
 
     if (!updated) {
-      return NextResponse.json({ success: false, error: { code: 'NOT_FOUND', message: 'API key not found' } }, { status: 404 });
+      return adminErrorResponse('NOT_FOUND', 'API key not found', 404);
     }
 
-    return NextResponse.json({ success: true, data: updated });
+    return adminResponse(updated);
   } catch (error) {
     log.error('PATCH error', { error: String(error) });
-    return NextResponse.json({ success: false, error: { code: 'INTERNAL', message: 'Failed to update API key' } }, { status: 500 });
+    return adminErrorResponse('INTERNAL', 'Failed to update API key', 500);
   }
 }

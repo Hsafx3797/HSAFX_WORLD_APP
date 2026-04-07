@@ -1,0 +1,23 @@
+{
+  "+1-555-123-4567": {
+    "valid": true,
+    "details": {
+      "hasCountryCode": true,
+      "length": 11
+    }
+  },
+  "+44 20 7946 0958": {
+    "valid": true,
+    "details": {
+      "hasCountryCode": true,
+      "length": 12
+    }
+  },
+  "(212) 555-0100": {
+    "valid": true,
+    "details": {
+      "hasCountryCode": false,
+      "length": 10
+    }
+  }
+}

@@ -29,9 +29,14 @@ function getEdgeRedis(): Redis {
 
 // ─── Rate limiters ────────────────────────────────────────────
 
+// Configurable via env (no redeploy needed for platform changes)
+const IP_RATE_LIMIT = Number(process.env.RATE_LIMIT_IP_PER_MIN ?? 100);
+const AUTH_RATE_LIMIT = Number(process.env.RATE_LIMIT_AUTH_PER_15MIN ?? 10);
+const API_KEY_RATE_LIMIT = Number(process.env.RATE_LIMIT_APIKEY_PER_MIN ?? 60);
+
 /**
  * IP-based rate limiter — applies to ALL requests.
- * Anonymous users: 100 req/min
+ * Anonymous users: configurable via RATE_LIMIT_IP_PER_MIN (default: 100 req/min)
  */
 let _ipLimiter: Ratelimit | undefined;
 
@@ -39,7 +44,7 @@ function getIpLimiter(): Ratelimit {
   if (!_ipLimiter) {
     _ipLimiter = new Ratelimit({
       redis: getEdgeRedis(),
-      limiter: Ratelimit.slidingWindow(100, '1 m'),
+      limiter: Ratelimit.slidingWindow(IP_RATE_LIMIT, '1 m'),
       prefix: 'rl:ip',
       analytics: false,
     });
@@ -62,7 +67,7 @@ function getUserLimiter(requestsPerHour: number): Ratelimit {
 
 /**
  * Auth endpoint rate limiter — strict limits.
- * 10 requests per 15 minutes per IP.
+ * Configurable via RATE_LIMIT_AUTH_PER_15MIN (default: 10 req/15min per IP).
  */
 let _authLimiter: Ratelimit | undefined;
 
@@ -70,7 +75,7 @@ function getAuthLimiter(): Ratelimit {
   if (!_authLimiter) {
     _authLimiter = new Ratelimit({
       redis: getEdgeRedis(),
-      limiter: Ratelimit.slidingWindow(10, '15 m'),
+      limiter: Ratelimit.slidingWindow(AUTH_RATE_LIMIT, '15 m'),
       prefix: 'rl:auth',
       analytics: false,
     });
@@ -80,7 +85,7 @@ function getAuthLimiter(): Ratelimit {
 
 /**
  * API key rate limiter — per-key limits for B2B.
- * Default: 60 req/min per key.
+ * Configurable via RATE_LIMIT_APIKEY_PER_MIN (default: 60 req/min per key).
  */
 let _apiKeyLimiter: Ratelimit | undefined;
 
@@ -88,7 +93,7 @@ function getApiKeyLimiter(): Ratelimit {
   if (!_apiKeyLimiter) {
     _apiKeyLimiter = new Ratelimit({
       redis: getEdgeRedis(),
-      limiter: Ratelimit.slidingWindow(60, '1 m'),
+      limiter: Ratelimit.slidingWindow(API_KEY_RATE_LIMIT, '1 m'),
       prefix: 'rl:apikey',
       analytics: false,
     });

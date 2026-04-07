@@ -21,6 +21,8 @@ const devFallbackRedis = new Proxy({} as Redis, {
       hgetall: async () => null,
       hset: async () => 1,
       exists: async () => 0,
+      // Rate-limit Lua script returns [burst, hourly, daily] counters — return 1s to simulate under-limit
+      eval: async () => [1, 1, 1],
       pipeline: () => ({
         incr: () => devFallbackRedis,
         expire: () => devFallbackRedis,
@@ -38,9 +40,11 @@ export function getRedis(): Redis {
     const url = process.env.UPSTASH_REDIS_REST_URL;
     const token = process.env.UPSTASH_REDIS_REST_TOKEN;
     if (!url || !token) {
-      if (process.env.NODE_ENV === 'production') {
+      const env = process.env.NODE_ENV;
+      // Only allow fallback in development and test environments
+      if (env !== 'development' && env !== 'test') {
         throw new Error(
-          'UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are required',
+          'UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are required in non-development environments',
         );
       }
       // Dev mode: use no-op fallback
@@ -140,6 +144,12 @@ export const keys = {
   // Idempotency
   idempotency: (idempotencyKey: string) =>
     key('idempotency', idempotencyKey),
+
+  // System flags (read by Edge Middleware)
+  system: {
+    maintenanceMode: () => key('system', 'maintenance_mode'),
+    concurrentJobs: () => key('system', 'concurrent_jobs'),
+  },
 } as const;
 
 // ─── TTL constants (seconds) ──────────────────────────────────

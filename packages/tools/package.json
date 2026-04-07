@@ -16,16 +16,7 @@
       "import": "./dist/calculators/index.mjs",
       "require": "./dist/calculators/index.js"
     },
-    "./calculators/compat": {
-      "types": "./dist/calculators/compat.d.ts",
-      "import": "./dist/calculators/compat.mjs",
-      "require": "./dist/calculators/compat.js"
-    },
-    "./calculators/islamic-compat": {
-      "types": "./dist/calculators/islamic-compat.d.ts",
-      "import": "./dist/calculators/islamic-compat.mjs",
-      "require": "./dist/calculators/islamic-compat.js"
-    },
+
     "./calculators/web": {
       "types": "./dist/calculators/web.d.ts",
       "import": "./dist/calculators/web.mjs",
@@ -46,21 +37,13 @@
       "import": "./dist/encoders/index.mjs",
       "require": "./dist/encoders/index.js"
     },
-    "./formatters": {
-      "types": "./dist/formatters/index.d.ts",
-      "import": "./dist/formatters/index.mjs",
-      "require": "./dist/formatters/index.js"
-    },
+
     "./generators": {
       "types": "./dist/generators/index.d.ts",
       "import": "./dist/generators/index.mjs",
       "require": "./dist/generators/index.js"
     },
-    "./generators/compat": {
-      "types": "./dist/generators/compat.d.ts",
-      "import": "./dist/generators/compat.mjs",
-      "require": "./dist/generators/compat.js"
-    },
+
     "./generators/seo": {
       "types": "./dist/generators/seo.d.ts",
       "import": "./dist/generators/seo.mjs",
@@ -96,11 +79,7 @@
       "import": "./dist/validators/index.mjs",
       "require": "./dist/validators/index.js"
     },
-    "./validators/compat": {
-      "types": "./dist/validators/compat.d.ts",
-      "import": "./dist/validators/compat.mjs",
-      "require": "./dist/validators/compat.js"
-    },
+
     "./validators/web": {
       "types": "./dist/validators/web.d.ts",
       "import": "./dist/validators/web.mjs",
@@ -110,6 +89,11 @@
       "types": "./dist/specialized/index.d.ts",
       "import": "./dist/specialized/index.mjs",
       "require": "./dist/specialized/index.js"
+    },
+    "./engines": {
+      "types": "./dist/engines/index.d.ts",
+      "import": "./dist/engines/index.mjs",
+      "require": "./dist/engines/index.js"
     }
   },
   "scripts": {

@@ -12,12 +12,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db, tools, toolCategories, activityLogs, eq, and, or, sql, desc, asc } from '@hsafx/db';
 import { createLogger } from '@hsafx/shared/logger';
 import { requireAdminRole } from '@/lib/require-admin';
+import { adminResponse, adminPaginatedResponse, adminErrorResponse } from '@/lib/admin-response';
 
 const log = createLogger('admin-tools');
 
 export async function GET(request: NextRequest) {
   try {
-    const authResult = await requireAdminRole();
+    const authResult = await requireAdminRole('tools.view');
     if (authResult instanceof NextResponse) return authResult;
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1', 10);
@@ -185,19 +186,10 @@ export async function GET(request: NextRequest) {
     const total = countResults[0]?.count ?? 0;
     const totalPages = Math.ceil(total / limit);
 
-    return NextResponse.json({
-      data: enrichedTools,
-      page,
-      limit,
-      total,
-      totalPages,
-    });
+    return adminPaginatedResponse(enrichedTools, { page, limit, total });
   } catch (error) {
     log.error('Failed to fetch tools', { error: String(error) });
-    return NextResponse.json(
-      { code: 'FETCH_ERROR', message: 'Failed to fetch tools' },
-      { status: 500 }
-    );
+    return adminErrorResponse('FETCH_ERROR', 'Failed to fetch tools', 500);
   }
 }
 
@@ -209,26 +201,20 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const authResult = await requireAdminRole();
+    const authResult = await requireAdminRole('tools.manage');
     if (authResult instanceof NextResponse) return authResult;
 
     const body = await request.json();
     const { name, slug, description, categoryId, toolGroup, runtime, executionMode, coinCost, isPremium, tags, icon, sortOrder, longDescription, metadata } = body;
 
     if (!name || !slug || !description || !categoryId || !toolGroup || !runtime || !executionMode) {
-      return NextResponse.json(
-        { code: 'VALIDATION_ERROR', message: 'name, slug, description, categoryId, toolGroup, runtime, executionMode are required' },
-        { status: 400 }
-      );
+      return adminErrorResponse('VALIDATION_ERROR', 'name, slug, description, categoryId, toolGroup, runtime, executionMode are required', 400);
     }
 
     // Check duplicate slug
     const existing = await db.select({ id: tools.id }).from(tools).where(eq(tools.slug, slug)).limit(1);
     if (existing.length > 0) {
-      return NextResponse.json(
-        { code: 'DUPLICATE_SLUG', message: 'Tool with this slug already exists' },
-        { status: 409 }
-      );
+      return adminErrorResponse('DUPLICATE_SLUG', 'Tool with this slug already exists', 409);
     }
 
     const [newTool] = await db
@@ -260,7 +246,7 @@ export async function POST(request: NextRequest) {
       metadata: JSON.stringify({ slug }),
     } as typeof activityLogs.$inferInsert);
 
-    return NextResponse.json(
+    return adminResponse(
       {
         id: newTool.id,
         name: newTool.name,
@@ -274,14 +260,11 @@ export async function POST(request: NextRequest) {
         isActive: newTool.isActive,
         createdAt: newTool.createdAt?.toISOString(),
       },
-      { status: 201 }
+      201
     );
   } catch (error) {
     log.error('Failed to create tool', { error: String(error) });
-    return NextResponse.json(
-      { code: 'CREATE_ERROR', message: 'Failed to create tool' },
-      { status: 500 }
-    );
+    return adminErrorResponse('CREATE_ERROR', 'Failed to create tool', 500);
   }
 }
 
@@ -293,17 +276,14 @@ export async function POST(request: NextRequest) {
  */
 export async function PATCH(request: NextRequest) {
   try {
-    const authResult = await requireAdminRole();
+    const authResult = await requireAdminRole('tools.manage');
     if (authResult instanceof NextResponse) return authResult;
 
     const body = await request.json();
     const { id, ...updates } = body as { id?: string; [k: string]: unknown };
 
     if (!id) {
-      return NextResponse.json(
-        { code: 'VALIDATION_ERROR', message: 'Tool ID is required' },
-        { status: 400 }
-      );
+      return adminErrorResponse('VALIDATION_ERROR', 'Tool ID is required', 400);
     }
 
     // Only allow specific fields
@@ -345,10 +325,7 @@ export async function PATCH(request: NextRequest) {
       });
 
     if (!updated) {
-      return NextResponse.json(
-        { code: 'NOT_FOUND', message: 'Tool not found' },
-        { status: 404 }
-      );
+      return adminErrorResponse('NOT_FOUND', 'Tool not found', 404);
     }
 
     // Audit log
@@ -359,13 +336,10 @@ export async function PATCH(request: NextRequest) {
       metadata: JSON.stringify({ fields: Object.keys(updates) }),
     } as typeof activityLogs.$inferInsert);
 
-    return NextResponse.json(updated);
+    return adminResponse(updated);
   } catch (error) {
     log.error('Failed to update tool', { error: String(error) });
-    return NextResponse.json(
-      { code: 'UPDATE_ERROR', message: 'Failed to update tool' },
-      { status: 500 }
-    );
+    return adminErrorResponse('UPDATE_ERROR', 'Failed to update tool', 500);
   }
 }
 
@@ -377,17 +351,14 @@ export async function PATCH(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
-    const authResult = await requireAdminRole();
+    const authResult = await requireAdminRole('tools.manage');
     if (authResult instanceof NextResponse) return authResult;
 
     const body = await request.json();
     const { id } = body as { id?: string };
 
     if (!id) {
-      return NextResponse.json(
-        { code: 'VALIDATION_ERROR', message: 'Tool ID is required' },
-        { status: 400 }
-      );
+      return adminErrorResponse('VALIDATION_ERROR', 'Tool ID is required', 400);
     }
 
     const [deleted] = await db
@@ -397,10 +368,7 @@ export async function DELETE(request: NextRequest) {
       .returning({ id: tools.id, slug: tools.slug });
 
     if (!deleted) {
-      return NextResponse.json(
-        { code: 'NOT_FOUND', message: 'Tool not found or already deleted' },
-        { status: 404 }
-      );
+      return adminErrorResponse('NOT_FOUND', 'Tool not found or already deleted', 404);
     }
 
     // Audit log
@@ -411,12 +379,9 @@ export async function DELETE(request: NextRequest) {
       metadata: { slug: deleted.slug },
     } as typeof activityLogs.$inferInsert);
 
-    return NextResponse.json({ success: true, id: deleted.id });
+    return adminResponse({ id: deleted.id });
   } catch (error) {
     log.error('Failed to delete tool', { error: String(error) });
-    return NextResponse.json(
-      { code: 'DELETE_ERROR', message: 'Failed to delete tool' },
-      { status: 500 }
-    );
+    return adminErrorResponse('DELETE_ERROR', 'Failed to delete tool', 500);
   }
 }

@@ -8,6 +8,11 @@
 
 import { NextResponse } from 'next/server';
 import { db, tools, toolExecutions, subscriptions, users, eq, and, sql, gte } from '@hsafx/db';
+import { createLogger } from '@hsafx/shared/logger';
+import { requireAdminRole } from '@/lib/require-admin';
+import { adminResponse, adminErrorResponse } from '@/lib/admin-response';
+
+const log = createLogger('admin-alerts');
 
 interface Alert {
   id: string;
@@ -20,6 +25,9 @@ interface Alert {
 
 export async function GET() {
   try {
+    const authResult = await requireAdminRole('system.view');
+    if (authResult instanceof NextResponse) return authResult;
+
     const alerts: Alert[] = [];
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -118,12 +126,9 @@ export async function GET() {
     // Sort alerts by createdAt descending
     alerts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-    return NextResponse.json(alerts);
+    return adminResponse(alerts);
   } catch (error) {
-    console.error('Failed to fetch alerts:', error);
-    return NextResponse.json(
-      { code: 'FETCH_ERROR', message: 'Failed to fetch alerts' },
-      { status: 500 }
-    );
+    log.error('Failed to fetch alerts', { err: error });
+    return adminErrorResponse('FETCH_ERROR', 'Failed to fetch alerts');
   }
 }

@@ -16,14 +16,23 @@ export default defineConfig({
   },
 
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    {
+      name: 'setup',
+      testMatch: /.*\.setup\.ts/,
+    },
+    {
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: 'e2e/.auth/admin.json',
+      },
+      dependencies: ['setup'],
+    },
   ],
 
-  webServer: process.env.CI
-    ? undefined
-    : {
-        command: 'pnpm dev',
-        port: 3001,
-        reuseExistingServer: true,
-      },
+  webServer: {
+    command: process.env.CI ? 'pnpm start' : 'pnpm dev',
+    port: 3001,
+    reuseExistingServer: !process.env.CI,
+  },
 });

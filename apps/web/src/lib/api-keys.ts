@@ -5,6 +5,7 @@
  * Key format:  hsafx_{env}_{52 random alphanumeric chars}
  * Storage:     SHA-256 hash in `apiKeys.keyHash` — plaintext NEVER stored
  * Prefix:      first 14 chars kept in `apiKeys.keyPrefix` for dashboard display
+ * Rotation:    POST /api/v1/keys/rotate — 24h grace period on old key
  */
 
 import { createHash, randomBytes } from 'crypto';

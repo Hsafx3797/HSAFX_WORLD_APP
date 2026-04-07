@@ -1,0 +1,10 @@
+Indent: 4 spaces
+Input:
+line1
+line2
+line3
+
+Output:
+    line1
+    line2
+    line3

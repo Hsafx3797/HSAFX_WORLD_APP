@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { Command } from 'cmdk';
-import { toolRegistry, categories } from '@hsafx/tool-definitions';
+import { ALL_ENGINE_NAMES, CATEGORY_ENGINES } from '@/lib/engine-constants';
 import { useAuth } from '@/hooks/use-auth';
 import {
   Dialog,
@@ -51,7 +51,7 @@ export function CommandPalette() {
 
   const pages = React.useMemo(() => {
     const base = [
-      { name: 'All Tools', href: '/tools', icon: Wrench },
+      // TODO: Re-add 'All Tools' page link once /tools route is built (Task 1000)
       { name: 'Pricing', href: '/pricing', icon: DollarSign },
       { name: 'API Docs', href: '/api-docs', icon: FileText },
       { name: 'Changelog', href: '/changelog', icon: FileText },
@@ -70,14 +70,9 @@ export function CommandPalette() {
     return base;
   }, [isAuthenticated]);
 
-  // Group tools by category for display
-  const toolsByCategory = React.useMemo(() => {
-    const map = new Map<string, typeof toolRegistry>();
-    for (const cat of categories) {
-      const tools = toolRegistry.filter((t) => t.category === cat);
-      if (tools.length > 0) map.set(cat, tools);
-    }
-    return map;
+  // Group engines by category for display
+  const enginesByCategory = React.useMemo(() => {
+    return Object.entries(CATEGORY_ENGINES);
   }, []);
 
   return (
@@ -88,7 +83,7 @@ export function CommandPalette() {
           <div className="flex items-center gap-2 border-b px-4">
             <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
             <Command.Input
-              placeholder="Search 454+ tools, pages, actions..."
+              placeholder={`Search ${ALL_ENGINE_NAMES.length} engines, pages, actions...`}
               className="flex h-12 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             />
             <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
@@ -155,34 +150,29 @@ export function CommandPalette() {
               )}
             </Command.Group>
 
-            {/* Tools grouped by category */}
-            {Array.from(toolsByCategory.entries()).map(([category, tools]) => (
+            {/* Engines grouped by category */}
+            {enginesByCategory.map(([category, engines]) => (
               <Command.Group
                 key={category}
-                heading={`${category} Tools (${tools.length})`}
+                heading={`${category} Engines (${engines.length})`}
                 className="**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1.5 **:[[cmdk-group-heading]]:text-xs **:[[cmdk-group-heading]]:font-medium **:[[cmdk-group-heading]]:text-muted-foreground"
               >
-                {tools.map((tool) => (
+                {engines.map((engine) => (
                   <Command.Item
-                    key={tool.id}
-                    value={`${tool.name} ${tool.description} ${tool.category} ${tool.keywords?.join(' ') ?? ''}`}
+                    key={engine}
+                    value={`${engine} ${category}`}
                     onSelect={() =>
-                      runCommand(() => router.push(`/tools/${tool.id}`))
+                      runCommand(() => router.push(`/dashboard`))
                     }
                     className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm aria-selected:bg-accent aria-selected:text-accent-foreground"
                   >
                     <Wrench className="h-4 w-4 shrink-0 text-muted-foreground" />
                     <div className="flex flex-col overflow-hidden">
-                      <span className="truncate">{tool.name}</span>
+                      <span className="truncate">{engine}</span>
                       <span className="truncate text-xs text-muted-foreground">
-                        {tool.description}
+                        {category}
                       </span>
                     </div>
-                    {tool.tier !== 'free' && (
-                      <span className="ml-auto shrink-0 rounded bg-yellow-500/10 px-1.5 py-0.5 text-[10px] font-medium text-yellow-600">
-                        {tool.tier.toUpperCase()}
-                      </span>
-                    )}
                   </Command.Item>
                 ))}
               </Command.Group>

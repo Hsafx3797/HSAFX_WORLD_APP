@@ -1,0 +1,48 @@
+erDiagram
+
+  users {
+    uuid id PK
+    varchar(255) email
+    varchar(100) name
+    varchar(255) password_hash
+    varchar(20) role
+    timestamp created_at
+  }
+
+  products {
+    serial id PK
+    varchar(200) name
+    text description
+    decimal(10,2) price
+    integer stock
+    integer category_id FK
+    timestamp created_at
+  }
+
+  categories {
+    serial id PK
+    varchar(100) name
+    integer parent_id FK
+  }
+
+  orders {
+    serial id PK
+    uuid user_id FK
+    decimal(10,2) total
+    varchar(20) status
+    timestamp created_at
+  }
+
+  order_items {
+    serial id PK
+    integer order_id FK
+    integer product_id FK
+    integer quantity
+    decimal(10,2) unit_price
+  }
+
+  products ||--o{ categories : "category_id"
+  categories ||--o{ categories : "parent_id"
+  orders ||--o{ users : "user_id"
+  order_items ||--o{ orders : "order_id"
+  order_items ||--o{ products : "product_id"

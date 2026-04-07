@@ -439,37 +439,316 @@ export function convertFrequency(
   return (value * fromFactor) / toFactor;
 }
 
-// ==================== CURRENCY (placeholder rates) ====================
+// ==================== CURRENCY (static reference rates) ====================
 
-// Note: In production, these should be fetched from a real-time API
+/**
+ * Static exchange rates relative to USD = 1.
+ * These are approximate mid-market rates and are NOT live.
+ * For live rates, supply your own via the customRates parameter.
+ */
+export const CURRENCY_RATES_DATE = '2025-01-15';
+
 const currencyRates: Record<string, number> = {
+  // Major
   USD: 1,
-  EUR: 0.92,
-  GBP: 0.79,
-  JPY: 149.5,
-  CNY: 7.24,
-  INR: 83.12,
-  AUD: 1.53,
-  CAD: 1.36,
-  SGD: 1.34,
-  AED: 3.67,
+  EUR: 0.97,
+  GBP: 0.82,
+  JPY: 156.0,
+  CHF: 0.91,
+  // Asia-Pacific
+  CNY: 7.33,
+  INR: 86.0,
+  AUD: 1.61,
+  SGD: 1.37,
+  HKD: 7.82,
+  KRW: 1450,
+  TWD: 32.7,
+  THB: 34.5,
+  MYR: 4.50,
+  PHP: 58.0,
+  IDR: 16200,
+  VND: 25400,
+  // Americas
+  CAD: 1.44,
+  BRL: 6.10,
+  MXN: 20.5,
+  ARS: 1050,
+  CLP: 1000,
+  COP: 4350,
+  // Middle East & Africa
+  AED: 3.6725,
   SAR: 3.75,
-  MYR: 4.72,
+  QAR: 3.64,
+  KWD: 0.31,
+  BHD: 0.377,
+  OMR: 0.385,
+  EGP: 50.5,
+  ZAR: 18.5,
+  NGN: 1550,
+  KES: 154,
+  // Europe (non-EUR)
+  SEK: 11.1,
+  NOK: 11.4,
+  DKK: 7.22,
+  PLN: 4.15,
+  CZK: 24.2,
+  HUF: 405,
+  RON: 4.82,
+  TRY: 35.5,
+  RUB: 102,
+  UAH: 41.5,
+  // Crypto-adjacent stablecoins (pegged)
+  USDT: 1,
+  USDC: 1,
+  // Precious metals (troy oz in USD)
+  XAU: 0.000378,
+  XAG: 0.0328,
 };
 
 export function convertCurrency(
   value: number,
   from: string,
-  to: string
+  to: string,
+  customRates?: Record<string, number>
 ): number {
-  const fromRate = currencyRates[from.toUpperCase()];
-  const toRate = currencyRates[to.toUpperCase()];
+  const rates = customRates || currencyRates;
+  const fromRate = rates[from.toUpperCase()];
+  const toRate = rates[to.toUpperCase()];
   
-  if (!fromRate || !toRate) {
-    throw new Error(`Unknown currency: ${!fromRate ? from : to}`);
+  if (fromRate === undefined || !fromRate) {
+    throw new Error(`Unknown currency: ${from}. Available: ${Object.keys(rates).join(', ')}`);
+  }
+  if (toRate === undefined) {
+    throw new Error(`Unknown currency: ${to}. Available: ${Object.keys(rates).join(', ')}`);
   }
   
   return (value / fromRate) * toRate;
+}
+
+// ==================== UNIFIED CONVERTER ====================
+
+// ==================== ELECTRIC (Current) ====================
+
+const electricUnits: Record<string, number> = {
+  a: 1,           // ampere
+  ka: 1e3,        // kiloampere
+  ma: 1e-3,       // milliampere
+  'µa': 1e-6,     // microampere
+  na: 1e-9,       // nanoampere
+  pa: 1e-12,      // picoampere
+};
+
+export function convertElectric(
+  value: number,
+  from: string,
+  to: string
+): number {
+  const fromFactor = electricUnits[from.toLowerCase()];
+  const toFactor = electricUnits[to.toLowerCase()];
+  if (fromFactor === undefined || toFactor === undefined) {
+    throw new Error(`Unknown electric current unit: ${fromFactor === undefined ? from : to}. Available: ${Object.keys(electricUnits).join(', ')}`);
+  }
+  return (value * fromFactor) / toFactor;
+}
+
+// ==================== FORCE ====================
+
+const forceUnits: Record<string, number> = {
+  n: 1,            // Newton (base)
+  kn: 1000,        // kilonewton
+  mn: 0.001,       // millinewton
+  dyn: 1e-5,       // dyne
+  lbf: 4.44822,    // pound-force
+  kgf: 9.80665,    // kilogram-force
+  ozf: 0.278014,   // ounce-force
+  pdl: 0.138255,   // poundal
+  kip: 4448.22,    // kilopound-force
+  tf: 9806.65,     // tonne-force (metric)
+};
+
+export function convertForce(
+  value: number,
+  from: string,
+  to: string
+): number {
+  const fromFactor = forceUnits[from.toLowerCase()];
+  const toFactor = forceUnits[to.toLowerCase()];
+  if (fromFactor === undefined || toFactor === undefined) {
+    throw new Error(`Unknown force unit: ${fromFactor === undefined ? from : to}. Available: ${Object.keys(forceUnits).join(', ')}`);
+  }
+  return (value * fromFactor) / toFactor;
+}
+
+// ==================== TORQUE ====================
+
+const torqueUnits: Record<string, number> = {
+  'n-m': 1,           // Newton-meter (base)
+  'kn-m': 1000,       // kilonewton-meter
+  'ft-lbf': 1.35582,  // foot pound-force
+  'in-lbf': 0.112985, // inch pound-force
+  'kgf-m': 9.80665,   // kilogram-force meter
+  'kgf-cm': 0.0980665,// kilogram-force centimeter
+  'dyn-cm': 1e-7,     // dyne centimeter
+  'ozf-in': 0.00706155,// ounce-force inch
+  'ozf-ft': 0.084739, // ounce-force foot
+};
+
+export function convertTorque(
+  value: number,
+  from: string,
+  to: string
+): number {
+  const fromFactor = torqueUnits[from.toLowerCase()];
+  const toFactor = torqueUnits[to.toLowerCase()];
+  if (fromFactor === undefined || toFactor === undefined) {
+    throw new Error(`Unknown torque unit: ${fromFactor === undefined ? from : to}. Available: ${Object.keys(torqueUnits).join(', ')}`);
+  }
+  return (value * fromFactor) / toFactor;
+}
+
+// ==================== FUEL CONSUMPTION ====================
+// Uses km/L as internal base; L/100km is inverse, MPG uses mile/gallon factors.
+
+export function convertFuelConsumption(
+  value: number,
+  from: string,
+  to: string
+): number {
+  if (value <= 0) throw new Error('Fuel consumption value must be positive');
+
+  // Convert to km/L first
+  let kmPerL: number;
+  switch (from.toLowerCase()) {
+    case 'km/l':      kmPerL = value; break;
+    case 'l/100km':   kmPerL = 100 / value; break;
+    case 'mpg-us':    kmPerL = value * 0.425144; break;
+    case 'mpg-uk':    kmPerL = value * 0.354006; break;
+    case 'mi/l':      kmPerL = value * 1.60934; break;
+    case 'km/gal-us': kmPerL = value / 3.78541; break;
+    case 'km/gal-uk': kmPerL = value / 4.54609; break;
+    default:
+      throw new Error(`Unknown fuel consumption unit: ${from}. Available: km/l, l/100km, mpg-us, mpg-uk, mi/l, km/gal-us, km/gal-uk`);
+  }
+
+  // Convert from km/L to target
+  switch (to.toLowerCase()) {
+    case 'km/l':      return kmPerL;
+    case 'l/100km':   return 100 / kmPerL;
+    case 'mpg-us':    return kmPerL / 0.425144;
+    case 'mpg-uk':    return kmPerL / 0.354006;
+    case 'mi/l':      return kmPerL / 1.60934;
+    case 'km/gal-us': return kmPerL * 3.78541;
+    case 'km/gal-uk': return kmPerL * 4.54609;
+    default:
+      throw new Error(`Unknown fuel consumption unit: ${to}. Available: km/l, l/100km, mpg-us, mpg-uk, mi/l, km/gal-us, km/gal-uk`);
+  }
+}
+
+// ==================== RADIATION (Absorbed / Equivalent Dose) ====================
+
+const radiationUnits: Record<string, number> = {
+  gy: 1,          // Gray (absorbed dose, base)
+  mgy: 0.001,
+  'µgy': 1e-6,
+  kgy: 1000,
+  rad: 0.01,      // 1 rad = 0.01 Gy
+  mrad: 1e-5,
+  sv: 1,          // Sievert (equivalent dose; = Gy when Q=1, i.e. X-ray/gamma)
+  msv: 0.001,
+  'µsv': 1e-6,
+  rem: 0.01,      // 1 rem = 0.01 Sv
+  mrem: 1e-5,
+};
+
+export function convertRadiation(
+  value: number,
+  from: string,
+  to: string
+): number {
+  const fromFactor = radiationUnits[from.toLowerCase()];
+  const toFactor = radiationUnits[to.toLowerCase()];
+  if (fromFactor === undefined || toFactor === undefined) {
+    throw new Error(`Unknown radiation unit: ${fromFactor === undefined ? from : to}. Available: ${Object.keys(radiationUnits).join(', ')}`);
+  }
+  return (value * fromFactor) / toFactor;
+}
+
+// ==================== DENSITY ====================
+
+const densityUnits: Record<string, number> = {
+  'kg/m3': 1,          // base
+  'g/cm3': 1000,
+  'g/ml': 1000,        // same as g/cm³
+  'g/l': 1,
+  'kg/l': 1000,
+  'lb/ft3': 16.0185,
+  'lb/gal': 119.826,   // US gallon
+  'oz/in3': 1729.994,
+  'slug/ft3': 515.379,
+  't/m3': 1000,        // metric ton per m³
+};
+
+export function convertDensity(
+  value: number,
+  from: string,
+  to: string
+): number {
+  const fromFactor = densityUnits[from.toLowerCase()];
+  const toFactor = densityUnits[to.toLowerCase()];
+  if (fromFactor === undefined || toFactor === undefined) {
+    throw new Error(`Unknown density unit: ${fromFactor === undefined ? from : to}. Available: ${Object.keys(densityUnits).join(', ')}`);
+  }
+  return (value * fromFactor) / toFactor;
+}
+
+// ==================== ILLUMINATION (Illuminance) ====================
+
+const illuminationUnits: Record<string, number> = {
+  lux: 1,            // lumen/m² (base)
+  mlux: 0.001,
+  klux: 1000,
+  fc: 10.7639,       // foot-candle = lumen/ft²
+  phot: 10000,       // 1 phot = 10,000 lux
+  nox: 0.001,        // used for night measurements
+};
+
+export function convertIllumination(
+  value: number,
+  from: string,
+  to: string
+): number {
+  const fromFactor = illuminationUnits[from.toLowerCase()];
+  const toFactor = illuminationUnits[to.toLowerCase()];
+  if (fromFactor === undefined || toFactor === undefined) {
+    throw new Error(`Unknown illumination unit: ${fromFactor === undefined ? from : to}. Available: ${Object.keys(illuminationUnits).join(', ')}`);
+  }
+  return (value * fromFactor) / toFactor;
+}
+
+// ==================== MAGNETIC (Flux Density) ====================
+
+const magneticUnits: Record<string, number> = {
+  t: 1,             // Tesla (base)
+  mt: 0.001,        // millitesla
+  'µt': 1e-6,       // microtesla
+  nt: 1e-9,         // nanotesla
+  gauss: 1e-4,      // 1 gauss = 100 µT = 0.0001 T
+  kgauss: 0.1,      // kilogauss
+  gamma: 1e-9,      // 1 gamma = 1 nT
+  'wb/m2': 1,       // Weber per m² = Tesla
+};
+
+export function convertMagnetic(
+  value: number,
+  from: string,
+  to: string
+): number {
+  const fromFactor = magneticUnits[from.toLowerCase()];
+  const toFactor = magneticUnits[to.toLowerCase()];
+  if (fromFactor === undefined || toFactor === undefined) {
+    throw new Error(`Unknown magnetic unit: ${fromFactor === undefined ? from : to}. Available: ${Object.keys(magneticUnits).join(', ')}`);
+  }
+  return (value * fromFactor) / toFactor;
 }
 
 // ==================== UNIFIED CONVERTER ====================
@@ -488,7 +767,15 @@ export type UnitType =
   | 'power' 
   | 'angle' 
   | 'frequency' 
-  | 'currency';
+  | 'currency'
+  | 'electric'
+  | 'force'
+  | 'torque'
+  | 'fuel-consumption'
+  | 'radiation'
+  | 'density'
+  | 'illumination'
+  | 'magnetic';
 
 export function convert(
   value: number,
@@ -525,6 +812,22 @@ export function convert(
       return convertFrequency(value, from, to);
     case 'currency':
       return convertCurrency(value, from, to);
+    case 'electric':
+      return convertElectric(value, from, to);
+    case 'force':
+      return convertForce(value, from, to);
+    case 'torque':
+      return convertTorque(value, from, to);
+    case 'fuel-consumption':
+      return convertFuelConsumption(value, from, to);
+    case 'radiation':
+      return convertRadiation(value, from, to);
+    case 'density':
+      return convertDensity(value, from, to);
+    case 'illumination':
+      return convertIllumination(value, from, to);
+    case 'magnetic':
+      return convertMagnetic(value, from, to);
     default:
       throw new Error(`Unknown unit type: ${type}`);
   }
@@ -545,5 +848,13 @@ export const unitLists = {
   angle: Object.keys(angleUnits),
   frequency: Object.keys(frequencyUnits),
   currency: Object.keys(currencyRates),
+  electric: Object.keys(electricUnits),
+  force: Object.keys(forceUnits),
+  torque: Object.keys(torqueUnits),
+  'fuel-consumption': ['km/l', 'l/100km', 'mpg-us', 'mpg-uk', 'mi/l', 'km/gal-us', 'km/gal-uk'],
+  radiation: Object.keys(radiationUnits),
+  density: Object.keys(densityUnits),
+  illumination: Object.keys(illuminationUnits),
+  magnetic: Object.keys(magneticUnits),
   temperature: ['C', 'F', 'K', 'R'],
 };

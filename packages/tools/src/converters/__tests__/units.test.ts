@@ -388,15 +388,15 @@ describe('convertFrequency', () => {
 
 describe('convertCurrency', () => {
   it('converts USD to EUR', () => {
-    expect(convertCurrency(1, 'USD', 'EUR')).toBeCloseTo(0.92, 2);
+    expect(convertCurrency(1, 'USD', 'EUR')).toBeCloseTo(0.97, 2);
   });
 
   it('converts EUR to USD', () => {
-    expect(convertCurrency(1, 'EUR', 'USD')).toBeCloseTo(1 / 0.92, 2);
+    expect(convertCurrency(1, 'EUR', 'USD')).toBeCloseTo(1 / 0.97, 2);
   });
 
   it('converts USD to GBP', () => {
-    expect(convertCurrency(1, 'USD', 'GBP')).toBeCloseTo(0.79, 2);
+    expect(convertCurrency(1, 'USD', 'GBP')).toBeCloseTo(0.82, 2);
   });
 
   it('converts same currency to same value', () => {
@@ -468,7 +468,7 @@ describe('convert', () => {
   });
 
   it('delegates currency conversions', () => {
-    expect(convert(1, 'USD', 'EUR', 'currency')).toBeCloseTo(0.92, 2);
+    expect(convert(1, 'USD', 'EUR', 'currency')).toBeCloseTo(0.97, 2);
   });
 
   it('throws for unknown type', () => {

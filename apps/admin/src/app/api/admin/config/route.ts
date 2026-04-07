@@ -11,6 +11,7 @@ import { db, plans, planLimits, featureFlags, eq } from '@hsafx/db';
 import { createLogger } from '@hsafx/shared/logger';
 import { publishAdminAlert } from '@hsafx/shared';
 import { requireAdminRole } from '@/lib/require-admin';
+import { adminResponse, adminErrorResponse } from '@/lib/admin-response';
 
 const log = createLogger('admin-config');
 
@@ -42,7 +43,7 @@ interface SystemConfig {
 
 export async function GET() {
   try {
-    const authResult = await requireAdminRole();
+    const authResult = await requireAdminRole('system.view');
     if (authResult instanceof NextResponse) return authResult;
 
     // Get rate limits from plan limits table
@@ -127,19 +128,16 @@ export async function GET() {
       },
     };
 
-    return NextResponse.json(config);
+    return adminResponse(config);
   } catch (error) {
     log.error('Failed to fetch config', { error: String(error) });
-    return NextResponse.json(
-      { code: 'FETCH_ERROR', message: 'Failed to fetch config' },
-      { status: 500 }
-    );
+    return adminErrorResponse('FETCH_ERROR', 'Failed to fetch config', 500);
   }
 }
 
 export async function PATCH(request: NextRequest) {
   try {
-    const authResult = await requireAdminRole();
+    const authResult = await requireAdminRole('system.config');
     if (authResult instanceof NextResponse) return authResult;
 
     const body = await request.json();
@@ -191,12 +189,9 @@ export async function PATCH(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({ message: 'Config updated successfully' });
+    return adminResponse({ message: 'Config updated successfully' });
   } catch (error) {
     log.error('Failed to update config', { error: String(error) });
-    return NextResponse.json(
-      { code: 'UPDATE_ERROR', message: 'Failed to update config' },
-      { status: 500 }
-    );
+    return adminErrorResponse('UPDATE_ERROR', 'Failed to update config', 500);
   }
 }

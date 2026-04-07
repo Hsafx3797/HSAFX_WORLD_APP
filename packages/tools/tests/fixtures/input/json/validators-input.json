@@ -1,0 +1,115 @@
+{
+  "valid": {
+    "emails": [
+      "user@example.com",
+      "john.doe+tag@company.co.uk",
+      "admin@sub.domain.org",
+      "test_123@test-domain.com"
+    ],
+    "urls": [
+      "https://www.example.com",
+      "http://api.example.com/v1/users",
+      "https://docs.example.org/guide?page=1#section",
+      "https://api.example.io:8080/items"
+    ],
+    "uuids": [
+      "550e8400-e29b-41d4-a716-446655440000",
+      "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+      "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+    ],
+    "ipAddresses": [
+      "192.168.1.1",
+      "10.0.0.255",
+      "255.255.255.0",
+      "::1",
+      "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
+      "fe80::1"
+    ],
+    "creditCards": [
+      "4111111111111111",
+      "5500000000000004",
+      "340000000000009",
+      "6011000000000004"
+    ],
+    "phones": [
+      "+1-555-123-4567",
+      "+44 20 7946 0958",
+      "(212) 555-0100"
+    ],
+    "macAddresses": [
+      "00:1A:2B:3C:4D:5E",
+      "AA-BB-CC-DD-EE-FF",
+      "00:00:00:00:00:00"
+    ],
+    "isbns": [
+      "978-0-596-52068-7",
+      "0-596-52068-9",
+      "978-3-16-148410-0"
+    ],
+    "ibans": [
+      "GB29NWBK60161331926819",
+      "DE89370400440532013000",
+      "FR7630006000011234567890189"
+    ],
+    "hexColors": [
+      "#FF5733",
+      "#000",
+      "#AABBCC",
+      "#123abc"
+    ],
+    "dates": [
+      "2024-01-15",
+      "2023-12-31",
+      "2000-01-01"
+    ],
+    "semvers": [
+      "1.0.0",
+      "2.5.3-beta.1",
+      "0.0.1-alpha+build.123",
+      "10.20.30"
+    ],
+    "times24h": [
+      "00:00",
+      "23:59",
+      "12:30",
+      "09:05"
+    ],
+    "slugs": [
+      "hello-world",
+      "my-blog-post-123",
+      "a-z-0-9"
+    ],
+    "base64": [
+      "SGVsbG8gV29ybGQ=",
+      "dGVzdA==",
+      "YWJjZGVmZw=="
+    ],
+    "jwts": [
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+    ],
+    "crons": [
+      "*/5 * * * *",
+      "0 0 * * *",
+      "0 9 * * 1-5",
+      "0 0 1 */3 *"
+    ],
+    "passwords": {
+      "strong": "MyP@ssw0rd!2024#Secure",
+      "medium": "Password123!",
+      "weak": "password"
+    }
+  },
+  "invalid": {
+    "emails": ["not-an-email", "@missing-local.com", "user@", "user @space.com"],
+    "urls": ["not a url", "://missing-scheme.com", "http://", ""],
+    "uuids": ["not-a-uuid", "550e8400-e29b-41d4-XXXX-446655440000", "123"],
+    "ipAddresses": ["999.999.999.999", "256.1.1.1", "abc.def.ghi.jkl"],
+    "creditCards": ["1234567890", "9999999999999999", "abcdefghijklmnop"],
+    "hexColors": ["#GGG", "red", "#12345", "ZZZZZZ"],
+    "dates": ["2024-13-01", "2024-00-15", "not-a-date", "32/13/2024"],
+    "semvers": ["1.0", "1.0.0-", "1.0.0.0", "abc"],
+    "times24h": ["24:00", "12:60", "25:00", "ab:cd"],
+    "slugs": ["Hello World", "has spaces", "UPPERCASE", "special!@#"],
+    "base64": ["not-base64!!!", "====", "a"]
+  }
+}

@@ -1,4 +1,5 @@
 import { pgTable, pgEnum, uuid, text, varchar, timestamp, boolean, integer, jsonb, index, uniqueIndex } from 'drizzle-orm/pg-core';
+import { encryptedText } from '../encrypted-column';
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
@@ -40,8 +41,8 @@ export const oauthConnections = pgTable('oauth_connections', {
     .references(() => users.id, { onDelete: 'cascade' }),
   provider: text('provider').notNull(), // 'google', 'github', 'facebook'
   providerUserId: text('provider_user_id').notNull(),
-  accessToken: text('access_token'),
-  refreshToken: text('refresh_token'),
+  accessToken: encryptedText('access_token'),
+  refreshToken: encryptedText('refresh_token'),
   expiresAt: timestamp('expires_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
@@ -56,8 +57,8 @@ export const oauthConnections = pgTable('oauth_connections', {
  */
 export const twoFactor = pgTable('two_factor', {
   id: uuid('id').primaryKey().defaultRandom(),
-  secret: text('secret').notNull(),
-  backupCodes: text('backup_codes').notNull(),
+  secret: encryptedText('secret').notNull(),
+  backupCodes: encryptedText('backup_codes').notNull(),
   userId: uuid('user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
@@ -161,7 +162,9 @@ export const passwordResetTokens = pgTable('password_reset_tokens', {
   expiresAt: timestamp('expires_at').notNull(),
   usedAt: timestamp('used_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-});
+}, (t) => [
+  index('prt_expires_at_idx').on(t.expiresAt),
+]);
 
 /**
  * Email Verification Tokens - Tokens for confirming email ownership
@@ -176,7 +179,9 @@ export const emailVerificationTokens = pgTable('email_verification_tokens', {
   expiresAt: timestamp('expires_at').notNull(),
   usedAt: timestamp('used_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-});
+}, (t) => [
+  index('evt_expires_at_idx').on(t.expiresAt),
+]);
 
 /**
  * Refresh Tokens - JWT token rotation for secure session renewal
@@ -190,11 +195,14 @@ export const refreshTokens = pgTable('refresh_tokens', {
   tokenHash: varchar('token_hash', { length: 64 }).notNull().unique(),
   expiresAt: timestamp('expires_at').notNull(),
   revokedAt: timestamp('revoked_at'),
-  replacedBy: uuid('replaced_by'),
+  replacedBy: uuid('replaced_by').references((): any => refreshTokens.id, { onDelete: 'set null' }),
   ipAddress: varchar('ip_address', { length: 45 }),
   userAgent: text('user_agent'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-});
+}, (t) => [
+  index('rt_user_id_idx').on(t.userId),
+  index('rt_expires_at_idx').on(t.expiresAt),
+]);
 
 /**
  * User Permission Overrides - Per-user permission grants/denials bypassing role defaults

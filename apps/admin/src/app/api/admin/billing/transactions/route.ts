@@ -9,12 +9,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db, users, coinTransactions, tools, eq, and, or, sql, desc, asc } from '@hsafx/db';
 import { createLogger } from '@hsafx/shared/logger';
 import { requireAdminRole } from '@/lib/require-admin';
+import { adminPaginatedResponse, adminErrorResponse } from '@/lib/admin-response';
 
 const log = createLogger('admin-billing-transactions');
 
 export async function GET(request: NextRequest) {
   try {
-    const authResult = await requireAdminRole();
+    const authResult = await requireAdminRole('billing.view');
     if (authResult instanceof NextResponse) return authResult;
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1', 10);
@@ -127,18 +128,9 @@ export async function GET(request: NextRequest) {
     const total = countResults[0]?.count ?? 0;
     const totalPages = Math.ceil(total / limit);
 
-    return NextResponse.json({
-      data: filteredTransactions,
-      page,
-      limit,
-      total,
-      totalPages,
-    });
+    return adminPaginatedResponse(filteredTransactions, { page, limit, total });
   } catch (error) {
     log.error('Failed to fetch transactions', { error: String(error) });
-    return NextResponse.json(
-      { code: 'FETCH_ERROR', message: 'Failed to fetch transactions' },
-      { status: 500 }
-    );
+    return adminErrorResponse('FETCH_ERROR', 'Failed to fetch transactions', 500);
   }
 }

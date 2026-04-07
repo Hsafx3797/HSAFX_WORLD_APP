@@ -11,6 +11,9 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { db } from '@hsafx/db';
 import { sessions, eq } from '@hsafx/db/schema';
 import { getAuth } from '@/lib/auth';
+import { createLogger } from '@hsafx/shared/logger';
+
+const log = createLogger('auth-revoke');
 
 export async function POST(request: NextRequest) {
   try {
@@ -50,7 +53,7 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error('[revoke-all] Error:', error);
+    log.error('Failed to revoke sessions', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Failed to revoke sessions' },
       { status: 500 },

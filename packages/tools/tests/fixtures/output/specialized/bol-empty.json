@@ -1,0 +1,9 @@
+{
+  "valid": false,
+  "formatted": "",
+  "carrier": "",
+  "type": "unknown",
+  "errors": [
+    "Invalid Bill of Lading format"
+  ]
+}

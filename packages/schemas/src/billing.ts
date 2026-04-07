@@ -38,7 +38,8 @@ export const CoinTransactionTypeSchema = z.enum([
   'spend',
   'refund',
   'adjustment',
-  'daily_reward',
+  'reward',
+  'referral',
 ]);
 export type CoinTransactionType = z.infer<typeof CoinTransactionTypeSchema>;
 

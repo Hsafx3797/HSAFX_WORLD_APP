@@ -51,6 +51,110 @@ export function jsonToToml(json: string): string {
   return toToml(data);
 }
 
+/**
+ * Convert TOML to JSON format
+ */
+export function tomlToJson(toml: string): string {
+  const result: Record<string, unknown> = {};
+  let currentTable: Record<string, unknown> = result;
+
+  const lines = toml.split('\n');
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) continue;
+
+    // Array of tables: [[table]]
+    const arrayMatch = line.match(/^\[\[(.+)\]\]$/);
+    if (arrayMatch) {
+      const path = arrayMatch[1]!.trim().split('.');
+      let target = result;
+      for (let i = 0; i < path.length - 1; i++) {
+        if (!(path[i]! in target)) target[path[i]!] = {};
+        target = target[path[i]!] as Record<string, unknown>;
+      }
+      const lastKey = path[path.length - 1]!;
+      if (!Array.isArray(target[lastKey])) target[lastKey] = [];
+      const newObj: Record<string, unknown> = {};
+      (target[lastKey] as unknown[]).push(newObj);
+      currentTable = newObj;
+      continue;
+    }
+
+    // Table: [table]
+    const tableMatch = line.match(/^\[(.+)\]$/);
+    if (tableMatch) {
+      const path = tableMatch[1]!.trim().split('.');
+      let target = result;
+      for (const key of path) {
+        if (!(key in target)) target[key] = {};
+        target = target[key] as Record<string, unknown>;
+      }
+      currentTable = target;
+      continue;
+    }
+
+    // Key-value pair
+    const kvMatch = line.match(/^([^=]+?)\s*=\s*(.+)$/);
+    if (kvMatch) {
+      const key = kvMatch[1]!.trim();
+      const rawValue = kvMatch[2]!.trim();
+      currentTable[key] = parseTomlValue(rawValue);
+    }
+  }
+
+  return JSON.stringify(result, null, 2);
+}
+
+function parseTomlValue(value: string): unknown {
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  if (/^-?\d+$/.test(value)) return parseInt(value, 10);
+  if (/^-?\d+\.\d+$/.test(value)) return parseFloat(value);
+  if (/^".*"$/.test(value)) return value.slice(1, -1).replace(/\\"/g, '"');
+  if (/^'.*'$/.test(value)) return value.slice(1, -1);
+  if (value.startsWith('[')) {
+    try {
+      return JSON.parse(value.replace(/'/g, '"'));
+    } catch {
+      return value;
+    }
+  }
+  return value;
+}
+
+// ==================== HOCON ====================
+
+/**
+ * Convert HOCON (Human-Optimized Config Object Notation) to JSON
+ * Supports basic HOCON features: unquoted keys, = sign, comments, includes
+ */
+export function hoconToJson(hocon: string): string {
+  // Strip comments (// and #)
+  const lines = hocon.split('\n')
+    .map(l => l.replace(/\/\/.*$/, '').replace(/#.*$/, '').trimEnd())
+    .filter(l => l.trim() !== '');
+  const cleaned = lines.join('\n');
+
+  // Convert HOCON-style = to JSON-style :
+  // Replace unquoted keys with quoted keys
+  let json = cleaned
+    .replace(/([a-zA-Z0-9_.-]+)\s*[=:]\s*/g, '"$1": ')
+    .replace(/\n/g, ',\n');
+
+  // Remove trailing commas before } or ]
+  json = json.replace(/,\s*([}\]])/g, '$1');
+
+  // Wrap in braces if not already wrapped
+  const trimmed = json.trim();
+  if (!trimmed.startsWith('{')) {
+    json = `{${json}}`;
+  }
+
+  // Parse and re-format
+  const parsed = JSON.parse(json);
+  return JSON.stringify(parsed, null, 2);
+}
+
 // ==================== INI ====================
 
 /**

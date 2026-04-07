@@ -17,6 +17,7 @@ import {
   apiErrorResponse,
   type ApiContext,
 } from '@/lib/api-v1-auth';
+import { ApiErrorCode } from '@hsafx/shared/errors';
 
 function getPeriodStart(period: string): Date {
   const now = new Date();
@@ -112,7 +113,7 @@ export async function GET(request: NextRequest) {
     );
   } catch (err) {
     return apiErrorResponse(
-      'E001',
+      ApiErrorCode.SERVER_ERROR,
       'Failed to retrieve usage statistics',
       ctx,
       500,

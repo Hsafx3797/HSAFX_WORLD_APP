@@ -1,0 +1,42 @@
+{
+  "name": "project",
+  "type": "directory",
+  "children": [
+    {
+      "name": "src",
+      "type": "directory",
+      "children": [
+        {
+          "name": "components",
+          "type": "directory",
+          "children": [
+            {
+              "name": "Button.tsx",
+              "type": "file"
+            },
+            {
+              "name": "Modal.tsx",
+              "type": "file"
+            }
+          ]
+        },
+        {
+          "name": "index.ts",
+          "type": "file"
+        },
+        {
+          "name": "utils.ts",
+          "type": "file"
+        }
+      ]
+    },
+    {
+      "name": "package.json",
+      "type": "file"
+    },
+    {
+      "name": "README.md",
+      "type": "file"
+    }
+  ]
+}

@@ -7,10 +7,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, users, subscriptions, coinTransactions, toolExecutions, sql } from '@hsafx/db';
 import { requireAdminRole } from '@/lib/require-admin';
+import { createLogger } from '@hsafx/shared/logger';
+import { adminResponse, adminErrorResponse } from '@/lib/admin-response';
+
+const log = createLogger('admin-analytics');
 
 export async function GET(request: NextRequest) {
   try {
-    const authResult = await requireAdminRole();
+    const authResult = await requireAdminRole('admin.view');
     if (authResult instanceof NextResponse) return authResult;
     const { searchParams } = new URL(request.url);
     const days = parseInt(searchParams.get('days') || '30', 10);
@@ -74,7 +78,7 @@ export async function GET(request: NextRequest) {
     const totalUsers = Number(totalUsersResult?.count ?? 0);
     const freeCount = totalUsers - Number(paidCount);
 
-    return NextResponse.json({
+    return adminResponse({
       userGrowth: userGrowth.map((r) => ({ date: r.date, users: Number(r.count) })),
       executionTrend: executionTrend.map((r) => ({
         date: r.date,
@@ -88,10 +92,7 @@ export async function GET(request: NextRequest) {
       ],
     });
   } catch (error) {
-    console.error('[Dashboard Analytics] Error:', error);
-    return NextResponse.json(
-      { code: 'INTERNAL', message: 'Failed to load analytics' },
-      { status: 500 }
-    );
+    log.error('Failed to load analytics', { err: error });
+    return adminErrorResponse('INTERNAL', 'Failed to load analytics');
   }
 }

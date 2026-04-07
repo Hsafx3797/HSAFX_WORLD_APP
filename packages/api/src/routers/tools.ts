@@ -206,7 +206,7 @@ export const toolsRouter = router({
         // - Usage counter increment
         // - Execution audit logging
         const { executeToolServer } = (await import(
-          '@/server/tool-execution'
+          '../server/tool-execution'
         )) as { executeToolServer: (input: ExecuteToolInput) => Promise<ExecuteToolResult> };
 
         const result = await executeToolServer({

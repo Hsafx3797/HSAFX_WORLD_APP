@@ -1,0 +1,20 @@
+{
+  "bmr": 1649,
+  "tdee": 1979,
+  "forWeightLoss": 1479,
+  "forWeightGain": 2479,
+  "macros": {
+    "protein": {
+      "grams": 148,
+      "calories": 594
+    },
+    "carbs": {
+      "grams": 198,
+      "calories": 791
+    },
+    "fat": {
+      "grams": 66,
+      "calories": 594
+    }
+  }
+}

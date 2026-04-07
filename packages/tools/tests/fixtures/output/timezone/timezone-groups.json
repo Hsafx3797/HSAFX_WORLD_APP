@@ -1,0 +1,472 @@
+[
+  {
+    "region": "Americas",
+    "timezones": [
+      {
+        "id": "America/New_York",
+        "name": "Eastern Time",
+        "offset": -300,
+        "abbr": "EST",
+        "city": "New York",
+        "country": "United States"
+      },
+      {
+        "id": "America/Chicago",
+        "name": "Central Time",
+        "offset": -360,
+        "abbr": "CST",
+        "city": "Chicago",
+        "country": "United States"
+      },
+      {
+        "id": "America/Denver",
+        "name": "Mountain Time",
+        "offset": -420,
+        "abbr": "MST",
+        "city": "Denver",
+        "country": "United States"
+      },
+      {
+        "id": "America/Los_Angeles",
+        "name": "Pacific Time",
+        "offset": -480,
+        "abbr": "PST",
+        "city": "Los Angeles",
+        "country": "United States"
+      },
+      {
+        "id": "America/Anchorage",
+        "name": "Alaska Time",
+        "offset": -540,
+        "abbr": "AKST",
+        "city": "Anchorage",
+        "country": "United States"
+      },
+      {
+        "id": "Pacific/Honolulu",
+        "name": "Hawaii Time",
+        "offset": -600,
+        "abbr": "HST",
+        "city": "Honolulu",
+        "country": "United States"
+      },
+      {
+        "id": "America/Toronto",
+        "name": "Eastern Time",
+        "offset": -300,
+        "abbr": "EST",
+        "city": "Toronto",
+        "country": "Canada"
+      },
+      {
+        "id": "America/Vancouver",
+        "name": "Pacific Time",
+        "offset": -480,
+        "abbr": "PST",
+        "city": "Vancouver",
+        "country": "Canada"
+      },
+      {
+        "id": "America/Mexico_City",
+        "name": "Central Time",
+        "offset": -360,
+        "abbr": "CST",
+        "city": "Mexico City",
+        "country": "Mexico"
+      },
+      {
+        "id": "America/Sao_Paulo",
+        "name": "Brasília Time",
+        "offset": -180,
+        "abbr": "BRT",
+        "city": "São Paulo",
+        "country": "Brazil"
+      },
+      {
+        "id": "America/Buenos_Aires",
+        "name": "Argentina Time",
+        "offset": -180,
+        "abbr": "ART",
+        "city": "Buenos Aires",
+        "country": "Argentina"
+      }
+    ]
+  },
+  {
+    "region": "Europe",
+    "timezones": [
+      {
+        "id": "Europe/London",
+        "name": "Greenwich Mean Time",
+        "offset": 0,
+        "abbr": "GMT",
+        "city": "London",
+        "country": "United Kingdom"
+      },
+      {
+        "id": "Europe/Paris",
+        "name": "Central European Time",
+        "offset": 60,
+        "abbr": "CET",
+        "city": "Paris",
+        "country": "France"
+      },
+      {
+        "id": "Europe/Berlin",
+        "name": "Central European Time",
+        "offset": 60,
+        "abbr": "CET",
+        "city": "Berlin",
+        "country": "Germany"
+      },
+      {
+        "id": "Europe/Rome",
+        "name": "Central European Time",
+        "offset": 60,
+        "abbr": "CET",
+        "city": "Rome",
+        "country": "Italy"
+      },
+      {
+        "id": "Europe/Madrid",
+        "name": "Central European Time",
+        "offset": 60,
+        "abbr": "CET",
+        "city": "Madrid",
+        "country": "Spain"
+      },
+      {
+        "id": "Europe/Amsterdam",
+        "name": "Central European Time",
+        "offset": 60,
+        "abbr": "CET",
+        "city": "Amsterdam",
+        "country": "Netherlands"
+      },
+      {
+        "id": "Europe/Brussels",
+        "name": "Central European Time",
+        "offset": 60,
+        "abbr": "CET",
+        "city": "Brussels",
+        "country": "Belgium"
+      },
+      {
+        "id": "Europe/Zurich",
+        "name": "Central European Time",
+        "offset": 60,
+        "abbr": "CET",
+        "city": "Zurich",
+        "country": "Switzerland"
+      },
+      {
+        "id": "Europe/Vienna",
+        "name": "Central European Time",
+        "offset": 60,
+        "abbr": "CET",
+        "city": "Vienna",
+        "country": "Austria"
+      },
+      {
+        "id": "Europe/Stockholm",
+        "name": "Central European Time",
+        "offset": 60,
+        "abbr": "CET",
+        "city": "Stockholm",
+        "country": "Sweden"
+      },
+      {
+        "id": "Europe/Oslo",
+        "name": "Central European Time",
+        "offset": 60,
+        "abbr": "CET",
+        "city": "Oslo",
+        "country": "Norway"
+      },
+      {
+        "id": "Europe/Helsinki",
+        "name": "Eastern European Time",
+        "offset": 120,
+        "abbr": "EET",
+        "city": "Helsinki",
+        "country": "Finland"
+      },
+      {
+        "id": "Europe/Athens",
+        "name": "Eastern European Time",
+        "offset": 120,
+        "abbr": "EET",
+        "city": "Athens",
+        "country": "Greece"
+      },
+      {
+        "id": "Europe/Istanbul",
+        "name": "Turkey Time",
+        "offset": 180,
+        "abbr": "TRT",
+        "city": "Istanbul",
+        "country": "Turkey"
+      },
+      {
+        "id": "Europe/Moscow",
+        "name": "Moscow Time",
+        "offset": 180,
+        "abbr": "MSK",
+        "city": "Moscow",
+        "country": "Russia"
+      }
+    ]
+  },
+  {
+    "region": "Middle East",
+    "timezones": [
+      {
+        "id": "Asia/Dubai",
+        "name": "Gulf Standard Time",
+        "offset": 240,
+        "abbr": "GST",
+        "city": "Dubai",
+        "country": "UAE"
+      },
+      {
+        "id": "Asia/Riyadh",
+        "name": "Arabian Standard Time",
+        "offset": 180,
+        "abbr": "AST",
+        "city": "Riyadh",
+        "country": "Saudi Arabia"
+      },
+      {
+        "id": "Asia/Kuwait",
+        "name": "Arabian Standard Time",
+        "offset": 180,
+        "abbr": "AST",
+        "city": "Kuwait City",
+        "country": "Kuwait"
+      },
+      {
+        "id": "Asia/Bahrain",
+        "name": "Arabian Standard Time",
+        "offset": 180,
+        "abbr": "AST",
+        "city": "Manama",
+        "country": "Bahrain"
+      },
+      {
+        "id": "Asia/Qatar",
+        "name": "Arabian Standard Time",
+        "offset": 180,
+        "abbr": "AST",
+        "city": "Doha",
+        "country": "Qatar"
+      },
+      {
+        "id": "Asia/Muscat",
+        "name": "Gulf Standard Time",
+        "offset": 240,
+        "abbr": "GST",
+        "city": "Muscat",
+        "country": "Oman"
+      },
+      {
+        "id": "Asia/Tehran",
+        "name": "Iran Standard Time",
+        "offset": 210,
+        "abbr": "IRST",
+        "city": "Tehran",
+        "country": "Iran"
+      }
+    ]
+  },
+  {
+    "region": "Asia",
+    "timezones": [
+      {
+        "id": "Asia/Karachi",
+        "name": "Pakistan Standard Time",
+        "offset": 300,
+        "abbr": "PKT",
+        "city": "Karachi",
+        "country": "Pakistan"
+      },
+      {
+        "id": "Asia/Kolkata",
+        "name": "Indian Standard Time",
+        "offset": 330,
+        "abbr": "IST",
+        "city": "Mumbai",
+        "country": "India"
+      },
+      {
+        "id": "Asia/Dhaka",
+        "name": "Bangladesh Standard Time",
+        "offset": 360,
+        "abbr": "BST",
+        "city": "Dhaka",
+        "country": "Bangladesh"
+      },
+      {
+        "id": "Asia/Bangkok",
+        "name": "Indochina Time",
+        "offset": 420,
+        "abbr": "ICT",
+        "city": "Bangkok",
+        "country": "Thailand"
+      },
+      {
+        "id": "Asia/Jakarta",
+        "name": "Western Indonesian Time",
+        "offset": 420,
+        "abbr": "WIB",
+        "city": "Jakarta",
+        "country": "Indonesia"
+      },
+      {
+        "id": "Asia/Singapore",
+        "name": "Singapore Standard Time",
+        "offset": 480,
+        "abbr": "SGT",
+        "city": "Singapore",
+        "country": "Singapore"
+      },
+      {
+        "id": "Asia/Hong_Kong",
+        "name": "Hong Kong Time",
+        "offset": 480,
+        "abbr": "HKT",
+        "city": "Hong Kong",
+        "country": "China"
+      },
+      {
+        "id": "Asia/Shanghai",
+        "name": "China Standard Time",
+        "offset": 480,
+        "abbr": "CST",
+        "city": "Shanghai",
+        "country": "China"
+      },
+      {
+        "id": "Asia/Taipei",
+        "name": "Taiwan Standard Time",
+        "offset": 480,
+        "abbr": "TST",
+        "city": "Taipei",
+        "country": "Taiwan"
+      },
+      {
+        "id": "Asia/Seoul",
+        "name": "Korea Standard Time",
+        "offset": 540,
+        "abbr": "KST",
+        "city": "Seoul",
+        "country": "South Korea"
+      },
+      {
+        "id": "Asia/Tokyo",
+        "name": "Japan Standard Time",
+        "offset": 540,
+        "abbr": "JST",
+        "city": "Tokyo",
+        "country": "Japan"
+      }
+    ]
+  },
+  {
+    "region": "Australia & Pacific",
+    "timezones": [
+      {
+        "id": "Australia/Perth",
+        "name": "Australian Western Time",
+        "offset": 480,
+        "abbr": "AWST",
+        "city": "Perth",
+        "country": "Australia"
+      },
+      {
+        "id": "Australia/Adelaide",
+        "name": "Australian Central Time",
+        "offset": 570,
+        "abbr": "ACST",
+        "city": "Adelaide",
+        "country": "Australia"
+      },
+      {
+        "id": "Australia/Sydney",
+        "name": "Australian Eastern Time",
+        "offset": 600,
+        "abbr": "AEST",
+        "city": "Sydney",
+        "country": "Australia"
+      },
+      {
+        "id": "Australia/Brisbane",
+        "name": "Australian Eastern Time",
+        "offset": 600,
+        "abbr": "AEST",
+        "city": "Brisbane",
+        "country": "Australia"
+      },
+      {
+        "id": "Australia/Melbourne",
+        "name": "Australian Eastern Time",
+        "offset": 600,
+        "abbr": "AEST",
+        "city": "Melbourne",
+        "country": "Australia"
+      },
+      {
+        "id": "Pacific/Auckland",
+        "name": "New Zealand Standard Time",
+        "offset": 720,
+        "abbr": "NZST",
+        "city": "Auckland",
+        "country": "New Zealand"
+      },
+      {
+        "id": "Pacific/Fiji",
+        "name": "Fiji Time",
+        "offset": 720,
+        "abbr": "FJT",
+        "city": "Suva",
+        "country": "Fiji"
+      }
+    ]
+  },
+  {
+    "region": "Africa",
+    "timezones": [
+      {
+        "id": "Africa/Cairo",
+        "name": "Eastern European Time",
+        "offset": 120,
+        "abbr": "EET",
+        "city": "Cairo",
+        "country": "Egypt"
+      },
+      {
+        "id": "Africa/Johannesburg",
+        "name": "South Africa Standard Time",
+        "offset": 120,
+        "abbr": "SAST",
+        "city": "Johannesburg",
+        "country": "South Africa"
+      },
+      {
+        "id": "Africa/Lagos",
+        "name": "West Africa Time",
+        "offset": 60,
+        "abbr": "WAT",
+        "city": "Lagos",
+        "country": "Nigeria"
+      },
+      {
+        "id": "Africa/Nairobi",
+        "name": "East Africa Time",
+        "offset": 180,
+        "abbr": "EAT",
+        "city": "Nairobi",
+        "country": "Kenya"
+      }
+    ]
+  }
+]

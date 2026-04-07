@@ -1,0 +1,19 @@
+{
+  "from": {
+    "timezone": "Asia/Tokyo",
+    "datetime": "2024-01-15 04:00:00",
+    "offset": "+09:00",
+    "abbr": "JST"
+  },
+  "to": {
+    "timezone": "America/Los_Angeles",
+    "datetime": "2024-01-14 11:00:00",
+    "offset": "-08:00",
+    "abbr": "PST"
+  },
+  "difference": {
+    "hours": 17,
+    "minutes": 0,
+    "formatted": "-17h 0m"
+  }
+}

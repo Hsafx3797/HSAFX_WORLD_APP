@@ -40,9 +40,6 @@ export {
   InsufficientCoinsError,
 } from './limits/coin-service';
 
-// ─── Tool Execution (Phase 4) ────────────────────────────────
-export { executeToolServer } from './tool-execution';
-
 // ─── Anonymous Usage (Phase 4) ────────────────────────────────
 export {
   checkAnonymousLimit,
@@ -51,6 +48,21 @@ export {
   type ToolClass,
   type AnonUsageCheckResult,
 } from './limits/anon-usage-service';
+
+// ─── B2B Quota Service ───────────────────────────────────────
+export {
+  resolveB2bSuite,
+  getActiveB2bSubscription,
+  checkB2bQuota,
+  incrementB2bUsage,
+  getB2bUsageSummary,
+  B2bQuotaExhaustedError,
+  B2bNoSubscriptionError,
+  B2bSuiteNotAvailableError,
+  type B2bQuotaCheck,
+  type B2bUsageIncrementResult,
+  type B2bUsageSummary,
+} from './limits/b2b-quota-service';
 
 // ─── Login Rewards (Phase 4) ─────────────────────────────────
 export {

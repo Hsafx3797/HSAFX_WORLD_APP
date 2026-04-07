@@ -1,0 +1,10 @@
+[
+  {
+    "id": "Europe/London",
+    "name": "Greenwich Mean Time",
+    "offset": 0,
+    "abbr": "GMT",
+    "city": "London",
+    "country": "United Kingdom"
+  }
+]

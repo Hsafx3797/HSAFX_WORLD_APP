@@ -166,6 +166,9 @@ export async function reserveCoins(
   toolName: string,
   idempotencyKey?: string,
 ): Promise<ReservationResult> {
+  if (!Number.isInteger(amount) || amount <= 0) {
+    throw new Error(`Invalid coin amount: ${amount}. Must be a positive integer.`);
+  }
   return await db.transaction(async (tx) => {
     // Check idempotency — if already reserved with this key, return existing
     if (idempotencyKey) {
@@ -199,6 +202,10 @@ export async function reserveCoins(
       .limit(1);
 
     const currentBalance = wallet?.balance ?? 0;
+
+    if (wallet?.disputeFrozen) {
+      throw new Error('Wallet is frozen due to a payment dispute. Contact support.');
+    }
 
     if (currentBalance < amount) {
       throw new InsufficientCoinsError(currentBalance, amount);
@@ -249,15 +256,31 @@ export async function reserveCoins(
 
 /**
  * Confirm a coin reservation (tool succeeded).
- * Marks the transaction as confirmed.
+ * Marks the transaction as confirmed. Only transitions from 'reserved' status.
  */
 export async function confirmReservation(reservationId: string): Promise<void> {
-  await db
-    .update(coinTransactions)
-    .set({
-      metadata: sql`jsonb_set(COALESCE(${coinTransactions.metadata}, '{}'::jsonb), '{status}', '"confirmed"')`,
-    })
-    .where(eq(coinTransactions.id, reservationId));
+  await db.transaction(async (tx) => {
+    // Lock the row to prevent race with releaseReservation
+    const [original] = await tx
+      .select()
+      .from(coinTransactions)
+      .where(eq(coinTransactions.id, reservationId))
+      .for('update')
+      .limit(1);
+
+    if (!original) return;
+
+    // Only confirm if still in 'reserved' status
+    const status = (original.metadata as Record<string, unknown>)?.status;
+    if (status !== 'reserved') return;
+
+    await tx
+      .update(coinTransactions)
+      .set({
+        metadata: sql`jsonb_set(COALESCE(${coinTransactions.metadata}, '{}'::jsonb), '{status}', '"confirmed"')`,
+      })
+      .where(eq(coinTransactions.id, reservationId));
+  });
 }
 
 /**
@@ -266,11 +289,12 @@ export async function confirmReservation(reservationId: string): Promise<void> {
  */
 export async function releaseReservation(reservationId: string): Promise<void> {
   await db.transaction(async (tx) => {
-    // Find the original reservation
+    // Find the original reservation with row lock to prevent double-refund race
     const [original] = await tx
       .select()
       .from(coinTransactions)
       .where(eq(coinTransactions.id, reservationId))
+      .for('update')
       .limit(1);
 
     if (!original) return;
@@ -339,6 +363,9 @@ export async function deductCoins(
   toolName: string,
   executionId?: string,
 ): Promise<{ transactionId: string; balanceAfter: number }> {
+  if (!Number.isInteger(amount) || amount <= 0) {
+    throw new Error(`Invalid coin amount: ${amount}. Must be a positive integer.`);
+  }
   return await db.transaction(async (tx) => {
     const [wallet] = await tx
       .select()
@@ -406,6 +433,9 @@ export async function grantCoins(
   resourceType?: string,
   resourceId?: string,
 ): Promise<{ transactionId: string; balanceAfter: number }> {
+  if (!Number.isInteger(amount) || amount <= 0) {
+    throw new Error(`Invalid coin amount: ${amount}. Must be a positive integer.`);
+  }
   return await db.transaction(async (tx) => {
     const [wallet] = await tx
       .select()

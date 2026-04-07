@@ -20,6 +20,7 @@
   "dependencies": {
     "@hsafx/db": "workspace:*",
     "@hsafx/shared": "workspace:*",
+    "@hsafx/tool-execution": "workspace:*",
     "@polar-sh/sdk": "^0.43.0",
     "@trpc/server": "^11.0.0",
     "stripe": "^20.3.1",

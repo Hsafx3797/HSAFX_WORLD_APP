@@ -1,5 +1,6 @@
 import { pgTable, pgEnum, uuid, text, varchar, timestamp, integer, boolean, jsonb, index, uniqueIndex } from 'drizzle-orm/pg-core';
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
+import { encryptedText } from '../encrypted-column';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 import { users } from './users';
@@ -126,11 +127,11 @@ export const featureFlags = pgTable('feature_flags', {
 export const emailProviderConfig = pgTable('email_provider_config', {
   id: uuid('id').primaryKey().defaultRandom(),
   provider: varchar('provider', { length: 50 }).notNull().unique(), // 'resend', 'smtp'
-  apiKey: text('api_key'), // Encrypted
+  apiKey: encryptedText('api_key'),
   smtpHost: text('smtp_host'),
   smtpPort: integer('smtp_port'),
   smtpUser: text('smtp_user'),
-  smtpPassword: text('smtp_password'), // Encrypted
+  smtpPassword: encryptedText('smtp_password'),
   fromEmail: text('from_email').notNull(),
   fromName: text('from_name').notNull(),
   isActive: boolean('is_active').notNull().default(true),

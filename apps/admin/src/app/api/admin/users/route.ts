@@ -11,12 +11,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db, users, subscriptions, plans, coinTransactions, toolExecutions, userCoinWallets, activityLogs, eq, and, or, sql, desc, asc } from '@hsafx/db';
 import { createLogger } from '@hsafx/shared/logger';
 import { requireAdminRole } from '@/lib/require-admin';
+import { adminResponse, adminPaginatedResponse, adminErrorResponse } from '@/lib/admin-response';
 
 const log = createLogger('admin-users');
 
 export async function GET(request: NextRequest) {
   try {
-    const authResult = await requireAdminRole();
+    const authResult = await requireAdminRole('users.view');
     if (authResult instanceof NextResponse) return authResult;
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1', 10);
@@ -132,19 +133,10 @@ export async function GET(request: NextRequest) {
     const total = countResults[0]?.count ?? 0;
     const totalPages = Math.ceil(total / limit);
 
-    return NextResponse.json({
-      data: enrichedUsers,
-      page,
-      limit,
-      total,
-      totalPages,
-    });
+    return adminPaginatedResponse(enrichedUsers, { page, limit, total });
   } catch (error) {
     log.error('Failed to fetch users', { error: String(error) });
-    return NextResponse.json(
-      { code: 'FETCH_ERROR', message: 'Failed to fetch users' },
-      { status: 500 }
-    );
+    return adminErrorResponse('FETCH_ERROR', 'Failed to fetch users', 500);
   }
 }
 
@@ -156,17 +148,14 @@ export async function GET(request: NextRequest) {
  */
 export async function PATCH(request: NextRequest) {
   try {
-    const authResult = await requireAdminRole();
+    const authResult = await requireAdminRole('users.edit');
     if (authResult instanceof NextResponse) return authResult;
 
     const body = await request.json();
     const { id, ...updates } = body as { id?: string; [k: string]: unknown };
 
     if (!id) {
-      return NextResponse.json(
-        { code: 'VALIDATION_ERROR', message: 'User ID is required' },
-        { status: 400 }
-      );
+      return adminErrorResponse('VALIDATION_ERROR', 'User ID is required', 400);
     }
 
     // Only allow specific fields to be updated
@@ -198,10 +187,7 @@ export async function PATCH(request: NextRequest) {
       });
 
     if (!updated) {
-      return NextResponse.json(
-        { code: 'NOT_FOUND', message: 'User not found' },
-        { status: 404 }
-      );
+      return adminErrorResponse('NOT_FOUND', 'User not found', 404);
     }
 
     // Audit log
@@ -212,7 +198,7 @@ export async function PATCH(request: NextRequest) {
       metadata: JSON.stringify({ fields: Object.keys(updates) }),
     } as typeof activityLogs.$inferInsert);
 
-    return NextResponse.json({
+    return adminResponse({
       id: updated.id,
       email: updated.email,
       fullName: updated.fullName,
@@ -221,10 +207,7 @@ export async function PATCH(request: NextRequest) {
     });
   } catch (error) {
     log.error('Failed to update user', { error: String(error) });
-    return NextResponse.json(
-      { code: 'UPDATE_ERROR', message: 'Failed to update user' },
-      { status: 500 }
-    );
+    return adminErrorResponse('UPDATE_ERROR', 'Failed to update user', 500);
   }
 }
 
@@ -236,17 +219,14 @@ export async function PATCH(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
-    const authResult = await requireAdminRole();
+    const authResult = await requireAdminRole('users.delete');
     if (authResult instanceof NextResponse) return authResult;
 
     const body = await request.json();
     const { id } = body as { id?: string };
 
     if (!id) {
-      return NextResponse.json(
-        { code: 'VALIDATION_ERROR', message: 'User ID is required' },
-        { status: 400 }
-      );
+      return adminErrorResponse('VALIDATION_ERROR', 'User ID is required', 400);
     }
 
     const [deleted] = await db
@@ -256,10 +236,7 @@ export async function DELETE(request: NextRequest) {
       .returning({ id: users.id });
 
     if (!deleted) {
-      return NextResponse.json(
-        { code: 'NOT_FOUND', message: 'User not found or already deleted' },
-        { status: 404 }
-      );
+      return adminErrorResponse('NOT_FOUND', 'User not found or already deleted', 404);
     }
 
     // Audit log
@@ -269,12 +246,9 @@ export async function DELETE(request: NextRequest) {
       resourceId: id,
     } as typeof activityLogs.$inferInsert);
 
-    return NextResponse.json({ success: true, id: deleted.id });
+    return adminResponse({ id: deleted.id });
   } catch (error) {
     log.error('Failed to delete user', { error: String(error) });
-    return NextResponse.json(
-      { code: 'DELETE_ERROR', message: 'Failed to delete user' },
-      { status: 500 }
-    );
+    return adminErrorResponse('DELETE_ERROR', 'Failed to delete user', 500);
   }
 }

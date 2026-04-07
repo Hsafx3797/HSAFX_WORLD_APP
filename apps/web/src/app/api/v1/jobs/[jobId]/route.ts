@@ -12,6 +12,7 @@ import {
   apiErrorResponse,
   type ApiContext,
 } from '@/lib/api-v1-auth';
+import { ApiErrorCode } from '@hsafx/shared/errors';
 import { getJob } from '@/server/jobs/job-manager';
 
 interface Params {
@@ -33,12 +34,12 @@ export async function GET(request: NextRequest, { params }: Params) {
   const job = await getJob(jobId);
 
   if (!job) {
-    return apiErrorResponse('J001', `Job '${jobId}' not found`, ctx, 404);
+    return apiErrorResponse(ApiErrorCode.JOB_NOT_FOUND, `Job '${jobId}' not found`, ctx, 404);
   }
 
   // 4. Security: ensure job belongs to this API key's owner
   if (job.userId !== ctx.userId) {
-    return apiErrorResponse('J001', `Job '${jobId}' not found`, ctx, 404);
+    return apiErrorResponse(ApiErrorCode.JOB_NOT_FOUND, `Job '${jobId}' not found`, ctx, 404);
   }
 
   return apiResponse(

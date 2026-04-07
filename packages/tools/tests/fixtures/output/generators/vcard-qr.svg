@@ -1,0 +1,1 @@
+https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=BEGIN%3AVCARD%0AVERSION%3A3.0%0AFN%3AJohn%20Doe%0AN%3ADoe%3BJohn%3B%3B%3B%0ATEL%3A%2B1234567890%0AEMAIL%3Ajohn%40example.com%0AORG%3AAcme%20Corp%0ATITLE%3AEngineer%0AEND%3AVCARD

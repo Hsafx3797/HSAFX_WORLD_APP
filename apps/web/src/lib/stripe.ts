@@ -1,11 +1,12 @@
 /**
  * Stripe SDK Client Singleton
- * HSAFX WORLD — Stripe handles coin-pack one-time purchases only.
+ * HSAFX WORLD — Stripe handles coin-pack payments and B2B metered billing.
  *
  * Subscriptions are handled by Polar (Merchant of Record).
  * This Stripe client is used for:
  *   - Creating coin-pack checkout sessions
  *   - Verifying webhook signatures (in the webhook route)
+ *   - Reporting B2B API usage via Billing Meter Events
  */
 
 import Stripe from 'stripe';

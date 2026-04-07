@@ -1,0 +1,8 @@
+{
+  "payeeName": "John Doe",
+  "amount": 5000,
+  "amountInWords": "Five Thousand Dollars Only",
+  "date": "2024-06-15",
+  "memo": "Payment for invoice #123",
+  "bankName": "Chase Bank"
+}

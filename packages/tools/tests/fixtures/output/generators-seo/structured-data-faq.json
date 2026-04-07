@@ -1,0 +1,25 @@
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "name": "FAQ",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is this?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A test FAQ page."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How does it work?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "It generates JSON-LD."
+      }
+    }
+  ]
+}
+</script>

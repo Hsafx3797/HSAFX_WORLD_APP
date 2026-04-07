@@ -1,0 +1,23 @@
+{
+  "GB29NWBK60161331926819": {
+    "valid": true,
+    "details": {
+      "countryCode": "GB",
+      "checkDigits": "29"
+    }
+  },
+  "DE89370400440532013000": {
+    "valid": true,
+    "details": {
+      "countryCode": "DE",
+      "checkDigits": "89"
+    }
+  },
+  "FR7630006000011234567890189": {
+    "valid": true,
+    "details": {
+      "countryCode": "FR",
+      "checkDigits": "76"
+    }
+  }
+}

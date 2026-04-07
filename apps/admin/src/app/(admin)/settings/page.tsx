@@ -163,6 +163,7 @@ export default function SettingsPage() {
                 value={localConfig.adminEmail || ''}
                 onChange={(e) => updateField('adminEmail', e.target.value)}
               />
+              {/* Maintenance mode: synced to Redis via feature-flags PATCH → Edge Middleware returns 503 */}
               <Toggle
                 label="Maintenance Mode"
                 description="Temporarily disable access to the platform"

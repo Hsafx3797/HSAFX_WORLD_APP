@@ -12,6 +12,9 @@ import {
   verifyCaptcha,
 } from '@/lib/login-security';
 import { getRedis } from '@/lib/redis';
+import { createLogger } from '@hsafx/shared/logger';
+
+const log = createLogger('auth');
 
 // Lazy initialization to avoid build-time errors
 let _auth: ReturnType<typeof betterAuth> | undefined;
@@ -57,7 +60,7 @@ function createAuth() {
             userId: user.id,
           });
         } catch (e) {
-          console.error('[auth] Failed to send password reset email:', e);
+          log.error('Failed to send password reset email', { error: e instanceof Error ? e.message : String(e) });
         }
       },
     },
@@ -94,7 +97,7 @@ function createAuth() {
             userId: user.id,
           });
         } catch (e) {
-          console.error('[auth] Failed to send verification email:', e);
+          log.error('Failed to send verification email', { error: e instanceof Error ? e.message : String(e) });
         }
       },
     },
@@ -134,14 +137,14 @@ function createAuth() {
       cookiePrefix: '__hsafx',
     },
     rateLimit: {
-      window: 60, // 1 minute window
-      max: 30, // 30 requests per window default
+      window: Number(process.env.AUTH_RATE_LIMIT_WINDOW ?? 60),
+      max: Number(process.env.AUTH_RATE_LIMIT_MAX ?? 30),
       customRules: {
-        '/api/auth/sign-in/email': { window: 60, max: 5 },
-        '/api/auth/sign-up/email': { window: 60, max: 3 },
-        '/api/auth/forgot-password': { window: 300, max: 3 }, // 3 per 5 min
-        '/api/auth/reset-password': { window: 300, max: 5 },
-        '/api/auth/two-factor/*': { window: 10, max: 3 },
+        '/api/auth/sign-in/email': { window: 60, max: Number(process.env.AUTH_SIGNIN_MAX ?? 5) },
+        '/api/auth/sign-up/email': { window: 60, max: Number(process.env.AUTH_SIGNUP_MAX ?? 3) },
+        '/api/auth/forgot-password': { window: 300, max: Number(process.env.AUTH_FORGOT_PW_MAX ?? 3) },
+        '/api/auth/reset-password': { window: 300, max: Number(process.env.AUTH_RESET_PW_MAX ?? 5) },
+        '/api/auth/two-factor/*': { window: 10, max: Number(process.env.AUTH_2FA_MAX ?? 3) },
       },
     },
     secret: process.env.BETTER_AUTH_SECRET,
@@ -203,7 +206,7 @@ function createAuth() {
             }
           }
         } catch (e) {
-          console.error('[auth] Login security check failed:', e);
+          log.error('Login security check failed', { error: e instanceof Error ? e.message : String(e) });
           // Allow login to proceed if security check fails
         }
       }),
@@ -220,14 +223,15 @@ function createAuth() {
 
           if (!email) return;
 
-          const status = ctx.context.returned?.status ?? 0;
+          const returned = ctx.context.returned as { status?: number } | undefined;
+          const status = returned?.status ?? 0;
           if (status >= 200 && status < 300) {
             await resetLoginFailures(ip, email);
           } else if (status >= 400) {
             await recordFailedLogin(ip, email);
           }
         } catch (e) {
-          console.error('[auth] Login security recording failed:', e);
+          log.error('Login security recording failed', { error: e instanceof Error ? e.message : String(e) });
         }
       }),
     },

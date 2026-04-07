@@ -1,0 +1,18 @@
+{
+  "not-an-email": {
+    "valid": false,
+    "error": "Invalid email format"
+  },
+  "@missing-local.com": {
+    "valid": false,
+    "error": "Invalid email format"
+  },
+  "user@": {
+    "valid": false,
+    "error": "Invalid email format"
+  },
+  "user @space.com": {
+    "valid": false,
+    "error": "Invalid email format"
+  }
+}

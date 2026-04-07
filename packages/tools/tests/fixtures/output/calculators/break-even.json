@@ -1,0 +1,9 @@
+{
+  "fixedCosts": 10000,
+  "variableCostPerUnit": 30,
+  "pricePerUnit": 50,
+  "breakEvenUnits": 500,
+  "breakEvenRevenue": 25000,
+  "contributionMargin": 20,
+  "contributionMarginRatio": 0.4
+}

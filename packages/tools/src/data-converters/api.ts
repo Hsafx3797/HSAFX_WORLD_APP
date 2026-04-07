@@ -371,3 +371,139 @@ function parseCurlArgs(curl: string): {
   
   return result;
 }
+
+// ============================================================
+// API converters (moved from compat.ts)
+// ============================================================
+
+/**
+ * cURL to HTTPie
+ */
+export function curlToHttpie(curl: string): string {
+  let httpie = 'http';
+  
+  // Extract method
+  const methodMatch = curl.match(/-X\s+(\w+)/);
+  if (methodMatch) {
+    httpie = `http ${methodMatch[1]}`;
+  }
+  
+  // Extract URL
+  const urlMatch = curl.match(/['"]?(https?:\/\/[^\s'"]+)['"]?/);
+  if (urlMatch) {
+    httpie += ` ${urlMatch[1]}`;
+  }
+  
+  // Extract headers
+  const headerMatches = curl.matchAll(/-H\s+['"]([^'"]+)['"]/g);
+  for (const match of headerMatches) {
+    const header = match[1]!;
+    const [key, value] = header.split(':').map(s => s.trim());
+    httpie += ` '${key}:${value}'`;
+  }
+  
+  return httpie;
+}
+
+/**
+ * URL to cURL
+ */
+export function urlToCurl(url: string, method = 'GET'): string {
+  return `curl -X ${method} '${url}'`;
+}
+
+/**
+ * API response to mock data.
+ * Analyzes the structure of a real API JSON response and generates
+ * randomized mock data that matches the same shape and realistic types.
+ */
+export function apiResponseToMock(json: string): string {
+  try {
+    const data = JSON.parse(json);
+    const mock = generateMockValue(data);
+    return JSON.stringify(mock, null, 2);
+  } catch (e) {
+    return JSON.stringify({ error: (e as Error).message });
+  }
+}
+
+/* ── Mock data helpers ── */
+
+const MOCK_NAMES = ['Alice', 'Bob', 'Charlie', 'Diana', 'Eve', 'Frank', 'Grace', 'Hank'];
+const MOCK_DOMAINS = ['example.com', 'test.org', 'mock.io', 'sample.net'];
+const MOCK_WORDS = ['lorem', 'ipsum', 'dolor', 'sit', 'amet', 'consectetur', 'adipiscing', 'elit'];
+
+function randomInt(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function randomPick<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function inferStringType(key: string, value: string): string {
+  const k = key.toLowerCase();
+  // UUID
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)) {
+    const hex = () => Math.random().toString(16).substring(2, 10);
+    return `${hex()}-${hex().substring(0, 4)}-4${hex().substring(0, 3)}-${randomPick(['8', '9', 'a', 'b'])}${hex().substring(0, 3)}-${hex()}${hex().substring(0, 4)}`;
+  }
+  // ISO date
+  if (/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2})?/.test(value)) {
+    const d = new Date(Date.now() - randomInt(0, 365 * 24 * 60 * 60 * 1000));
+    return d.toISOString();
+  }
+  // Email
+  if (/^[^@]+@[^@]+\.[^@]+$/.test(value) || k.includes('email')) {
+    return `${randomPick(MOCK_NAMES).toLowerCase()}${randomInt(1, 99)}@${randomPick(MOCK_DOMAINS)}`;
+  }
+  // URL
+  if (/^https?:\/\//.test(value) || k.includes('url') || k.includes('link') || k.includes('href')) {
+    return `https://${randomPick(MOCK_DOMAINS)}/${MOCK_WORDS[randomInt(0, 4)]}`;
+  }
+  // Phone
+  if (k.includes('phone') || k.includes('tel') || /^\+?\d[\d\-\s]{7,}$/.test(value)) {
+    return `+1-${randomInt(200, 999)}-${randomInt(100, 999)}-${randomInt(1000, 9999)}`;
+  }
+  // Name fields
+  if (k.includes('name') || k === 'first' || k === 'last') {
+    return randomPick(MOCK_NAMES);
+  }
+  // IP address
+  if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(value)) {
+    return `${randomInt(10, 192)}.${randomInt(0, 255)}.${randomInt(0, 255)}.${randomInt(1, 254)}`;
+  }
+  // Generic string — produce words matching approximate length
+  const wordCount = Math.max(1, Math.ceil(value.length / 6));
+  const words: string[] = [];
+  for (let i = 0; i < wordCount; i++) words.push(randomPick(MOCK_WORDS));
+  return words.join(' ');
+}
+
+function generateMockValue(value: unknown, key = ''): unknown {
+  if (value === null) return null;
+  if (typeof value === 'string') return inferStringType(key, value);
+  if (typeof value === 'number') {
+    if (Number.isInteger(value)) return randomInt(1, 1000);
+    return Math.round(Math.random() * 1000 * 100) / 100;
+  }
+  if (typeof value === 'boolean') return Math.random() > 0.5;
+  if (Array.isArray(value)) {
+    if (value.length === 0) return [];
+    // Generate 1-3 items based on the first element's shape
+    const count = Math.min(value.length, randomInt(1, 3));
+    const result: unknown[] = [];
+    for (let i = 0; i < count; i++) {
+      result.push(generateMockValue(value[0], key));
+    }
+    return result;
+  }
+  if (typeof value === 'object') {
+    const result: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      result[k] = generateMockValue(v, k);
+    }
+    return result;
+  }
+  return value;
+}

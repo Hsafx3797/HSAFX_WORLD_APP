@@ -1,6 +1,8 @@
 /**
  * GET /api/v1/health
  * Public health check (also verifies API key if provided).
+ *
+ * OpenAPI spec available at GET /api/v1/openapi.json
  */
 
 import { NextRequest, NextResponse } from 'next/server';

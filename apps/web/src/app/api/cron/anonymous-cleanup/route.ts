@@ -10,10 +10,13 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db, anonymousUsage, sql } from '@hsafx/db';
+import { redis } from '@/lib/redis';
 
 // ─── Auth guard ─────────────────────────────────────────────
 
 const CRON_SECRET = process.env.CRON_SECRET ?? '';
+const LOCK_KEY = 'cron:lock:anonymous-cleanup';
+const LOCK_TTL = 300; // 5 minutes
 
 function unauthorized() {
   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -25,6 +28,12 @@ export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization');
   if (!CRON_SECRET || authHeader !== `Bearer ${CRON_SECRET}`) {
     return unauthorized();
+  }
+
+  // Distributed lock — prevent concurrent runs
+  const acquired = await redis.set(LOCK_KEY, '1', { ex: LOCK_TTL, nx: true });
+  if (!acquired) {
+    return NextResponse.json({ success: false, error: 'Another instance is already running' }, { status: 409 });
   }
 
   const startTime = Date.now();
@@ -74,5 +83,7 @@ export async function GET(req: NextRequest) {
       { success: false, error: message },
       { status: 500 },
     );
+  } finally {
+    await redis.del(LOCK_KEY);
   }
 }

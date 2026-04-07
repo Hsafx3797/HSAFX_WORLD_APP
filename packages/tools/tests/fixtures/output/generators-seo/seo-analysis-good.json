@@ -1,0 +1,20 @@
+{
+  "score": 86,
+  "maxScore": 100,
+  "percentage": 86,
+  "grade": "B",
+  "issues": [
+    {
+      "severity": "warning",
+      "message": "Meta description is too short"
+    },
+    {
+      "severity": "error",
+      "message": "Many images missing alt text"
+    }
+  ],
+  "recommendations": [
+    "Extend your meta description to 150-160 characters",
+    "Add descriptive alt text to all images"
+  ]
+}

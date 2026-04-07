@@ -19,8 +19,7 @@
  */
 
 import { NextResponse, type NextRequest } from 'next/server';
-import { headers } from 'next/headers';
-import { auth } from '@/lib/auth';
+import { requireAdminRole } from '@/lib/require-admin';
 import { db, sql } from '@hsafx/db';
 import {
   getEventBus,
@@ -117,13 +116,9 @@ export const runtime = 'nodejs';
 export async function GET(_request: NextRequest) {
   // Start the centralized metrics collector (idempotent, lazy init on first request)
   startMetricsCollector();
-  // Auth check
-  const headersList = await headers();
-  const session = await auth.api.getSession({ headers: headersList });
-
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  // Auth + admin role check
+  const adminAuth = await requireAdminRole('admin.view');
+  if (adminAuth instanceof NextResponse) return adminAuth;
 
   let intervalId: ReturnType<typeof setInterval> | undefined;
   let controllerRef: ReadableStreamDefaultController | undefined;

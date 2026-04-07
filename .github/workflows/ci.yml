@@ -160,14 +160,21 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      - name: Build admin app
+        run: pnpm turbo build --filter=@hsafx/admin
+        env:
+          NEXT_PUBLIC_APP_URL: http://localhost:3000
+          NEXT_PUBLIC_FASTAPI_URL: http://localhost:8000
+
       - name: Run E2E tests
         working-directory: apps/admin
         run: npx playwright test
         env:
+          CI: true
           ADMIN_URL: http://localhost:3001
           ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
           ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
-        continue-on-error: true
+        continue-on-error: true  # TODO: remove once DB is available in CI
 
       - name: Upload E2E report
         if: always()

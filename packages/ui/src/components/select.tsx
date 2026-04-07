@@ -160,23 +160,23 @@ const SelectContent = React.forwardRef<HTMLDivElement, SelectContentProps>(
           case 'ArrowDown': {
             e.preventDefault();
             const next = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
-            items[next].focus();
+            items[next]!.focus();
             break;
           }
           case 'ArrowUp': {
             e.preventDefault();
             const prev = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
-            items[prev].focus();
+            items[prev]!.focus();
             break;
           }
           case 'Home': {
             e.preventDefault();
-            items[0].focus();
+            items[0]!.focus();
             break;
           }
           case 'End': {
             e.preventDefault();
-            items[items.length - 1].focus();
+            items[items.length - 1]!.focus();
             break;
           }
           case 'Enter':

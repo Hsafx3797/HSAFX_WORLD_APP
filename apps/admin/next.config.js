@@ -2,7 +2,7 @@
 const nextConfig = {
   output: 'standalone',
   reactStrictMode: true,
-  transpilePackages: ['@hsafx/db', '@hsafx/shared', '@hsafx/api', '@hsafx/config', '@hsafx/schemas', '@hsafx/theme', '@hsafx/tool-definitions'],
+  transpilePackages: ['@hsafx/db', '@hsafx/shared', '@hsafx/api', '@hsafx/config', '@hsafx/schemas', '@hsafx/theme'],
   experimental: {
     serverActions: { bodySizeLimit: '10mb' },
   },

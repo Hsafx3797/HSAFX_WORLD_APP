@@ -62,9 +62,9 @@ const changelog: ChangelogEntry[] = [
     title: 'Initial Launch',
     type: 'feature',
     items: [
-      '454+ developer tools across 7 categories',
-      '191 text transformation tools',
-      '106 data conversion tools',
+      '28 parameterized engines across 3 backends',
+      '9 text/data engines (Rust)',
+      '11 code/format engines (Node.js),'
       'User authentication with social login (Google, GitHub, Facebook)',
       'Dark/light mode with theme customization',
       'Smart search across all tools',

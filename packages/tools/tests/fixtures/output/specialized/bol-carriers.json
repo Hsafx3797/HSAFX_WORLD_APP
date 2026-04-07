@@ -1,0 +1,30 @@
+{
+  "MAEU": {
+    "valid": true,
+    "formatted": "MAEU-987654321",
+    "carrier": "Maersk Line",
+    "type": "Ocean Bill of Lading",
+    "errors": []
+  },
+  "MSCU": {
+    "valid": true,
+    "formatted": "MSCU-987654321",
+    "carrier": "Unknown carrier",
+    "type": "Ocean Bill of Lading",
+    "errors": []
+  },
+  "HLCU": {
+    "valid": true,
+    "formatted": "HLCU-987654321",
+    "carrier": "Hapag-Lloyd",
+    "type": "Ocean Bill of Lading",
+    "errors": []
+  },
+  "CMDU": {
+    "valid": true,
+    "formatted": "CMDU-987654321",
+    "carrier": "Unknown carrier",
+    "type": "Ocean Bill of Lading",
+    "errors": []
+  }
+}

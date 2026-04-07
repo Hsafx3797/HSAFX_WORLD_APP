@@ -30,7 +30,7 @@ vi.mock('@hsafx/db', () => ({
               return {
                 limit: (...lArgs: unknown[]) => {
                   mockLimit(...lArgs);
-                  return mockLimit._returnValue ?? [];
+                  return (mockLimit as ReturnType<typeof vi.fn> & { _returnValue?: unknown[] })._returnValue ?? [];
                 },
               };
             },
@@ -59,7 +59,7 @@ vi.mock('@hsafx/db', () => ({
 
 // Import after mock setup
 const { isWebhookProcessed, markWebhookProcessed } = await import(
-  '../../server/webhooks/idempotency'
+  '../idempotency'
 );
 
 // ─── Tests ────────────────────────────────────────────────────

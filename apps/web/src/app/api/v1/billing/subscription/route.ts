@@ -2,6 +2,10 @@
  * GET /api/v1/billing/subscription
  * Returns the current subscription for the API key owner.
  * Requires scope: billing:read
+ *
+ * Stripe metered billing: Usage is reported via reportStripeUsage() in
+ * job-worker.ts and job-complete/route.ts for users with a stripeCustomerId.
+ * See: apps/web/src/server/billing/stripe-usage.ts
  */
 
 import { NextRequest } from 'next/server';
@@ -13,6 +17,7 @@ import {
   apiErrorResponse,
   type ApiContext,
 } from '@/lib/api-v1-auth';
+import { ApiErrorCode } from '@hsafx/shared/errors';
 
 export async function GET(request: NextRequest) {
   const result = await authenticateApiKey(request);
@@ -63,7 +68,7 @@ export async function GET(request: NextRequest) {
     );
   } catch (err) {
     return apiErrorResponse(
-      'B004',
+      ApiErrorCode.SERVER_ERROR,
       'Failed to retrieve subscription',
       ctx,
       500,

@@ -1,32 +1,33 @@
-# HSAFX World - All-in-One Tool Suite
+# HSAFX World - B2B Engine API Platform
 
-A comprehensive platform with 448+ professional tools across 5 major categories, built with Next.js, FastAPI, and Rust/WASM.
+A B2B API platform with 28 parameterized engines for text, data, and media processing, built with Next.js, FastAPI, and Rust.
 
 ## 🎯 Project Overview
 
-HSAFX World is a freemium SaaS platform providing access to professional-grade tools:
-- **191 Text Tools** (Rust/WASM - client-side)
-- **100+ Data Converters** (Node.js)
-- **100+ Media Processors** (Python/FFmpeg)
-- **100 Generators & Calculators** (JS/Rust)
-- **10+ Logistics Tools** (Python scraping)
+HSAFX World is a B2B API platform providing server-side engine execution:
+- **9 Text/Data Engines** (Rust service — case, wrap, filter, transform, encode, hash, counter, unicode, generate-data)
+- **11 Code/Format Engines** (Node.js — comment, markup, convert, format, schema, diff, api, generate-web, validate, calculate, unit)
+- **8 Media Engines** (FastAPI — image, video, audio, pdf, document, archive, file, font)
 
 ## 📁 Project Structure
 
 ```
 hsafx_world_app/
 ├── apps/
-│   ├── web/          # Next.js 15 user application (port 3000)
-│   ├── admin/        # Next.js 15 admin panel (port 3001)
-│   └── server/       # FastAPI Python backend (port 8000)
+│   ├── web/          # Next.js 15 B2B API server (port 3000)
+│   └── admin/        # Next.js 15 admin panel (port 3001)
+├── backend/
+│   ├── fastapi/      # FastAPI Python backend (port 8000)
+│   └── rust/         # Rust text/data engine service
 ├── packages/
 │   ├── api/          # tRPC routers & procedures
 │   ├── db/           # Drizzle ORM + PostgreSQL schema
+│   ├── schemas/      # Zod validation schemas
 │   ├── shared/       # Shared types, constants, utilities
-│   ├── tools/        # Tool implementations & engine
-│   ├── ui/           # UI components
-│   └── wasm/         # Rust/WASM text tools
-└── docs/             # Complete documentation (41+ files)
+│   ├── theme/        # Theme system & presets
+│   ├── tools/        # 20 engine implementations (Node.js engines)
+│   └── ui/           # UI components
+└── docs/             # Complete documentation (60+ files)
 ```
 
 ## 🚀 Quick Start
@@ -75,23 +76,23 @@ hsafx_world_app/
    pnpm dev:admin        # Admin panel (port 3001)
    
    # FastAPI server
-   cd apps/server && uvicorn src.main:app --reload  # (port 8000)
+   cd backend/fastapi && uvicorn src.main:app --reload  # (port 8000)
    ```
 
 ## 📚 Documentation
 
 Comprehensive documentation in `docs/planning/`:
 
-- **[EXECUTIVE_SUMMARY.md](docs/planning/EXECUTIVE_SUMMARY.md)** - Project overview
-- **[DOCUMENTATION_INDEX.md](docs/planning/DOCUMENTATION_INDEX.md)** - All documents indexed
-- **[00_PRODUCT_REQUIREMENTS.md](docs/planning/00_PRODUCT_REQUIREMENTS.md)** - Complete PRD
-- **[10_SYSTEM_ARCHITECTURE.md](docs/planning/10_SYSTEM_ARCHITECTURE.md)** - Architecture design
-- **[11_TECHNOLOGY_STACK.md](docs/planning/11_TECHNOLOGY_STACK.md)** - Tech decisions
-- **[12_FILE_STRUCTURE.md](docs/planning/12_FILE_STRUCTURE.md)** - Monorepo structure
-- **[13_DATABASE_SCHEMA.md](docs/planning/13_DATABASE_SCHEMA.md)** - Database design
-- **[30_TOOLS_CATALOG.md](docs/planning/30_TOOLS_CATALOG.md)** - All 448 tools listed
+- **[EXECUTIVE_SUMMARY.md](docs/PLANNING/EXECUTIVE_SUMMARY.md)** - Project overview
+- **[DOCUMENTATION_INDEX.md](docs/PLANNING/DOCUMENTATION_INDEX.md)** - All documents indexed
+- **[00_PRODUCT_REQUIREMENTS.md](docs/PLANNING/00_PRODUCT_REQUIREMENTS.md)** - Complete PRD
+- **[10_SYSTEM_ARCHITECTURE.md](docs/PLANNING/10_SYSTEM_ARCHITECTURE.md)** - Architecture design
+- **[11_TECHNOLOGY_STACK.md](docs/PLANNING/11_TECHNOLOGY_STACK.md)** - Tech decisions
+- **[12_FILE_STRUCTURE.md](docs/PLANNING/12_FILE_STRUCTURE.md)** - Monorepo structure
+- **[13_DATABASE_SCHEMA.md](docs/PLANNING/13_DATABASE_SCHEMA.md)** - Database design
+- **[30_TOOLS_CATALOG.md](docs/PLANNING/30_TOOLS_CATALOG.md)** - All 451 tools listed
 
-See [DOCUMENTATION_INDEX.md](docs/planning/DOCUMENTATION_INDEX.md) for full list.
+See [DOCUMENTATION_INDEX.md](docs/PLANNING/DOCUMENTATION_INDEX.md) for full list.
 
 ## 🏗️ Technology Stack
 
@@ -106,8 +107,7 @@ See [DOCUMENTATION_INDEX.md](docs/planning/DOCUMENTATION_INDEX.md) for full list
 
 ### Backend
 - **tRPC API** - Type-safe API layer (`packages/api`)
-- **FastAPI 0.109** - Python backend (`apps/server`)
-- **SQLAlchemy 2.0** - Python ORM
+- **FastAPI 0.109** - Python backend (`backend/fastapi`)
 - **Drizzle ORM** - TypeScript database toolkit
 
 ### Tool Execution
@@ -126,11 +126,9 @@ See [DOCUMENTATION_INDEX.md](docs/planning/DOCUMENTATION_INDEX.md) for full list
 ### External Services
 - **Stripe** - Payment processing
 - **Polar** - Subscription management
-- **Inngest** - Background jobs
-- **Meilisearch** - Search engine
-- **Sentry** - Error tracking
-- **Plausible** - Analytics
 - **Resend** - Email service
+- **Sentry** - Error tracking (planned)
+- **Plausible** - Analytics (planned)
 
 ## 🔧 Development
 
@@ -153,7 +151,7 @@ pnpm db:studio
 ### FastAPI Backend
 
 ```bash
-cd apps/server
+cd backend/fastapi
 
 # Create virtual environment
 python -m venv .venv
@@ -183,7 +181,7 @@ pnpm dev
 ### Rust/WASM Tools
 
 ```bash
-cd packages/wasm/text-tools
+cd backend/rust/text-tools
 
 # Build WASM
 wasm-pack build --target web --out-dir ../../../apps/web/public/wasm

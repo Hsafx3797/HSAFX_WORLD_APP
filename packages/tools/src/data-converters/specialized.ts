@@ -1428,3 +1428,178 @@ function camelCase(str: string): string {
     .map((part, i) => (i === 0 ? part.toLowerCase() : capitalize2(part.toLowerCase())))
     .join('');
 }
+
+// ============================================================
+// Schema/Config diff & converters (moved from compat.ts)
+// ============================================================
+
+/**
+ * Schema diff
+ */
+export function schemaDiff(schema1: string, schema2: string): string {
+  try {
+    const s1 = JSON.parse(schema1);
+    const s2 = JSON.parse(schema2);
+    
+    const added: string[] = [];
+    const removed: string[] = [];
+    const changed: string[] = [];
+    
+    const props1 = s1.properties || {};
+    const props2 = s2.properties || {};
+    
+    for (const key of Object.keys(props2)) {
+      if (!(key in props1)) added.push(key);
+    }
+    
+    for (const key of Object.keys(props1)) {
+      if (!(key in props2)) removed.push(key);
+      else if (JSON.stringify(props1[key]) !== JSON.stringify(props2[key])) {
+        changed.push(key);
+      }
+    }
+    
+    return JSON.stringify({ added, removed, changed }, null, 2);
+  } catch (e) {
+    return JSON.stringify({ error: (e as Error).message });
+  }
+}
+
+/**
+ * Config diff
+ */
+export function configDiff(config1: string, config2: string): string {
+  return schemaDiff(config1, config2);
+}
+
+/**
+ * OpenAPI diff
+ */
+export function openapiDiff(spec1: string, spec2: string): string {
+  try {
+    const s1 = JSON.parse(spec1);
+    const s2 = JSON.parse(spec2);
+    
+    const paths1 = Object.keys(s1.paths || {});
+    const paths2 = Object.keys(s2.paths || {});
+    
+    const added = paths2.filter(p => !paths1.includes(p));
+    const removed = paths1.filter(p => !paths2.includes(p));
+    
+    return JSON.stringify({
+      versionChange: { from: s1.info?.version, to: s2.info?.version },
+      paths: { added, removed }
+    }, null, 2);
+  } catch (e) {
+    return JSON.stringify({ error: (e as Error).message });
+  }
+}
+
+/**
+ * GraphQL schema diff
+ */
+export function graphqlSchemaDiff(schema1: string, schema2: string): string {
+  const typeRegex = /type\s+(\w+)/g;
+  
+  const types1: string[] = [];
+  const types2: string[] = [];
+  
+  let match;
+  while ((match = typeRegex.exec(schema1)) !== null) {
+    types1.push(match[1]!);
+  }
+  
+  typeRegex.lastIndex = 0;
+  while ((match = typeRegex.exec(schema2)) !== null) {
+    types2.push(match[1]!);
+  }
+  
+  const added = types2.filter(t => !types1.includes(t));
+  const removed = types1.filter(t => !types2.includes(t));
+  
+  return JSON.stringify({ types: { added, removed } }, null, 2);
+}
+
+/**
+ * JSON Schema to OpenAPI
+ */
+export function jsonSchemaToOpenapi(schema: string): string {
+  try {
+    const parsed = JSON.parse(schema);
+    const openapi = {
+      openapi: '3.0.0',
+      info: {
+        title: parsed.title || 'API',
+        version: '1.0.0'
+      },
+      paths: {},
+      components: {
+        schemas: {
+          [parsed.title || 'Schema']: parsed
+        }
+      }
+    };
+    return JSON.stringify(openapi, null, 2);
+  } catch (e) {
+    return JSON.stringify({ error: (e as Error).message });
+  }
+}
+
+/**
+ * SQL to NoSQL (basic query conversion)
+ */
+export function sqlToNoSql(sql: string): string {
+  const selectMatch = sql.match(/SELECT\s+(.+?)\s+FROM\s+(\w+)(?:\s+WHERE\s+(.+))?/i);
+  if (!selectMatch) {
+    return JSON.stringify({ error: 'Only SELECT queries supported' });
+  }
+  
+  const fields = selectMatch[1]!.split(',').map(f => f.trim());
+  const collection = selectMatch[2];
+  const where = selectMatch[3];
+  
+  const query: Record<string, unknown> = {};
+  if (where) {
+    const conditions = where.split(/\s+AND\s+/i);
+    for (const cond of conditions) {
+      const condMatch = cond.match(/(\w+)\s*=\s*'?([^']+)'?/);
+      if (condMatch) {
+        query[condMatch[1]!] = condMatch[2];
+      }
+    }
+  }
+  
+  const projection = fields[0] === '*' ? {} : Object.fromEntries(fields.map(f => [f, 1]));
+  
+  return JSON.stringify({
+    collection,
+    query,
+    projection
+  }, null, 2);
+}
+
+/**
+ * Kubernetes to Kustomize
+ */
+export function kubernetesToKustomize(k8sYaml: string): string {
+  const nameMatch = k8sYaml.match(/name:\s*(\S+)/);
+  const kindMatch = k8sYaml.match(/kind:\s*(\S+)/);
+  
+  const name = nameMatch ? nameMatch[1] : 'resource';
+  const kind = kindMatch ? kindMatch[1]!.toLowerCase() : 'deployment';
+  
+  const kustomization = `apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ${kind}.yaml
+
+namePrefix: dev-
+
+commonLabels:
+  app: ${name}
+  environment: development
+`;
+  
+  return kustomization;
+}

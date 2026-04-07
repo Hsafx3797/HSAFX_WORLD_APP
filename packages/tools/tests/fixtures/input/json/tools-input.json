@@ -1,0 +1,162 @@
+{
+  "encoding": {
+    "plain": "Hello, World! <script>alert('xss')</script>",
+    "unicode": "Héllo Wörld 你好世界 🌍",
+    "special": "Café résumé naïve coöperate",
+    "html_entities": "&lt;div class=&quot;test&quot;&gt;Hello &amp; World&lt;/div&gt;",
+    "url_component": "hello world/path?key=value&other=123",
+    "hex_input": "48656c6c6f",
+    "binary_input": "01001000 01100101 01101100 01101100 01101111",
+    "ascii_codes": [72, 101, 108, 108, 111],
+    "code_points": [72, 233, 108, 108, 111, 32, 128013]
+  },
+  "generators": {
+    "hash_input": "The quick brown fox jumps over the lazy dog",
+    "jwt_payload": {
+      "sub": "user-123",
+      "name": "Test User",
+      "role": "admin",
+      "iat": 1700000000
+    },
+    "vcard": {
+      "firstName": "John",
+      "lastName": "Doe",
+      "phone": "+1-555-123-4567",
+      "email": "john.doe@example.com",
+      "organization": "HSAFX Corp",
+      "title": "Software Engineer",
+      "url": "https://johndoe.dev"
+    },
+    "password_options": {
+      "length": 24,
+      "uppercase": true,
+      "lowercase": true,
+      "numbers": true,
+      "symbols": true,
+      "excludeAmbiguous": true
+    },
+    "color_palette_base": "#3498db",
+    "qr_text": "https://hsafx.world",
+    "placeholder_image": { "width": 300, "height": 200, "text": "Test Image" },
+    "emoji_query": "heart"
+  },
+  "css_generators": {
+    "tailwind_classes": "flex items-center justify-between p-4 bg-blue-500 text-white rounded-lg shadow-md",
+    "css_to_parse": ".container { display: flex; align-items: center; padding: 16px; background-color: #3498db; color: white; }",
+    "css_object": {
+      "display": "flex",
+      "align-items": "center",
+      "padding": "16px",
+      "background-color": "#3498db"
+    },
+    "clip_path": {
+      "shape": "polygon",
+      "points": [[50, 0], [100, 100], [0, 100]]
+    },
+    "typography": {
+      "fontFamily": "Inter, system-ui, sans-serif",
+      "fontSize": "16px",
+      "fontWeight": 400,
+      "lineHeight": 1.6,
+      "letterSpacing": "-0.01em",
+      "color": "#333333"
+    }
+  },
+  "seo_generators": {
+    "htaccess": {
+      "forceHttps": true,
+      "forceWww": true,
+      "gzipEnabled": true,
+      "browserCaching": true,
+      "customRedirects": [
+        { "from": "/old-page", "to": "/new-page", "type": 301 },
+        { "from": "/temp", "to": "/current", "type": 302 }
+      ]
+    },
+    "canonical_url": "https://www.example.com/products/widget",
+    "seo_slug_input": "How to Build a REST API with Node.js & Express! (2024 Guide)",
+    "structured_data": {
+      "type": "Organization",
+      "name": "HSAFX Corp",
+      "url": "https://hsafx.world",
+      "logo": "https://hsafx.world/logo.png"
+    },
+    "og_article": {
+      "publishedTime": "2024-01-15T10:00:00Z",
+      "modifiedTime": "2024-01-20T14:30:00Z",
+      "author": "John Doe",
+      "section": "Technology",
+      "tags": ["TypeScript", "Testing", "Web Development"]
+    },
+    "security_txt": {
+      "contact": ["mailto:security@example.com", "https://example.com/security"],
+      "expires": "2025-12-31T23:59:59Z",
+      "encryption": "https://example.com/pgp-key.txt",
+      "preferredLanguages": ["en", "ar"],
+      "canonical": "https://example.com/.well-known/security.txt"
+    },
+    "humans_txt": {
+      "team": [
+        { "role": "Lead Developer", "name": "John Doe", "contact": "john@example.com", "location": "Dubai, UAE" },
+        { "role": "Designer", "name": "Jane Smith", "twitter": "@janesmith", "location": "London, UK" }
+      ],
+      "thanks": ["Open source community", "Contributors"],
+      "site": {
+        "lastUpdate": "2024-01-20",
+        "language": "English",
+        "standards": ["HTML5", "CSS3", "ES2024"],
+        "components": ["React", "Next.js", "TailwindCSS"],
+        "software": ["VS Code", "Figma"]
+      }
+    },
+    "seo_analysis": {
+      "title": "Best TypeScript Tools for Web Developers - HSAFX World",
+      "description": "Discover the best TypeScript tools for modern web development. Free online converters, generators, and calculators.",
+      "h1Count": 1,
+      "h2Count": 5,
+      "wordCount": 1500,
+      "imageCount": 8,
+      "imagesWithAlt": 7,
+      "internalLinks": 15,
+      "externalLinks": 3,
+      "hasCanonical": true,
+      "hasRobots": true,
+      "hasSitemap": true,
+      "loadTimeMs": 1200,
+      "mobileResponsive": true,
+      "httpsEnabled": true
+    }
+  },
+  "timezone": {
+    "conversions": [
+      {
+        "datetime": "2024-06-15T14:30:00",
+        "from": "America/New_York",
+        "to": "Europe/London"
+      },
+      {
+        "datetime": "2024-01-01T00:00:00",
+        "from": "Asia/Dubai",
+        "to": "America/Los_Angeles"
+      },
+      {
+        "datetime": "2024-03-10T02:30:00",
+        "from": "US/Eastern",
+        "to": "Asia/Tokyo"
+      }
+    ],
+    "multi_conversion": {
+      "datetime": "2024-06-15T09:00:00",
+      "from": "America/New_York",
+      "to": ["Europe/London", "Asia/Dubai", "Asia/Tokyo", "Australia/Sydney"]
+    },
+    "meeting": {
+      "baseTime": "2024-06-15T14:00:00",
+      "baseTimezone": "America/New_York",
+      "participants": ["Europe/London", "Asia/Dubai", "Asia/Tokyo"]
+    },
+    "search_queries": ["dubai", "london", "tokyo", "new york"],
+    "offset_search": 4,
+    "country_search": "United States"
+  }
+}

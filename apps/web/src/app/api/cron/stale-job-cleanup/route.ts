@@ -14,10 +14,12 @@ import {
   db,
   asyncJobs,
   fileUploads,
+  coinTransactions,
   eq,
   sql,
 } from '@hsafx/db';
 import { redis, keys, TTL } from '@/lib/redis';
+import { releaseReservation } from '@/server/limits/coin-service';
 
 // ─── Auth guard ─────────────────────────────────────────────
 
@@ -31,6 +33,7 @@ function unauthorized() {
 
 const STALE_JOB_MINUTES = 60; // 1 hour
 const STALE_UPLOAD_HOURS = 24; // 24 hours
+const STALE_RESERVATION_MINUTES = 30; // 30 minutes
 
 // ─── Types ──────────────────────────────────────────────────
 
@@ -38,6 +41,7 @@ interface CleanupResult {
   staleJobsCanceled: number;
   redisKeysCleared: number;
   staleUploadsFailed: number;
+  orphanedReservationsReleased: number;
   errors: string[];
 }
 
@@ -54,6 +58,7 @@ export async function GET(req: NextRequest) {
     staleJobsCanceled: 0,
     redisKeysCleared: 0,
     staleUploadsFailed: 0,
+    orphanedReservationsReleased: 0,
     errors: [],
   };
 
@@ -118,6 +123,31 @@ export async function GET(req: NextRequest) {
       .returning({ id: fileUploads.id });
 
     result.staleUploadsFailed = failedUploads.length;
+
+    // ── 4. Release orphaned coin reservations ─────────────────
+
+    const reservationCutoff = new Date();
+    reservationCutoff.setMinutes(reservationCutoff.getMinutes() - STALE_RESERVATION_MINUTES);
+
+    const orphanedReservations = await db
+      .select({ id: coinTransactions.id })
+      .from(coinTransactions)
+      .where(
+        sql`${coinTransactions.type} = 'spend'
+            AND ${coinTransactions.metadata}->>'status' = 'reserved'
+            AND ${coinTransactions.createdAt} < ${reservationCutoff}`,
+      )
+      .limit(100); // Cap per run to avoid long-running transactions
+
+    for (const reservation of orphanedReservations) {
+      try {
+        await releaseReservation(reservation.id);
+        result.orphanedReservationsReleased++;
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        result.errors.push(`reservation:${reservation.id} → ${msg}`);
+      }
+    }
 
     const durationMs = Date.now() - startTime;
 

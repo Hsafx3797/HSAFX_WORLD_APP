@@ -10,12 +10,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db, users, subscriptions, plans, activityLogs, eq, and, or, sql, desc, asc } from '@hsafx/db';
 import { createLogger } from '@hsafx/shared/logger';
 import { requireAdminRole } from '@/lib/require-admin';
+import { adminResponse, adminPaginatedResponse, adminErrorResponse } from '@/lib/admin-response';
 
 const log = createLogger('admin-subscriptions');
 
 export async function GET(request: NextRequest) {
   try {
-    const authResult = await requireAdminRole();
+    const authResult = await requireAdminRole('subscriptions.view');
     if (authResult instanceof NextResponse) return authResult;
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1', 10);
@@ -129,19 +130,10 @@ export async function GET(request: NextRequest) {
     const total = countResults[0]?.count ?? 0;
     const totalPages = Math.ceil(total / limit);
 
-    return NextResponse.json({
-      data: enrichedSubscriptions,
-      page,
-      limit,
-      total,
-      totalPages,
-    });
+    return adminPaginatedResponse(enrichedSubscriptions, { page, limit, total });
   } catch (error) {
     log.error('Failed to fetch subscriptions', { error: String(error) });
-    return NextResponse.json(
-      { code: 'FETCH_ERROR', message: 'Failed to fetch subscriptions' },
-      { status: 500 }
-    );
+    return adminErrorResponse('FETCH_ERROR', 'Failed to fetch subscriptions', 500);
   }
 }
 
@@ -153,17 +145,14 @@ export async function GET(request: NextRequest) {
  */
 export async function PATCH(request: NextRequest) {
   try {
-    const authResult = await requireAdminRole();
+    const authResult = await requireAdminRole('subscriptions.manage');
     if (authResult instanceof NextResponse) return authResult;
 
     const body = await request.json();
     const { id, ...updates } = body as { id?: string; [k: string]: unknown };
 
     if (!id) {
-      return NextResponse.json(
-        { code: 'VALIDATION_ERROR', message: 'Subscription ID is required' },
-        { status: 400 }
-      );
+      return adminErrorResponse('VALIDATION_ERROR', 'Subscription ID is required', 400);
     }
 
     const allowedFields: Record<string, string> = {
@@ -195,10 +184,7 @@ export async function PATCH(request: NextRequest) {
         .where(eq(plans.id, updates.planId as string))
         .limit(1);
       if (!planExists) {
-        return NextResponse.json(
-          { code: 'INVALID_PLAN', message: 'Plan not found' },
-          { status: 400 }
-        );
+        return adminErrorResponse('INVALID_PLAN', 'Plan not found', 400);
       }
     }
 
@@ -218,10 +204,7 @@ export async function PATCH(request: NextRequest) {
       });
 
     if (!updated) {
-      return NextResponse.json(
-        { code: 'NOT_FOUND', message: 'Subscription not found' },
-        { status: 404 }
-      );
+      return adminErrorResponse('NOT_FOUND', 'Subscription not found', 404);
     }
 
     // Audit log
@@ -233,7 +216,7 @@ export async function PATCH(request: NextRequest) {
       metadata: JSON.stringify({ fields: Object.keys(updates) }),
     } as typeof activityLogs.$inferInsert);
 
-    return NextResponse.json({
+    return adminResponse({
       id: updated.id,
       userId: updated.userId,
       planId: updated.planId,
@@ -245,9 +228,6 @@ export async function PATCH(request: NextRequest) {
     });
   } catch (error) {
     log.error('Failed to update subscription', { error: String(error) });
-    return NextResponse.json(
-      { code: 'UPDATE_ERROR', message: 'Failed to update subscription' },
-      { status: 500 }
-    );
+    return adminErrorResponse('UPDATE_ERROR', 'Failed to update subscription', 500);
   }
 }

@@ -1,0 +1,9 @@
+Input:
+banana
+apple
+cherry
+
+Output:
+apple
+banana
+cherry

@@ -12,8 +12,9 @@ import {
   bigint,
   index,
   uniqueIndex,
+  check,
 } from 'drizzle-orm/pg-core';
-import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
+import { InferInsertModel, InferSelectModel, sql } from 'drizzle-orm';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 import { users } from './users';
@@ -106,7 +107,7 @@ export const subscriptions = pgTable('subscriptions', {
     .references(() => users.id, { onDelete: 'cascade' }),
   planId: uuid('plan_id')
     .notNull()
-    .references(() => plans.id),
+    .references(() => plans.id, { onDelete: 'restrict' }),
   status: subscriptionStatusEnum('status').notNull(),
   billingCycle: billingIntervalEnum('billing_cycle').notNull(),
   currentPeriodStart: timestamp('current_period_start').notNull(),
@@ -125,6 +126,9 @@ export const subscriptions = pgTable('subscriptions', {
   index('sub_plan_id_idx').on(t.planId),
   index('sub_period_end_idx').on(t.currentPeriodEnd),
   index('sub_polar_sub_id_idx').on(t.polarSubscriptionId),
+  uniqueIndex('sub_user_active_idx')
+    .on(t.userId)
+    .where(sql`status = 'active'`),
 ]);
 
 /**
@@ -148,6 +152,7 @@ export const coinTransactions = pgTable('coin_transactions', {
   index('coin_tx_user_id_idx').on(t.userId),
   index('coin_tx_type_idx').on(t.type),
   index('coin_tx_created_idx').on(t.createdAt),
+  index('coin_tx_user_type_created_idx').on(t.userId, t.type, t.createdAt),
 ]);
 
 /**
@@ -218,9 +223,13 @@ export const userCoinWallets = pgTable('user_coin_wallets', {
   balance: bigint('balance', { mode: 'number' }).notNull().default(0),
   lifetimeEarned: bigint('lifetime_earned', { mode: 'number' }).notNull().default(0),
   lifetimeSpent: bigint('lifetime_spent', { mode: 'number' }).notNull().default(0),
+  disputeFrozen: boolean('dispute_frozen').notNull().default(false),
   lastRecalculatedAt: timestamp('last_recalculated_at'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
-});
+}, (t) => [
+  check('wallet_balance_nonneg', sql`${t.balance} >= 0`),
+]);
 
 /**
  * Coin Packs - Purchasable coin bundles
@@ -244,7 +253,7 @@ export const toolCoinCosts = pgTable('tool_coin_costs', {
   id: uuid('id').primaryKey().defaultRandom(),
   toolId: uuid('tool_id')
     .notNull()
-    .references(() => tools.id),
+    .references(() => tools.id, { onDelete: 'cascade' }),
   baWeight: decimal('ba_weight', { precision: 4, scale: 2 }).notNull().default('1.0'),
   overrideCost: integer('override_cost'), // null = use BA weight formula
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
@@ -479,7 +488,6 @@ export const planAuditLogs = pgTable('plan_audit_logs', {
     .notNull()
     .references(() => plans.id, { onDelete: 'cascade' }),
   changedBy: uuid('changed_by')
-    .notNull()
     .references(() => users.id, { onDelete: 'set null' }),
   changeType: planChangeTypeEnum('change_type').notNull(),
   changes: jsonb('changes').$type<Record<string, unknown>>().notNull(),

@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createLogger } from '@hsafx/shared/logger';
+
+const log = createLogger('cron-cleanup');
 
 /**
  * Cron endpoint: hard-delete users whose 14-day grace period has expired.
@@ -23,7 +26,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ ok: true, deletedCount: count });
   } catch (err) {
-    console.error('[Cron] cleanup-deleted-users failed:', err);
+    log.error('Cleanup deleted users failed', { error: err instanceof Error ? err.message : String(err) });
     return NextResponse.json(
       { error: 'Internal error' },
       { status: 500 },

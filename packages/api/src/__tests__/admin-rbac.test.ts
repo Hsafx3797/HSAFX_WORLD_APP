@@ -21,10 +21,9 @@ function makeCtx(overrides: Partial<Context> = {}): Context {
 const fakeSession = {
   id: 'sess_1',
   userId: 'user_1',
-  token: 'tok',
+  sessionToken: 'tok',
   expiresAt: new Date(Date.now() + 3600_000),
   createdAt: new Date(),
-  updatedAt: new Date(),
   ipAddress: '127.0.0.1',
   userAgent: 'test',
 } as Context['session'];

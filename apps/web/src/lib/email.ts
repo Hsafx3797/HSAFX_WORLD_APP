@@ -16,6 +16,9 @@ import { Resend } from 'resend';
 import { db } from '@hsafx/db';
 import { emailLogs, emailTemplates } from '@hsafx/db/schema';
 import { eq, and } from '@hsafx/db/schema';
+import { createLogger } from '@hsafx/shared/logger';
+
+const log = createLogger('email');
 
 // ─── Configuration ──────────────────────────────────────────────────────────
 
@@ -358,6 +361,6 @@ async function logEmail(params: LogEmailParams) {
     });
   } catch (logErr) {
     // Don't let logging failures break email sending
-    console.error('[Email] Failed to log email:', logErr);
+    log.error('Failed to log email', { error: logErr instanceof Error ? logErr.message : String(logErr) });
   }
 }

@@ -1,3 +1,9 @@
+// TODO [G6]: Rust WASM coverage is partial — only text case, hash, encoding,
+//   format, counter, unicode, manipulation, and generators are implemented.
+//   Node.js fallback exists via @hsafx/tools (TypeScript). Remaining coverage:
+//   validators, calculators, data converters, and specialized tools are NOT
+//   compiled to WASM yet. See: docs/PLANNING/11_TECHNOLOGY_STACK.md
+
 use wasm_bindgen::prelude::*;
 
 pub mod case;

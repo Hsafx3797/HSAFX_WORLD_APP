@@ -69,6 +69,15 @@ import {
   apiRequestLogs,
   permissionAuditLogs,
 } from './audit';
+import {
+  b2bPlans,
+  b2bSubscriptions,
+  b2bSuites,
+  b2bPlanQuotas,
+  b2bSuiteCategories,
+  b2bToolSuiteOverrides,
+  b2bUsage,
+} from './b2b';
 
 // ═══════════════════════════════════════════════════════════════
 // USERS
@@ -135,6 +144,10 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     fields: [users.id],
     references: [userOnboarding.userId],
   }),
+
+  // 1:M B2B
+  b2bSubscriptions: many(b2bSubscriptions),
+  b2bUsage: many(b2bUsage),
 }));
 
 export const userPreferencesRelations = relations(userPreferences, ({ one }) => ({
@@ -379,6 +392,7 @@ export const toolsRelations = relations(tools, ({ one, many }) => ({
   coinCosts: many(toolCoinCosts),
   anonymousUsage: many(anonymousUsage),
   dailyProTrials: many(dailyProTrials),
+  b2bSuiteOverride: many(b2bToolSuiteOverrides),
 }));
 
 export const toolLimitsRelations = relations(toolLimits, ({ one }) => ({
@@ -526,6 +540,73 @@ export const adminSettingsRelations = relations(adminSettings, ({ one }) => ({
   updatedByUser: one(users, {
     fields: [adminSettings.updatedBy],
     references: [users.id],
+  }),
+}));
+
+// ═══════════════════════════════════════════════════════════════
+// B2B BILLING
+// ═══════════════════════════════════════════════════════════════
+
+export const b2bPlansRelations = relations(b2bPlans, ({ many }) => ({
+  subscriptions: many(b2bSubscriptions),
+  quotas: many(b2bPlanQuotas),
+}));
+
+export const b2bSubscriptionsRelations = relations(b2bSubscriptions, ({ one }) => ({
+  user: one(users, {
+    fields: [b2bSubscriptions.userId],
+    references: [users.id],
+  }),
+  plan: one(b2bPlans, {
+    fields: [b2bSubscriptions.b2bPlanId],
+    references: [b2bPlans.id],
+  }),
+}));
+
+export const b2bSuitesRelations = relations(b2bSuites, ({ many }) => ({
+  quotas: many(b2bPlanQuotas),
+  categories: many(b2bSuiteCategories),
+  toolOverrides: many(b2bToolSuiteOverrides),
+  usage: many(b2bUsage),
+}));
+
+export const b2bPlanQuotasRelations = relations(b2bPlanQuotas, ({ one }) => ({
+  plan: one(b2bPlans, {
+    fields: [b2bPlanQuotas.b2bPlanId],
+    references: [b2bPlans.id],
+  }),
+  suite: one(b2bSuites, {
+    fields: [b2bPlanQuotas.b2bSuiteId],
+    references: [b2bSuites.id],
+  }),
+}));
+
+export const b2bSuiteCategoriesRelations = relations(b2bSuiteCategories, ({ one }) => ({
+  suite: one(b2bSuites, {
+    fields: [b2bSuiteCategories.b2bSuiteId],
+    references: [b2bSuites.id],
+  }),
+}));
+
+export const b2bToolSuiteOverridesRelations = relations(b2bToolSuiteOverrides, ({ one }) => ({
+  tool: one(tools, {
+    fields: [b2bToolSuiteOverrides.toolId],
+    references: [tools.id],
+  }),
+  suite: one(b2bSuites, {
+    fields: [b2bToolSuiteOverrides.b2bSuiteId],
+    references: [b2bSuites.id],
+  }),
+}));
+
+export const b2bUsageRelations = relations(b2bUsage, ({ one }) => ({
+  user: one(users, {
+    fields: [b2bUsage.userId],
+    references: [users.id],
+  }),
+  suite: one(b2bSuites, {
+    fields: [b2bUsage.b2bSuiteId],
+    references: [b2bSuites.id],
   }),
 }));
 

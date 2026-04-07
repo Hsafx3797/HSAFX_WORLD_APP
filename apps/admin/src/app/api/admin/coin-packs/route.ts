@@ -10,12 +10,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db, coinPacks, eq } from '@hsafx/db';
 import { createLogger } from '@hsafx/shared/logger';
 import { requireAdminRole } from '@/lib/require-admin';
+import { adminResponse, adminErrorResponse } from '@/lib/admin-response';
 
 const log = createLogger('admin-coin-packs');
 
 export async function GET() {
   try {
-    const authResult = await requireAdminRole();
+    const authResult = await requireAdminRole('billing.view');
     if (authResult instanceof NextResponse) return authResult;
 
     const packs = await db
@@ -23,23 +24,23 @@ export async function GET() {
       .from(coinPacks)
       .orderBy(coinPacks.sortOrder);
 
-    return NextResponse.json({ success: true, data: packs });
+    return adminResponse(packs);
   } catch (error) {
     log.error('GET error', { error: String(error) });
-    return NextResponse.json({ success: false, error: { code: 'INTERNAL', message: 'Failed to fetch coin packs' } }, { status: 500 });
+    return adminErrorResponse('INTERNAL', 'Failed to fetch coin packs', 500);
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const authResult = await requireAdminRole();
+    const authResult = await requireAdminRole('billing.adjust');
     if (authResult instanceof NextResponse) return authResult;
 
     const body = await request.json();
     const { name, coins, priceInCents, bonusCoins, isActive, sortOrder } = body;
 
     if (!name || coins == null || priceInCents == null) {
-      return NextResponse.json({ success: false, error: { code: 'VALIDATION', message: 'Name, coins, and price are required' } }, { status: 400 });
+      return adminErrorResponse('VALIDATION', 'Name, coins, and price are required', 400);
     }
 
     const [pack] = await db
@@ -54,23 +55,23 @@ export async function POST(request: NextRequest) {
       } as typeof coinPacks.$inferInsert)
       .returning();
 
-    return NextResponse.json({ success: true, data: pack }, { status: 201 });
+    return adminResponse(pack, 201);
   } catch (error) {
     log.error('POST error', { error: String(error) });
-    return NextResponse.json({ success: false, error: { code: 'INTERNAL', message: 'Failed to create coin pack' } }, { status: 500 });
+    return adminErrorResponse('INTERNAL', 'Failed to create coin pack', 500);
   }
 }
 
 export async function PATCH(request: NextRequest) {
   try {
-    const authResult = await requireAdminRole();
+    const authResult = await requireAdminRole('billing.adjust');
     if (authResult instanceof NextResponse) return authResult;
 
     const body = await request.json();
     const { id, ...updates } = body;
 
     if (!id) {
-      return NextResponse.json({ success: false, error: { code: 'VALIDATION', message: 'Coin pack ID is required' } }, { status: 400 });
+      return adminErrorResponse('VALIDATION', 'Coin pack ID is required', 400);
     }
 
     const [updated] = await db
@@ -80,33 +81,33 @@ export async function PATCH(request: NextRequest) {
       .returning();
 
     if (!updated) {
-      return NextResponse.json({ success: false, error: { code: 'NOT_FOUND', message: 'Coin pack not found' } }, { status: 404 });
+      return adminErrorResponse('NOT_FOUND', 'Coin pack not found', 404);
     }
 
-    return NextResponse.json({ success: true, data: updated });
+    return adminResponse(updated);
   } catch (error) {
     log.error('PATCH error', { error: String(error) });
-    return NextResponse.json({ success: false, error: { code: 'INTERNAL', message: 'Failed to update coin pack' } }, { status: 500 });
+    return adminErrorResponse('INTERNAL', 'Failed to update coin pack', 500);
   }
 }
 
 export async function DELETE(request: NextRequest) {
   try {
-    const authResult = await requireAdminRole();
+    const authResult = await requireAdminRole('billing.adjust');
     if (authResult instanceof NextResponse) return authResult;
 
     const body = await request.json();
     const { id } = body;
 
     if (!id) {
-      return NextResponse.json({ success: false, error: { code: 'VALIDATION', message: 'Coin pack ID is required' } }, { status: 400 });
+      return adminErrorResponse('VALIDATION', 'Coin pack ID is required', 400);
     }
 
     await db.delete(coinPacks).where(eq(coinPacks.id, id));
 
-    return NextResponse.json({ success: true });
+    return adminResponse(null);
   } catch (error) {
     log.error('DELETE error', { error: String(error) });
-    return NextResponse.json({ success: false, error: { code: 'INTERNAL', message: 'Failed to delete coin pack' } }, { status: 500 });
+    return adminErrorResponse('INTERNAL', 'Failed to delete coin pack', 500);
   }
 }

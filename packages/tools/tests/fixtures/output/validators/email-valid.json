@@ -1,0 +1,30 @@
+{
+  "user@example.com": {
+    "valid": true,
+    "details": {
+      "localPart": "user",
+      "domain": "example.com"
+    }
+  },
+  "john.doe+tag@company.co.uk": {
+    "valid": true,
+    "details": {
+      "localPart": "john.doe+tag",
+      "domain": "company.co.uk"
+    }
+  },
+  "admin@sub.domain.org": {
+    "valid": true,
+    "details": {
+      "localPart": "admin",
+      "domain": "sub.domain.org"
+    }
+  },
+  "test_123@test-domain.com": {
+    "valid": true,
+    "details": {
+      "localPart": "test_123",
+      "domain": "test-domain.com"
+    }
+  }
+}

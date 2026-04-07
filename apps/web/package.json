@@ -4,14 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev",
-    "build": "pnpm sync:wasm && next build",
+    "dev": "next dev -H 0.0.0.0",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
-    "test:watch": "vitest",
-    "sync:wasm": "node -e \"const fs=require('fs');const s='../../backend/rust/text-tools/pkg/';const d='./public/wasm/';fs.mkdirSync(d,{recursive:true});['text_tools.js','text_tools_bg.wasm'].forEach(f=>{if(fs.existsSync(s+f)){fs.copyFileSync(s+f,d+f);console.log('Synced '+f)}else{console.warn('Missing '+s+f)}})\""
+    "test:watch": "vitest"
+
   },
   "dependencies": {
     "@hsafx/api": "workspace:*",
@@ -19,7 +19,6 @@
     "@hsafx/schemas": "workspace:*",
     "@hsafx/shared": "workspace:*",
     "@hsafx/theme": "workspace:*",
-    "@hsafx/tool-definitions": "workspace:*",
     "@hsafx/tool-execution": "workspace:*",
     "@hsafx/ui": "workspace:*",
     "@polar-sh/sdk": "^0.43.0",

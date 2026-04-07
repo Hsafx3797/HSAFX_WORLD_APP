@@ -6,12 +6,13 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { trpc } from '@/lib/trpc';
 import { toast } from 'sonner';
 
+// TODO: Update hrefs to /tools once tool browse page is built (Task 1000)
 const CHECKLIST_STEPS = [
-  { key: 'use_tool', label: 'Use your first tool', href: '/tools' },
-  { key: 'favorite_tool', label: 'Favorite a tool', href: '/tools' },
+  { key: 'use_tool', label: 'Use your first tool', href: '/dashboard' },
+  { key: 'favorite_tool', label: 'Favorite a tool', href: '/dashboard' },
   { key: 'claim_bonus', label: 'Claim daily bonus', href: '/dashboard' },
   { key: 'complete_profile', label: 'Complete your profile', href: '/settings' },
-  { key: 'try_pro_tool', label: 'Try a Pro tool', href: '/tools' },
+  { key: 'try_pro_tool', label: 'Try a Pro tool', href: '/dashboard' },
 ] as const;
 
 export function OnboardingChecklist() {

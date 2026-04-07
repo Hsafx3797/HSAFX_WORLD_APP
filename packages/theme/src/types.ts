@@ -238,30 +238,6 @@ export interface ThemePreset {
 }
 
 /**
- * Theme context value exposed by ThemeProvider
- */
-export interface ThemeContextValue {
-  /** Current user intent */
-  intent: ThemeIntent;
-  /** Computed resolved theme */
-  resolved: ResolvedTheme;
-  /** Update part of the intent */
-  setIntent: (partial: Partial<ThemeIntent>) => void;
-  /** Apply a preset by ID */
-  applyPreset: (presetId: string) => void;
-  /** Reset to default preset */
-  reset: () => void;
-  /** Whether theme is loading */
-  isLoading: boolean;
-  /** Available presets for current plan */
-  availablePresets: ThemePreset[];
-  /** Whether user can customize primary color */
-  canCustomizePrimary: boolean;
-  /** Whether user can access advanced controls */
-  canCustomizeAdvanced: boolean;
-}
-
-/**
  * OKLCH color representation for internal use
  */
 export interface OklchColor {
@@ -287,37 +263,6 @@ export interface StoredThemeData {
   theme: ThemeIntent;
   lastUpdated: string;
 }
-
-/**
- * Default theme intent values
- */
-export const DEFAULT_THEME_INTENT: ThemeIntent = {
-  version: 1,
-  brand: {
-    primary: '#171717',
-  },
-  surface: {
-    contrast: 'medium',
-    neutralBias: 'true',
-  },
-  mode: 'system',
-  typography: {
-    font: 'system',
-    scale: 1,
-    letterSpacing: 0,
-  },
-  shape: {
-    roundness: 0.5,
-  },
-  elevation: {
-    intensity: 0.5,
-    softness: 0.5,
-  },
-  spacing: {
-    density: 1,
-  },
-  preset: 'default',
-};
 
 /**
  * Theme intent validation constraints

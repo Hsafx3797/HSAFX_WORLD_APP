@@ -1,0 +1,2 @@
+Input: alpha beta gamma delta epsilon
+Output: alpha gamma beta delta epsilon

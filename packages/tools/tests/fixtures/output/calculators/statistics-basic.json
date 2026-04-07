@@ -1,0 +1,26 @@
+{
+  "count": 5,
+  "sum": 15,
+  "mean": 3,
+  "median": 3,
+  "mode": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "min": 1,
+  "max": 5,
+  "range": 4,
+  "variance": 2,
+  "standardDeviation": 1.4142135623730951,
+  "sampleVariance": 2.5,
+  "sampleStandardDeviation": 1.5811388300841898,
+  "quartiles": {
+    "q1": 2,
+    "q2": 3,
+    "q3": 4
+  },
+  "iqr": 2
+}

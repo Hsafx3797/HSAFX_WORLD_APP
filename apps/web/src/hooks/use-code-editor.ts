@@ -19,8 +19,12 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useCopyToClipboard } from './use-utils';
-import { useToolDirection } from '@/components/tools/tool-popup';
-import type { ToolOption } from '@/lib/tools/types';
+
+interface ToolOption {
+  name: string;
+  default?: unknown;
+  defaultValue?: unknown;
+}
 
 // ============================================================================
 // TYPES
@@ -135,9 +139,8 @@ export function useCodeEditor(config: UseCodeEditorConfig): UseCodeEditorReturn 
     showCssPreview = false,
   } = config;
 
-  // ---- Context (for popup sync) ----
-  const toolDirectionContext = useToolDirection();
-  const isPopupControlled = toolDirectionContext?.isPopupControlled ?? false;
+  // ---- Context (popup removed — direction is always internal) ----
+  const isPopupControlled = false;
 
   // ---- Core State ----
   const [input, setInput] = useState('');
@@ -147,10 +150,8 @@ export function useCodeEditor(config: UseCodeEditorConfig): UseCodeEditorReturn 
   const [internalDirection, setInternalDirection] = useState<CodeEditorDirection>('forward');
   const [showPreview, setShowPreview] = useState(false);
   
-  // Use context direction if in popup, otherwise use internal
-  const direction = isPopupControlled 
-    ? (toolDirectionContext?.direction ?? 'forward') 
-    : internalDirection;
+  // Use internal direction always (popup removed)
+  const direction = internalDirection;
 
   // Track previous direction to detect external changes (from popup)
   const prevDirectionRef = useRef(direction);
@@ -246,20 +247,14 @@ export function useCodeEditor(config: UseCodeEditorConfig): UseCodeEditorReturn 
   const swapDirection = useCallback(() => {
     if (!bidirectional) return;
     
-    // If in popup context, use context's swap (popup controls direction)
-    if (isPopupControlled && toolDirectionContext) {
-      toolDirectionContext.swapDirection();
-    } else {
-      // Otherwise manage internally
-      setInternalDirection(d => d === 'forward' ? 'reverse' : 'forward');
-    }
+    setInternalDirection(d => d === 'forward' ? 'reverse' : 'forward');
     
     // Always swap input/output values
     const temp = input;
     setInput(output);
     setOutput(temp);
     setError(null);
-  }, [bidirectional, isPopupControlled, toolDirectionContext, input, output]);
+  }, [bidirectional, input, output]);
 
   /** Update a single option value */
   const updateOption = useCallback((name: string, value: unknown) => {

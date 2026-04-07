@@ -9,7 +9,6 @@ const nextConfig = {
     '@hsafx/shared',
     '@hsafx/api',
     '@hsafx/theme',
-    '@hsafx/tool-definitions',
     '@hsafx/tool-execution',
   ],
   experimental: {

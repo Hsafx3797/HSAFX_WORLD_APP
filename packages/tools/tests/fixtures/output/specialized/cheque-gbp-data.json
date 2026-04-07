@@ -1,0 +1,8 @@
+{
+  "payeeName": "Jane Smith",
+  "amount": 2500,
+  "amountInWords": "Two Thousand Five Hundred GBP Only",
+  "date": "2024-07-01",
+  "memo": "Rent payment",
+  "bankName": "Barclays"
+}

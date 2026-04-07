@@ -4,17 +4,24 @@
  * POST /api/admin/email-templates — Create or update a template
  *
  * Requires admin session.
+ *
+ * TODO [G15]: Create admin UI page at apps/admin/src/app/(admin)/email-templates/page.tsx
+ * to provide CRUD interface for these endpoints. API is complete but has no UI consumer.
  */
 
 import { NextResponse, type NextRequest } from 'next/server';
 import { db, eq } from '@hsafx/db';
 import { emailTemplates } from '@hsafx/db/schema';
 import { requireAdminRole } from '@/lib/require-admin';
+import { adminResponse, adminErrorResponse } from '@/lib/admin-response';
+import { createLogger } from '@hsafx/shared/logger';
+
+const log = createLogger('admin-email-templates');
 
 // ── GET: List templates ────────────────────────────────────
 
 export async function GET() {
-  const authResult = await requireAdminRole();
+  const authResult = await requireAdminRole('system.view');
   if (authResult instanceof NextResponse) return authResult;
 
   try {
@@ -23,17 +30,17 @@ export async function GET() {
       .from(emailTemplates)
       .orderBy(emailTemplates.slug);
 
-    return NextResponse.json({ templates });
+    return adminResponse(templates);
   } catch (error) {
-    console.error('[email-templates] GET error:', error);
-    return NextResponse.json({ error: 'Failed to fetch templates' }, { status: 500 });
+    log.error('Failed to fetch email templates', { err: error });
+    return adminErrorResponse('FETCH_ERROR', 'Failed to fetch templates', 500);
   }
 }
 
 // ── POST: Create or update template ────────────────────────
 
 export async function POST(request: NextRequest) {
-  const authResult = await requireAdminRole();
+  const authResult = await requireAdminRole('system.config');
   if (authResult instanceof NextResponse) return authResult;
 
   try {
@@ -48,10 +55,7 @@ export async function POST(request: NextRequest) {
     };
 
     if (!body.slug || !body.name || !body.subject || !body.htmlBody) {
-      return NextResponse.json(
-        { error: 'Missing required fields: slug, name, subject, htmlBody' },
-        { status: 400 }
-      );
+      return adminErrorResponse('VALIDATION', 'Missing required fields: slug, name, subject, htmlBody', 400);
     }
 
     // Check if slug already exists → update
@@ -77,7 +81,7 @@ export async function POST(request: NextRequest) {
         .set(updateData as typeof emailTemplates.$inferInsert)
         .where(eq(emailTemplates.id, existing[0]!.id));
 
-      return NextResponse.json({ success: true, action: 'updated', id: existing[0]!.id });
+      return adminResponse({ action: 'updated', id: existing[0]!.id });
     }
 
     // Create new
@@ -96,12 +100,12 @@ export async function POST(request: NextRequest) {
       .values(insertData as typeof emailTemplates.$inferInsert)
       .returning({ id: emailTemplates.id });
 
-    return NextResponse.json(
-      { success: true, action: 'created', id: inserted[0]?.id },
-      { status: 201 }
+    return adminResponse(
+      { action: 'created', id: inserted[0]?.id },
+      201
     );
   } catch (error) {
-    console.error('[email-templates] POST error:', error);
-    return NextResponse.json({ error: 'Failed to save template' }, { status: 500 });
+    log.error('Failed to save email template', { err: error });
+    return adminErrorResponse('SAVE_ERROR', 'Failed to save template', 500);
   }
 }

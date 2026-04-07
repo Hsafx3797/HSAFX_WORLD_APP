@@ -7,6 +7,11 @@ node_modules/
 coverage/
 *.test.ts.snap
 
+# Playwright
+**/e2e/.auth/
+**/playwright-report/
+**/test-results/
+
 # Production
 dist/
 build/
@@ -81,12 +86,19 @@ temp/
 *.tmp
 *.log
 
+# Test/debug output
+*_output*.txt
+vitest_*.txt
+test_output.txt
+
 # Claude temp directories
 tmpclaude-*
 
 # Qodo
 .qodo/
 
+# Docs (contains real credentials, internal planning — never share)
+docs/
+
 # Stale docs / temp files
-docs/TRASH/
 folders.txt

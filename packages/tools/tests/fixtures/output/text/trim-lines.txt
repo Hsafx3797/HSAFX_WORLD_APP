@@ -1,0 +1,9 @@
+Input:
+  hello  
+  world  
+  test  
+
+Output:
+hello
+world
+test

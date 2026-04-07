@@ -30,7 +30,7 @@ export type IdParam = z.infer<typeof IdParamSchema>;
  * Slug parameter schema
  */
 export const SlugParamSchema = z.object({
-  slug: z.string().min(1),
+  slug: z.string().min(1).regex(/^[a-z0-9][a-z0-9-]*$/, 'Slug must contain only lowercase letters, numbers, and hyphens'),
 });
 
 export type SlugParam = z.infer<typeof SlugParamSchema>;

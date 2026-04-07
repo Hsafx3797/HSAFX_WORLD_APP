@@ -8,6 +8,10 @@
  * - Requires 2FA verification (valid `admin_2fa_session` cookie)
  * - Creates a scoped, read-only impersonation session (1-hour TTL)
  * - Full audit trail logged
+ *
+ * TODO [G16]: Wire impersonation UI — add "Impersonate" button to admin users/[id] page,
+ * add impersonate/stopImpersonate functions to apps/admin/src/lib/api.ts,
+ * and show impersonation banner in web app header.
  */
 
 import { NextResponse, type NextRequest } from 'next/server';

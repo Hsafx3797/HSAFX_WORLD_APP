@@ -150,10 +150,12 @@ describe('CoinTransactionTypeSchema', () => {
   it('should accept valid types', () => {
     expect(CoinTransactionTypeSchema.parse('grant')).toBe('grant');
     expect(CoinTransactionTypeSchema.parse('spend')).toBe('spend');
-    expect(CoinTransactionTypeSchema.parse('daily_reward')).toBe('daily_reward');
+    expect(CoinTransactionTypeSchema.parse('reward')).toBe('reward');
+    expect(CoinTransactionTypeSchema.parse('referral')).toBe('referral');
   });
 
   it('should reject invalid types', () => {
+    expect(() => CoinTransactionTypeSchema.parse('daily_reward')).toThrow();
     expect(() => CoinTransactionTypeSchema.parse('bonus')).toThrow();
   });
 });

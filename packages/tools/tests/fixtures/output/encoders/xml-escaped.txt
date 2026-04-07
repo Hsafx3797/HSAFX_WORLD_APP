@@ -1,0 +1,1 @@
+&lt;tag attr=&quot;value&quot;&gt;content &amp; more&lt;/tag&gt;

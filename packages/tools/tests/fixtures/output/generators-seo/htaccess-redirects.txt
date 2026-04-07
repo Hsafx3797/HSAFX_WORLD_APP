@@ -1,0 +1,6 @@
+# Generated SEO Rules
+RewriteEngine On
+
+# Custom redirects
+Redirect 301 /old-page /new-page
+Redirect 302 /temp /current

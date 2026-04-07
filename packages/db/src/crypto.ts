@@ -1,13 +1,9 @@
 /**
- * Encrypted-field helpers for Drizzle ORM
+ * Encrypted-field helpers for Drizzle ORM (LEGACY — prefer encryptedText custom column)
  *
- * Provides encrypt/decrypt wrappers for sensitive columns
- * (OAuth tokens, TOTP secrets, backup codes).
- *
- * Usage in service layer:
- *   import { encryptFields, decryptFields } from '@hsafx/db/crypto';
- *   const row = encryptFields(values, ['accessToken', 'refreshToken']);
- *   const plain = decryptFields(row, ['accessToken', 'refreshToken']);
+ * The `encryptedText` custom column type in `encrypted-column.ts` handles
+ * encryption/decryption transparently at the Drizzle driver level. These
+ * helpers are retained for any manual encrypt/decrypt needs outside ORM queries.
  */
 
 import { encrypt, decrypt } from '@hsafx/shared/crypto';

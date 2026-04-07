@@ -1,0 +1,70 @@
+{
+  "principal": 1000,
+  "rate": 12,
+  "time": 1,
+  "compoundsPerYear": 12,
+  "interest": 126.8250301319697,
+  "total": 1126.8250301319697,
+  "schedule": [
+    {
+      "period": 1,
+      "balance": 1010,
+      "interestEarned": 10
+    },
+    {
+      "period": 2,
+      "balance": 1020.1,
+      "interestEarned": 10.100000000000023
+    },
+    {
+      "period": 3,
+      "balance": 1030.3010000000002,
+      "interestEarned": 10.201000000000136
+    },
+    {
+      "period": 4,
+      "balance": 1040.60401,
+      "interestEarned": 10.303009999999858
+    },
+    {
+      "period": 5,
+      "balance": 1051.0100501000002,
+      "interestEarned": 10.406040100000155
+    },
+    {
+      "period": 6,
+      "balance": 1061.520150601,
+      "interestEarned": 10.510100500999897
+    },
+    {
+      "period": 7,
+      "balance": 1072.13535210701,
+      "interestEarned": 10.615201506009953
+    },
+    {
+      "period": 8,
+      "balance": 1082.8567056280801,
+      "interestEarned": 10.721353521070114
+    },
+    {
+      "period": 9,
+      "balance": 1093.6852726843608,
+      "interestEarned": 10.82856705628069
+    },
+    {
+      "period": 10,
+      "balance": 1104.6221254112045,
+      "interestEarned": 10.936852726843654
+    },
+    {
+      "period": 11,
+      "balance": 1115.6683466653164,
+      "interestEarned": 11.04622125411197
+    },
+    {
+      "period": 12,
+      "balance": 1126.8250301319697,
+      "interestEarned": 11.156683466653249
+    }
+  ]
+}

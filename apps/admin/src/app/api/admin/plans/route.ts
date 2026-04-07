@@ -8,10 +8,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, plans, planLimits, planFeatures, eq, desc, sql } from '@hsafx/db';
 import { requireAdminRole } from '@/lib/require-admin';
+import { adminResponse, adminErrorResponse } from '@/lib/admin-response';
+import { createLogger } from '@hsafx/shared/logger';
+
+const log = createLogger('admin-plans');
 
 export async function GET() {
   try {
-    const authResult = await requireAdminRole();
+    const authResult = await requireAdminRole('billing.view');
     if (authResult instanceof NextResponse) return authResult;
 
     const allPlans = await db
@@ -30,23 +34,23 @@ export async function GET() {
       limits: limits.filter((l) => l.planId === plan.id),
     }));
 
-    return NextResponse.json({ success: true, data: plansWithLimits });
+    return adminResponse(plansWithLimits);
   } catch (error) {
-    console.error('[Plans API] GET error:', error);
-    return NextResponse.json({ success: false, error: { code: 'INTERNAL', message: 'Failed to fetch plans' } }, { status: 500 });
+    log.error('Failed to fetch plans', { err: error });
+    return adminErrorResponse('INTERNAL', 'Failed to fetch plans', 500);
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const authResult = await requireAdminRole();
+    const authResult = await requireAdminRole('billing.adjust');
     if (authResult instanceof NextResponse) return authResult;
 
     const body = await request.json();
     const { name, slug, description, priceMonthlyCents, priceYearlyCents, coinGrant, polarProductId, isActive } = body;
 
     if (!name || !slug) {
-      return NextResponse.json({ success: false, error: { code: 'VALIDATION', message: 'Name and slug are required' } }, { status: 400 });
+      return adminErrorResponse('VALIDATION', 'Name and slug are required', 400);
     }
 
     const [newPlan] = await db
@@ -63,23 +67,23 @@ export async function POST(request: NextRequest) {
       } as typeof plans.$inferInsert)
       .returning();
 
-    return NextResponse.json({ success: true, data: newPlan }, { status: 201 });
+    return adminResponse(newPlan, 201);
   } catch (error) {
-    console.error('[Plans API] POST error:', error);
-    return NextResponse.json({ success: false, error: { code: 'INTERNAL', message: 'Failed to create plan' } }, { status: 500 });
+    log.error('Failed to create plan', { err: error });
+    return adminErrorResponse('INTERNAL', 'Failed to create plan', 500);
   }
 }
 
 export async function PATCH(request: NextRequest) {
   try {
-    const authResult = await requireAdminRole();
+    const authResult = await requireAdminRole('billing.adjust');
     if (authResult instanceof NextResponse) return authResult;
 
     const body = await request.json();
     const { id, ...updates } = body;
 
     if (!id) {
-      return NextResponse.json({ success: false, error: { code: 'VALIDATION', message: 'Plan ID is required' } }, { status: 400 });
+      return adminErrorResponse('VALIDATION', 'Plan ID is required', 400);
     }
 
     const [updated] = await db
@@ -89,12 +93,12 @@ export async function PATCH(request: NextRequest) {
       .returning();
 
     if (!updated) {
-      return NextResponse.json({ success: false, error: { code: 'NOT_FOUND', message: 'Plan not found' } }, { status: 404 });
+      return adminErrorResponse('NOT_FOUND', 'Plan not found', 404);
     }
 
-    return NextResponse.json({ success: true, data: updated });
+    return adminResponse(updated);
   } catch (error) {
-    console.error('[Plans API] PATCH error:', error);
-    return NextResponse.json({ success: false, error: { code: 'INTERNAL', message: 'Failed to update plan' } }, { status: 500 });
+    log.error('Failed to update plan', { err: error });
+    return adminErrorResponse('INTERNAL', 'Failed to update plan', 500);
   }
 }

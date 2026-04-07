@@ -1,0 +1,131 @@
+{
+  "initialInvestment": 10000,
+  "monthlyContribution": 500,
+  "annualReturn": 7,
+  "years": 20,
+  "finalValue": 300850.71840257966,
+  "totalContributions": 130000,
+  "totalEarnings": 170850.71840257966,
+  "yearlyBreakdown": [
+    {
+      "year": 1,
+      "contributions": 6000,
+      "earnings": 919.1934533825588,
+      "balance": 16919.19345338256
+    },
+    {
+      "year": 2,
+      "contributions": 6000,
+      "earnings": 1419.382507587532,
+      "balance": 24338.57596097009
+    },
+    {
+      "year": 3,
+      "contributions": 6000,
+      "earnings": 1955.7302689643657,
+      "balance": 32294.306229934456
+    },
+    {
+      "year": 4,
+      "contributions": 6000,
+      "earnings": 2530.8506533782165,
+      "balance": 40825.15688331267
+    },
+    {
+      "year": 5,
+      "contributions": 6000,
+      "earnings": 3147.54653688339,
+      "balance": 49972.70342019606
+    },
+    {
+      "year": 6,
+      "contributions": 6000,
+      "earnings": 3808.8234156708713,
+      "balance": 59781.526835866935
+    },
+    {
+      "year": 7,
+      "contributions": 6000,
+      "earnings": 4517.904053494254,
+      "balance": 70299.43088936119
+    },
+    {
+      "year": 8,
+      "contributions": 6000,
+      "earnings": 5278.244187959499,
+      "balance": 81577.67507732069
+    },
+    {
+      "year": 9,
+      "contributions": 6000,
+      "earnings": 6093.549372223482,
+      "balance": 93671.22444954417
+    },
+    {
+      "year": 10,
+      "contributions": 6000,
+      "earnings": 6967.793034180373,
+      "balance": 106639.01748372454
+    },
+    {
+      "year": 11,
+      "contributions": 6000,
+      "earnings": 7905.235841148198,
+      "balance": 120544.25332487274
+    },
+    {
+      "year": 12,
+      "contributions": 6000,
+      "earnings": 8910.446464429828,
+      "balance": 135454.69978930257
+    },
+    {
+      "year": 13,
+      "contributions": 6000,
+      "earnings": 9988.323844946048,
+      "balance": 151443.02363424862
+    },
+    {
+      "year": 14,
+      "contributions": 6000,
+      "earnings": 11144.121068452863,
+      "balance": 168587.14470270148
+    },
+    {
+      "year": 15,
+      "contributions": 6000,
+      "earnings": 12383.470966700435,
+      "balance": 186970.61566940192
+    },
+    {
+      "year": 16,
+      "contributions": 6000,
+      "earnings": 13712.413569301512,
+      "balance": 206683.02923870343
+    },
+    {
+      "year": 17,
+      "contributions": 6000,
+      "earnings": 15137.425540097844,
+      "balance": 227820.45477880127
+    },
+    {
+      "year": 18,
+      "contributions": 6000,
+      "earnings": 16665.451741484198,
+      "balance": 250485.90652028547
+    },
+    {
+      "year": 19,
+      "contributions": 6000,
+      "earnings": 18303.939080519194,
+      "balance": 274789.84560080466
+    },
+    {
+      "year": 20,
+      "contributions": 6000,
+      "earnings": 20060.872801774996,
+      "balance": 300850.71840257966
+    }
+  ]
+}

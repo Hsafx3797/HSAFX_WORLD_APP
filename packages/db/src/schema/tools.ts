@@ -13,15 +13,18 @@ import {
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { InferInsertModel, InferSelectModel, sql } from 'drizzle-orm';
+import { encryptedText } from '../encrypted-column';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 import { users } from './users';
 
 // ─── Enums ────────────────────────────────────────────────────
 
-export const identifierTypeEnum = pgEnum('identifier_type', [
-  'ip_hash', 'fingerprint',
-]);
+// UNUSED: identifierTypeEnum — defined but never referenced by any table column.
+// Kept commented to avoid breaking existing DB migrations that created this enum.
+// export const identifierTypeEnum = pgEnum('identifier_type', [
+//   'ip_hash', 'fingerprint',
+// ]);
 
 /**
  * Tool Categories - Hierarchical organization of tools
@@ -32,7 +35,7 @@ export const toolCategories = pgTable('tool_categories', {
   name: text('name').notNull(),
   slug: text('slug').notNull().unique(),
   description: text('description'),
-  parentId: uuid('parent_id'), // Self-referential handled via relation, not direct FK
+  parentId: uuid('parent_id').references((): any => toolCategories.id, { onDelete: 'set null' }),
   icon: text('icon'),
   sortOrder: integer('sort_order').notNull().default(0),
   isActive: boolean('is_active').notNull().default(true),
@@ -255,6 +258,30 @@ export const toolClassPolicy = pgTable('tool_class_policy', {
 // Types inferred from tables using InferSelectModel and InferInsertModel for better compatibility
 export type ToolCategory = InferSelectModel<typeof toolCategories>;
 export type NewToolCategory = InferInsertModel<typeof toolCategories>;
+
+/**
+ * Webhook Endpoints - Customer-registered URLs for job completion notifications
+ * Reference: 14_API_CONTRACTS.md, 45_INTEGRATION_CONTRACTS.md
+ *
+ * B2B customers register callback URLs. When a job completes (success or failure),
+ * the system dispatches a signed POST to the registered URL.
+ */
+export const webhookEndpoints = pgTable('webhook_endpoints', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  url: text('url').notNull(),
+  secret: encryptedText('secret').notNull(), // HMAC signing key — encrypted at rest
+  events: text('events').array().notNull().default(sql`ARRAY['job.completed', 'job.failed']::text[]`),
+  isActive: boolean('is_active').notNull().default(true),
+  description: text('description'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (t) => [
+  index('wh_user_id_idx').on(t.userId),
+  index('wh_user_active_idx').on(t.userId, t.isActive),
+]);
 export type Tool = InferSelectModel<typeof tools>;
 export type NewTool = InferInsertModel<typeof tools>;
 export type ToolLimit = InferSelectModel<typeof toolLimits>;
@@ -275,6 +302,8 @@ export type DailyProTrial = InferSelectModel<typeof dailyProTrials>;
 export type NewDailyProTrial = InferInsertModel<typeof dailyProTrials>;
 export type ToolClassPolicyRow = InferSelectModel<typeof toolClassPolicy>;
 export type NewToolClassPolicyRow = InferInsertModel<typeof toolClassPolicy>;
+export type WebhookEndpoint = InferSelectModel<typeof webhookEndpoints>;
+export type NewWebhookEndpoint = InferInsertModel<typeof webhookEndpoints>;
 
 // Zod schemas - use 'as unknown as' for drizzle-zod compatibility
 export const insertToolCategorySchema = createInsertSchema(toolCategories) as unknown as z.ZodType<NewToolCategory>;
@@ -288,3 +317,4 @@ export const insertAnonymousUsageSchema = createInsertSchema(anonymousUsage) as 
 export const insertApiRateLimitSchema = createInsertSchema(apiRateLimits) as unknown as z.ZodType<NewApiRateLimit>;
 export const insertToolClassPolicySchema = createInsertSchema(toolClassPolicy) as unknown as z.ZodType<NewToolClassPolicyRow>;
 export const insertDailyProTrialSchema = createInsertSchema(dailyProTrials) as unknown as z.ZodType<NewDailyProTrial>;
+export const insertWebhookEndpointSchema = createInsertSchema(webhookEndpoints) as unknown as z.ZodType<NewWebhookEndpoint>;

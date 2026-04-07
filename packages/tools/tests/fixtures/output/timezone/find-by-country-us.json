@@ -1,0 +1,50 @@
+[
+  {
+    "id": "America/New_York",
+    "name": "Eastern Time",
+    "offset": -300,
+    "abbr": "EST",
+    "city": "New York",
+    "country": "United States"
+  },
+  {
+    "id": "America/Chicago",
+    "name": "Central Time",
+    "offset": -360,
+    "abbr": "CST",
+    "city": "Chicago",
+    "country": "United States"
+  },
+  {
+    "id": "America/Denver",
+    "name": "Mountain Time",
+    "offset": -420,
+    "abbr": "MST",
+    "city": "Denver",
+    "country": "United States"
+  },
+  {
+    "id": "America/Los_Angeles",
+    "name": "Pacific Time",
+    "offset": -480,
+    "abbr": "PST",
+    "city": "Los Angeles",
+    "country": "United States"
+  },
+  {
+    "id": "America/Anchorage",
+    "name": "Alaska Time",
+    "offset": -540,
+    "abbr": "AKST",
+    "city": "Anchorage",
+    "country": "United States"
+  },
+  {
+    "id": "Pacific/Honolulu",
+    "name": "Hawaii Time",
+    "offset": -600,
+    "abbr": "HST",
+    "city": "Honolulu",
+    "country": "United States"
+  }
+]

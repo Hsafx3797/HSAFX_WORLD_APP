@@ -27,7 +27,7 @@ const eslintConfig = [
     },
   },
   {
-    ignores: ['.next/', 'node_modules/', 'public/wasm/'],
+    ignores: ['.next/', 'node_modules/'],
   },
 ];
 

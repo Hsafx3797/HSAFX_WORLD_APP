@@ -1,0 +1,42 @@
+{
+  "maxHeartRate": 190,
+  "restingHeartRate": 60,
+  "heartRateReserve": 130,
+  "zones": [
+    {
+      "name": "Zone 1 - Recovery",
+      "percentage": "50-60%",
+      "min": 125,
+      "max": 138,
+      "purpose": "Warm up, recovery"
+    },
+    {
+      "name": "Zone 2 - Fat Burn",
+      "percentage": "60-70%",
+      "min": 138,
+      "max": 151,
+      "purpose": "Fat burning, endurance"
+    },
+    {
+      "name": "Zone 3 - Aerobic",
+      "percentage": "70-80%",
+      "min": 151,
+      "max": 164,
+      "purpose": "Cardio fitness"
+    },
+    {
+      "name": "Zone 4 - Anaerobic",
+      "percentage": "80-90%",
+      "min": 164,
+      "max": 177,
+      "purpose": "Speed, power"
+    },
+    {
+      "name": "Zone 5 - Maximum",
+      "percentage": "90-100%",
+      "min": 177,
+      "max": 190,
+      "purpose": "Maximum effort"
+    }
+  ]
+}

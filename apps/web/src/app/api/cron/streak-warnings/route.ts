@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createLogger } from '@hsafx/shared/logger';
+
+const log = createLogger('cron-streak');
 
 /**
  * T3.4 — Streak Break Warning Emails
@@ -84,7 +87,7 @@ export async function GET(request: NextRequest) {
         });
         sentCount++;
       } catch (emailErr) {
-        console.error(`[Cron] Failed to send streak warning to ${user.email}:`, emailErr);
+        log.error('Failed to send streak warning email', { email: user.email, error: emailErr instanceof Error ? emailErr.message : String(emailErr) });
       }
     }
 
@@ -94,7 +97,7 @@ export async function GET(request: NextRequest) {
       emailsSent: sentCount,
     });
   } catch (err) {
-    console.error('[Cron] streak-warnings failed:', err);
+    log.error('Streak warnings cron failed', { error: err instanceof Error ? err.message : String(err) });
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }

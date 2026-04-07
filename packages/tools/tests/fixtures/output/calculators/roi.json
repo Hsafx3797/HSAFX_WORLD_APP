@@ -1,0 +1,8 @@
+{
+  "initialInvestment": 1000,
+  "finalValue": 1500,
+  "gain": 500,
+  "roi": 50,
+  "annualizedReturn": 22.474487139158896,
+  "holdingPeriodYears": 2
+}

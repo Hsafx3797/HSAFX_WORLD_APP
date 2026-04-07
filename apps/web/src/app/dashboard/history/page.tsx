@@ -1,76 +1,26 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
+import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
-interface UsageRecord {
-  id: string;
-  toolId: string;
-  toolName: string;
-  executionTimeMs: number;
-  coinsCharged: number;
-  status: string;
-  createdAt: string;
-}
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
-
 export default function HistoryPage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
-  const [history, setHistory] = useState<UsageRecord[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/auth/login');
-    }
-  }, [authLoading, user, router]);
+  const { data, isLoading } = trpc.tools.getMyExecutions.useQuery(
+    { page, pageSize: 20 },
+    { enabled: !!user }
+  );
 
-  useEffect(() => {
-    if (user) {
-      fetchHistory();
-    }
-  }, [user, page]);
-
-  const fetchHistory = async () => {
-    try {
-      setIsLoading(true);
-      const token = localStorage.getItem('accessToken');
-      const response = await fetch(`${API_BASE}/tools/history?page=${page}&per_page=20`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setHistory(
-          data.history.map((h: Record<string, unknown>) => ({
-            id: h.id,
-            toolId: h.tool_id,
-            toolName: h.tool_name,
-            executionTimeMs: h.execution_time_ms,
-            coinsCharged: h.coins_charged,
-            status: h.status,
-            createdAt: h.created_at,
-          }))
-        );
-        setTotalPages(data.total_pages);
-      }
-    } catch (error) {
-      console.error('Failed to fetch history:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const history = data?.items ?? [];
+  const totalPages = Math.max(1, Math.ceil((history.length === 20 ? page + 1 : page)));
 
   if (authLoading) {
     return (
@@ -120,11 +70,7 @@ export default function HistoryPage() {
               </svg>
               <p>No usage history yet</p>
               <p className="text-sm mt-1">Start using tools to see your history here</p>
-              <Link href="/tools">
-                <Button variant="outline" className="mt-4">
-                  Browse Tools
-                </Button>
-              </Link>
+              {/* TODO: Link to /tools once tool browse page is built (Task 1000) */}
             </div>
           ) : (
             <>
@@ -137,10 +83,11 @@ export default function HistoryPage() {
                     <div className="flex items-center gap-4">
                       <div>
                         <Link
-                          href={`/tools/${record.toolId}`}
+                          href={`/dashboard/history`}
                           className="font-medium hover:text-primary"
+                          // TODO: Link to /tools/${record.toolId} once tool routes are built (Task 1000)
                         >
-                          {record.toolName || record.toolId}
+                          {record.toolId}
                         </Link>
                         <p className="text-sm text-muted-foreground">
                           {new Date(record.createdAt).toLocaleString()}
@@ -148,16 +95,17 @@ export default function HistoryPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
-                      <Badge variant={record.status === 'success' ? 'success' : 'destructive'}>
+                      <Badge variant={record.status === 'succeeded' ? 'success' : 'destructive'}>
                         {record.status}
                       </Badge>
                       <span className="text-sm text-muted-foreground">
-                        {record.executionTimeMs}ms
+                        {record.executionTime ?? 0}ms
                       </span>
-                      {record.coinsCharged > 0 && (
-                        <span className="text-sm font-medium">-{record.coinsCharged} coins</span>
+                      {record.coinCost > 0 && (
+                        <span className="text-sm font-medium">-{record.coinCost} coins</span>
                       )}
-                      <Link href={`/tools/${record.toolId}`}>
+                      <Link href={`/dashboard/history`}>
+                        {/* TODO: Link to /tools/${record.toolId} for re-run once tool routes are built (Task 1000) */}
                         <Button variant="ghost" size="sm" className="gap-1">
                           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
                           Re-run

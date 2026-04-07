@@ -12,12 +12,36 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db, featureFlags, eq, asc } from '@hsafx/db';
 import { createLogger } from '@hsafx/shared/logger';
 import { requireAdminRole } from '@/lib/require-admin';
+import { adminResponse, adminErrorResponse } from '@/lib/admin-response';
 
 const log = createLogger('admin-feature-flags');
 
+/**
+ * Sync maintenance_mode flag to Redis so Edge Middleware can read it
+ * without a DB query. Uses Upstash REST API directly (no SDK needed).
+ */
+async function syncMaintenanceModeToRedis(enabled: boolean): Promise<void> {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return;
+
+  const envPrefix = process.env.NODE_ENV === 'production' ? 'prod' : 'dev';
+  const redisKey = `${envPrefix}:system:maintenance_mode`;
+
+  try {
+    await fetch(`${url}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(enabled ? ['SET', redisKey, '1'] : ['DEL', redisKey]),
+    });
+  } catch (err) {
+    log.error('Failed to sync maintenance_mode to Redis', { error: String(err) });
+  }
+}
+
 export async function GET() {
   try {
-    const authResult = await requireAdminRole();
+    const authResult = await requireAdminRole('system.view');
     if (authResult instanceof NextResponse) return authResult;
 
     // Query all feature flags
@@ -53,29 +77,23 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json(formattedFlags);
+    return adminResponse(formattedFlags);
   } catch (error) {
     log.error('Failed to fetch feature flags', { error: String(error) });
-    return NextResponse.json(
-      { code: 'FETCH_ERROR', message: 'Failed to fetch feature flags' },
-      { status: 500 }
-    );
+    return adminErrorResponse('FETCH_ERROR', 'Failed to fetch feature flags');
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const authResult = await requireAdminRole();
+    const authResult = await requireAdminRole('system.config');
     if (authResult instanceof NextResponse) return authResult;
 
     const body = await request.json();
     const { key, name, description, enabled, percentage, tier } = body;
 
     if (!key) {
-      return NextResponse.json(
-        { code: 'VALIDATION_ERROR', message: 'Key is required' },
-        { status: 400 }
-      );
+      return adminErrorResponse('VALIDATION_ERROR', 'Key is required', 400);
     }
 
     // Check if key already exists
@@ -86,10 +104,7 @@ export async function POST(request: NextRequest) {
       .limit(1);
 
     if (existingFlag.length > 0) {
-      return NextResponse.json(
-        { code: 'DUPLICATE_KEY', message: 'Feature flag with this key already exists' },
-        { status: 409 }
-      );
+      return adminErrorResponse('DUPLICATE_KEY', 'Feature flag with this key already exists', 409);
     }
 
     // Insert new feature flag - use type assertion for drizzle type inference
@@ -105,7 +120,7 @@ export async function POST(request: NextRequest) {
       } as typeof featureFlags.$inferInsert)
       .returning();
 
-    return NextResponse.json(
+    return adminResponse(
       {
         id: newFlag.id,
         key: newFlag.name,
@@ -117,14 +132,11 @@ export async function POST(request: NextRequest) {
         createdAt: newFlag.createdAt?.toISOString(),
         updatedAt: newFlag.updatedAt?.toISOString(),
       },
-      { status: 201 }
+      201,
     );
   } catch (error) {
     log.error('Failed to create feature flag', { error: String(error) });
-    return NextResponse.json(
-      { code: 'CREATE_ERROR', message: 'Failed to create feature flag' },
-      { status: 500 }
-    );
+    return adminErrorResponse('CREATE_ERROR', 'Failed to create feature flag');
   }
 }
 
@@ -136,17 +148,14 @@ export async function POST(request: NextRequest) {
  */
 export async function PATCH(request: NextRequest) {
   try {
-    const authResult = await requireAdminRole();
+    const authResult = await requireAdminRole('system.config');
     if (authResult instanceof NextResponse) return authResult;
 
     const body = await request.json();
     const { id, ...updates } = body as { id?: string; [k: string]: unknown };
 
     if (!id) {
-      return NextResponse.json(
-        { code: 'VALIDATION_ERROR', message: 'Feature flag ID is required' },
-        { status: 400 }
-      );
+      return adminErrorResponse('VALIDATION_ERROR', 'Feature flag ID is required', 400);
     }
 
     const setValues: Record<string, unknown> = { updatedAt: new Date() };
@@ -174,14 +183,16 @@ export async function PATCH(request: NextRequest) {
       .returning();
 
     if (!updated) {
-      return NextResponse.json(
-        { code: 'NOT_FOUND', message: 'Feature flag not found' },
-        { status: 404 }
-      );
+      return adminErrorResponse('NOT_FOUND', 'Feature flag not found', 404);
+    }
+
+    // Sync maintenance_mode flag to Redis for Edge Middleware
+    if (updated.name === 'maintenance_mode' && updates.enabled !== undefined) {
+      await syncMaintenanceModeToRedis(!!updates.enabled);
     }
 
     const metadata = (updated.metadata || {}) as Record<string, unknown>;
-    return NextResponse.json({
+    return adminResponse({
       id: updated.id,
       key: updated.name,
       name: (metadata.displayName as string) || updated.name,
@@ -193,10 +204,7 @@ export async function PATCH(request: NextRequest) {
     });
   } catch (error) {
     log.error('Failed to update feature flag', { error: String(error) });
-    return NextResponse.json(
-      { code: 'UPDATE_ERROR', message: 'Failed to update feature flag' },
-      { status: 500 }
-    );
+    return adminErrorResponse('UPDATE_ERROR', 'Failed to update feature flag');
   }
 }
 
@@ -208,17 +216,14 @@ export async function PATCH(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
-    const authResult = await requireAdminRole();
+    const authResult = await requireAdminRole('system.config');
     if (authResult instanceof NextResponse) return authResult;
 
     const body = await request.json();
     const { id } = body as { id?: string };
 
     if (!id) {
-      return NextResponse.json(
-        { code: 'VALIDATION_ERROR', message: 'Feature flag ID is required' },
-        { status: 400 }
-      );
+      return adminErrorResponse('VALIDATION_ERROR', 'Feature flag ID is required', 400);
     }
 
     const deleted = await db
@@ -227,18 +232,12 @@ export async function DELETE(request: NextRequest) {
       .returning({ id: featureFlags.id, name: featureFlags.name });
 
     if (deleted.length === 0) {
-      return NextResponse.json(
-        { code: 'NOT_FOUND', message: 'Feature flag not found' },
-        { status: 404 }
-      );
+      return adminErrorResponse('NOT_FOUND', 'Feature flag not found', 404);
     }
 
-    return NextResponse.json({ success: true, id: deleted[0].id, key: deleted[0].name });
+    return adminResponse({ id: deleted[0].id, key: deleted[0].name });
   } catch (error) {
     log.error('Failed to delete feature flag', { error: String(error) });
-    return NextResponse.json(
-      { code: 'DELETE_ERROR', message: 'Failed to delete feature flag' },
-      { status: 500 }
-    );
+    return adminErrorResponse('DELETE_ERROR', 'Failed to delete feature flag');
   }
 }

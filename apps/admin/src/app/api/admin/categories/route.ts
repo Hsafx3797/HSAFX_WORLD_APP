@@ -12,12 +12,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db, toolCategories, tools, eq, sql, asc } from '@hsafx/db';
 import { createLogger } from '@hsafx/shared/logger';
 import { requireAdminRole } from '@/lib/require-admin';
+import { adminResponse, adminErrorResponse } from '@/lib/admin-response';
 
 const log = createLogger('admin-categories');
 
 export async function GET() {
   try {
-    const authResult = await requireAdminRole();
+    const authResult = await requireAdminRole('tools.view');
     if (authResult instanceof NextResponse) return authResult;
 
     // Query categories with tool counts
@@ -53,29 +54,23 @@ export async function GET() {
       updatedAt: cat.updatedAt?.toISOString(),
     }));
 
-    return NextResponse.json(formattedCategories);
+    return adminResponse(formattedCategories);
   } catch (error) {
     log.error('Failed to fetch categories', { error: String(error) });
-    return NextResponse.json(
-      { code: 'FETCH_ERROR', message: 'Failed to fetch categories' },
-      { status: 500 }
-    );
+    return adminErrorResponse('FETCH_ERROR', 'Failed to fetch categories');
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const authResult = await requireAdminRole();
+    const authResult = await requireAdminRole('tools.manage');
     if (authResult instanceof NextResponse) return authResult;
 
     const body = await request.json();
     const { name, slug, description, icon, order } = body;
 
     if (!name || !slug) {
-      return NextResponse.json(
-        { code: 'VALIDATION_ERROR', message: 'Name and slug are required' },
-        { status: 400 }
-      );
+      return adminErrorResponse('VALIDATION_ERROR', 'Name and slug are required', 400);
     }
 
     // Check if slug already exists
@@ -86,10 +81,7 @@ export async function POST(request: NextRequest) {
       .limit(1);
 
     if (existingCategory.length > 0) {
-      return NextResponse.json(
-        { code: 'DUPLICATE_SLUG', message: 'Category with this slug already exists' },
-        { status: 409 }
-      );
+      return adminErrorResponse('DUPLICATE_SLUG', 'Category with this slug already exists', 409);
     }
 
     // Insert new category - use type assertion to work around drizzle type inference issues
@@ -105,7 +97,7 @@ export async function POST(request: NextRequest) {
       } as typeof toolCategories.$inferInsert)
       .returning();
 
-    return NextResponse.json(
+    return adminResponse(
       {
         id: newCategory.id,
         name: newCategory.name,
@@ -117,14 +109,11 @@ export async function POST(request: NextRequest) {
         createdAt: newCategory.createdAt?.toISOString(),
         updatedAt: newCategory.updatedAt?.toISOString(),
       },
-      { status: 201 }
+      201,
     );
   } catch (error) {
     log.error('Failed to create category', { error: String(error) });
-    return NextResponse.json(
-      { code: 'CREATE_ERROR', message: 'Failed to create category' },
-      { status: 500 }
-    );
+    return adminErrorResponse('CREATE_ERROR', 'Failed to create category');
   }
 }
 
@@ -136,17 +125,14 @@ export async function POST(request: NextRequest) {
  */
 export async function PATCH(request: NextRequest) {
   try {
-    const authResult = await requireAdminRole();
+    const authResult = await requireAdminRole('tools.manage');
     if (authResult instanceof NextResponse) return authResult;
 
     const body = await request.json();
     const { id, ...updates } = body as { id?: string; [k: string]: unknown };
 
     if (!id) {
-      return NextResponse.json(
-        { code: 'VALIDATION_ERROR', message: 'Category ID is required' },
-        { status: 400 }
-      );
+      return adminErrorResponse('VALIDATION_ERROR', 'Category ID is required', 400);
     }
 
     const allowedFields: Record<string, string> = {
@@ -175,10 +161,7 @@ export async function PATCH(request: NextRequest) {
         .where(eq(toolCategories.slug, updates.slug as string))
         .limit(1);
       if (existing.length > 0 && existing[0].id !== id) {
-        return NextResponse.json(
-          { code: 'DUPLICATE_SLUG', message: 'Another category with this slug already exists' },
-          { status: 409 }
-        );
+        return adminErrorResponse('DUPLICATE_SLUG', 'Another category with this slug already exists', 409);
       }
     }
 
@@ -189,13 +172,10 @@ export async function PATCH(request: NextRequest) {
       .returning();
 
     if (!updated) {
-      return NextResponse.json(
-        { code: 'NOT_FOUND', message: 'Category not found' },
-        { status: 404 }
-      );
+      return adminErrorResponse('NOT_FOUND', 'Category not found', 404);
     }
 
-    return NextResponse.json({
+    return adminResponse({
       id: updated.id,
       name: updated.name,
       slug: updated.slug,
@@ -207,10 +187,7 @@ export async function PATCH(request: NextRequest) {
     });
   } catch (error) {
     log.error('Failed to update category', { error: String(error) });
-    return NextResponse.json(
-      { code: 'UPDATE_ERROR', message: 'Failed to update category' },
-      { status: 500 }
-    );
+    return adminErrorResponse('UPDATE_ERROR', 'Failed to update category');
   }
 }
 
@@ -222,17 +199,14 @@ export async function PATCH(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
-    const authResult = await requireAdminRole();
+    const authResult = await requireAdminRole('tools.manage');
     if (authResult instanceof NextResponse) return authResult;
 
     const body = await request.json();
     const { id } = body as { id?: string };
 
     if (!id) {
-      return NextResponse.json(
-        { code: 'VALIDATION_ERROR', message: 'Category ID is required' },
-        { status: 400 }
-      );
+      return adminErrorResponse('VALIDATION_ERROR', 'Category ID is required', 400);
     }
 
     // Check for attached tools
@@ -242,10 +216,7 @@ export async function DELETE(request: NextRequest) {
       .where(eq(tools.categoryId, id));
 
     if ((toolCount?.count ?? 0) > 0) {
-      return NextResponse.json(
-        { code: 'HAS_TOOLS', message: `Cannot delete category with ${toolCount.count} attached tools. Reassign them first.` },
-        { status: 409 }
-      );
+      return adminErrorResponse('HAS_TOOLS', `Cannot delete category with ${toolCount.count} attached tools. Reassign them first.`, 409);
     }
 
     const deleted = await db
@@ -254,18 +225,12 @@ export async function DELETE(request: NextRequest) {
       .returning({ id: toolCategories.id });
 
     if (deleted.length === 0) {
-      return NextResponse.json(
-        { code: 'NOT_FOUND', message: 'Category not found' },
-        { status: 404 }
-      );
+      return adminErrorResponse('NOT_FOUND', 'Category not found', 404);
     }
 
-    return NextResponse.json({ success: true, id: deleted[0].id });
+    return adminResponse({ id: deleted[0].id });
   } catch (error) {
     log.error('Failed to delete category', { error: String(error) });
-    return NextResponse.json(
-      { code: 'DELETE_ERROR', message: 'Failed to delete category' },
-      { status: 500 }
-    );
+    return adminErrorResponse('DELETE_ERROR', 'Failed to delete category');
   }
 }

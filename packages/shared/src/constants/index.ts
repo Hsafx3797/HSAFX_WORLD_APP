@@ -112,6 +112,8 @@ export const TransactionType = {
   SPEND: 'spend', // Coins spent on tools
   REFUND: 'refund', // Coins refunded
   ADJUSTMENT: 'adjustment', // Manual adjustment
+  REWARD: 'reward', // Earned from login rewards (daily/hourly)
+  REFERRAL: 'referral', // Referral bonus
 } as const;
 
 export type TransactionTypeType = (typeof TransactionType)[keyof typeof TransactionType];

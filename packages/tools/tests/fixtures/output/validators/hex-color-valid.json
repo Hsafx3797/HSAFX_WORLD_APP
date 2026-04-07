@@ -1,0 +1,30 @@
+{
+  "#FF5733": {
+    "valid": true,
+    "details": {
+      "normalized": "#FF5733",
+      "hasAlpha": false
+    }
+  },
+  "#000": {
+    "valid": true,
+    "details": {
+      "normalized": "#000",
+      "hasAlpha": false
+    }
+  },
+  "#AABBCC": {
+    "valid": true,
+    "details": {
+      "normalized": "#AABBCC",
+      "hasAlpha": false
+    }
+  },
+  "#123abc": {
+    "valid": true,
+    "details": {
+      "normalized": "#123abc",
+      "hasAlpha": false
+    }
+  }
+}

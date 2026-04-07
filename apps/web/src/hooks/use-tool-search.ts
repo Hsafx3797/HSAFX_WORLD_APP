@@ -7,7 +7,7 @@ import { useDebounce } from './use-utils';
 /**
  * Server-side tool search using PostgreSQL full-text search (tsvector + GIN).
  * Falls back to disabled query when search is empty so the caller can
- * use the static toolRegistry for the initial (unfiltered) page load.
+ * use the initial (unfiltered) page load.
  */
 export function useToolSearch(opts: {
   search: string;

@@ -50,7 +50,7 @@ export default function Verify2FAPage() {
       }
 
       toast.success('Verified successfully!');
-      router.push('/tools');
+      router.push('/dashboard');
     } catch {
       toast.error('Verification failed. Please try again.');
     } finally {

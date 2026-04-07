@@ -34,7 +34,7 @@ import {
 import type { Column } from '@/components/ui';
 import * as api from '@/lib/api';
 
-type TransactionType = 'purchase' | 'reward' | 'usage' | 'refund' | 'adjustment' | 'bonus';
+type TransactionType = 'grant' | 'purchase' | 'spend' | 'refund' | 'adjustment' | 'reward' | 'referral';
 
 export default function BillingPage() {
   const [filters, setFilters] = useState<TransactionFilters>({ page: 1, limit: 50 });
@@ -82,18 +82,19 @@ export default function BillingPage() {
 
   const getTransactionIcon = (type: TransactionType) => {
     switch (type) {
+      case 'grant':
+        return <ArrowUpRight className="h-4 w-4 text-chart-4" />;
       case 'purchase':
         return <ArrowUpRight className="h-4 w-4 text-success" />;
-      case 'usage':
+      case 'spend':
         return <ArrowDownRight className="h-4 w-4 text-destructive" />;
       case 'reward':
+      case 'referral':
         return <CheckCircle className="h-4 w-4 text-primary" />;
       case 'refund':
         return <RefreshCw className="h-4 w-4 text-chart-3" />;
       case 'adjustment':
         return <AlertTriangle className="h-4 w-4 text-warning" />;
-      case 'bonus':
-        return <CheckCircle className="h-4 w-4 text-chart-4" />;
       default:
         return <DollarSign className="h-4 w-4 text-muted-foreground" />;
     }
@@ -101,11 +102,12 @@ export default function BillingPage() {
 
   const getTransactionVariant = (type: TransactionType): 'success' | 'danger' | 'warning' | 'info' | 'default' => {
     switch (type) {
+      case 'grant':
       case 'purchase':
       case 'reward':
-      case 'bonus':
+      case 'referral':
         return 'success';
-      case 'usage':
+      case 'spend':
         return 'danger';
       case 'refund':
         return 'warning';
@@ -199,8 +201,8 @@ export default function BillingPage() {
 
   const stats = {
     totalPurchases: transactions.filter((t) => t.type === 'purchase').reduce((sum, t) => sum + t.amount, 0),
-    totalUsage: transactions.filter((t) => t.type === 'usage').reduce((sum, t) => sum + Math.abs(t.amount), 0),
-    totalRewards: transactions.filter((t) => t.type === 'reward' || t.type === 'bonus').reduce((sum, t) => sum + t.amount, 0),
+    totalUsage: transactions.filter((t) => t.type === 'spend').reduce((sum, t) => sum + Math.abs(t.amount), 0),
+    totalRewards: transactions.filter((t) => t.type === 'reward' || t.type === 'referral' || t.type === 'grant').reduce((sum, t) => sum + t.amount, 0),
     totalRefunds: transactions.filter((t) => t.type === 'refund').reduce((sum, t) => sum + t.amount, 0),
   };
 
@@ -247,7 +249,7 @@ export default function BillingPage() {
               </div>
               {showFilters && (
                 <div className="mt-4 pt-4 border-t grid grid-cols-4 gap-4">
-                  <Select label="Type" options={[{ value: '', label: 'All Types' },{ value: 'purchase', label: 'Purchase' },{ value: 'usage', label: 'Usage' },{ value: 'reward', label: 'Reward' },{ value: 'refund', label: 'Refund' },{ value: 'adjustment', label: 'Adjustment' },{ value: 'bonus', label: 'Bonus' }]} value={filters.type || ''} onChange={(e) => handleFilterChange('type', e.target.value)} />
+                  <Select label="Type" options={[{ value: '', label: 'All Types' },{ value: 'grant', label: 'Grant' },{ value: 'purchase', label: 'Purchase' },{ value: 'spend', label: 'Spend' },{ value: 'reward', label: 'Reward' },{ value: 'referral', label: 'Referral' },{ value: 'refund', label: 'Refund' },{ value: 'adjustment', label: 'Adjustment' }]} value={filters.type || ''} onChange={(e) => handleFilterChange('type', e.target.value)} />
                   <Input label="Date From" type="date" value={filters.dateFrom || ''} onChange={(e) => handleFilterChange('dateFrom', e.target.value)} />
                   <Input label="Date To" type="date" value={filters.dateTo || ''} onChange={(e) => handleFilterChange('dateTo', e.target.value)} />
                   <Select label="Sort By" options={[{ value: 'createdAt', label: 'Date' },{ value: 'amount', label: 'Amount' }]} value={filters.sortBy || 'createdAt'} onChange={(e) => handleFilterChange('sortBy', e.target.value)} />

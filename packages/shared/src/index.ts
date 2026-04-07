@@ -46,22 +46,6 @@ export {
 
 // Execution module
 export {
-  type ExecutionMode,
-  type ToolRuntime,
-  type ToolExecutionDef,
-  type ExecutionContext,
-  type ExecutionInput,
-  type ExecutionResult,
-  type PreExecutionCheck,
-  type ExecutionRecord,
-  checkCanExecuteTool,
-  determineExecutionPath,
-  createExecutionRecord,
-  formatExecutionError,
-  formatExecutionSuccess,
-} from './execution/service';
-
-export {
   type WorkerStatus,
   type WorkerInfo,
   type JobPriority,

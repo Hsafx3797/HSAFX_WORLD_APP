@@ -1,0 +1,5 @@
+This is the original text with some shared content.
+The second line stays the same in both versions.
+This line will be removed from the new version.
+The fourth line is present in both texts.
+And this fifth line is shared too.

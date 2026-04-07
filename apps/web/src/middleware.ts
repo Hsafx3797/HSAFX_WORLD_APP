@@ -17,6 +17,7 @@ import {
   checkUserRateLimit,
   rateLimitHeaders,
 } from '@/lib/rate-limit';
+import { redis, keys } from '@/lib/redis';
 
 // ─── Rate Limiting ────────────────────────────────────────────────────────────
 
@@ -128,6 +129,12 @@ async function handleRateLimit(
     }
 
     // ── Session-based rate limit (500 req / hr for authenticated users) ──
+    // NOTE: Keyed by session token because Edge Middleware cannot resolve userId
+    // (better-auth uses opaque tokens, not JWTs). This means a user who logs out
+    // and back in gets a new rate limit window. This is a known limitation —
+    // the real billing protection is the coin reservation system (server-side),
+    // and B2B API key rate limiting (keyed by key ID) is unaffected.
+    // TODO: Add a signed __hsafx.uid cookie at login time to key by userId here.
     const sessionToken = request.cookies.get(SESSION_COOKIE)?.value;
     if (sessionToken) {
       const userResult = await checkUserRateLimit(sessionToken);
@@ -145,11 +152,16 @@ async function handleRateLimit(
       }
     }
   } catch {
-    // Rate limit check failed — fail open in development, closed in production
+    // Rate limit check failed (Redis down, network error, etc.)
     if (process.env.NODE_ENV === 'production') {
-      console.error('[middleware] Rate limit check failed — allowing request');
+      // Fail closed in production — reject request when rate limiter is unavailable
+      console.error('[middleware] Rate limit check failed — blocking request (fail-closed)');
+      return NextResponse.json(
+        { error: 'Service temporarily unavailable. Please try again.' },
+        { status: 503, headers: { 'Retry-After': '10' } },
+      );
     }
-    // Allow request to proceed
+    // Fail open in development — allow request to proceed
   }
 
   return null;
@@ -277,22 +289,117 @@ function handleCsrf(request: NextRequest): NextResponse | null {
   );
 }
 
+// ─── Maintenance Mode ─────────────────────────────────────────────────────────
+
+/** Paths exempt from maintenance mode (admin, health, internal) */
+const MAINTENANCE_EXEMPT_PREFIXES = [
+  '/admin',
+  '/api/admin/',
+  '/api/v1/health',
+  '/api/internal/',
+  '/api/auth/',
+  '/_next',
+  '/favicon',
+  '/static',
+];
+
+async function handleMaintenanceMode(request: NextRequest): Promise<NextResponse | null> {
+  const pathname = request.nextUrl.pathname;
+
+  // Skip exempt paths (admin can still access)
+  if (MAINTENANCE_EXEMPT_PREFIXES.some((p) => pathname.startsWith(p))) return null;
+
+  // Skip if Redis is not configured
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) return null;
+
+  try {
+    const enabled = await redis.get(keys.system.maintenanceMode());
+    if (enabled !== '1') return null;
+
+    // API routes return JSON 503
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.json(
+        { success: false, error: { code: 'SYSTEM_9003', message: 'System is under maintenance' } },
+        { status: 503, headers: { 'Retry-After': '300' } },
+      );
+    }
+
+    // Web pages return HTML 503
+    return new NextResponse(
+      '<!DOCTYPE html><html><head><title>Maintenance</title></head><body style="font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f5f5f5"><div style="text-align:center"><h1>Under Maintenance</h1><p>We\'re performing scheduled maintenance. Please check back shortly.</p></div></body></html>',
+      { status: 503, headers: { 'Content-Type': 'text/html', 'Retry-After': '300' } },
+    );
+  } catch {
+    // Fail open — don't block users if Redis is unreachable
+    return null;
+  }
+}
+
+// ─── CORS for B2B API ─────────────────────────────────────────────────────────
+
+/**
+ * CORS headers for /api/v1/ routes.
+ * B2B API is token-authenticated (Bearer), not cookie-based,
+ * so credentials mode is not required.
+ */
+const CORS_HEADERS: Record<string, string> = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Authorization, Content-Type, Idempotency-Key, X-Request-Id',
+  'Access-Control-Expose-Headers': 'X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, X-Request-Id',
+  'Access-Control-Max-Age': '86400',
+};
+
+function handleCors(request: NextRequest): NextResponse | null {
+  const pathname = request.nextUrl.pathname;
+
+  // Only apply CORS to B2B API routes
+  if (!pathname.startsWith('/api/v1/')) return null;
+
+  // Handle preflight OPTIONS request
+  if (request.method === 'OPTIONS') {
+    return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+  }
+
+  return null;
+}
+
+/**
+ * Inject CORS headers into an existing response for /api/v1/ routes.
+ */
+function applyCorsHeaders(request: NextRequest, response: NextResponse): NextResponse {
+  if (request.nextUrl.pathname.startsWith('/api/v1/')) {
+    for (const [key, value] of Object.entries(CORS_HEADERS)) {
+      response.headers.set(key, value);
+    }
+  }
+  return response;
+}
+
 // ─── Middleware Entry Point ──────────────────────────────────────────────────
 
 export async function middleware(request: NextRequest) {
-  // 0. Rate limiting (IP, auth endpoint, API key)
+  // 0. CORS preflight — must respond before any other checks
+  const corsResponse = handleCors(request);
+  if (corsResponse) return corsResponse;
+
+  // 1. Maintenance mode check (reads flag from Redis, set by admin)
+  const maintenanceResponse = await handleMaintenanceMode(request);
+  if (maintenanceResponse) return applyCorsHeaders(request, maintenanceResponse);
+
+  // 2. Rate limiting (IP, auth endpoint, API key)
   const rateResponse = await handleRateLimit(request);
-  if (rateResponse) return rateResponse;
+  if (rateResponse) return applyCorsHeaders(request, rateResponse);
 
-  // 1. CSRF Origin validation
+  // 3. CSRF Origin validation
   const csrfResponse = handleCsrf(request);
-  if (csrfResponse) return csrfResponse;
+  if (csrfResponse) return applyCorsHeaders(request, csrfResponse);
 
-  // 2. Check auth protection
+  // 4. Check auth protection
   const authRedirect = handleAuth(request);
   if (authRedirect) return authRedirect;
 
-  return NextResponse.next();
+  return applyCorsHeaders(request, NextResponse.next());
 }
 
 export const config = {
@@ -307,7 +414,7 @@ export const config = {
     '/auth/:path*',
     // API routes (rate limiting)
     '/api/:path*',
-    // Tool slug redirects (not /tools/category/* or static files)
-    '/tools/:slug((?!category|_next|api|static).*)',
+    // TODO [G9]: Re-enable tool slug matcher once tool routes are built (Task 1000)
+    // '/tools/:slug((?!category|_next|api|static).*)',
   ],
 };

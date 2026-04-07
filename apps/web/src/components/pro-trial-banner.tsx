@@ -1,8 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import type { ToolMetadata } from '@/lib/tools/types';
 import { trpc } from '@/lib/trpc';
+
+interface ToolMetadata {
+  id: string;
+  tier: string;
+}
 import { useAuth } from '@/hooks/use-auth';
 import { useSubscription } from '@/hooks/use-subscription';
 import { Badge } from '@/components/ui/badge';

@@ -2,6 +2,8 @@
  * GET /api/v1/account
  * Returns account info for the API key owner.
  * Requires scope: billing:read
+ *
+ * Webhook management: see /api/v1/account/webhooks (GET, POST, DELETE).
  */
 
 import { NextRequest } from 'next/server';
@@ -13,6 +15,7 @@ import {
   apiErrorResponse,
   type ApiContext,
 } from '@/lib/api-v1-auth';
+import { ApiErrorCode } from '@hsafx/shared/errors';
 
 export async function GET(request: NextRequest) {
   // 1. Auth
@@ -31,7 +34,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!user) {
-      return apiErrorResponse('U001', 'User not found', ctx, 404);
+      return apiErrorResponse(ApiErrorCode.USER_NOT_FOUND, 'User not found', ctx, 404);
     }
 
     // 4. Fetch subscription
@@ -71,7 +74,7 @@ export async function GET(request: NextRequest) {
     );
   } catch (err) {
     return apiErrorResponse(
-      'E001',
+      ApiErrorCode.SERVER_ERROR,
       'Failed to retrieve account info',
       ctx,
       500,

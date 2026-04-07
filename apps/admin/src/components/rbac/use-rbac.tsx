@@ -71,8 +71,7 @@ export function RBACProvider({ children, session: initialSession }: RBACProvider
   // Redirect to 2FA verification if needed
   React.useEffect(() => {
     if (
-      session?.twoFactorEnabled &&
-      !session?.twoFactorVerified &&
+      session?.twoFactorVerified === false &&
       pathname !== '/verify-2fa' &&
       pathname !== '/login'
     ) {

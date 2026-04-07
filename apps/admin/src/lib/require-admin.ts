@@ -6,10 +6,12 @@
  */
 
 import { NextResponse } from 'next/server';
+import { adminErrorResponse } from '@/lib/admin-response';
 import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
 import { db, roles, userRoles, eq } from '@hsafx/db';
-import type { AdminRole } from '@/lib/types';
+import type { AdminRole, Permission } from '@/lib/types';
+import { hasPermission } from '@/lib/permissions';
 
 /** Roles that grant admin panel access */
 const ADMIN_ROLES = new Set<string>([
@@ -38,15 +40,16 @@ export interface AdminAuth {
 
 /**
  * Verify the caller has a valid session AND an admin role.
+ * Optionally checks a granular permission against the role's permission set.
  * Returns AdminAuth on success; returns NextResponse (401/403) on failure.
  * Use `instanceof NextResponse` to narrow.
  */
-export async function requireAdminRole(): Promise<AdminAuth | NextResponse> {
+export async function requireAdminRole(permission?: Permission): Promise<AdminAuth | NextResponse> {
   const headersList = await headers();
   const session = await auth.api.getSession({ headers: headersList });
 
   if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return adminErrorResponse('UNAUTHORIZED', 'Authentication required', 401);
   }
 
   const userRoleRows = await db
@@ -60,14 +63,15 @@ export async function requireAdminRole(): Promise<AdminAuth | NextResponse> {
     .filter((name) => ADMIN_ROLES.has(name));
 
   if (adminRoleNames.length === 0) {
-    return NextResponse.json(
-      { error: 'Forbidden: no admin role assigned' },
-      { status: 403 },
-    );
+    return adminErrorResponse('FORBIDDEN', 'No admin role assigned', 403);
   }
 
   const mappedRoles = adminRoleNames.map((n) => ROLE_MAP[n] ?? 'support');
   const role = ROLE_PRIORITY.find((r) => mappedRoles.includes(r)) ?? 'support';
+
+  if (permission && !hasPermission(role, permission)) {
+    return adminErrorResponse('FORBIDDEN', 'Insufficient permissions', 403);
+  }
 
   return { userId: session.user.id, email: session.user.email, role };
 }

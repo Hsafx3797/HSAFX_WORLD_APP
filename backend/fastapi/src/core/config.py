@@ -7,6 +7,10 @@ from functools import lru_cache
 from typing import List
 
 from pydantic_settings import BaseSettings
+from dotenv import load_dotenv
+
+# Load .env explicitly from project root
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "../../.env"))
 
 
 class Settings(BaseSettings):
@@ -23,11 +27,35 @@ class Settings(BaseSettings):
     PORT: int = 8000
 
     # Redis
+    # We use a validator to determine the final REDIS_URL
     REDIS_URL: str = "redis://localhost:6379/0"
+    UPSTASH_REDIS_REST_TOKEN: str = os.getenv("UPSTASH_REDIS_REST_TOKEN", "")
     REDIS_CACHE_TTL: int = 3600
 
+    @property
+    def final_redis_url(self) -> str:
+        """
+        Returns the effective Redis URL.
+        Checks REDIS_URL env var first (TCP format with auth),
+        then builds from UPSTASH_REDIS_REST_URL + token.
+        """
+        # Prefer explicit REDIS_URL (TCP format with credentials)
+        redis_url_env = os.getenv("REDIS_URL")
+        if redis_url_env:
+            return redis_url_env
+
+        # Build from Upstash REST credentials
+        upstash_url = os.getenv("UPSTASH_REDIS_REST_URL")
+        if upstash_url:
+            host = upstash_url.replace("https://", "").replace("http://", "").rstrip("/")
+            token = self.UPSTASH_REDIS_REST_TOKEN
+            if token:
+                return f"rediss://default:{token}@{host}:6379"
+            return f"rediss://{host}:6379"
+        return self.REDIS_URL
+
     # Auth — better-auth session validation (JWT removed — better-auth is the single auth system)
-    INTERNAL_SECRET: str = ""  # For Next.js → FastAPI service calls
+    INTERNAL_API_SECRET: str = ""  # For Next.js → FastAPI service calls
 
     # CORS
     CORS_ORIGINS: List[str] = [
@@ -99,7 +127,9 @@ class Settings(BaseSettings):
     SCRAPER_CA_BUNDLE: str = ""
 
     class Config:
-        env_file = ".env"
+        # Load .env from project root (2 levels up from backend/fastapi)
+        env_file = "../../.env"
+        env_file_encoding = "utf-8"
         case_sensitive = True
         extra = "ignore"
 

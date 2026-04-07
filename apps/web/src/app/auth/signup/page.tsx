@@ -41,7 +41,7 @@ export default function SignUpPage() {
     try {
       await authClient.signIn.social({
         provider,
-        callbackURL: '/tools',
+        callbackURL: '/dashboard',
       });
     } catch (error) {
       toast.error(`Failed to sign in with ${provider}`);
