@@ -29,6 +29,12 @@ logger = logging.getLogger(__name__)
 class ArchiveHandler:
     """Server-side archive compression/decompression — 8 tools."""
 
+    @staticmethod
+    def _validate_member_path(member_name: str, extract_dir: Path) -> bool:
+        """Return True if member_name resolves inside extract_dir (prevents ZIP slip)."""
+        resolved = (extract_dir / member_name).resolve()
+        return str(resolved).startswith(str(extract_dir.resolve()))
+
     async def convert(
         self,
         tool_id: str,
@@ -133,6 +139,9 @@ class ArchiveHandler:
             try:
                 import rarfile
                 with rarfile.RarFile(str(input_path)) as rf:
+                    for member in rf.namelist():
+                        if not self._validate_member_path(member, extract_dir):
+                            return {"success": False, "error": f"Unsafe path in archive: {member}"}
                     rf.extractall(str(extract_dir))
             except ImportError:
                 # Fallback to unrar CLI
@@ -180,6 +189,9 @@ class ArchiveHandler:
             try:
                 import py7zr
                 with py7zr.SevenZipFile(str(input_path), mode="r") as z:
+                    for member in z.getnames():
+                        if not self._validate_member_path(member, extract_dir):
+                            return {"success": False, "error": f"Unsafe path in archive: {member}"}
                     z.extractall(path=str(extract_dir))
             except ImportError:
                 # Fallback to 7z CLI
@@ -228,6 +240,9 @@ class ArchiveHandler:
             extract_dir = out_dir / "extracted"
             extract_dir.mkdir(exist_ok=True)
             with tarfile.open(fileobj=io.BytesIO(data), mode="r:*") as tf:
+                for member in tf.getmembers():
+                    if not self._validate_member_path(member.name, extract_dir):
+                        return {"success": False, "error": f"Unsafe path in archive: {member.name}"}
                 tf.extractall(extract_dir, filter="data")
             files = [str(p) for p in extract_dir.rglob("*") if p.is_file()]
             return {"success": True, "output": files, "metadata": {"file_count": len(files)}}
@@ -272,6 +287,9 @@ class ArchiveHandler:
             extract_dir = out_dir / "extracted"
             extract_dir.mkdir(exist_ok=True)
             with tarfile.open(fileobj=io.BytesIO(data), mode="r:gz") as tf:
+                for member in tf.getmembers():
+                    if not self._validate_member_path(member.name, extract_dir):
+                        return {"success": False, "error": f"Unsafe path in archive: {member.name}"}
                 tf.extractall(extract_dir, filter="data")
             files = [str(p) for p in extract_dir.rglob("*") if p.is_file()]
             return {"success": True, "output": files, "metadata": {"file_count": len(files)}}
