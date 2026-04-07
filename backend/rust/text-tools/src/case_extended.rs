@@ -1,7 +1,8 @@
+#[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::*;
 
 /// dot.case converter
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn dot_case(text: &str) -> String {
     text.split(|c: char| !c.is_alphanumeric())
         .filter(|s| !s.is_empty())
@@ -11,7 +12,7 @@ pub fn dot_case(text: &str) -> String {
 }
 
 /// path/case converter
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn path_case(text: &str) -> String {
     text.split(|c: char| !c.is_alphanumeric())
         .filter(|s| !s.is_empty())
@@ -21,7 +22,7 @@ pub fn path_case(text: &str) -> String {
 }
 
 /// Train-Case converter
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn train_case(text: &str) -> String {
     text.split(|c: char| !c.is_alphanumeric())
         .filter(|s| !s.is_empty())
@@ -37,7 +38,7 @@ pub fn train_case(text: &str) -> String {
 }
 
 /// Swap Case (toggle each character's case)
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn swap_case(text: &str) -> String {
     text.chars()
         .map(|c| {
@@ -51,7 +52,7 @@ pub fn swap_case(text: &str) -> String {
 }
 
 /// Sentence case (capitalize first letter of each sentence)
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn sentence_case(text: &str) -> String {
     let mut result = String::new();
     let mut capitalize_next = true;
@@ -71,7 +72,7 @@ pub fn sentence_case(text: &str) -> String {
 }
 
 /// Alternating case (aLtErNaTiNg)
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn alternating_case(text: &str) -> String {
     text.chars()
         .enumerate()
@@ -86,7 +87,7 @@ pub fn alternating_case(text: &str) -> String {
 }
 
 /// Inverse case (iNVERSE)
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn inverse_case(text: &str) -> String {
     text.chars()
         .enumerate()
@@ -105,7 +106,7 @@ pub fn inverse_case(text: &str) -> String {
 }
 
 /// SCREAMING_SNAKE_CASE
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn screaming_snake_case(text: &str) -> String {
     text.split(|c: char| !c.is_alphanumeric())
         .filter(|s| !s.is_empty())
@@ -115,7 +116,7 @@ pub fn screaming_snake_case(text: &str) -> String {
 }
 
 /// flatcase (all lowercase, no separator)
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn flat_case(text: &str) -> String {
     text.chars()
         .filter(|c| c.is_alphanumeric())
@@ -124,7 +125,7 @@ pub fn flat_case(text: &str) -> String {
 }
 
 /// Capitalized Case (each word capitalized)
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn capitalized_case(text: &str) -> String {
     text.split_whitespace()
         .map(|word| {
@@ -139,7 +140,7 @@ pub fn capitalized_case(text: &str) -> String {
 }
 
 /// Mocking SpongeBob case (random upper/lower)
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn spongebob_case(text: &str) -> String {
     text.chars()
         .enumerate()
@@ -154,7 +155,7 @@ pub fn spongebob_case(text: &str) -> String {
 }
 
 /// Leet speak (1337)
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn leet_speak(text: &str) -> String {
     text.chars()
         .map(|c| match c.to_lowercase().next().unwrap_or(c) {
@@ -177,7 +178,7 @@ pub fn leet_speak(text: &str) -> String {
 /// Uses `DefaultHasher` seeded by `(index, char)`, so the same input always
 /// produces the same output.  This is intentional for a text-transform tool
 /// (reproducible results), but the output is NOT cryptographically random.
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn studly_case(text: &str) -> String {
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};

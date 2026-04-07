@@ -1,8 +1,8 @@
+#[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::*;
-use serde::{Serialize, Deserialize};
 
 /// URL slug generator
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn url_slug(text: &str) -> String {
     text.to_lowercase()
         .chars()
@@ -23,7 +23,7 @@ pub fn url_slug(text: &str) -> String {
 }
 
 /// Lorem ipsum generator
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn lorem_ipsum(paragraphs: usize) -> String {
     const LOREM: &str = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
     
@@ -34,7 +34,7 @@ pub fn lorem_ipsum(paragraphs: usize) -> String {
 }
 
 /// Password generator — uses CSPRNG (getrandom) for secure randomness
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn generate_password(length: usize, include_symbols: bool, include_numbers: bool) -> String {
     let mut chars = String::from("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
     if include_numbers {
@@ -74,7 +74,7 @@ pub fn generate_password(length: usize, include_symbols: bool, include_numbers: 
 }
 
 /// Escape regex special characters
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn escape_regex(text: &str) -> String {
     text.chars()
         .map(|c| {
@@ -88,13 +88,13 @@ pub fn escape_regex(text: &str) -> String {
 }
 
 /// Find and replace
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn find_replace(text: &str, find: &str, replace: &str) -> String {
     text.replace(find, replace)
 }
 
 /// Find and replace (case insensitive)
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn find_replace_case_insensitive(text: &str, find: &str, replace: &str) -> String {
     let find_lower = find.to_lowercase();
     let mut result = String::new();
@@ -110,35 +110,52 @@ pub fn find_replace_case_insensitive(text: &str, find: &str, replace: &str) -> S
     result
 }
 
-/// Replace with regex
-#[wasm_bindgen]
-pub fn regex_replace(text: &str, pattern: &str, replacement: &str) -> Result<String, JsValue> {
+/// Replace with regex (native)
+pub fn regex_replace_native(text: &str, pattern: &str, replacement: &str) -> Result<String, String> {
     regex::Regex::new(pattern)
         .map(|re| re.replace_all(text, replacement).to_string())
-        .map_err(|e| JsValue::from_str(&format!("Invalid regex: {}", e)))
+        .map_err(|e| format!("Invalid regex: {}", e))
 }
 
-/// Match regex and return all matches
-#[wasm_bindgen]
-pub fn regex_match(text: &str, pattern: &str) -> Result<JsValue, JsValue> {
+/// Replace with regex (wasm)
+#[cfg(feature = "wasm")]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
+pub fn regex_replace(text: &str, pattern: &str, replacement: &str) -> Result<String, JsValue> {
+    regex_replace_native(text, pattern, replacement).map_err(|e| JsValue::from_str(&e))
+}
+
+/// Match regex and return all matches (native)
+pub fn regex_match_native(text: &str, pattern: &str) -> Result<Vec<String>, String> {
     regex::Regex::new(pattern)
-        .map(|re| {
-            let matches: Vec<&str> = re.find_iter(text).map(|m| m.as_str()).collect();
-            serde_wasm_bindgen::to_value(&matches).unwrap()
-        })
-        .map_err(|e| JsValue::from_str(&format!("Invalid regex: {}", e)))
+        .map(|re| re.find_iter(text).map(|m| m.as_str().to_string()).collect())
+        .map_err(|e| format!("Invalid regex: {}", e))
 }
 
-/// Test if text matches regex
-#[wasm_bindgen]
-pub fn regex_test(text: &str, pattern: &str) -> Result<bool, JsValue> {
+/// Match regex and return all matches (wasm)
+#[cfg(feature = "wasm")]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
+pub fn regex_match(text: &str, pattern: &str) -> Result<JsValue, JsValue> {
+    regex_match_native(text, pattern)
+        .map(|matches| serde_wasm_bindgen::to_value(&matches).unwrap())
+        .map_err(|e| JsValue::from_str(&e))
+}
+
+/// Test if text matches regex (native)
+pub fn regex_test_native(text: &str, pattern: &str) -> Result<bool, String> {
     regex::Regex::new(pattern)
         .map(|re| re.is_match(text))
-        .map_err(|e| JsValue::from_str(&format!("Invalid regex: {}", e)))
+        .map_err(|e| format!("Invalid regex: {}", e))
+}
+
+/// Test if text matches regex (wasm)
+#[cfg(feature = "wasm")]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
+pub fn regex_test(text: &str, pattern: &str) -> Result<bool, JsValue> {
+    regex_test_native(text, pattern).map_err(|e| JsValue::from_str(&e))
 }
 
 /// Line number wrapper with custom format
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn number_lines(text: &str, start: usize, separator: &str) -> String {
     text.lines()
         .enumerate()
@@ -148,7 +165,7 @@ pub fn number_lines(text: &str, start: usize, separator: &str) -> String {
 }
 
 /// Remove line numbers
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn remove_line_numbers(text: &str) -> String {
     let pattern = regex::Regex::new(r"^\s*\d+[\s.:|\-]+").unwrap();
     text.lines()
@@ -158,7 +175,7 @@ pub fn remove_line_numbers(text: &str) -> String {
 }
 
 /// Diff two texts (simple line-by-line)
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn simple_diff(text1: &str, text2: &str) -> String {
     let lines1: Vec<&str> = text1.lines().collect();
     let lines2: Vec<&str> = text2.lines().collect();
@@ -186,7 +203,7 @@ pub fn simple_diff(text1: &str, text2: &str) -> String {
 }
 
 /// Truncate text with ellipsis
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn truncate_text(text: &str, max_length: usize, ellipsis: &str) -> String {
     let char_count = text.chars().count();
     if char_count <= max_length {
@@ -199,7 +216,7 @@ pub fn truncate_text(text: &str, max_length: usize, ellipsis: &str) -> String {
 }
 
 /// Center text within width
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn center_text(text: &str, width: usize) -> String {
     text.lines()
         .map(|line| {
@@ -215,7 +232,7 @@ pub fn center_text(text: &str, width: usize) -> String {
 }
 
 /// Right align text
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn right_align_text(text: &str, width: usize) -> String {
     text.lines()
         .map(|line| {
@@ -231,7 +248,7 @@ pub fn right_align_text(text: &str, width: usize) -> String {
 }
 
 /// Repeat text n times
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn repeat_text(text: &str, n: usize, separator: &str) -> String {
     (0..n)
         .map(|_| text)

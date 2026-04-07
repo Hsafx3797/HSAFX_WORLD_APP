@@ -1,13 +1,14 @@
+#[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::*;
 
 /// Mirror text (reversed)
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn mirror_text(text: &str) -> String {
     text.chars().rev().collect()
 }
 
 /// Upside down text
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn upside_down_text(text: &str) -> String {
     const UPSIDE_DOWN: &[(&str, &str)] = &[
         ("a", "ɐ"), ("b", "q"), ("c", "ɔ"), ("d", "p"), ("e", "ǝ"),
@@ -39,7 +40,7 @@ pub fn upside_down_text(text: &str) -> String {
 }
 
 /// Fullwidth text (aesthetic)
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn fullwidth_text(text: &str) -> String {
     text.chars()
         .map(|c| {
@@ -55,7 +56,7 @@ pub fn fullwidth_text(text: &str) -> String {
 }
 
 /// Circled letters (Ⓗⓔⓛⓛⓞ)
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn circled_text(text: &str) -> String {
     text.chars()
         .map(|c| {
@@ -75,7 +76,7 @@ pub fn circled_text(text: &str) -> String {
 }
 
 /// Squared text
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn squared_text(text: &str) -> String {
     text.to_uppercase()
         .chars()
@@ -90,7 +91,7 @@ pub fn squared_text(text: &str) -> String {
 }
 
 /// Small caps
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn small_caps(text: &str) -> String {
     const SMALL: &[(&str, &str)] = &[
         ("a", "ᴀ"), ("b", "ʙ"), ("c", "ᴄ"), ("d", "ᴅ"), ("e", "ᴇ"),
@@ -114,7 +115,7 @@ pub fn small_caps(text: &str) -> String {
 }
 
 /// Superscript
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn superscript_text(text: &str) -> String {
     const SUPER: &[(&str, &str)] = &[
         ("0", "⁰"), ("1", "¹"), ("2", "²"), ("3", "³"), ("4", "⁴"),
@@ -140,7 +141,7 @@ pub fn superscript_text(text: &str) -> String {
 }
 
 /// Subscript
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn subscript_text(text: &str) -> String {
     const SUB: &[(&str, &str)] = &[
         ("0", "₀"), ("1", "₁"), ("2", "₂"), ("3", "₃"), ("4", "₄"),
@@ -165,7 +166,7 @@ pub fn subscript_text(text: &str) -> String {
 }
 
 /// Sparkle text (✨ around words)
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn sparkle_text(text: &str) -> String {
     text.split_whitespace()
         .map(|word| format!("✨{}✨", word))
@@ -174,7 +175,7 @@ pub fn sparkle_text(text: &str) -> String {
 }
 
 /// Clap text (words 👏 separated 👏 by 👏 claps)
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn clap_text(text: &str) -> String {
     text.split_whitespace()
         .collect::<Vec<_>>()
@@ -182,7 +183,7 @@ pub fn clap_text(text: &str) -> String {
 }
 
 /// Zalgo text (creepy glitchy text)
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn zalgo_text(text: &str, intensity: u8) -> String {
     // Combining marks above (Unicode escape to avoid multi-codepoint char literals)
     const ZALGO_UP: &[char] = &[
@@ -233,7 +234,7 @@ pub fn zalgo_text(text: &str, intensity: u8) -> String {
 }
 
 /// Monospace unicode text
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn monospace_text(text: &str) -> String {
     text.chars()
         .map(|c| {
@@ -251,7 +252,7 @@ pub fn monospace_text(text: &str) -> String {
 }
 
 /// Bold unicode text
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn bold_unicode_text(text: &str) -> String {
     text.chars()
         .map(|c| {
@@ -269,7 +270,7 @@ pub fn bold_unicode_text(text: &str) -> String {
 }
 
 /// Italic unicode text
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn italic_unicode_text(text: &str) -> String {
     text.chars()
         .map(|c| {

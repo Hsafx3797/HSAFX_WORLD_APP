@@ -1,3 +1,4 @@
+#[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::*;
 use serde::{Serialize, Deserialize};
 
@@ -13,19 +14,19 @@ pub struct TextStats {
 }
 
 /// Count words in text
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn word_count(text: &str) -> usize {
     text.split_whitespace().count()
 }
 
 /// Count characters in text
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn char_count(text: &str) -> usize {
     text.chars().count()
 }
 
 /// Count lines in text
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn line_count(text: &str) -> usize {
     if text.is_empty() {
         0
@@ -34,21 +35,18 @@ pub fn line_count(text: &str) -> usize {
     }
 }
 
-/// Get comprehensive text statistics
-#[wasm_bindgen]
-pub fn text_stats(text: &str) -> JsValue {
+/// Get comprehensive text statistics (native)
+pub fn text_stats_native(text: &str) -> TextStats {
     let chars = text.chars().count();
     let chars_no_spaces = text.chars().filter(|c| !c.is_whitespace()).count();
     let words = text.split_whitespace().count();
     let lines = if text.is_empty() { 0 } else { text.lines().count() };
     
-    // Count sentences (approximate - looks for . ! ?)
     let sentences = text.chars()
         .filter(|&c| c == '.' || c == '!' || c == '?')
         .count()
         .max(1);
     
-    // Count paragraphs (separated by blank lines)
     let paragraphs = text.split("\n\n")
         .filter(|p| !p.trim().is_empty())
         .count()
@@ -60,7 +58,7 @@ pub fn text_stats(text: &str) -> JsValue {
         0.0
     };
     
-    let stats = TextStats {
+    TextStats {
         char_count: chars,
         char_count_no_spaces: chars_no_spaces,
         word_count: words,
@@ -68,13 +66,18 @@ pub fn text_stats(text: &str) -> JsValue {
         sentence_count: sentences,
         paragraph_count: paragraphs,
         avg_word_length,
-    };
-    
-    serde_wasm_bindgen::to_value(&stats).unwrap()
+    }
+}
+
+/// Get comprehensive text statistics (wasm)
+#[cfg(feature = "wasm")]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
+pub fn text_stats(text: &str) -> JsValue {
+    serde_wasm_bindgen::to_value(&text_stats_native(text)).unwrap()
 }
 
 /// Count occurrences of a substring
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn count_occurrences(text: &str, search: &str, case_sensitive: bool) -> usize {
     if case_sensitive {
         text.matches(search).count()

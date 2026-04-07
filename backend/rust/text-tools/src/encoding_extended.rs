@@ -1,7 +1,8 @@
+#[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::*;
 
 /// Base32 encode
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn base32_encode(text: &str) -> String {
     const ALPHABET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
     let bytes = text.as_bytes();
@@ -30,9 +31,8 @@ pub fn base32_encode(text: &str) -> String {
     result
 }
 
-/// Base32 decode
-#[wasm_bindgen]
-pub fn base32_decode(encoded: &str) -> Result<String, JsValue> {
+/// Base32 decode (native)
+pub fn base32_decode_native(encoded: &str) -> Result<String, String> {
     let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
     let encoded = encoded.trim_end_matches('=').to_uppercase();
     let mut bits = 0u32;
@@ -40,7 +40,7 @@ pub fn base32_decode(encoded: &str) -> Result<String, JsValue> {
     let mut result = Vec::new();
     
     for c in encoded.chars() {
-        let val = alphabet.find(c).ok_or_else(|| JsValue::from_str("Invalid character"))?;
+        let val = alphabet.find(c).ok_or_else(|| "Invalid character".to_string())?;
         bits = (bits << 5) | (val as u32);
         bit_count += 5;
         if bit_count >= 8 {
@@ -49,11 +49,18 @@ pub fn base32_decode(encoded: &str) -> Result<String, JsValue> {
         }
     }
     
-    String::from_utf8(result).map_err(|e| JsValue::from_str(&e.to_string()))
+    String::from_utf8(result).map_err(|e| e.to_string())
+}
+
+/// Base32 decode (wasm)
+#[cfg(feature = "wasm")]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
+pub fn base32_decode(encoded: &str) -> Result<String, JsValue> {
+    base32_decode_native(encoded).map_err(|e| JsValue::from_str(&e))
 }
 
 /// Binary encode (space-separated bytes)
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn binary_encode(text: &str) -> String {
     text.bytes()
         .map(|b| format!("{:08b}", b))
@@ -61,17 +68,23 @@ pub fn binary_encode(text: &str) -> String {
         .join(" ")
 }
 
-/// Binary decode
-#[wasm_bindgen]
-pub fn binary_decode(encoded: &str) -> Result<String, JsValue> {
+/// Binary decode (native)
+pub fn binary_decode_native(encoded: &str) -> Result<String, String> {
     encoded.split_whitespace()
-        .map(|s| u8::from_str_radix(s, 2).map_err(|e| JsValue::from_str(&e.to_string())))
+        .map(|s| u8::from_str_radix(s, 2).map_err(|e| e.to_string()))
         .collect::<Result<Vec<u8>, _>>()
-        .and_then(|bytes| String::from_utf8(bytes).map_err(|e| JsValue::from_str(&e.to_string())))
+        .and_then(|bytes| String::from_utf8(bytes).map_err(|e| e.to_string()))
+}
+
+/// Binary decode (wasm)
+#[cfg(feature = "wasm")]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
+pub fn binary_decode(encoded: &str) -> Result<String, JsValue> {
+    binary_decode_native(encoded).map_err(|e| JsValue::from_str(&e))
 }
 
 /// Octal encode (space-separated)
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn octal_encode(text: &str) -> String {
     text.bytes()
         .map(|b| format!("{:03o}", b))
@@ -79,17 +92,23 @@ pub fn octal_encode(text: &str) -> String {
         .join(" ")
 }
 
-/// Octal decode
-#[wasm_bindgen]
-pub fn octal_decode(encoded: &str) -> Result<String, JsValue> {
+/// Octal decode (native)
+pub fn octal_decode_native(encoded: &str) -> Result<String, String> {
     encoded.split_whitespace()
-        .map(|s| u8::from_str_radix(s, 8).map_err(|e| JsValue::from_str(&e.to_string())))
+        .map(|s| u8::from_str_radix(s, 8).map_err(|e| e.to_string()))
         .collect::<Result<Vec<u8>, _>>()
-        .and_then(|bytes| String::from_utf8(bytes).map_err(|e| JsValue::from_str(&e.to_string())))
+        .and_then(|bytes| String::from_utf8(bytes).map_err(|e| e.to_string()))
+}
+
+/// Octal decode (wasm)
+#[cfg(feature = "wasm")]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
+pub fn octal_decode(encoded: &str) -> Result<String, JsValue> {
+    octal_decode_native(encoded).map_err(|e| JsValue::from_str(&e))
 }
 
 /// ROT13 cipher
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn rot13(text: &str) -> String {
     text.chars()
         .map(|c| {
@@ -104,7 +123,7 @@ pub fn rot13(text: &str) -> String {
 }
 
 /// ROT47 cipher
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn rot47(text: &str) -> String {
     text.chars()
         .map(|c| {
@@ -119,7 +138,7 @@ pub fn rot47(text: &str) -> String {
 }
 
 /// Caesar cipher
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn caesar_cipher(text: &str, shift: i32) -> String {
     let shift = ((shift % 26) + 26) % 26;
     text.chars()
@@ -135,7 +154,7 @@ pub fn caesar_cipher(text: &str, shift: i32) -> String {
 }
 
 /// Atbash cipher (A=Z, B=Y, etc.)
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn atbash_cipher(text: &str) -> String {
     text.chars()
         .map(|c| {
@@ -150,7 +169,7 @@ pub fn atbash_cipher(text: &str) -> String {
 }
 
 /// Morse code encode
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn morse_encode(text: &str) -> String {
     const MORSE: &[(&str, &str)] = &[
         ("a", ".-"), ("b", "-..."), ("c", "-.-."), ("d", "-.."), ("e", "."),
@@ -174,7 +193,7 @@ pub fn morse_encode(text: &str) -> String {
 }
 
 /// Morse code decode
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn morse_decode(encoded: &str) -> String {
     const MORSE: &[(&str, &str)] = &[
         (".-", "a"), ("-...", "b"), ("-.-.", "c"), ("-..", "d"), (".", "e"),
@@ -198,7 +217,7 @@ pub fn morse_decode(encoded: &str) -> String {
 }
 
 /// HTML escape
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn html_escape(text: &str) -> String {
     text.chars()
         .map(|c| match c {
@@ -213,7 +232,7 @@ pub fn html_escape(text: &str) -> String {
 }
 
 /// HTML unescape
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn html_unescape(text: &str) -> String {
     text.replace("&amp;", "&")
         .replace("&lt;", "<")
@@ -223,17 +242,23 @@ pub fn html_unescape(text: &str) -> String {
         .replace("&nbsp;", " ")
 }
 
-/// ASCII to text (space-separated decimal)
-#[wasm_bindgen]
-pub fn ascii_decode(encoded: &str) -> Result<String, JsValue> {
+/// ASCII to text (native)
+pub fn ascii_decode_native(encoded: &str) -> Result<String, String> {
     encoded.split_whitespace()
-        .map(|s| s.parse::<u8>().map_err(|e| JsValue::from_str(&e.to_string())))
+        .map(|s| s.parse::<u8>().map_err(|e| e.to_string()))
         .collect::<Result<Vec<u8>, _>>()
-        .and_then(|bytes| String::from_utf8(bytes).map_err(|e| JsValue::from_str(&e.to_string())))
+        .and_then(|bytes| String::from_utf8(bytes).map_err(|e| e.to_string()))
+}
+
+/// ASCII to text (wasm)
+#[cfg(feature = "wasm")]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
+pub fn ascii_decode(encoded: &str) -> Result<String, JsValue> {
+    ascii_decode_native(encoded).map_err(|e| JsValue::from_str(&e))
 }
 
 /// Text to ASCII codes
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn ascii_encode(text: &str) -> String {
     text.bytes()
         .map(|b| b.to_string())
@@ -242,7 +267,7 @@ pub fn ascii_encode(text: &str) -> String {
 }
 
 /// NATO phonetic alphabet
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn nato_encode(text: &str) -> String {
     const NATO: &[(&str, &str)] = &[
         ("a", "Alpha"), ("b", "Bravo"), ("c", "Charlie"), ("d", "Delta"),
@@ -271,7 +296,7 @@ pub fn nato_encode(text: &str) -> String {
 }
 
 /// Pig Latin
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn pig_latin(text: &str) -> String {
     text.split_whitespace()
         .map(|word| {
@@ -289,7 +314,7 @@ pub fn pig_latin(text: &str) -> String {
 }
 
 /// JSON string escape
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn json_escape(text: &str) -> String {
     text.chars()
         .map(|c| match c {
@@ -305,7 +330,7 @@ pub fn json_escape(text: &str) -> String {
 }
 
 /// XML escape
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn xml_escape(text: &str) -> String {
     text.chars()
         .map(|c| match c {

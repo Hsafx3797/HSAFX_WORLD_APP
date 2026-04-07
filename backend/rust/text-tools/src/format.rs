@@ -1,13 +1,14 @@
+#[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::*;
 
 /// Trim whitespace from both ends
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn trim_whitespace(text: &str) -> String {
     text.trim().to_string()
 }
 
 /// Remove extra spaces (multiple spaces to single space)
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn remove_extra_spaces(text: &str) -> String {
     text.split_whitespace()
         .collect::<Vec<_>>()
@@ -15,7 +16,7 @@ pub fn remove_extra_spaces(text: &str) -> String {
 }
 
 /// Remove all whitespace
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn remove_all_whitespace(text: &str) -> String {
     text.chars()
         .filter(|c| !c.is_whitespace())
@@ -23,7 +24,7 @@ pub fn remove_all_whitespace(text: &str) -> String {
 }
 
 /// Add line numbers to text
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn add_line_numbers(text: &str) -> String {
     text.lines()
         .enumerate()
@@ -33,13 +34,13 @@ pub fn add_line_numbers(text: &str) -> String {
 }
 
 /// Reverse text
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn reverse_text(text: &str) -> String {
     text.chars().rev().collect()
 }
 
 /// Reverse words
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn reverse_words(text: &str) -> String {
     text.split_whitespace()
         .rev()
@@ -48,7 +49,7 @@ pub fn reverse_words(text: &str) -> String {
 }
 
 /// Sort lines alphabetically
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn sort_lines(text: &str, ascending: bool) -> String {
     let mut lines: Vec<&str> = text.lines().collect();
     
@@ -62,7 +63,7 @@ pub fn sort_lines(text: &str, ascending: bool) -> String {
 }
 
 /// Remove duplicate lines
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn remove_duplicate_lines(text: &str) -> String {
     let mut seen = std::collections::HashSet::new();
     text.lines()
@@ -72,7 +73,7 @@ pub fn remove_duplicate_lines(text: &str) -> String {
 }
 
 /// Wrap text at specified column width
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn wrap_text(text: &str, width: usize) -> String {
     let mut result = Vec::new();
     let mut current_line = String::new();

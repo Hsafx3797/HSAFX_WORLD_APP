@@ -1,7 +1,8 @@
+#[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::*;
 
 /// Remove vowels
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn remove_vowels(text: &str) -> String {
     text.chars()
         .filter(|c| !"aeiouAEIOU".contains(*c))
@@ -9,7 +10,7 @@ pub fn remove_vowels(text: &str) -> String {
 }
 
 /// Remove consonants
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn remove_consonants(text: &str) -> String {
     text.chars()
         .filter(|c| !c.is_alphabetic() || "aeiouAEIOU".contains(*c))
@@ -17,7 +18,7 @@ pub fn remove_consonants(text: &str) -> String {
 }
 
 /// Remove numbers
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn remove_numbers(text: &str) -> String {
     text.chars()
         .filter(|c| !c.is_numeric())
@@ -25,7 +26,7 @@ pub fn remove_numbers(text: &str) -> String {
 }
 
 /// Remove symbols (keep only alphanumeric and spaces)
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn remove_symbols(text: &str) -> String {
     text.chars()
         .filter(|c| c.is_alphanumeric() || c.is_whitespace())
@@ -33,7 +34,7 @@ pub fn remove_symbols(text: &str) -> String {
 }
 
 /// Remove empty lines
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn remove_empty_lines(text: &str) -> String {
     text.lines()
         .filter(|line| !line.trim().is_empty())
@@ -42,7 +43,7 @@ pub fn remove_empty_lines(text: &str) -> String {
 }
 
 /// Remove leading zeros from numbers
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn remove_leading_zeros(text: &str) -> String {
     text.split_whitespace()
         .map(|word| {
@@ -62,7 +63,7 @@ pub fn remove_leading_zeros(text: &str) -> String {
 }
 
 /// Keep only letters
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn keep_only_letters(text: &str) -> String {
     text.chars()
         .filter(|c| c.is_alphabetic())
@@ -70,7 +71,7 @@ pub fn keep_only_letters(text: &str) -> String {
 }
 
 /// Keep only numbers
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn keep_only_numbers(text: &str) -> String {
     text.chars()
         .filter(|c| c.is_numeric())
@@ -78,7 +79,7 @@ pub fn keep_only_numbers(text: &str) -> String {
 }
 
 /// Extract emails from text
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn extract_emails(text: &str) -> String {
     let email_pattern = regex::Regex::new(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}").unwrap();
     email_pattern
@@ -89,7 +90,7 @@ pub fn extract_emails(text: &str) -> String {
 }
 
 /// Extract URLs from text
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn extract_urls(text: &str) -> String {
     let url_pattern = regex::Regex::new(r#"https?://[^\s<>"']+"#).unwrap();
     url_pattern
@@ -100,7 +101,7 @@ pub fn extract_urls(text: &str) -> String {
 }
 
 /// Extract numbers from text
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn extract_numbers(text: &str) -> String {
     let num_pattern = regex::Regex::new(r"-?\d+\.?\d*").unwrap();
     num_pattern
@@ -111,7 +112,7 @@ pub fn extract_numbers(text: &str) -> String {
 }
 
 /// Extract hashtags from text
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn extract_hashtags(text: &str) -> String {
     let hashtag_pattern = regex::Regex::new(r"#\w+").unwrap();
     hashtag_pattern
@@ -122,7 +123,7 @@ pub fn extract_hashtags(text: &str) -> String {
 }
 
 /// Extract mentions from text
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn extract_mentions(text: &str) -> String {
     let mention_pattern = regex::Regex::new(r"@\w+").unwrap();
     mention_pattern
@@ -133,7 +134,7 @@ pub fn extract_mentions(text: &str) -> String {
 }
 
 /// Trim each line
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn trim_lines(text: &str) -> String {
     text.lines()
         .map(|line| line.trim())
@@ -142,7 +143,7 @@ pub fn trim_lines(text: &str) -> String {
 }
 
 /// Pad lines to same length
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn pad_lines(text: &str, width: usize, pad_char: char) -> String {
     text.lines()
         .map(|line| {
@@ -157,7 +158,7 @@ pub fn pad_lines(text: &str, width: usize, pad_char: char) -> String {
 }
 
 /// Dedent text (remove common leading whitespace)
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn dedent_text(text: &str) -> String {
     let lines: Vec<&str> = text.lines().collect();
     let min_indent = lines
@@ -181,7 +182,7 @@ pub fn dedent_text(text: &str) -> String {
 }
 
 /// Indent text
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn indent_text(text: &str, spaces: usize) -> String {
     let indent = " ".repeat(spaces);
     text.lines()
@@ -191,13 +192,13 @@ pub fn indent_text(text: &str, spaces: usize) -> String {
 }
 
 /// Replace line breaks
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn replace_line_breaks(text: &str, replacement: &str) -> String {
     text.replace('\n', replacement).replace('\r', "")
 }
 
 /// Split lines by length
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn split_lines_by_length(text: &str, max_length: usize) -> String {
     let mut result = Vec::new();
     
@@ -224,7 +225,7 @@ pub fn split_lines_by_length(text: &str, max_length: usize) -> String {
 /// Uses `DefaultHasher` seeded by `(index, text.len())`, so the same input
 /// always produces the same output.  Suitable for a text tool (reproducible),
 /// but NOT cryptographically random.
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn shuffle_lines(text: &str) -> String {
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
@@ -247,7 +248,7 @@ pub fn shuffle_lines(text: &str) -> String {
 /// Keeps first and last characters fixed; middle characters are shuffled using
 /// `DefaultHasher` seeded by `(word_index, char_index, word)`.  Same input →
 /// same output (reproducible, not cryptographically random).
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn scramble_words(text: &str) -> String {
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
@@ -281,7 +282,7 @@ pub fn scramble_words(text: &str) -> String {
 ///
 /// Uses `DefaultHasher` of the full text to choose an index, so the same input
 /// always returns the same line.  Suitable for a text tool; NOT random.
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn pick_random_line(text: &str) -> String {
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};

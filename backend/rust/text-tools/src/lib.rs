@@ -4,6 +4,7 @@
 //   validators, calculators, data converters, and specialized tools are NOT
 //   compiled to WASM yet. See: docs/PLANNING/11_TECHNOLOGY_STACK.md
 
+#[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::*;
 
 pub mod case;
@@ -32,7 +33,7 @@ pub use unicode::*;
 pub use generators::*;
 
 /// Initialize WASM module
-#[wasm_bindgen(start)]
+#[cfg_attr(feature = "wasm", wasm_bindgen(start))]
 pub fn init() {
     // Setup panic hook for better error messages
     #[cfg(feature = "console_error_panic_hook")]
@@ -40,7 +41,8 @@ pub fn init() {
 }
 
 /// Get list of all available tools
-#[wasm_bindgen]
+#[cfg(feature = "wasm")]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn get_available_tools() -> JsValue {
     let tools = vec![
         // case.rs

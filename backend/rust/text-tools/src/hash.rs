@@ -1,8 +1,9 @@
+#[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::*;
 use sha2::{Sha256, Sha512, Digest};
 
 /// Generate MD5 hash
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn md5_hash(text: &str) -> String {
     use md5::Md5;
     let mut hasher = Md5::new();
@@ -11,7 +12,7 @@ pub fn md5_hash(text: &str) -> String {
 }
 
 /// Generate SHA-256 hash
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn sha256_hash(text: &str) -> String {
     let mut hasher = Sha256::new();
     hasher.update(text.as_bytes());
@@ -19,7 +20,7 @@ pub fn sha256_hash(text: &str) -> String {
 }
 
 /// Generate SHA-512 hash
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn sha512_hash(text: &str) -> String {
     let mut hasher = Sha512::new();
     hasher.update(text.as_bytes());
@@ -27,7 +28,7 @@ pub fn sha512_hash(text: &str) -> String {
 }
 
 /// Generate UUID v4
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn generate_uuid() -> String {
     uuid::Uuid::new_v4().to_string()
 }

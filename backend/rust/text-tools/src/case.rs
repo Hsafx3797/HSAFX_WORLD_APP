@@ -1,19 +1,20 @@
+#[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::*;
 
 /// Convert text to UPPERCASE
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn uppercase(text: &str) -> String {
     text.to_uppercase()
 }
 
 /// Convert text to lowercase
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn lowercase(text: &str) -> String {
     text.to_lowercase()
 }
 
 /// Convert text to Title Case
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn title_case(text: &str) -> String {
     text.split_whitespace()
         .map(|word| {
@@ -31,7 +32,7 @@ pub fn title_case(text: &str) -> String {
 }
 
 /// Convert text to camelCase
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn camel_case(text: &str) -> String {
     let words: Vec<&str> = text
         .split(|c: char| !c.is_alphanumeric())
@@ -79,7 +80,7 @@ fn split_words(text: &str) -> Vec<String> {
 }
 
 /// Convert text to snake_case
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn snake_case(text: &str) -> String {
     split_words(text)
         .iter()
@@ -89,7 +90,7 @@ pub fn snake_case(text: &str) -> String {
 }
 
 /// Convert text to kebab-case
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn kebab_case(text: &str) -> String {
     split_words(text)
         .iter()
@@ -99,7 +100,7 @@ pub fn kebab_case(text: &str) -> String {
 }
 
 /// Convert text to CONSTANT_CASE
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn constant_case(text: &str) -> String {
     split_words(text)
         .iter()
@@ -109,7 +110,7 @@ pub fn constant_case(text: &str) -> String {
 }
 
 /// Convert text to PascalCase
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub fn pascal_case(text: &str) -> String {
     text.split(|c: char| !c.is_alphanumeric())
         .filter(|s| !s.is_empty())
