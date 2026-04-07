@@ -21,8 +21,12 @@ import {
   Hash,
   AlertTriangle,
   Trash2,
+  UserCheck,
+  UserCheck,
 } from 'lucide-react';
+import * as api from '@/lib/api';
 import { useUser, useUserMutations, useUserActivity } from '@/lib/hooks';
+import * as api from '@/lib/api';
 import type { UserActivity } from '@/lib/types';
 import {
   Card,
@@ -52,8 +56,14 @@ export default function UserDetailPage() {
   // Modal states
   const [showBanModal, setShowBanModal] = useState(false);
   const [showAdjustCoinsModal, setShowAdjustCoinsModal] = useState(false);
+  const [showImpersonateModal, setShowImpersonateModal] = useState(false);
+  const [impersonateReason, setImpersonateReason] = useState('');
+  const [impersonating, setImpersonating] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
+  const [showImpersonateModal, setShowImpersonateModal] = useState(false);
+  const [impersonateReason, setImpersonateReason] = useState('');
+  const [impersonating, setImpersonating] = useState(false);
 
   // Form states
   const [banReason, setBanReason] = useState('');
@@ -75,10 +85,42 @@ export default function UserDetailPage() {
   }, [user, mutations, refresh]);
 
   const handleResetPassword = useCallback(async () => {
-    if (!user) return;
+    if (!user)Impersonate = useCallback(async () => {
+    if (!user || !impersonateReason.trim()) return;
+    setImpersonating(true);
+    try {
+      const res = await api.startImpersonation(user.id, impersonateReason.trim());
+      if (!res.success) throw new Error(res.error?.message || 'Failed to start impersonation');
+      setShowImpersonateModal(false);
+      setImpersonateReason('');
+      window.open('/', '_blank');
+    } catch {
+      // Error handled by API response
+    } finally {
+      setImpersonating(false);
+    }
+  }, [user, impersonateReason]);
+
+  const handle return;
     await mutations.resetPassword(user.id);
     setShowResetPasswordModal(false);
   }, [user, mutations]);
+
+  const handleImpersonate = useCallback(async () => {
+    if (!user || !impersonateReason.trim()) return;
+    setImpersonating(true);
+    try {
+      const res = await api.startImpersonation(user.id, impersonateReason.trim());
+      if (!res.success) throw new Error(res.error?.message || 'Failed to start impersonation');
+      setShowImpersonateModal(false);
+      setImpersonateReason('');
+      window.open('/', '_blank');
+    } catch {
+      // Error handled by API response
+    } finally {
+      setImpersonating(false);
+    }
+  }, [user, impersonateReason]);
 
   const handleAdjustCoins = useCallback(async (totpCode: string) => {
     if (!user) return;
@@ -158,6 +200,9 @@ export default function UserDetailPage() {
           )}
           <Button variant="outline" icon={<Key className="h-4 w-4" />} onClick={() => setShowResetPasswordModal(true)}>
             Reset Password
+          </Button>
+          <Button variant="outline" icon={<UserCheck className="h-4 w-4" />} onClick={() => setShowImpersonateModal(true)}>
+            Impersonate
           </Button>
         </div>
       </div>
@@ -397,6 +442,34 @@ export default function UserDetailPage() {
         message={`This will permanently delete ${user.email}. Enter your 2FA code to confirm.`}
         loading={mutations.loading}
       />
+
+      {/* Impersonate Modal */}
+      <Modal
+        open={showImpersonateModal}
+        onClose={() => { setShowImpersonateModal(false); setImpersonateReason(''); }}
+        title="Impersonate User"
+        description={`You are about to impersonate ${user.name || user.email}. This action will be audited.`}
+      >
+        <FormGroup>
+          <Textarea
+            label="Reason (required, min 10 characters)"
+            placeholder="Enter the reason for impersonation..."
+            value={impersonateReason}
+            onChange={(e) => setImpersonateReason(e.target.value)}
+            rows={3}
+            required
+          />
+          <p className="text-xs text-muted-foreground">
+            Requires 2FA verification. Session expires after 1 hour. Write actions are restricted.
+          </p>
+          <div className="flex justify-end gap-3 pt-4">
+            <Button variant="outline" onClick={() => { setShowImpersonateModal(false); setImpersonateReason(''); }}>Cancel</Button>
+            <Button onClick={handleImpersonate} loading={impersonating} disabled={impersonateReason.trim().length < 10}>
+              Start Impersonation
+            </Button>
+          </div>
+        </FormGroup>
+      </Modal>
     </div>
   );
 }
