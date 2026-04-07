@@ -22,6 +22,7 @@ import type {
   StreakTier, ReferralConfigEntry, PlanFeature, PlanLimit,
   AnalyticsOverview, CohortRow, FunnelData, ToolUsageRow, RevenueRow, ChurnData, SystemHealth,
   AdminSetting, RateLimitConfigEntry,
+  B2bPlan, B2bSuite, B2bPlanQuota, B2bSubscription, B2bUsageRow,
 } from './types';
 import * as api from './api';
 
@@ -1324,3 +1325,259 @@ export function useSystemHealth() {
   );
   return { health: data, error, isLoading };
 }
+
+// ==================== B2B PLANS ====================
+
+export function useB2bPlans() {
+  const { data, error, isLoading, mutate: refresh } = useSWR<B2bPlan[]>(
+    '/admin/b2b/plans',
+    async () => {
+      const res = await api.getB2bPlans(1, 100);
+      if (!res.success) throw new Error(res.error?.message);
+      return (res.data as unknown as { data: B2bPlan[] }).data;
+    }
+  );
+  return { plans: data || [], error, isLoading, refresh };
+}
+
+export function useB2bPlanMutations() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const create = useCallback(async (data: Partial<B2bPlan>) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.createB2bPlan(data);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate('/admin/b2b/plans');
+      return res.data!;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to create B2B plan';
+      setError(msg);
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const update = useCallback(async (id: string, data: Partial<B2bPlan>) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.updateB2bPlan(id, data);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate('/admin/b2b/plans');
+      return res.data!;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to update B2B plan';
+      setError(msg);
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { loading, error, create, update };
+}
+
+// ==================== B2B SUITES ====================
+
+export function useB2bSuites() {
+  const { data, error, isLoading, mutate: refresh } = useSWR<B2bSuite[]>(
+    '/admin/b2b/suites',
+    async () => {
+      const res = await api.getB2bSuites(1, 100);
+      if (!res.success) throw new Error(res.error?.message);
+      return (res.data as unknown as { data: B2bSuite[] }).data;
+    }
+  );
+  return { suites: data || [], error, isLoading, refresh };
+}
+
+export function useB2bSuiteMutations() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const create = useCallback(async (data: Partial<B2bSuite>) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.createB2bSuite(data);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate('/admin/b2b/suites');
+      return res.data!;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to create B2B suite';
+      setError(msg);
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const update = useCallback(async (id: string, data: Partial<B2bSuite>) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.updateB2bSuite(id, data);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate('/admin/b2b/suites');
+      return res.data!;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to update B2B suite';
+      setError(msg);
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { loading, error, create, update };
+}
+
+// ==================== B2B QUOTAS ====================
+
+export function useB2bQuotas(planId?: string, suiteId?: string) {
+  const key = `/admin/b2b/quotas?planId=${planId || ''}&suiteId=${suiteId || ''}`;
+  const { data, error, isLoading, mutate: refresh } = useSWR<B2bPlanQuota[]>(
+    key,
+    async () => {
+      const res = await api.getB2bQuotas({ planId, suiteId, limit: 500 });
+      if (!res.success) throw new Error(res.error?.message);
+      return (res.data as unknown as { data: B2bPlanQuota[] }).data;
+    }
+  );
+  return { quotas: data || [], error, isLoading, refresh };
+}
+
+export function useB2bQuotaMutations() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const upsert = useCallback(async (data: { b2bPlanId: string; b2bSuiteId: string; monthlyLimit: number }) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.upsertB2bQuota(data);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate((key: string) => typeof key === 'string' && key.startsWith('/admin/b2b/quotas'), undefined, { revalidate: true });
+      return res.data!;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to save quota';
+      setError(msg);
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const update = useCallback(async (id: string, monthlyLimit: number) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.updateB2bQuota(id, monthlyLimit);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate((key: string) => typeof key === 'string' && key.startsWith('/admin/b2b/quotas'), undefined, { revalidate: true });
+      return res.data!;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to update quota';
+      setError(msg);
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { loading, error, upsert, update };
+}
+
+// ==================== B2B SUBSCRIPTIONS ====================
+
+export function useB2bSubscriptions(params?: { page?: number; limit?: number; status?: string; search?: string }) {
+  const key = `/admin/b2b/subscriptions?${JSON.stringify(params || {})}`;
+  const { data, error, isLoading, mutate: refresh } = useSWR<{ items: B2bSubscription[]; total: number; page: number; limit: number; totalPages: number }>(
+    key,
+    async () => {
+      const res = await api.getB2bSubscriptions(params);
+      if (!res.success) throw new Error(res.error?.message);
+      const paged = res.data as unknown as { data: B2bSubscription[]; total: number; page: number; limit: number; totalPages: number };
+      return { items: paged.data, total: paged.total, page: paged.page, limit: paged.limit, totalPages: paged.totalPages };
+    }
+  );
+  return {
+    subscriptions: data?.items || [],
+    total: data?.total ?? 0,
+    page: data?.page ?? 1,
+    totalPages: data?.totalPages ?? 1,
+    error,
+    isLoading,
+    refresh,
+  };
+}
+
+export function useB2bSubscriptionMutations() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const create = useCallback(async (data: { userId: string; b2bPlanId: string; billingCycle: string; currentPeriodStart: string; currentPeriodEnd: string; resetDayOfMonth?: number }) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.createB2bSubscription(data);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate((key: string) => typeof key === 'string' && key.startsWith('/admin/b2b/subscriptions'), undefined, { revalidate: true });
+      return res.data!;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to create subscription';
+      setError(msg);
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const update = useCallback(async (id: string, data: Partial<B2bSubscription>) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.updateB2bSubscription(id, data);
+      if (!res.success) throw new Error(res.error?.message);
+      mutate((key: string) => typeof key === 'string' && key.startsWith('/admin/b2b/subscriptions'), undefined, { revalidate: true });
+      return res.data!;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to update subscription';
+      setError(msg);
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { loading, error, create, update };
+}
+
+// ==================== B2B USAGE ====================
+
+export function useB2bUsage(params?: { userId?: string; suiteId?: string; from?: string; to?: string; page?: number; limit?: number }) {
+  const key = `/admin/b2b/usage?${JSON.stringify(params || {})}`;
+  const { data, error, isLoading, mutate: refresh } = useSWR<{ items: B2bUsageRow[]; total: number; page: number; totalPages: number }>(
+    key,
+    async () => {
+      const res = await api.getB2bUsage(params);
+      if (!res.success) throw new Error(res.error?.message);
+      const paged = res.data as unknown as { data: B2bUsageRow[]; total: number; page: number; limit: number; totalPages: number };
+      return { items: paged.data, total: paged.total, page: paged.page, totalPages: paged.totalPages };
+    }
+  );
+  return {
+    usage: data?.items || [],
+    total: data?.total ?? 0,
+    page: data?.page ?? 1,
+    totalPages: data?.totalPages ?? 1,
+    error,
+    isLoading,
+    refresh,
+  };
+}
+

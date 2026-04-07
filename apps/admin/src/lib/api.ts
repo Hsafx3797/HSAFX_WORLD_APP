@@ -18,6 +18,7 @@ import type {
   StreakTier, ReferralConfigEntry, PlanFeature, PlanLimit,
   AnalyticsOverview, CohortRow, FunnelData, ToolUsageRow, RevenueRow, ChurnData, SystemHealth,
   AdminSetting, RateLimitConfigEntry,
+  B2bPlan, B2bSuite, B2bPlanQuota, B2bSubscription, B2bUsageRow,
 } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api/admin';
@@ -608,6 +609,85 @@ export async function upsertRateLimitConfig(data: Partial<RateLimitConfigEntry>)
 }
 
 // ==================== ANALYTICS ====================
+
+// ==================== B2B PLANS ====================
+
+export async function getB2bPlans(page = 1, limit = 50): Promise<ApiResponse<PaginatedResponse<B2bPlan>>> {
+  return fetchApi(`/b2b/plans?page=${page}&limit=${limit}`);
+}
+
+export async function createB2bPlan(data: Partial<B2bPlan>): Promise<ApiResponse<B2bPlan>> {
+  return fetchApi('/b2b/plans', { method: 'POST', body: JSON.stringify(data) });
+}
+
+export async function updateB2bPlan(id: string, data: Partial<B2bPlan>): Promise<ApiResponse<B2bPlan>> {
+  return fetchApi('/b2b/plans', { method: 'PATCH', body: JSON.stringify({ id, ...data }) });
+}
+
+// ==================== B2B SUITES ====================
+
+export async function getB2bSuites(page = 1, limit = 50): Promise<ApiResponse<PaginatedResponse<B2bSuite>>> {
+  return fetchApi(`/b2b/suites?page=${page}&limit=${limit}`);
+}
+
+export async function createB2bSuite(data: Partial<B2bSuite>): Promise<ApiResponse<B2bSuite>> {
+  return fetchApi('/b2b/suites', { method: 'POST', body: JSON.stringify(data) });
+}
+
+export async function updateB2bSuite(id: string, data: Partial<B2bSuite>): Promise<ApiResponse<B2bSuite>> {
+  return fetchApi('/b2b/suites', { method: 'PATCH', body: JSON.stringify({ id, ...data }) });
+}
+
+// ==================== B2B QUOTAS ====================
+
+export async function getB2bQuotas(params?: { planId?: string; suiteId?: string; page?: number; limit?: number }): Promise<ApiResponse<PaginatedResponse<B2bPlanQuota>>> {
+  const sp = new URLSearchParams();
+  if (params?.planId) sp.set('planId', params.planId);
+  if (params?.suiteId) sp.set('suiteId', params.suiteId);
+  sp.set('page', String(params?.page ?? 1));
+  sp.set('limit', String(params?.limit ?? 100));
+  return fetchApi(`/b2b/quotas?${sp.toString()}`);
+}
+
+export async function upsertB2bQuota(data: { b2bPlanId: string; b2bSuiteId: string; monthlyLimit: number }): Promise<ApiResponse<B2bPlanQuota>> {
+  return fetchApi('/b2b/quotas', { method: 'POST', body: JSON.stringify(data) });
+}
+
+export async function updateB2bQuota(id: string, monthlyLimit: number): Promise<ApiResponse<B2bPlanQuota>> {
+  return fetchApi('/b2b/quotas', { method: 'PATCH', body: JSON.stringify({ id, monthlyLimit }) });
+}
+
+// ==================== B2B SUBSCRIPTIONS ====================
+
+export async function getB2bSubscriptions(params?: { page?: number; limit?: number; status?: string; search?: string }): Promise<ApiResponse<PaginatedResponse<B2bSubscription>>> {
+  const sp = new URLSearchParams();
+  sp.set('page', String(params?.page ?? 1));
+  sp.set('limit', String(params?.limit ?? 20));
+  if (params?.status) sp.set('status', params.status);
+  if (params?.search) sp.set('search', params.search);
+  return fetchApi(`/b2b/subscriptions?${sp.toString()}`);
+}
+
+export async function createB2bSubscription(data: { userId: string; b2bPlanId: string; billingCycle: string; currentPeriodStart: string; currentPeriodEnd: string; resetDayOfMonth?: number }): Promise<ApiResponse<B2bSubscription>> {
+  return fetchApi('/b2b/subscriptions', { method: 'POST', body: JSON.stringify(data) });
+}
+
+export async function updateB2bSubscription(id: string, data: Partial<B2bSubscription>): Promise<ApiResponse<B2bSubscription>> {
+  return fetchApi('/b2b/subscriptions', { method: 'PATCH', body: JSON.stringify({ id, ...data }) });
+}
+
+// ==================== B2B USAGE ====================
+
+export async function getB2bUsage(params?: { userId?: string; suiteId?: string; from?: string; to?: string; page?: number; limit?: number }): Promise<ApiResponse<PaginatedResponse<B2bUsageRow>>> {
+  const sp = new URLSearchParams();
+  if (params?.userId) sp.set('userId', params.userId);
+  if (params?.suiteId) sp.set('suiteId', params.suiteId);
+  if (params?.from) sp.set('from', params.from);
+  if (params?.to) sp.set('to', params.to);
+  sp.set('page', String(params?.page ?? 1));
+  sp.set('limit', String(params?.limit ?? 50));
+  return fetchApi(`/b2b/usage?${sp.toString()}`);
+}
 
 export async function getAnalyticsOverview(startDate: string, endDate: string): Promise<ApiResponse<AnalyticsOverview>> {
   return fetchApi(`/analytics/overview?startDate=${startDate}&endDate=${endDate}`);

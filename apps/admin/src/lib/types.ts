@@ -596,6 +596,81 @@ export interface AdminSetting {
   updatedAt: string;
 }
 
+// ==================== B2B ====================
+
+export interface B2bPlan {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+  priceMonthlyCents?: number | null;
+  priceYearlyCents?: number | null;
+  isActive: boolean;
+  metadata?: Record<string, unknown>;
+  quotas?: B2bPlanQuota[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface B2bSuite {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string | null;
+  isActive: boolean;
+  sortOrder: number;
+  categories?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface B2bPlanQuota {
+  id: string;
+  b2bPlanId: string;
+  planName?: string;
+  planSlug?: string;
+  b2bSuiteId: string;
+  suiteName?: string;
+  suiteSlug?: string;
+  monthlyLimit: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface B2bSubscription {
+  id: string;
+  userId: string;
+  userEmail: string;
+  userName: string;
+  b2bPlanId: string;
+  planName: string;
+  planSlug: string;
+  status: 'active' | 'canceled' | 'expired' | 'past_due' | 'trialing';
+  billingCycle: 'monthly' | 'yearly';
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  resetDayOfMonth: number;
+  cancelAtPeriodEnd: boolean;
+  canceledAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface B2bUsageRow {
+  id: string;
+  userId: string;
+  userEmail: string;
+  userName: string;
+  b2bSuiteId: string;
+  suiteName: string;
+  suiteSlug: string;
+  periodStart: string;
+  periodEnd: string;
+  usageCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ==================== ANALYTICS ====================
 
 export interface AnalyticsOverview {
