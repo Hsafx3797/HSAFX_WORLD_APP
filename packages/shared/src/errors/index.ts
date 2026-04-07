@@ -170,6 +170,10 @@ export const ApiErrorCode = {
   JOB_NOT_COMPLETE: 'J002',
   JOB_FAILED: 'J003',
 
+  // Batch (J0xx extended)
+  BATCH_TOO_LARGE: 'J004',
+  BATCH_EMPTY: 'J005',
+
   // Account (U0xx)
   USER_NOT_FOUND: 'U001',
 
