@@ -100,10 +100,23 @@ export const ENGINE_TOOL_CLASS: Record<string, string> = {
 };
 
 /**
- * Engine minimum tier requirements. Currently all engines are free (empty map).
- * To gate an engine behind a plan, add e.g. { 'schema': 'pro' }.
+ * Engine minimum tier requirements.
+ * Engines not listed here are accessible to all tiers (including free).
+ * Media engines and advanced data engines require 'pro' tier.
  */
-export const ENGINE_MIN_TIER: Record<string, UserPlan> = {};
+export const ENGINE_MIN_TIER: Record<string, UserPlan> = {
+  // Media engines — pro tier required
+  image: 'pro',
+  video: 'pro',
+  audio: 'pro',
+  pdf: 'pro',
+  document: 'pro',
+  archive: 'pro',
+  font: 'pro',
+  // Advanced data engines — pro tier required
+  schema: 'pro',
+  diff: 'pro',
+};
 
 // ─── Engine → category (reverse mapping) ──────────────────────
 
