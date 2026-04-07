@@ -113,6 +113,16 @@ export async function POST(request: NextRequest) {
       return adminErrorResponse('NOT_FOUND', 'User not found', 400);
     }
 
+    // Check for existing active subscription
+    const [existing] = await db
+      .select({ id: b2bSubscriptions.id })
+      .from(b2bSubscriptions)
+      .where(and(eq(b2bSubscriptions.userId, userId), eq(b2bSubscriptions.status, 'active')))
+      .limit(1);
+    if (existing) {
+      return adminErrorResponse('CONFLICT', 'User already has an active subscription. Deactivate existing first.', 409);
+    }
+
     const [newSub] = await db
       .insert(b2bSubscriptions)
       .values({
@@ -176,6 +186,31 @@ export async function PATCH(request: NextRequest) {
       const [planExists] = await db.select({ id: b2bPlans.id }).from(b2bPlans).where(eq(b2bPlans.id, updates.b2bPlanId)).limit(1);
       if (!planExists) {
         return adminErrorResponse('NOT_FOUND', 'B2B plan not found', 400);
+      }
+    }
+
+    // If reactivating, ensure no other active subscription exists for this user
+    if (updates.status === 'active') {
+      const [current] = await db
+        .select({ userId: b2bSubscriptions.userId })
+        .from(b2bSubscriptions)
+        .where(eq(b2bSubscriptions.id, id))
+        .limit(1);
+      if (current) {
+        const [existing] = await db
+          .select({ id: b2bSubscriptions.id })
+          .from(b2bSubscriptions)
+          .where(
+            and(
+              eq(b2bSubscriptions.userId, current.userId),
+              eq(b2bSubscriptions.status, 'active'),
+              sql`${b2bSubscriptions.id} != ${id}`,
+            ),
+          )
+          .limit(1);
+        if (existing) {
+          return adminErrorResponse('CONFLICT', 'User already has an active subscription. Deactivate existing first.', 409);
+        }
       }
     }
 
