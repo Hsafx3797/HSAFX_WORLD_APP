@@ -375,7 +375,7 @@ export const openApiSpec = {
         summary: 'Execute an engine',
         operationId: 'executeEngine',
         tags: ['Engines'],
-        description: 'Submit input and options to one of 28 engines. Returns a job ID for async result retrieval.',
+        description: 'Submit input and options to one of 30 engines. Returns a job ID for async result retrieval.',
         parameters: [
           {
             name: 'name',

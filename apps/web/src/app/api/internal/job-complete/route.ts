@@ -17,6 +17,7 @@ import { confirmReservation, releaseReservation } from '@/server/limits/coin-ser
 import { incrementB2bUsage } from '@/server/limits/b2b-quota-service';
 import { dispatchJobWebhooks } from '@/server/webhooks/dispatch';
 import { reportStripeUsage } from '@/server/billing/stripe-usage';
+import { redis } from '@/lib/redis';
 import { createLogger } from '@hsafx/shared/logger';
 
 const log = createLogger('job-complete');
@@ -121,9 +122,22 @@ export async function POST(request: NextRequest) {
       // Billing reconciliation — B2B (ops increment) vs B2C (coin confirmation)
       if (isB2b && b2bSuiteId && existingJob?.userId) {
         // B2B: increment usage count (SUCCESS-only counting)
-        await incrementB2bUsage(existingJob.userId, b2bSuiteId).catch((err) =>
-          log.error('Failed to increment B2B usage', { userId: existingJob.userId, suiteId: b2bSuiteId, error: err }),
-        );
+        try {
+          await incrementB2bUsage(existingJob.userId, b2bSuiteId);
+        } catch (err) {
+          log.error('Failed to increment B2B usage — flagging for reconciliation', {
+            userId: existingJob.userId,
+            suiteId: b2bSuiteId,
+            jobId: body.jobId,
+            error: err,
+          });
+          // Flag for reconciliation so ops that ran aren't lost from billing
+          redis.set(
+            `b2b:usage_failed:${body.jobId}`,
+            JSON.stringify({ userId: existingJob.userId, suiteId: b2bSuiteId, ts: Date.now() }),
+            { ex: 7 * 24 * 60 * 60 }, // 7 day TTL
+          ).catch(() => {});
+        }
       } else {
         // B2C: confirm coin reservation (coins permanently deducted)
         if (reservationId) {

@@ -197,13 +197,12 @@ def _generate_cheque_pdf(data: dict[str, Any]) -> bytes:
     c.setLineWidth(1.5)
     c.roundRect(box_x, box_y, 135, 30, 3, stroke=1, fill=1)
 
-    # Format amount
-    try:
-        import locale
-        locale.setlocale(locale.LC_ALL, "")
-        formatted = locale.currency(amount, grouping=True)
-    except Exception:
-        formatted = f"${amount:,.2f}"
+    # Format amount (thread-safe, no locale)
+    currency_symbol = {
+        "USD": "$", "GBP": "£", "EUR": "€", "SAR": "﷼",
+        "AED": "د.إ", "PKR": "₨",
+    }.get(currency, "$")
+    formatted = f"{currency_symbol}{amount:,.2f}"
 
     c.setFont("Helvetica-Bold", 13)
     c.setFillColor(text_col)

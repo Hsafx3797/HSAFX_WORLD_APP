@@ -28,7 +28,6 @@ logger = logging.getLogger(__name__)
 
 # Lazy imports — not all deps available in every environment
 _pypdf = None
-_reportlab = None
 
 
 def _get_pypdf():
@@ -36,13 +35,6 @@ def _get_pypdf():
     if _pypdf is None:
         import pypdf as _pypdf  # type: ignore
     return _pypdf
-
-
-def _get_reportlab():
-    global _reportlab
-    if _reportlab is None:
-        pass  # type: ignore
-    return _reportlab
 
 
 class PdfHandler:
@@ -291,9 +283,14 @@ class PdfHandler:
             for idx, src_page in enumerate(chunk):
                 col = idx % cols
                 row = idx // cols
-                _tx = col * cell_w
-                _ty = ph - (row + 1) * cell_h
-                src_page.scale_to(float(cell_w), float(cell_h))
+                tx = col * cell_w
+                ty = ph - (row + 1) * cell_h
+                # Scale page to cell size then translate to grid position
+                sx = cell_w / float(src_page.mediabox.width)
+                sy = cell_h / float(src_page.mediabox.height)
+                src_page.add_transformation(
+                    pypdf.Transformation().scale(sx, sy).translate(tx, ty)
+                )
                 new_page.merge_page(src_page)
             writer.add_page(new_page)
 
@@ -753,15 +750,13 @@ class PdfHandler:
         pdfa_def = out_dir / "PDFA_def.ps"
         pdfa_def.write_text(
             """%!
-[/Title (Converted)
- /DOCINFO pdfmark
-[{
-  /OutputCondition (sRGB)
+[ /Title (Converted)
+  /DOCINFO pdfmark
+[ /OutputCondition (sRGB)
   /OutputConditionIdentifier (Custom)
   /RegistryName (http://www.color.org)
   /Info (sRGB IEC61966-2.1)
-  /OutputIntents [ currentdict ] pdfmark
-}
+  /OutputIntents pdfmark
 """,
         )
 

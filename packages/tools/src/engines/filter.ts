@@ -20,7 +20,7 @@ const TARGETS: Record<string, RegExp> = {
   'symbols':          /[^\w\s]/g,
   'punctuation':      /[.,;:!?'"(){}[\]]/g,
   'empty-lines':      /^\s*\n/gm,
-  'leading-zeros':    /\b0+(\d)/g,
+  'leading-zeros':    /\b0+(?=\d)/g,
   'trailing-spaces':  /[ \t]+$/gm,
   'html-tags':        /<[^>]+>/g,
   'emails':           /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g,

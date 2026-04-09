@@ -1,6 +1,6 @@
 /**
  * GET /api/v1/engines
- * List all 28 engines with their option schemas.
+ * List all 30 engines with their option schemas.
  * Requires scope: tools:read
  *
  * Returns engine names, descriptions, runtime backends, option schemas,
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
   const scopeErr = requireScope(ctx, 'tools:read');
   if (scopeErr) return scopeErr;
 
-  // 3. Build engine list from ALL_ENGINE_NAMES (28 engines)
+  // 3. Build engine list from ALL_ENGINE_NAMES (30 engines)
   const engines = ALL_ENGINE_NAMES.map((name) => {
     const runtime = ENGINE_RUNTIME[name]!;
     const nodeEngine = runtime === 'node' ? getEngine(name) : null;

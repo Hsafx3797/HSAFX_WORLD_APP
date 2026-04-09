@@ -1,37 +1,56 @@
-# 30 — Tools Catalog (Compacted)
+# 30 — Tools Catalog
 
-> Original: 446 numbered tool entries. Registry (`packages/tool-definitions/src/registry/`) is source of truth with **454 tool IDs**.
+> **30 engines**, **~454 tool operations**, ALL server-side.
+> Updated: April 2026.
 
-## Registry Totals (from `index.ts`)
+## Engine Catalog
 
-| Category    | Count   | Registry File          | Engine Coverage                  |
-| ----------- | ------- | ---------------------- | -------------------------------- |
-| Text        | 191     | `text-tools.ts`        | ✅ 191/191 mapped                |
-| Data        | 106     | `data-tools.ts`        | ✅ Engines done, presets partial |
-| Media       | 83      | `media-tools.ts`       | Server-side (FastAPI)            |
-| Generator   | 38      | `generator-tools.ts`   | Engine done, presets needed      |
-| Calculator  | 9       | `calculator-tools.ts`  | Engine done, presets needed      |
-| Converter   | 23      | `converter-tools.ts`   | Engine done, presets needed      |
-| Specialized | 4       | `specialized-tools.ts` | Custom UI/logic                  |
-| **Total**   | **454** |                        |                                  |
+| #  | Engine          | Backend  | Operations | Description                          |
+|----|-----------------|----------|-----------|--------------------------------------|
+| 1  | `case`          | Rust     | 68        | Case conversions (snake, camel, etc.)|
+| 2  | `wrap`          | Rust     | 50+       | Text wrapping (quotes, brackets)     |
+| 3  | `filter`        | Rust     | 15+       | Remove/extract/keep text patterns    |
+| 4  | `transform`     | Rust     | 24        | Reverse/sort/shuffle/pad/join        |
+| 5  | `encode`        | Rust     | ~70       | Base64/hex/URL/ROT13/morse           |
+| 6  | `hash`          | Rust     | 10+       | SHA/MD5/CRC/HMAC/checksum           |
+| 7  | `counter`       | Rust     | 5         | Word/char/line/frequency counts      |
+| 8  | `unicode`       | Rust     | 10+       | Zalgo, fullwidth, math transforms    |
+| 9  | `generate-data` | Rust     | 20+       | UUID/password/nanoid/person           |
+| 10 | `comment`       | Node.js  | 37+       | Add/remove comments (37 languages)   |
+| 11 | `markup`        | Node.js  | 20+       | HTML/MD/BBCode/LaTeX tag wrapping    |
+| 12 | `convert`       | Node.js  | 30+       | JSON↔YAML↔XML↔CSV↔TOML converters   |
+| 13 | `format`        | Node.js  | 15+       | Format/minify SQL/JSON/CSS/GraphQL   |
+| 14 | `schema`        | Node.js  | 10+       | JSON Schema↔TypeScript↔Zod↔Joi      |
+| 15 | `diff`          | Node.js  | 5+        | Text/schema/OpenAPI diff             |
+| 16 | `api`           | Node.js  | 10+       | curl parse, JWT decode, URL parse    |
+| 17 | `generate-web`  | Node.js  | 20+       | CSS generators, QR, SEO, lorem       |
+| 18 | `validate`      | Node.js  | 39        | Format validators (email, UUID, etc.)|
+| 19 | `calculate`     | Node.js  | 9         | Expression, financial, health calcs  |
+| 20 | `unit`          | Node.js  | 23        | Unit conversions (length, weight)    |
+| 21 | `image`         | FastAPI  | 19        | Resize, crop, convert, watermark     |
+| 22 | `video`         | FastAPI  | 12        | Convert, trim, extract audio         |
+| 23 | `audio`         | FastAPI  | 12        | Convert, normalize, split            |
+| 24 | `pdf`           | FastAPI  | 27        | Merge, split, compress, OCR          |
+| 25 | `document`      | FastAPI  | 15        | DOCX↔PDF, EPUB, markdown             |
+| 26 | `archive`       | FastAPI  | 8         | Zip, tar, 7z, extract               |
+| 27 | `file`          | FastAPI  | 5         | Metadata extraction                  |
+| 28 | `font`          | FastAPI  | 4         | Convert, subset, WOFF2               |
+| 29 | `tracking`      | FastAPI  | 3         | Container/vessel/flight tracking     |
+| 30 | `cheque`        | FastAPI  | 1         | Multi-currency cheque generation     |
 
-## Catalog Categories (by original numbering)
+## Backend Distribution
 
-| Range   | Category                                                                                                                                                                                                                | Count |
-| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
-| 001-050 | Text case converters                                                                                                                                                                                                    | 50    |
-| 051-097 | Text wrappers/formatters                                                                                                                                                                                                | 47    |
-| 098-120 | Unicode/fun text transforms                                                                                                                                                                                             | 23    |
-| 121-161 | Encoders/decoders/ciphers                                                                                                                                                                                               | 41    |
-| 162-191 | Text manipulation/cleanup                                                                                                                                                                                               | 30    |
-| 192-297 | Data format converters                                                                                                                                                                                                  | 106   |
-| 298-379 | Media tools (image/video/audio)                                                                                                                                                                                         | 82    |
-| 380-414 | Generators (UUID, password, lorem, QR, color, SEO, CSS, etc.)                                                                                                                                                           | 35    |
-| 415-419 | Calculators (BMI, GPA, Islamic inheritance, Zakat, timezone)                                                                                                                                                            | 5     |
-| 420-442 | Unit converters (length, weight, temp, area, volume, time, speed, energy, pressure, power, frequency, data storage, electrical, angle, force, torque, fuel, radiation, density, illumination, magnetic, cooking, paper) | 23    |
-| 443-446 | Specialized (DB visualization, file tree, cheque generator, seaport tracker)                                                                                                                                            | 4     |
+| Backend  | Count | Protocol            |
+|----------|-------|---------------------|
+| Rust     | 9     | HTTP X-Internal-Secret |
+| Node.js  | 11    | Direct import       |
+| FastAPI  | 10    | HTTP X-Internal-Secret |
 
-## Key Notes
+## Notes
+
+- `packages/tool-definitions` registry is DELETED — do not reference
+- All execution via `POST /api/v1/engine/{name}` with `{ input, options }`
+- No presets, no slugs, no category routes
 
 - **Doc numbered 446, registry has 454** — some tools were added/split during implementation beyond original catalog
 - All tool metadata (slug, name, description, category, keywords, engine mapping) lives in registry code

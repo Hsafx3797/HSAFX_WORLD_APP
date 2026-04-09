@@ -255,7 +255,7 @@ const BACON_MAP: Record<string, string> = {
   A:'AAAAA',B:'AAAAB',C:'AAABA',D:'AAABB',E:'AABAA',F:'AABAB',G:'AABBA',H:'AABBB',
   I:'ABAAA',J:'ABAAB',K:'ABABA',L:'ABABB',M:'ABBAA',N:'ABBAB',O:'ABBBA',P:'ABBBB',
   Q:'BAAAA',R:'BAAAB',S:'BAABA',T:'BAABB',U:'BABAA',V:'BABAB',W:'BABBA',X:'BABBB',
-  Y:'BAAAA',Z:'BAAAB',
+  Y:'BBAAA',Z:'BBAAB',
 };
 const BACON_REVERSE = Object.fromEntries(Object.entries(BACON_MAP).map(([k, v]) => [v, k]));
 function baconEncode(input: string): string {

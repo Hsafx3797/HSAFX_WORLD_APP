@@ -11,7 +11,7 @@
 
 import type { UserPlan } from '@hsafx/shared/permissions';
 
-// ─── Engine runtime map (28 engines → 3 backends) ────────────
+// ─── Engine runtime map (30 engines → 3 backends) ────────────
 
 export type EngineRuntime = 'rust' | 'node' | 'python';
 
@@ -119,6 +119,7 @@ export const ENGINE_MIN_TIER: Record<string, UserPlan> = {
   document: 'pro',
   archive: 'pro',
   font: 'pro',
+  file: 'pro',
   // Advanced data engines — pro tier required
   schema: 'pro',
   diff: 'pro',

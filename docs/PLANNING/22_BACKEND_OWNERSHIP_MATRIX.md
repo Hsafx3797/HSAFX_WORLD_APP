@@ -1,6 +1,10 @@
 # 22 — Backend Ownership Matrix
 
 > Compacted. Code samples removed. Only rules, matrices, and flow descriptions kept.
+> ⚠️ **Note (April 2026)**: Originally wrote "2 services" but now 3: Next.js + FastAPI + Rust HTTP service.
+> Rust service handles 9 text/data engines (case, wrap, filter, transform, encode, hash, counter, unicode, generate-data).
+> FastAPI handles 10 media engines (image, video, audio, pdf, document, archive, file, font, tracking, cheque).
+> The core principle (state → Next.js, compute → Rust/FastAPI) still holds.
 
 ---
 

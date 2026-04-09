@@ -466,14 +466,14 @@ describe('POST /api/v1/engine/{name}', () => {
       });
     });
 
-    it('resolves suite using engine category', async () => {
+    it('resolves suite using engine name', async () => {
       const job = createMockJob({ id: 'job_suite_1' });
       mockCreateJob.mockResolvedValue(job);
 
       await callPOST('case', { input: 'hello' });
 
-      // 'case' category is 'text', toolId is 'engine:case'
-      expect(mockResolveB2bSuite).toHaveBeenCalledWith('text', 'engine:case');
+      // Suite is resolved by engine name (not category), toolId is 'engine:case'
+      expect(mockResolveB2bSuite).toHaveBeenCalledWith('case', 'engine:case');
     });
 
     it('handles B2bQuotaExhaustedError thrown by checkB2bQuota', async () => {

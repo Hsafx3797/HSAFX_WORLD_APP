@@ -29,6 +29,7 @@ const STYLES: Record<string, { left: string; right: string }> = {
   'spoiler':          { left: '||',  right: '||' },
   'blockquote-prefix': { left: '> ', right: '' },
   'hashtag':          { left: '#',   right: '' },
+  'line-numbers':     { left: '',    right: '' }, // special: handled in execute()
 };
 
 // ---------------------------------------------------------------------------

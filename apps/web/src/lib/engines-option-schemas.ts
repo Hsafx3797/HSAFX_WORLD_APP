@@ -1,5 +1,5 @@
 /**
- * ENGINE_OPTION_SCHEMAS — runtime-available option documentation for all 28 engines.
+ * ENGINE_OPTION_SCHEMAS — runtime-available option documentation for all 30 engines.
  *
  * Hand-maintained because TypeScript interfaces aren't available at runtime.
  * Used by GET /api/v1/engines and GET /api/v1/engine/{name}/schema.
@@ -198,5 +198,22 @@ export const ENGINE_OPTION_SCHEMAS: Record<string, object> = {
   },
   font: {
     operation: { type: 'string', required: true, examples: ['to-ttf', 'to-otf', 'to-woff', 'to-woff2'] },
+  },
+  tracking: {
+    operation: { type: 'string', required: true, examples: ['container-track', 'vessel-schedule', 'bulk-track', 'allinone-track', 'list-terminals'] },
+    terminal: { type: 'string', description: 'Terminal code to search', examples: ['QICT', 'KICT', 'SAPT'] },
+    nocache: { type: 'boolean', description: 'Bypass cache and fetch fresh data' },
+  },
+  cheque: {
+    operation: { type: 'string', required: true, enum: ['generate', 'validate'] },
+    payeeName: { type: 'string', required: true, description: 'Name of the payee' },
+    amount: { type: 'number', required: true, description: 'Cheque amount (max 999,999,999.99)' },
+    date: { type: 'string', required: true, description: 'Cheque date', examples: ['2025-01-15'] },
+    bankName: { type: 'string', description: 'Name of the issuing bank' },
+    accountNumber: { type: 'string', description: 'Bank account number' },
+    chequeNumber: { type: 'string', description: 'Cheque serial number' },
+    currency: { type: 'string', enum: ['USD', 'GBP', 'EUR', 'SAR', 'AED', 'PKR'], description: 'Currency code' },
+    routingNumber: { type: 'string', description: 'Bank routing number' },
+    memo: { type: 'string', description: 'Memo line text' },
   },
 };

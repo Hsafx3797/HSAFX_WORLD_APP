@@ -180,9 +180,9 @@ export async function POST(
       );
     }
 
-    const engineCategory = ENGINE_TO_CATEGORY[engineName] ?? 'text';
-    const suite = await resolveB2bSuite(engineCategory, billingToolId);
+    const suite = await resolveB2bSuite(engineName, billingToolId);
     if (!suite) {
+      const engineCategory = ENGINE_TO_CATEGORY[engineName] ?? 'text';
       return apiErrorResponse(
         ApiErrorCode.SUITE_NOT_AVAILABLE,
         `No B2B suite configured for engine '${engineName}' (category: ${engineCategory})`,

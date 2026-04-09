@@ -11,7 +11,7 @@
 - **Apps**: `apps/web` (Next.js — B2B API server), `apps/admin` (Next.js admin panel)
 - **Backend**: `backend/fastapi` (Python — media engines), `backend/rust` (Rust — text/data engine service)
 - **Packages**: `packages/tools` (engine implementations), `packages/ui`, `packages/shared`, `packages/schemas`, `packages/db`, `packages/api`, `packages/theme`
-- **Deleted/Deprecated**: `packages/tool-definitions` (being removed — presets are dead)
+- **Deleted**: `packages/tool-definitions` (removed — presets are dead), `executor.ts` (removed)
 
 ---
 
@@ -21,7 +21,7 @@
 
 ### What It Is
 
-**28 parameterized engines** — ALL server-side. No presets. No tool IDs. Direct parameter calls only.
+**30 parameterized engines** — ALL server-side. No presets. No tool IDs. Direct parameter calls only.
 Each engine exposes `execute(input, options)` and runs on one of 3 server backends.
 
 ### Execution Backends (ALL Server-Side)
@@ -30,11 +30,11 @@ Each engine exposes `execute(input, options)` and runs on one of 3 server backen
 |----------|---------------|---------------|---------|
 | Rust     | Separate HTTP | `X-Internal-Secret` | 9 engines: case, wrap, filter, transform, encode, hash, counter, unicode, generate-data |
 | Node.js  | Next.js process | Direct import | 11 engines: comment, markup, convert, format, schema, diff, api, generate-web, validate, calculate, unit |
-| FastAPI  | Separate HTTP | `X-Internal-Secret` | 8 engines: image, video, audio, pdf, document, archive, file, font |
+| FastAPI  | Separate HTTP | `X-Internal-Secret` | 10 engines: image, video, audio, pdf, document, archive, file, font, tracking, cheque |
 
 **NOTHING runs client-side. The API IS the product.**
 
-### Engine List (28 Total)
+### Engine List (30 Total)
 
 | #  | Engine          | Backend  | What It Does                          |
 |----|-----------------|----------|---------------------------------------|
@@ -66,6 +66,8 @@ Each engine exposes `execute(input, options)` and runs on one of 3 server backen
 | 26 | `archive`       | FastAPI  | Zip, tar, 7z, extract (8 ops)         |
 | 27 | `file`          | FastAPI  | Metadata extraction (5 ops)           |
 | 28 | `font`          | FastAPI  | Convert, subset, WOFF2 (4 ops)        |
+| 29 | `tracking`      | FastAPI  | Container/vessel/flight tracking      |
+| 30 | `cheque`        | FastAPI  | Multi-currency cheque generation      |
 
 ### How It Works
 
@@ -88,10 +90,10 @@ POST http://fastapi:8000/execute/image
 
 - **ALL tools go through engines, ALL engines run server-side**
 - Text/data engines → Rust service (9) or Node.js (11)
-- Media engines → FastAPI (8)
+- Media/specialized engines → FastAPI (10)
 - **NO presets** — callers pass engine name + options directly
-- **NO tool IDs** — tool-definitions package is being deleted
-- **NO executor.ts** — being deleted, was the old switch/case dispatch
+- **NO tool IDs** — tool-definitions package is deleted
+- **NO executor.ts** — deleted, was the old switch/case dispatch
 - **NO client-side execution** — the API is the product, customers pay for server compute
 
 ---
@@ -101,24 +103,26 @@ POST http://fastapi:8000/execute/image
 ### Target API (Being Built)
 
 ```
-POST /api/v1/engine/{name}          ← Execute any of 28 engines
+POST /api/v1/engine/{name}          ← Execute any of 30 engines
   Body: { input, options }
   → authenticateApiKey() + requireScope('tools:execute')
   → resolve engine runtime (rust/node/python)
   → B2B billing: checkB2bQuota() → engine.execute() → incrementB2bUsage()
   → 202 + jobId
 
-GET /api/v1/engines                 ← List all 28 engines + option schemas
+GET /api/v1/engines                 ← List all 30 engines + option schemas
 GET /api/v1/engine/{name}/schema    ← Option schema for one engine
 ```
 
-### Being Deleted
+### Deleted (All Gone)
 
-- 6 category routes (`/text`, `/data`, `/generate`, `/validate`, `/calculate`, `/convert`)
-- Category route handler (`category-route-handler.ts`)
-- 4 legacy tool routes (`/tools/*`)
-- Old generic engine execute (`/engine/execute`)
-- Old engine list (`/engine/list`)
+- 6 category routes (`/text`, `/data`, `/generate`, `/validate`, `/calculate`, `/convert`) — deleted
+- Category route handler (`category-route-handler.ts`) — deleted
+- 4 legacy tool routes (`/tools/*`) — deleted
+- Old generic engine execute (`/engine/execute`) — deleted
+- Old engine list (`/engine/list`) — deleted
+- `executor.ts` — deleted
+- `packages/tool-definitions` — deleted
 
 ---
 
@@ -149,8 +153,8 @@ apps/web/src/server/limits/
   b2b-quota-service.ts ← B2B suite quota enforcement
 
 backend/fastapi/src/
-  handlers/          ← 9 handler classes (ImageConverter, VideoConverter, etc.)
-  routes/engine.py   ← NEW: POST /execute/{engine} (unified media engine route)
+  handlers/          ← 10 handler classes (ImageConverter, VideoConverter, TrackingHandler, ChequeHandler, etc.)
+  routes/engine.py   ← POST /execute/{engine} (unified media engine route)
 
 backend/rust/
   text-tools/        ← Existing ~170 pure functions (being refactored from WASM to native)
@@ -204,7 +208,7 @@ pnpm turbo build
 
 - Don't say "client-side" — ALL engines are server-side
 - Don't add presets or tool IDs — they're dead
-- Don't modify executor.ts — it's being deleted
-- Don't add category routes — they're being deleted
-- Don't import from `@hsafx/tool-definitions` — package is being deleted
-- Don't add B2C billing logic — B2B only
+- Don't reference executor.ts — it's deleted
+- Don't add category routes — they're deleted  
+- Don't import from `@hsafx/tool-definitions` — package is deleted
+- Don't add B2C coin billing for engine execution — B2B ops billing only

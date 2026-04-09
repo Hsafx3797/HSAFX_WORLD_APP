@@ -243,9 +243,23 @@ class VideoConverter:
         fmt = opts.get("outputFormat", "mp4")
         out_path = out_dir / f"speed.{fmt}"
 
-        # Video speed: 1/speed, Audio speed: atempo
+        # Video speed: 1/speed, Audio speed: atempo (chain for values outside 0.5-2.0)
         vf = f"setpts={1/speed}*PTS"
-        af = f"atempo={speed}" if 0.5 <= speed <= 2.0 else f"atempo={min(speed, 2.0)}"
+
+        # Build atempo chain: FFmpeg atempo only accepts 0.5-2.0 range
+        atempo_parts: list[str] = []
+        remaining = speed
+        if remaining > 1.0:
+            while remaining > 2.0:
+                atempo_parts.append("atempo=2.0")
+                remaining /= 2.0
+            atempo_parts.append(f"atempo={remaining}")
+        else:
+            while remaining < 0.5:
+                atempo_parts.append("atempo=0.5")
+                remaining /= 0.5
+            atempo_parts.append(f"atempo={remaining}")
+        af = ",".join(atempo_parts)
 
         cmd = [
             FFMPEG, "-y", "-i", str(input_path),

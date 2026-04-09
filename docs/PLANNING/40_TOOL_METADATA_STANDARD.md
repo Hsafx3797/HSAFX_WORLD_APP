@@ -1,7 +1,10 @@
 # 40 — Tool Metadata Standard (Compacted)
 
-> **Status:** ❌ NOT IMPLEMENTED — Future SEO/content spec. `ToolPage` interface not in codebase.
-> Current metadata: `ToolMetadata` in `packages/tool-definitions/src/types.ts` (id, name, description, category, tier, execution, etc.)
+> ⚠️ **STALE (April 2026)**: References `packages/tool-definitions` which is DELETED.
+> This spec is for future B2C web UI tool pages — not yet implemented.
+> Engine metadata is now at `apps/web/src/lib/engines-option-schemas.ts` and `engine-constants.ts`.
+
+> **Status:** ❌ NOT IMPLEMENTED — Future SEO/content spec for tool pages.
 
 ## Purpose
 

@@ -1,2 +1,2 @@
 Input: alpha beta gamma delta epsilon
-Output: epsilon beta alpha delta gamma
+Output: delta gamma beta epsilon alpha
