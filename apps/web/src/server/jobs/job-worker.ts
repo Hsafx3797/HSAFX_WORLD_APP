@@ -23,6 +23,7 @@ import { redis } from '@/lib/redis';
 import { createLogger } from '@hsafx/shared/logger';
 import { ENGINE_RUNTIME } from '@/lib/engine-constants';
 import type { EngineRuntime } from '@/lib/engine-constants';
+import { engineExecutionDuration, engineExecutionTotal, jobsTotal } from '@/lib/telemetry';
 
 const log = createLogger('job-worker');
 
@@ -96,14 +97,18 @@ function getEngineName(job: Job): string {
  */
 export async function processJob(job: Job): Promise<void> {
   const startTime = Date.now();
+  const engineName = getEngineName(job);
+  const runtime = resolveRuntime(job);
+
+  // Track job creation
+  jobsTotal.inc({ engine: engineName, status: 'started' });
 
   try {
     // 1. Mark as preparing
     await updateJob(job.id, { status: 'preparing', progress: 10 });
 
     // 2. Determine runtime from ENGINE_RUNTIME
-    const runtime = resolveRuntime(job);
-    const engineName = getEngineName(job);
+    // (already resolved above for metrics)
 
     // 3. Mark as processing + extend Redis TTL for long-running jobs
     await updateJob(job.id, { status: 'processing', progress: 25 });
@@ -133,6 +138,7 @@ export async function processJob(job: Job): Promise<void> {
     // For async (FastAPI) tools, the job-complete callback handles
     // result storage, status update, and billing reconciliation.
     if (isAsync) {
+      // Async metrics are recorded on callback completion, not here
       return;
     }
 
@@ -143,6 +149,12 @@ export async function processJob(job: Job): Promise<void> {
       progress: 100,
       completedAt: new Date().toISOString(),
     });
+
+    // Record success metrics
+    const execDuration = (Date.now() - startTime) / 1000;
+    engineExecutionDuration.observe({ engine: engineName, backend: runtime, status: 'success' }, execDuration);
+    engineExecutionTotal.inc({ engine: engineName, backend: runtime, status: 'success' });
+    jobsTotal.inc({ engine: engineName, status: 'completed' });
 
     // 5. Billing reconciliation — B2B (ops increment) vs B2C (coin confirmation)
     const isB2b = job.options?._isB2b === true;
@@ -216,6 +228,12 @@ export async function processJob(job: Job): Promise<void> {
       error: errorMessage,
       completedAt: new Date().toISOString(),
     });
+
+    // Record failure metrics
+    const failExecDuration = (Date.now() - startTime) / 1000;
+    engineExecutionDuration.observe({ engine: engineName, backend: runtime, status: 'error' }, failExecDuration);
+    engineExecutionTotal.inc({ engine: engineName, backend: runtime, status: 'error' });
+    jobsTotal.inc({ engine: engineName, status: 'failed' });
 
     // Update DB record
     const { db: db2, sql: sql2 } = await import('@hsafx/db');

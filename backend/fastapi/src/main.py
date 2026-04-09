@@ -13,8 +13,9 @@ TODO [G5]: 21 tool handlers still raise NotImplementedError (stubs).
   and others. Check each handler file for NotImplementedError.
   See: docs/PLANNING/30_TOOLS_CATALOG.md
 
-Active routers: tools (compute), jobs (Redis), tracking (scraping)
+Active routers: tools (compute), jobs (Redis)
 Internal router: /internal/* (callback from Next.js)
+Engine router: /execute/{engine} (9 engines: 8 media + 1 tracking)
 """
 
 from contextlib import asynccontextmanager

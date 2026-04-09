@@ -1,5 +1,5 @@
 /**
- * Shared engine constants for the 28-engine B2B API.
+ * Shared engine constants for the 29-engine B2B API.
  *
  * Single source of truth for:
  * - ENGINE_RUNTIME     — execution backend per engine (rust/node/python)
@@ -40,7 +40,7 @@ export const ENGINE_RUNTIME: Record<string, EngineRuntime> = {
   calculate: 'node',
   unit: 'node',
 
-  // Python/FastAPI (media processing — 8 engines)
+  // Python/FastAPI (media processing — 8 engines + tracking)
   image: 'python',
   video: 'python',
   audio: 'python',
@@ -49,9 +49,10 @@ export const ENGINE_RUNTIME: Record<string, EngineRuntime> = {
   archive: 'python',
   file: 'python',
   font: 'python',
+  tracking: 'python',
 };
 
-/** All 28 engine names */
+/** All 29 engine names */
 export const ALL_ENGINE_NAMES = Object.keys(ENGINE_RUNTIME);
 
 // ─── Category → engine list ───────────────────────────────────
@@ -64,6 +65,7 @@ export const CATEGORY_ENGINES: Record<string, string[]> = {
   calculate: ['calculate'],
   convert: ['unit'],
   media: ['image', 'video', 'audio', 'pdf', 'document', 'archive', 'file', 'font'],
+  tracking: ['tracking'],
 };
 
 // ─── Engine → billing toolClass ───────────────────────────────
@@ -97,6 +99,7 @@ export const ENGINE_TOOL_CLASS: Record<string, string> = {
   archive: 'media_processing',
   file: 'media_processing',
   font: 'media_processing',
+  tracking: 'data_processing',
 };
 
 /**
@@ -131,4 +134,5 @@ export const ENGINE_TO_CATEGORY: Record<string, string> = {
   calculate: 'calculate',
   image: 'media', video: 'media', audio: 'media', pdf: 'media',
   document: 'media', archive: 'media', file: 'media', font: 'media',
+  tracking: 'tracking',
 };

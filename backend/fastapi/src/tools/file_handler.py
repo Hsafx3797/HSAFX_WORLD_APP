@@ -255,3 +255,85 @@ class FileHandler:
             "output": json.dumps(metadata, indent=2, default=str),
             "metadata": metadata,
         }
+
+    # ── File Structure Analysis ────────────────────────────────────
+
+    async def _handle_file_structure(self, *, input_file_url=None, input_file_urls=None, opts, out_dir, **kw):
+        """
+        Analyze file structure of archives (zip, tar, etc.) or list file properties.
+
+        For archive files: extracts internal directory tree with sizes.
+        For regular files: returns file info (name, size, type).
+        """
+        urls = input_file_urls or ([input_file_url] if input_file_url else [])
+        if not urls:
+            return {"success": False, "error": "No files provided"}
+
+        import mimetypes
+        import tarfile
+        import zipfile
+
+        results = []
+        for url in urls:
+            name, data = await self._download(url)
+            ext = Path(name).suffix.lower()
+            mime_type = mimetypes.guess_type(name)[0] or "application/octet-stream"
+            file_info: dict[str, Any] = {
+                "filename": name,
+                "size": len(data),
+                "type": mime_type,
+                "extension": ext,
+            }
+
+            # Analyze archive structure
+            if ext == ".zip" or mime_type == "application/zip":
+                try:
+                    with zipfile.ZipFile(io.BytesIO(data)) as zf:
+                        entries = []
+                        total_uncompressed = 0
+                        for info in zf.infolist():
+                            entries.append({
+                                "path": info.filename,
+                                "is_dir": info.is_dir(),
+                                "compressed_size": info.compress_size,
+                                "uncompressed_size": info.file_size,
+                            })
+                            total_uncompressed += info.file_size
+                        file_info["archive_type"] = "zip"
+                        file_info["entries"] = entries
+                        file_info["entry_count"] = len(entries)
+                        file_info["total_uncompressed_size"] = total_uncompressed
+                except zipfile.BadZipFile:
+                    file_info["error"] = "Invalid or corrupted ZIP file"
+
+            elif ext in (".tar", ".tgz", ".tar.gz", ".tar.bz2", ".tar.xz") or name.endswith((".tar.gz", ".tar.bz2", ".tar.xz")):
+                try:
+                    mode = "r:*"
+                    with tarfile.open(fileobj=io.BytesIO(data), mode=mode) as tf:
+                        entries = []
+                        total_size = 0
+                        for member in tf.getmembers():
+                            entries.append({
+                                "path": member.name,
+                                "is_dir": member.isdir(),
+                                "size": member.size,
+                                "mode": oct(member.mode) if member.mode else None,
+                            })
+                            total_size += member.size
+                        file_info["archive_type"] = "tar"
+                        file_info["entries"] = entries
+                        file_info["entry_count"] = len(entries)
+                        file_info["total_uncompressed_size"] = total_size
+                except (tarfile.TarError, Exception) as e:
+                    file_info["error"] = f"Failed to read tar archive: {str(e)}"
+            else:
+                # Non-archive file — just return basic info
+                file_info["is_archive"] = False
+
+            results.append(file_info)
+
+        return {
+            "success": True,
+            "output": json.dumps(results, indent=2, default=str),
+            "metadata": {"file_count": len(results)},
+        }

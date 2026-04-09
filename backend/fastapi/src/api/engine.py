@@ -2,11 +2,11 @@
 Engine API — Unified engine execution route for B2B API.
 
 Replaces the old tool-slug-based dispatch with engine-name-based dispatch.
-8 media engines map 1:1 to 8 handler classes.
+9 engines map 1:1 to 9 handler classes (8 media + 1 tracking).
 
 Endpoints:
   POST /execute/{engine_name}  — Execute an engine operation
-  GET  /engines                — List all 8 media engines + their operations
+  GET  /engines                — List all 9 Python engines + their operations
 
 Auth: X-Internal-Secret header (same as /internal/*)
 """
@@ -31,6 +31,7 @@ from src.tools.file_handler import FileHandler
 from src.tools.font_handler import FontHandler
 from src.tools.image_converter import ImageConverter
 from src.tools.pdf_handler import PdfHandler
+from src.tools.tracking_handler import TrackingHandler
 from src.tools.video_converter import VideoConverter
 
 logger = structlog.get_logger()
@@ -80,6 +81,7 @@ _pdf_handler = PdfHandler()
 _archive_handler = ArchiveHandler()
 _file_handler = FileHandler()
 _font_handler = FontHandler()
+_tracking_handler = TrackingHandler()
 
 # ─── Engine → handler map ──────────────────────────────────────
 
@@ -92,6 +94,7 @@ ENGINE_MAP: dict[str, Any] = {
     "archive": _archive_handler,
     "file": _file_handler,
     "font": _font_handler,
+    "tracking": _tracking_handler,
 }
 
 # ─── Engine → supported operations ─────────────────────────────
@@ -136,10 +139,14 @@ ENGINE_OPERATIONS: dict[str, list[str]] = {
     ],
     "file": [
         "bulk-rename", "batch-extension", "file-hash-generator",
-        "flatten-folder", "metadata-viewer",
+        "flatten-folder", "metadata-viewer", "file-structure",
     ],
     "font": [
         "to-ttf", "to-otf", "to-woff", "to-woff2",
+    ],
+    "tracking": [
+        "container-track", "vessel-schedule", "bulk-track",
+        "allinone-track", "list-terminals",
     ],
 }
 
@@ -264,12 +271,20 @@ _OPERATION_TO_SLUG: dict[str, dict[str, str]] = {
         "file-hash-generator": "file-hash-generator",
         "flatten-folder": "flatten-folder",
         "metadata-viewer": "metadata-viewer",
+        "file-structure": "file-structure",
     },
     "font": {
         "to-ttf": "font-to-ttf",
         "to-otf": "font-to-otf",
         "to-woff": "font-to-woff",
         "to-woff2": "font-to-woff2",
+    },
+    "tracking": {
+        "container-track": "container-track",
+        "vessel-schedule": "vessel-schedule",
+        "bulk-track": "bulk-track",
+        "allinone-track": "allinone-track",
+        "list-terminals": "list-terminals",
     },
 }
 
@@ -410,7 +425,7 @@ async def execute_engine(
 async def list_engines(
     x_internal_secret: str = Header(...),
 ):
-    """List all 8 media engines and their supported operations."""
+    """List all 9 Python engines and their supported operations."""
     if not INTERNAL_SECRET or not hmac.compare_digest(x_internal_secret, INTERNAL_SECRET):
         raise HTTPException(status_code=401, detail="Invalid internal secret")
 
@@ -547,6 +562,14 @@ async def _execute_engine(
                 input_file_urls=file_urls,
                 options=handler_options,
                 output_dir=None,
+            )
+
+        elif engine_name == "tracking":
+            # Tracking handler — no files, takes input data directly
+            return await handler.convert(
+                tool_slug,
+                input_data=input_data,
+                options=handler_options,
             )
 
         else:

@@ -41,39 +41,26 @@ appRouter = { user, billing, tools, admin, rewards, apiKeys }
 
 ---
 
-## 3. Actual REST API Routes (Verified)
+## 3. Actual REST API Routes (Verified Jul 2025 — 16 route files, 18 methods)
 
 ```
 /api/v1/
-├── engine/execute      POST    Engine-first execution (any engine + options)
-├── engine/list         GET     Engine discovery (all 19 engines + schemas)
-├── text/               GET     List text engines + presets
-├── text/               POST    Execute text engine (case/wrap/comment/markup/filter/transform/encode/hash/counter/unicode)
-├── data/               GET     List data engines + presets
-├── data/               POST    Execute data engine (convert/format/schema/diff/api)
-├── generate/           GET     List generate engine presets
-├── generate/           POST    Execute generate engine
-├── validate/           GET     List validate engine presets
-├── validate/           POST    Execute validate engine
-├── calculate/          GET     List calculate engine presets
-├── calculate/          POST    Execute calculate engine
-├── convert/            GET     List unit conversion presets
-├── convert/            POST    Execute unit conversion engine
-├── tools/              GET     List tools (legacy)
-├── tools/:toolKey      GET     Get tool details (legacy)
-├── tools/:toolKey/execute POST Execute tool by slug (legacy, always async → job)
-├── tools/batch         POST    Batch execution
-├── jobs/:jobId         GET     Job status
-├── jobs/:jobId/result  GET     Job result
-├── account/            GET     Account info
-├── account/usage       GET     Usage statistics
-├── account/webhooks    GET/POST/DELETE  Webhook management
-├── billing/balance     GET     Coin balance
-├── billing/transactions GET    Transaction history
-├── billing/subscription GET    Subscription info
-├── keys/rotate         POST    API key rotation
-├── health/             GET     Health check
-└── openapi.json        GET     OpenAPI spec
+├── engine/[name]        POST    Execute any engine (primary endpoint)
+├── engine/[name]/schema GET     Engine option schema
+├── engines              GET     List all engines + schemas + preset counts
+├── batch                POST    Batch execution (max 10 items)
+├── batch/[batchId]      GET     Batch status
+├── jobs/[jobId]         GET     Job status (queued/preparing/processing/completed/failed)
+├── jobs/[jobId]/result  GET     Job result (text or download URL)
+├── account              GET     Account info
+├── account/usage        GET     Usage statistics
+├── account/webhooks     GET/POST/DELETE  Webhook management (max 5)
+├── billing/balance      GET     Coin balance
+├── billing/transactions GET     Transaction history
+├── billing/subscription GET     Subscription info
+├── keys/rotate          POST    API key rotation (24h grace period)
+├── health               GET     Health check (no auth: basic; with auth: key info)
+└── openapi.json         GET     OpenAPI spec (cached 1h)
 ```
 
 ### Admin B2B Routes (apps/admin)
@@ -81,19 +68,15 @@ appRouter = { user, billing, tools, admin, rewards, apiKeys }
 ```
 /api/admin/b2b/
 ├── plans/              GET/POST/PATCH   B2B plan CRUD
-├── subscriptions/      GET/POST/PATCH   B2B subscription management (with user/plan joins)
-├── suites/             GET/POST/PATCH   Suite CRUD (with category mappings)
-├── quotas/             GET/POST/PATCH   Per-plan per-suite quota management (upsert)
-├── usage/              GET              Read-only usage stats (with user/suite joins, date filters)
-├── suite-categories/   GET/POST/DELETE  Category→suite mapping management
-└── tool-overrides/     GET/POST/DELETE  Per-tool suite override management
+├── subscriptions/      GET/POST/PATCH   B2B subscription management
+├── suites/             GET/POST/PATCH   Suite CRUD
+├── quotas/             GET/POST/PATCH   Per-plan per-suite quota management
+├── usage/              GET              Read-only usage stats
+├── suite-categories/   GET/POST/DELETE  Category→suite mapping
+└── tool-overrides/     GET/POST/DELETE  Per-tool suite overrides
 ```
 
-**API layers:**
-
-- **Category endpoints** (`/text`, `/data`, `/generate`, `/validate`, `/calculate`, `/convert`): Primary B2B surface. Each scopes engines by category. Supports preset, custom, and preset+override modes.
-- **Engine endpoint** (`/engine/execute`): Generic — any engine name + any options, no category scoping.
-- **Legacy slug endpoint** (`/tools/:key/execute`): Backward-compatible, maps slug → engine via preset lookup.
+**DELETED routes** (verified non-existent): `/text/`, `/data/`, `/generate/`, `/validate/`, `/calculate/`, `/convert/` (category routes), `/engine/execute`, `/engine/list`, `/tools/*` (legacy). All replaced by `POST /engine/[name]` + `GET /engines`.
 
 ---
 

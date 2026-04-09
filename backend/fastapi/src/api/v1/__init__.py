@@ -8,7 +8,9 @@ Per Backend Ownership Matrix (22_BACKEND_OWNERSHIP_MATRIX.md):
 Active routers:
   /tools     — tool execution + validation (compute)
   /jobs      — async job orchestration (Redis)
-  /track     — container/vessel scraping (compute)
+
+Removed routers:
+  /track     — migrated to engine #29 "tracking" (via /execute/tracking)
 
 Deprecated routers (moved to _*_DEPRECATED.py):
   admin, users, billing, categories, ads — all violate ownership matrix
@@ -19,10 +21,8 @@ from fastapi import APIRouter
 
 from src.api.v1.jobs import router as jobs_router
 from src.api.v1.tools import router as tools_router
-from src.api.v1.tracking import router as tracking_router
 
 router = APIRouter()
 
 router.include_router(tools_router, prefix="/tools", tags=["Tools"])
 router.include_router(jobs_router, prefix="/jobs", tags=["Jobs"])
-router.include_router(tracking_router, prefix="/track", tags=["Container Tracking"])

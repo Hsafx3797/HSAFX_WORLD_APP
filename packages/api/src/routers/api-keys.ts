@@ -1,11 +1,29 @@
 import { z } from 'zod';
-import { randomBytes, createHash } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import { router, protectedProcedure } from '../trpc';
 import { apiKeys, eq, and, desc } from '@hsafx/db/schema';
 import { TRPCError } from '@trpc/server';
 
-function hashKey(key: string): string {
-  return createHash('sha256').update(key).digest('hex');
+/**
+ * Generate API key in canonical format: hsafx_{live|test}_{52 alphanumeric}
+ * Must match the regex in apps/web/src/lib/api-keys.ts
+ */
+function generateApiKeyForTRPC(): { plaintext: string; hash: string; prefix: string } {
+  const env = process.env.NODE_ENV === 'production' ? 'live' : 'test';
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const { randomBytes } = require('node:crypto');
+  const maxValid = 256 - (256 % chars.length);
+  let random = '';
+  while (random.length < 52) {
+    const bytes = randomBytes(68);
+    for (let i = 0; i < bytes.length && random.length < 52; i++) {
+      if (bytes[i]! < maxValid) random += chars[bytes[i]! % chars.length];
+    }
+  }
+  const plaintext = `hsafx_${env}_${random}`;
+  const hash = createHash('sha256').update(plaintext).digest('hex');
+  const prefix = plaintext.slice(0, 14);
+  return { plaintext, hash, prefix };
 }
 
 export const apiKeysRouter = router({
@@ -51,17 +69,15 @@ export const apiKeysRouter = router({
         });
       }
 
-      const rawKey = `sk_${randomBytes(32).toString('hex')}`;
-      const keyPrefix = rawKey.slice(0, 11); // "sk_" + first 8 hex chars
-      const keyHash = hashKey(rawKey);
+      const generated = generateApiKeyForTRPC();
 
       const [created] = await ctx.db
         .insert(apiKeys)
         .values({
           userId: ctx.user!.id,
           name: input.name,
-          keyHash,
-          keyPrefix,
+          keyHash: generated.hash,
+          keyPrefix: generated.prefix,
           scopes: input.scopes,
         })
         .returning({
@@ -72,7 +88,7 @@ export const apiKeysRouter = router({
         });
 
       // Return full key ONCE — it cannot be recovered after this
-      return { ...created, key: rawKey };
+      return { ...created, key: generated.plaintext };
     }),
 
   revoke: protectedProcedure

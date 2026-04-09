@@ -41,8 +41,8 @@ SHA-256 hashed in database. Shown only once at creation.
 
 | Scope           | Description                                    |
 | --------------- | ---------------------------------------------- |
-| `tools:read`    | View tool metadata (GET /api/v1/tools)         |
-| `tools:execute` | Execute tools (POST /api/v1/tools/:id/execute) |
+| `tools:read`    | List engines, view schemas (GET /api/v1/engines, /engine/{name}/schema) |
+| `tools:execute` | Execute engines (POST /api/v1/engine/{name})   |
 | `billing:read`  | View balance/transactions                      |
 | `billing:write` | Purchase coins                                 |
 | `admin:*`       | Full admin access (admin accounts only)        |

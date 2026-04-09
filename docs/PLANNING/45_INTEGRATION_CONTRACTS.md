@@ -19,7 +19,7 @@
 | BullMQ         | Job queue for async tools | ❌ Not installed       | Planning only                               |
 | Email Service  | Transactional emails      | ⬜ Deferred (post-MVP) | —                                           |
 | Analytics      | Usage tracking            | ⬜ Deferred (post-MVP) | —                                           |
-| Error Tracking | Sentry/Rollbar            | ⬜ Deferred (post-MVP) | —                                           |
+| Error Tracking | Sentry                  | ✅ Installed           | `@sentry/nextjs` (web + admin)              |
 
 ## Stripe Integration (Built)
 

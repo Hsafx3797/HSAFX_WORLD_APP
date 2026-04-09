@@ -2,12 +2,17 @@
  * Stripe Webhook Handler
  * Reference: SOLUTION_ROADMAP Task 4.7, 21_BILLING_LOGIC.md
  *
- * Handles:
+ * B2C (coin packs):
  * - checkout.session.completed → credit coin pack purchase
  * - charge.refunded → refund coins
  * - charge.dispute.created → flag account
- * - invoice.payment_succeeded → log payment
- * - invoice.payment_failed → alert user, grace period
+ *
+ * B2B (API subscriptions):
+ * - customer.subscription.created → create/activate b2bSubscription
+ * - customer.subscription.updated → update plan/status/period
+ * - customer.subscription.deleted → cancel b2bSubscription
+ * - invoice.payment_succeeded → log + renew B2B period if applicable
+ * - invoice.payment_failed → mark past_due + alert
  *
  * Idempotency: uses processedWebhooks table (C-11).
  */
@@ -22,6 +27,8 @@ import {
   coinPacks,
   notifications,
   activityLogs,
+  b2bSubscriptions,
+  b2bPlans,
   eq,
   and,
   sql,
@@ -90,6 +97,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   try {
     switch (eventType) {
+      // ── B2C: Coin Packs ────────────────────────────────
       case 'checkout.session.completed':
         await handleCheckoutCompleted(eventId, data);
         break;
@@ -102,6 +110,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         await handleDisputeCreated(eventId, data);
         break;
 
+      // ── B2B: API Subscriptions ─────────────────────────
+      case 'customer.subscription.created':
+        await handleB2bSubscriptionCreated(eventId, data);
+        break;
+
+      case 'customer.subscription.updated':
+        await handleB2bSubscriptionUpdated(eventId, data);
+        break;
+
+      case 'customer.subscription.deleted':
+        await handleB2bSubscriptionDeleted(eventId, data);
+        break;
+
+      // ── Shared: Invoices ───────────────────────────────
       case 'invoice.payment_succeeded':
         await handleInvoicePaymentSucceeded(eventId, data);
         break;
@@ -412,10 +434,38 @@ async function handleInvoicePaymentFailed(
 ): Promise<void> {
   const stripeInvoiceId = data.id as string;
   const customerEmail = data.customer_email as string | undefined;
+  const subscriptionId = data.subscription as string | undefined;
 
   log.warn('Invoice payment failed', { stripeInvoiceId, customerEmail });
 
-  // If we can identify the user from the payment, notify them
+  // B2B: mark subscription as past_due if linked
+  if (subscriptionId) {
+    const [sub] = await db
+      .select()
+      .from(b2bSubscriptions)
+      .where(eq(b2bSubscriptions.stripeSubscriptionId, subscriptionId))
+      .limit(1);
+
+    if (sub) {
+      await db
+        .update(b2bSubscriptions)
+        .set({ status: 'past_due', updatedAt: new Date() })
+        .where(eq(b2bSubscriptions.id, sub.id));
+
+      await db.insert(notifications).values({
+        userId: sub.userId,
+        type: 'billing',
+        title: 'API Subscription Payment Failed',
+        message: 'Your API subscription payment failed. Please update your payment method to avoid service interruption.',
+        metadata: { stripeEventId: eventId, invoiceId: stripeInvoiceId },
+      });
+
+      log.warn('B2B subscription marked past_due', { subscriptionId, userId: sub.userId });
+      return;
+    }
+  }
+
+  // B2C fallback: notify user from payment record
   const paymentIntentId = data.payment_intent as string | undefined;
   if (paymentIntentId) {
     const [payment] = await db
@@ -434,4 +484,233 @@ async function handleInvoicePaymentFailed(
       });
     }
   }
+}
+
+// ─── B2B Subscription Handlers ────────────────────────────────
+
+/**
+ * Resolve a B2B plan from a Stripe Price ID.
+ * The b2bPlans table stores stripe_price_id_monthly and stripe_price_id_yearly.
+ */
+async function resolveB2bPlanFromPrice(stripePriceId: string): Promise<{
+  plan: typeof b2bPlans.$inferSelect;
+  billingCycle: 'monthly' | 'yearly';
+} | null> {
+  // Try monthly first
+  const [monthly] = await db
+    .select()
+    .from(b2bPlans)
+    .where(eq(b2bPlans.stripePriceIdMonthly, stripePriceId))
+    .limit(1);
+
+  if (monthly) return { plan: monthly, billingCycle: 'monthly' };
+
+  // Try yearly
+  const [yearly] = await db
+    .select()
+    .from(b2bPlans)
+    .where(eq(b2bPlans.stripePriceIdYearly, stripePriceId))
+    .limit(1);
+
+  if (yearly) return { plan: yearly, billingCycle: 'yearly' };
+
+  return null;
+}
+
+/**
+ * B2B subscription created in Stripe.
+ * Creates or activates a b2bSubscription record.
+ *
+ * Expects metadata.userId on the Stripe subscription to map to our user.
+ * This is set when the subscription is created from our checkout flow.
+ */
+async function handleB2bSubscriptionCreated(
+  eventId: string,
+  data: Record<string, unknown>,
+): Promise<void> {
+  const stripeSub = data as Record<string, unknown>;
+  const stripeSubId = stripeSub.id as string;
+  const stripeCustomerId = stripeSub.customer as string;
+  const metadata = stripeSub.metadata as Record<string, string> | undefined;
+  const userId = metadata?.userId;
+
+  if (!userId) {
+    log.warn('B2B subscription.created missing userId in metadata', { stripeSubId });
+    return;
+  }
+
+  // Extract price ID from first item
+  const items = stripeSub.items as { data?: Array<{ price?: { id?: string } }> } | undefined;
+  const stripePriceId = items?.data?.[0]?.price?.id;
+  if (!stripePriceId) {
+    log.warn('B2B subscription.created missing price ID', { stripeSubId });
+    return;
+  }
+
+  const resolved = await resolveB2bPlanFromPrice(stripePriceId);
+  if (!resolved) {
+    log.warn('B2B subscription.created: no matching plan for price', { stripePriceId, stripeSubId });
+    return;
+  }
+
+  const periodStart = new Date((stripeSub.current_period_start as number) * 1000);
+  const periodEnd = new Date((stripeSub.current_period_end as number) * 1000);
+
+  // Check if this subscription already exists (idempotency)
+  const [existing] = await db
+    .select()
+    .from(b2bSubscriptions)
+    .where(eq(b2bSubscriptions.stripeSubscriptionId, stripeSubId))
+    .limit(1);
+
+  if (existing) {
+    log.info('B2B subscription already exists', { stripeSubId, existingId: existing.id });
+    return;
+  }
+
+  // Cancel any existing active subscription for this user
+  await db
+    .update(b2bSubscriptions)
+    .set({ status: 'canceled', canceledAt: new Date(), updatedAt: new Date() })
+    .where(and(
+      eq(b2bSubscriptions.userId, userId),
+      eq(b2bSubscriptions.status, 'active'),
+    ));
+
+  // Create new subscription
+  await db.insert(b2bSubscriptions).values({
+    userId,
+    b2bPlanId: resolved.plan.id,
+    stripeSubscriptionId: stripeSubId,
+    stripeCustomerId,
+    status: 'active',
+    billingCycle: resolved.billingCycle,
+    currentPeriodStart: periodStart,
+    currentPeriodEnd: periodEnd,
+    resetDayOfMonth: periodStart.getUTCDate(),
+    metadata: { stripeEventId: eventId, stripePriceId },
+  });
+
+  log.info('B2B subscription created', {
+    userId,
+    planSlug: resolved.plan.slug,
+    billingCycle: resolved.billingCycle,
+    stripeSubId,
+  });
+}
+
+/**
+ * B2B subscription updated in Stripe.
+ * Handles plan changes, period renewals, and status transitions.
+ */
+async function handleB2bSubscriptionUpdated(
+  eventId: string,
+  data: Record<string, unknown>,
+): Promise<void> {
+  const stripeSub = data as Record<string, unknown>;
+  const stripeSubId = stripeSub.id as string;
+  const stripeStatus = stripeSub.status as string;
+
+  // Find our subscription
+  const [sub] = await db
+    .select()
+    .from(b2bSubscriptions)
+    .where(eq(b2bSubscriptions.stripeSubscriptionId, stripeSubId))
+    .limit(1);
+
+  if (!sub) {
+    log.warn('B2B subscription.updated: no matching subscription', { stripeSubId });
+    return;
+  }
+
+  // Map Stripe status to our status
+  const statusMap: Record<string, 'active' | 'past_due' | 'canceled' | 'suspended'> = {
+    active: 'active',
+    past_due: 'past_due',
+    canceled: 'canceled',
+    unpaid: 'suspended',
+    incomplete: 'suspended',
+    incomplete_expired: 'canceled',
+    trialing: 'active',
+    paused: 'suspended',
+  };
+  const newStatus = statusMap[stripeStatus] ?? 'suspended';
+
+  // Check for plan change
+  const items = stripeSub.items as { data?: Array<{ price?: { id?: string } }> } | undefined;
+  const stripePriceId = items?.data?.[0]?.price?.id;
+
+  const updates: Partial<typeof b2bSubscriptions.$inferInsert> = {
+    status: newStatus,
+    cancelAtPeriodEnd: (stripeSub.cancel_at_period_end as boolean) ?? false,
+    currentPeriodStart: new Date((stripeSub.current_period_start as number) * 1000),
+    currentPeriodEnd: new Date((stripeSub.current_period_end as number) * 1000),
+    updatedAt: new Date(),
+  };
+
+  if (stripePriceId) {
+    const resolved = await resolveB2bPlanFromPrice(stripePriceId);
+    if (resolved && resolved.plan.id !== sub.b2bPlanId) {
+      updates.b2bPlanId = resolved.plan.id;
+      updates.billingCycle = resolved.billingCycle;
+      log.info('B2B subscription plan changed', {
+        stripeSubId,
+        oldPlanId: sub.b2bPlanId,
+        newPlanId: resolved.plan.id,
+      });
+    }
+  }
+
+  if (stripeStatus === 'canceled') {
+    updates.canceledAt = new Date();
+  }
+
+  await db
+    .update(b2bSubscriptions)
+    .set(updates)
+    .where(eq(b2bSubscriptions.id, sub.id));
+
+  log.info('B2B subscription updated', { stripeSubId, newStatus, userId: sub.userId });
+}
+
+/**
+ * B2B subscription deleted in Stripe.
+ * Mark as canceled in our system.
+ */
+async function handleB2bSubscriptionDeleted(
+  eventId: string,
+  data: Record<string, unknown>,
+): Promise<void> {
+  const stripeSub = data as Record<string, unknown>;
+  const stripeSubId = stripeSub.id as string;
+
+  const [sub] = await db
+    .select()
+    .from(b2bSubscriptions)
+    .where(eq(b2bSubscriptions.stripeSubscriptionId, stripeSubId))
+    .limit(1);
+
+  if (!sub) {
+    log.warn('B2B subscription.deleted: no matching subscription', { stripeSubId });
+    return;
+  }
+
+  await db
+    .update(b2bSubscriptions)
+    .set({
+      status: 'canceled',
+      canceledAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(b2bSubscriptions.id, sub.id));
+
+  await db.insert(notifications).values({
+    userId: sub.userId,
+    type: 'billing',
+    title: 'API Subscription Canceled',
+    message: 'Your API subscription has been canceled. Your access will continue until the end of the current billing period.',
+    metadata: { stripeEventId: eventId, stripeSubscriptionId: stripeSubId },
+  });
+
+  log.info('B2B subscription canceled', { stripeSubId, userId: sub.userId });
 }

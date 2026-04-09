@@ -1,7 +1,7 @@
 /**
  * Shared test helpers for B2B API v1 tests
  */
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import type { ApiContext } from '@/lib/api-v1-auth';
 import type { Job, JobResult } from '@/server/jobs/types';
 
@@ -9,8 +9,6 @@ import type { Job, JobResult } from '@/server/jobs/types';
 
 export const VALID_API_KEY =
   'hsafx_test_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-export const INVALID_FORMAT_KEY = 'invalid_key_format';
-export const SHORT_KEY = 'hsafx_test_short';
 
 // ─── Factories ────────────────────────────────────────────────
 
@@ -89,9 +87,3 @@ export function createMockJobResult(
 }
 
 // ─── Sample Tool Metadata ─────────────────────────────────────
-
-// ─── Response Parsing ─────────────────────────────────────────
-
-export async function parseJsonResponse(response: NextResponse) {
-  return response.json();
-}

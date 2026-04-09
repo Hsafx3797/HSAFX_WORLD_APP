@@ -24,6 +24,7 @@ import {
 } from '@/lib/api-keys';
 import { redis, keys, TTL } from '@/lib/redis';
 import { ApiErrorCode } from '@hsafx/shared/errors';
+import { apiKeyAuthTotal } from '@/lib/telemetry';
 
 // ─── Types ─────────────────────────────────────────────────────
 
@@ -174,12 +175,14 @@ export async function authenticateApiKey(
   // 1. Extract key
   const rawKey = extractApiKeyFromHeaders(request.headers);
   if (!rawKey) {
+    apiKeyAuthTotal.inc({ result: 'invalid' });
     return errorResponse(ApiErrorCode.AUTH_MISSING_KEY, requestId);
   }
 
   // 2. Validate format
   const validation = validateApiKeyFormat(rawKey);
   if (!validation.valid || !validation.hash) {
+    apiKeyAuthTotal.inc({ result: 'invalid' });
     return errorResponse(ApiErrorCode.AUTH_INVALID_KEY, requestId);
   }
 
@@ -189,16 +192,19 @@ export async function authenticateApiKey(
   });
 
   if (!keyRow) {
+    apiKeyAuthTotal.inc({ result: 'invalid' });
     return errorResponse(ApiErrorCode.AUTH_INVALID_KEY, requestId);
   }
 
   // 4. Check revoked / inactive
   if (!keyRow.isActive || keyRow.revokedAt) {
+    apiKeyAuthTotal.inc({ result: 'expired' });
     return errorResponse(ApiErrorCode.AUTH_KEY_REVOKED, requestId);
   }
 
   // 5. Check expiry
   if (keyRow.expiresAt && new Date(keyRow.expiresAt) < new Date()) {
+    apiKeyAuthTotal.inc({ result: 'expired' });
     return errorResponse(ApiErrorCode.AUTH_KEY_REVOKED, requestId);
   }
 
@@ -212,6 +218,7 @@ export async function authenticateApiKey(
   const rateResult = await checkRateLimit(keyRow.id, tier);
 
   if (!rateResult.allowed) {
+    apiKeyAuthTotal.inc({ result: 'rate_limited' });
     const res = errorResponse(ApiErrorCode.RATE_LIMIT, requestId, {
       retryAfter: rateResult.retryAfter,
       tier,
@@ -224,7 +231,10 @@ export async function authenticateApiKey(
     return res;
   }
 
-  // 8. Touch lastUsed (fire-and-forget — don't block response)
+  // 8. Track successful auth
+  apiKeyAuthTotal.inc({ result: 'success' });
+
+  // 9. Touch lastUsed (fire-and-forget — don't block response)
   db.update(apiKeys)
     .set({ lastUsed: new Date() })
     .where(eq(apiKeys.id, keyRow.id))
