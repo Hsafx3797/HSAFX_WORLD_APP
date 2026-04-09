@@ -10,6 +10,7 @@ import { db, b2bToolSuiteOverrides, b2bSuites, tools, eq, sql } from '@hsafx/db'
 import { requireAdminRole } from '@/lib/require-admin';
 import { adminResponse, adminPaginatedResponse, adminErrorResponse } from '@/lib/admin-response';
 import { createLogger } from '@hsafx/shared/logger';
+import { logB2bAudit } from '@/lib/b2b-audit';
 
 const log = createLogger('admin-b2b-tool-overrides');
 
@@ -81,6 +82,8 @@ export async function POST(request: NextRequest) {
       .values({ toolId, b2bSuiteId })
       .returning();
 
+    await logB2bAudit({ userId: authResult.userId, action: 'create', resource: 'b2b_tool_override', resourceId: override.id, actionDetail: `Assigned tool to suite override`, changes: { after: { toolId, b2bSuiteId } } });
+
     return adminResponse(override, 201);
   } catch (error: unknown) {
     if (error instanceof Error && error.message.includes('b2b_tso_tool_id_idx')) {
@@ -111,6 +114,8 @@ export async function DELETE(request: NextRequest) {
     if (!deleted) {
       return adminErrorResponse('NOT_FOUND', 'Override not found', 404);
     }
+
+    await logB2bAudit({ userId: authResult.userId, action: 'delete', resource: 'b2b_tool_override', resourceId: id, actionDetail: `Removed tool suite override`, changes: { before: deleted } });
 
     return adminResponse(deleted);
   } catch (error) {

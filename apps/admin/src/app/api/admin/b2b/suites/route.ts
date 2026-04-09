@@ -10,6 +10,7 @@ import { db, b2bSuites, b2bSuiteCategories, eq, sql } from '@hsafx/db';
 import { requireAdminRole } from '@/lib/require-admin';
 import { adminResponse, adminPaginatedResponse, adminErrorResponse } from '@/lib/admin-response';
 import { createLogger } from '@hsafx/shared/logger';
+import { logB2bAudit } from '@/lib/b2b-audit';
 
 const log = createLogger('admin-b2b-suites');
 
@@ -78,6 +79,8 @@ export async function POST(request: NextRequest) {
       } as typeof b2bSuites.$inferInsert)
       .returning();
 
+    await logB2bAudit({ userId: authResult.userId, action: 'create', resource: 'b2b_suite', resourceId: newSuite.id, actionDetail: `Created suite: ${name}`, changes: { after: { slug, name } } });
+
     return adminResponse(newSuite, 201);
   } catch (error: unknown) {
     if (error instanceof Error && (error.message.includes('b2b_suites_slug_unique') || error.message.includes('unique constraint'))) {
@@ -117,6 +120,8 @@ export async function PATCH(request: NextRequest) {
     if (!updated) {
       return adminErrorResponse('NOT_FOUND', 'B2B suite not found', 404);
     }
+
+    await logB2bAudit({ userId: authResult.userId, action: 'update', resource: 'b2b_suite', resourceId: id, actionDetail: `Updated suite`, changes: { updates: Object.keys(setValues).filter(k => k !== 'updatedAt') } });
 
     return adminResponse(updated);
   } catch (error) {

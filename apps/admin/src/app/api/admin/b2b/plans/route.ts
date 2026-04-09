@@ -10,6 +10,7 @@ import { db, b2bPlans, b2bPlanQuotas, b2bSuites, eq, sql } from '@hsafx/db';
 import { requireAdminRole } from '@/lib/require-admin';
 import { adminResponse, adminPaginatedResponse, adminErrorResponse } from '@/lib/admin-response';
 import { createLogger } from '@hsafx/shared/logger';
+import { logB2bAudit } from '@/lib/b2b-audit';
 
 const log = createLogger('admin-b2b-plans');
 
@@ -88,6 +89,8 @@ export async function POST(request: NextRequest) {
       } as typeof b2bPlans.$inferInsert)
       .returning();
 
+    await logB2bAudit({ userId: authResult.userId, action: 'create', resource: 'b2b_plan', resourceId: newPlan.id, actionDetail: `Created plan: ${name}`, changes: { after: { name, slug } } });
+
     return adminResponse(newPlan, 201);
   } catch (error: unknown) {
     if (error instanceof Error && (error.message.includes('b2b_plans_slug_unique') || error.message.includes('unique constraint'))) {
@@ -128,6 +131,8 @@ export async function PATCH(request: NextRequest) {
     if (!updated) {
       return adminErrorResponse('NOT_FOUND', 'B2B plan not found', 404);
     }
+
+    await logB2bAudit({ userId: authResult.userId, action: 'update', resource: 'b2b_plan', resourceId: id, actionDetail: `Updated plan`, changes: { updates: Object.keys(setValues).filter(k => k !== 'updatedAt') } });
 
     return adminResponse(updated);
   } catch (error) {

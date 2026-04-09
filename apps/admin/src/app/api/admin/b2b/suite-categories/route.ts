@@ -10,6 +10,7 @@ import { db, b2bSuiteCategories, b2bSuites, eq, sql } from '@hsafx/db';
 import { requireAdminRole } from '@/lib/require-admin';
 import { adminResponse, adminPaginatedResponse, adminErrorResponse } from '@/lib/admin-response';
 import { createLogger } from '@hsafx/shared/logger';
+import { logB2bAudit } from '@/lib/b2b-audit';
 
 const log = createLogger('admin-b2b-suite-categories');
 
@@ -71,6 +72,8 @@ export async function POST(request: NextRequest) {
       .values({ b2bSuiteId, category })
       .returning();
 
+    await logB2bAudit({ userId: authResult.userId, action: 'create', resource: 'b2b_suite_category', resourceId: mapping.id, actionDetail: `Mapped category '${category}' to suite`, changes: { after: { b2bSuiteId, category } } });
+
     return adminResponse(mapping, 201);
   } catch (error: unknown) {
     if (error instanceof Error && error.message.includes('unique')) {
@@ -101,6 +104,8 @@ export async function DELETE(request: NextRequest) {
     if (!deleted) {
       return adminErrorResponse('NOT_FOUND', 'Mapping not found', 404);
     }
+
+    await logB2bAudit({ userId: authResult.userId, action: 'delete', resource: 'b2b_suite_category', resourceId: id, actionDetail: `Removed category mapping`, changes: { before: deleted } });
 
     return adminResponse(deleted);
   } catch (error) {

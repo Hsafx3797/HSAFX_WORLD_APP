@@ -2,7 +2,7 @@
 Engine API — Unified engine execution route for B2B API.
 
 Replaces the old tool-slug-based dispatch with engine-name-based dispatch.
-9 engines map 1:1 to 9 handler classes (8 media + 1 tracking).
+9 engines map 1:1 to 9 handler classes (8 media + 1 tracking + 1 cheque).
 
 Endpoints:
   POST /execute/{engine_name}  — Execute an engine operation
@@ -26,6 +26,7 @@ from pydantic import BaseModel, Field
 
 from src.tools.archive_handler import ArchiveHandler
 from src.tools.audio_converter import AudioConverter
+from src.tools.cheque_handler import ChequeHandler
 from src.tools.document_converter import DocumentConverter
 from src.tools.file_handler import FileHandler
 from src.tools.font_handler import FontHandler
@@ -82,6 +83,7 @@ _archive_handler = ArchiveHandler()
 _file_handler = FileHandler()
 _font_handler = FontHandler()
 _tracking_handler = TrackingHandler()
+_cheque_handler = ChequeHandler()
 
 # ─── Engine → handler map ──────────────────────────────────────
 
@@ -95,6 +97,7 @@ ENGINE_MAP: dict[str, Any] = {
     "file": _file_handler,
     "font": _font_handler,
     "tracking": _tracking_handler,
+    "cheque": _cheque_handler,
 }
 
 # ─── Engine → supported operations ─────────────────────────────
@@ -147,6 +150,9 @@ ENGINE_OPERATIONS: dict[str, list[str]] = {
     "tracking": [
         "container-track", "vessel-schedule", "bulk-track",
         "allinone-track", "list-terminals",
+    ],
+    "cheque": [
+        "generate", "validate",
     ],
 }
 
@@ -285,6 +291,10 @@ _OPERATION_TO_SLUG: dict[str, dict[str, str]] = {
         "bulk-track": "bulk-track",
         "allinone-track": "allinone-track",
         "list-terminals": "list-terminals",
+    },
+    "cheque": {
+        "generate": "generate",
+        "validate": "validate",
     },
 }
 
@@ -566,6 +576,14 @@ async def _execute_engine(
 
         elif engine_name == "tracking":
             # Tracking handler — no files, takes input data directly
+            return await handler.convert(
+                tool_slug,
+                input_data=input_data,
+                options=handler_options,
+            )
+
+        elif engine_name == "cheque":
+            # Cheque handler — no files, takes input data directly, returns PDF
             return await handler.convert(
                 tool_slug,
                 input_data=input_data,

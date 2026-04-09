@@ -13,6 +13,7 @@ import {
 import { requireAdminRole } from '@/lib/require-admin';
 import { adminResponse, adminPaginatedResponse, adminErrorResponse } from '@/lib/admin-response';
 import { createLogger } from '@hsafx/shared/logger';
+import { logB2bAudit } from '@/lib/b2b-audit';
 
 const log = createLogger('admin-b2b-subscriptions');
 
@@ -136,6 +137,8 @@ export async function POST(request: NextRequest) {
       } as typeof b2bSubscriptions.$inferInsert)
       .returning();
 
+    await logB2bAudit({ userId: authResult.userId, action: 'create', resource: 'b2b_subscription', resourceId: newSub.id, actionDetail: `Created subscription for user ${userId}`, changes: { after: { userId, b2bPlanId, billingCycle } } });
+
     return adminResponse(newSub, 201);
   } catch (error: unknown) {
     // Unique constraint = user already has an active subscription
@@ -223,6 +226,8 @@ export async function PATCH(request: NextRequest) {
     if (!updated) {
       return adminErrorResponse('NOT_FOUND', 'B2B subscription not found', 404);
     }
+
+    await logB2bAudit({ userId: authResult.userId, action: 'update', resource: 'b2b_subscription', resourceId: id, actionDetail: `Updated subscription`, changes: { updates: Object.keys(setValues).filter(k => k !== 'updatedAt') } });
 
     return adminResponse(updated);
   } catch (error) {

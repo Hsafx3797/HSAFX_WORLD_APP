@@ -320,7 +320,7 @@ async function seed() {
       'text-processing': ['case', 'wrap', 'filter', 'transform', 'comment', 'markup'],
       'data-encoding': ['encode', 'hash', 'counter', 'unicode'],
       'data-conversion': ['convert', 'format', 'schema', 'diff', 'api', 'tracking'],
-      'generation': ['generate-data', 'generate-web', 'calculate', 'unit', 'validate'],
+      'generation': ['generate-data', 'generate-web', 'calculate', 'unit', 'validate', 'cheque'],
       'media-processing': ['image', 'video', 'audio', 'pdf', 'document', 'archive', 'file', 'font'],
     };
     const suiteCategoryValues: { b2bSuiteId: string; category: string }[] = [];
@@ -364,7 +364,7 @@ async function seed() {
   console.log(`   Tool Categories: ${categoryData.length}`);
   console.log(`   B2B Plans: 3`);
   console.log(`   B2B Suites: 5`);
-  console.log(`   B2B Engine→Suite Mappings: 29`);
+  console.log(`   B2B Engine→Suite Mappings: 30`);
   console.log(`   B2B Plan Quotas: 15`);
 }
 

@@ -13,6 +13,7 @@ import {
 import { requireAdminRole } from '@/lib/require-admin';
 import { adminResponse, adminPaginatedResponse, adminErrorResponse } from '@/lib/admin-response';
 import { createLogger } from '@hsafx/shared/logger';
+import { logB2bAudit } from '@/lib/b2b-audit';
 
 const log = createLogger('admin-b2b-quotas');
 
@@ -99,6 +100,8 @@ export async function POST(request: NextRequest) {
       })
       .returning();
 
+    await logB2bAudit({ userId: authResult.userId, action: 'create', resource: 'b2b_plan_quota', resourceId: quota.id, actionDetail: `Set quota ${monthlyLimit} for plan+suite`, changes: { after: { b2bPlanId, b2bSuiteId, monthlyLimit } } });
+
     return adminResponse(quota, 201);
   } catch (error) {
     log.error('Failed to create B2B quota', { err: error });
@@ -133,6 +136,8 @@ export async function PATCH(request: NextRequest) {
     if (!updated) {
       return adminErrorResponse('NOT_FOUND', 'B2B quota not found', 404);
     }
+
+    await logB2bAudit({ userId: authResult.userId, action: 'update', resource: 'b2b_plan_quota', resourceId: id, actionDetail: `Updated quota limit to ${monthlyLimit}` });
 
     return adminResponse(updated);
   } catch (error) {

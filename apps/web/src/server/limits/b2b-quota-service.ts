@@ -152,7 +152,7 @@ export async function checkB2bQuota(
     throw new B2bNoSubscriptionError();
   }
 
-  // Get the quota limit for this plan + suite
+  // Get the quota limit for this plan + suite (only active suites)
   const [quota] = await db
     .select({
       monthlyLimit: b2bPlanQuotas.monthlyLimit,
@@ -164,6 +164,7 @@ export async function checkB2bQuota(
       and(
         eq(b2bPlanQuotas.b2bPlanId, sub.b2bPlanId),
         eq(b2bPlanQuotas.b2bSuiteId, suiteId),
+        eq(b2bSuites.isActive, true),
       ),
     )
     .limit(1);
@@ -218,14 +219,16 @@ export async function incrementB2bUsage(
     throw new B2bNoSubscriptionError();
   }
 
-  // Get the quota limit for this plan + suite
+  // Get the quota limit for this plan + suite (only active suites)
   const [quota] = await db
     .select({ monthlyLimit: b2bPlanQuotas.monthlyLimit })
     .from(b2bPlanQuotas)
+    .innerJoin(b2bSuites, eq(b2bPlanQuotas.b2bSuiteId, b2bSuites.id))
     .where(
       and(
         eq(b2bPlanQuotas.b2bPlanId, sub.b2bPlanId),
         eq(b2bPlanQuotas.b2bSuiteId, suiteId),
+        eq(b2bSuites.isActive, true),
       ),
     )
     .limit(1);
