@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { trpc } from '@/lib/trpc';
 import { toast } from 'sonner';
+import { authClient } from '@/lib/auth-client';
 import { DangerZone } from '@/components/danger-zone';
 import { GdprExportButton } from '@/components/gdpr-export-button';
 import { PasswordStrengthMeter, isPasswordValid } from '@/components/password-strength-meter';
@@ -450,6 +451,89 @@ function SecuritySection() {
   );
 }
 
+// ─── Social Accounts Section ────────────────────────────────
+const PROVIDERS = [
+  { id: 'google', name: 'Google', icon: '🔵' },
+  { id: 'github', name: 'GitHub', icon: '⚫' },
+  { id: 'facebook', name: 'Facebook', icon: '🔷' },
+] as const;
+
+function SocialAccountsSection() {
+  const { data: linked, isLoading } = trpc.user.getLinkedAccounts.useQuery();
+  const utils = trpc.useUtils();
+  const unlinkMutation = trpc.user.unlinkAccount.useMutation({
+    onSuccess: () => {
+      toast.success('Account unlinked');
+      utils.user.getLinkedAccounts.invalidate();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const linkedProviders = new Set(linked?.map((a) => a.provider) ?? []);
+
+  const handleLink = (provider: string) => {
+    authClient.signIn.social({
+      provider: provider as 'google' | 'github' | 'facebook',
+      callbackURL: '/settings#social',
+    });
+  };
+
+  const handleUnlink = (provider: string) => {
+    unlinkMutation.mutate({ provider });
+  };
+
+  return (
+    <section id="social" className="bg-card border border-border rounded-lg p-6">
+      <h2 className="text-xl font-semibold mb-2">Connected Accounts</h2>
+      <p className="text-sm text-muted-foreground mb-6">
+        Link social accounts for easier sign-in. You must keep at least one authentication method active.
+      </p>
+      <div className="space-y-4">
+        {PROVIDERS.map((p) => {
+          const isLinked = linkedProviders.has(p.id);
+          const account = linked?.find((a) => a.provider === p.id);
+          return (
+            <div
+              key={p.id}
+              className="flex items-center justify-between p-4 bg-muted/50 rounded-lg"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-xl">{p.icon}</span>
+                <div>
+                  <p className="font-medium text-sm">{p.name}</p>
+                  {isLinked && account?.createdAt && (
+                    <p className="text-xs text-muted-foreground">
+                      Connected {new Date(account.createdAt).toLocaleDateString()}
+                    </p>
+                  )}
+                </div>
+              </div>
+              {isLoading ? (
+                <span className="text-xs text-muted-foreground">Loading...</span>
+              ) : isLinked ? (
+                <button
+                  onClick={() => handleUnlink(p.id)}
+                  disabled={unlinkMutation.isPending}
+                  className="px-3 py-1.5 text-sm border border-border rounded-lg hover:bg-destructive/10 hover:text-destructive transition-colors disabled:opacity-50"
+                >
+                  {unlinkMutation.isPending ? 'Unlinking...' : 'Disconnect'}
+                </button>
+              ) : (
+                <button
+                  onClick={() => handleLink(p.id)}
+                  className="px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                >
+                  Connect
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 // ─── API Access Section ─────────────────────────────────────
 function ApiAccessSection() {
   const utils = trpc.useUtils();
@@ -670,6 +754,9 @@ function SettingsSidebar() {
       <a href="#security" className="block px-4 py-2 rounded-lg hover:bg-muted transition-colors">
         Security
       </a>
+      <a href="#social" className="block px-4 py-2 rounded-lg hover:bg-muted transition-colors">
+        Connected Accounts
+      </a>
       <a href="#api" className="block px-4 py-2 rounded-lg hover:bg-muted transition-colors">
         API Access
       </a>
@@ -713,6 +800,7 @@ export function SettingsClient() {
             <PreferencesSection />
             <NotificationsSection />
             <SecuritySection />
+            <SocialAccountsSection />
             <ApiAccessSection />
             <BillingSection />
             <PrivacySection />

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { scrypt, randomBytes, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import { router, protectedProcedure, adminProcedure } from '../trpc';
-import { users, userPreferences, userSettings, sessions, userOnboarding, plans, planLimits, eq, and, ne, or, ilike } from '@hsafx/db/schema';
+import { users, userPreferences, userSettings, sessions, userOnboarding, plans, planLimits, oauthConnections, eq, and, ne, or, ilike } from '@hsafx/db/schema';
 import { TRPCError } from '@trpc/server';
 import { getUserPlan } from '../helpers/get-user-plan';
 
@@ -465,6 +465,60 @@ export const userRouter = router({
     .mutation(async ({ ctx, input }) => {
       const { trackReferralSignup } = await import('@/server/referral/referral-service');
       return trackReferralSignup(input.referralCode, ctx.user!.id);
+    }),
+
+  // ─── Social Account Linking (T1.2) ─────────────────────────
+
+  getLinkedAccounts: protectedProcedure.query(async ({ ctx }) => {
+    const rows = await ctx.db
+      .select({
+        id: oauthConnections.id,
+        provider: oauthConnections.provider,
+        providerUserId: oauthConnections.providerUserId,
+        createdAt: oauthConnections.createdAt,
+      })
+      .from(oauthConnections)
+      .where(eq(oauthConnections.userId, ctx.user!.id));
+    return rows;
+  }),
+
+  unlinkAccount: protectedProcedure
+    .input(z.object({ provider: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.user!.id;
+
+      // Check how many auth methods the user has
+      const [user] = await ctx.db
+        .select({ passwordHash: users.passwordHash })
+        .from(users)
+        .where(eq(users.id, userId));
+
+      const linkedAccounts = await ctx.db
+        .select({ id: oauthConnections.id, provider: oauthConnections.provider })
+        .from(oauthConnections)
+        .where(eq(oauthConnections.userId, userId));
+
+      const hasPassword = !!user?.passwordHash;
+      const otherProviders = linkedAccounts.filter((a) => a.provider !== input.provider);
+
+      // Must keep at least 1 auth method
+      if (!hasPassword && otherProviders.length === 0) {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: 'Cannot unlink your only authentication method. Set a password first or link another provider.',
+        });
+      }
+
+      const deleted = await ctx.db
+        .delete(oauthConnections)
+        .where(and(eq(oauthConnections.userId, userId), eq(oauthConnections.provider, input.provider)))
+        .returning({ id: oauthConnections.id });
+
+      if (deleted.length === 0) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Account not linked' });
+      }
+
+      return { success: true };
     }),
 
   // ─── GDPR Data Export (T3.3) ──────────────────────────────
