@@ -7,12 +7,15 @@ import { useCoins } from '@/hooks/use-coins';
 import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 
 export default function BillingSettingsPage() {
   const { subscription, isLoading: subLoading, isPro, isAdvance, cancel, reactivate } = useSubscription();
   const { balance } = useCoins();
   const { data: allPlans } = trpc.billing.getPlans.useQuery();
   const { data: invoiceData, isLoading: invLoading } = trpc.billing.getInvoices.useQuery({ page: 1, pageSize: 20 });
+  const { data: b2bSub } = trpc.b2b.getMySubscription.useQuery();
+  const portalMutation = trpc.b2b.createPortalSession.useMutation();
   const [processing, setProcessing] = useState(false);
 
   const hasPaid = isPro || isAdvance;
@@ -129,6 +132,51 @@ export default function BillingSettingsPage() {
               </Button>
             )}
           </section>
+
+          {/* B2B API Subscription */}
+          {b2bSub && (
+            <section className="bg-card border border-border rounded-lg p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold">API Subscription</h2>
+                <Badge variant={b2bSub.status === 'active' ? 'default' : 'destructive'}>{b2bSub.status}</Badge>
+              </div>
+              <div className="p-4 bg-muted/50 rounded-lg mb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold">{b2bSub.planName} Plan</h3>
+                    <p className="text-sm text-muted-foreground capitalize">{b2bSub.billingCycle} billing</p>
+                  </div>
+                  <p className="text-xl font-bold">
+                    ${((b2bSub.billingCycle === 'monthly' ? b2bSub.priceMonthlyCents : b2bSub.priceYearlyCents) / 100).toFixed(0)}
+                    <span className="text-sm font-normal text-muted-foreground">/{b2bSub.billingCycle === 'monthly' ? 'mo' : 'yr'}</span>
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/dashboard/api">View Dashboard</Link>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    setProcessing(true);
+                    try {
+                      const result = await portalMutation.mutateAsync();
+                      if (result.portalUrl) window.location.href = result.portalUrl;
+                    } catch (err) {
+                      toast.error(err instanceof Error ? err.message : 'Failed to open billing portal');
+                    } finally {
+                      setProcessing(false);
+                    }
+                  }}
+                  disabled={processing}
+                >
+                  {processing ? 'Loading...' : 'Manage via Stripe'}
+                </Button>
+              </div>
+            </section>
+          )}
 
           {/* Billing History — from DB */}
           <section className="bg-card border border-border rounded-lg p-6">

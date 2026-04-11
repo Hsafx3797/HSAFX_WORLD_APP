@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
 import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 
 const STATUS_COLORS: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   active: 'default',
@@ -22,6 +23,7 @@ function formatPrice(cents: number) {
 
 export default function B2bDashboardPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, isLoading: authLoading } = useAuth();
   const { data: sub, isLoading: subLoading } = trpc.b2b.getMySubscription.useQuery(undefined, {
     enabled: !!user,
@@ -29,7 +31,17 @@ export default function B2bDashboardPage() {
   const { data: usage, isLoading: usageLoading } = trpc.b2b.getMyUsage.useQuery(undefined, {
     enabled: !!user,
   });
+  const portalMutation = trpc.b2b.createPortalSession.useMutation();
   const [processing, setProcessing] = useState(false);
+
+  // Handle checkout success redirect
+  useEffect(() => {
+    if (searchParams.get('checkout') === 'success') {
+      toast.success('Subscription activated! Your API plan is now active.');
+      // Clean up the query param
+      router.replace('/dashboard/api');
+    }
+  }, [searchParams, router]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -94,6 +106,23 @@ export default function B2bDashboardPage() {
             </div>
             <Button variant="outline" asChild>
               <Link href="/pricing">Change Plan</Link>
+            </Button>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                setProcessing(true);
+                try {
+                  const result = await portalMutation.mutateAsync();
+                  if (result.portalUrl) window.location.href = result.portalUrl;
+                } catch (err) {
+                  toast.error(err instanceof Error ? err.message : 'Failed to open billing portal');
+                } finally {
+                  setProcessing(false);
+                }
+              }}
+              disabled={processing}
+            >
+              {processing ? 'Loading...' : 'Manage Billing'}
             </Button>
           </div>
         </CardHeader>
