@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Badge } from '@/components/ui/badge';
 import { trpc } from '@/lib/trpc';
 import { useSubscription } from '@/hooks/use-subscription';
+import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
 
 function formatPrice(cents: number | null | undefined) {
@@ -47,7 +48,11 @@ export default function PricingPage() {
   const { data: plansData, isLoading: plansLoading } = trpc.billing.getPlans.useQuery();
   const { data: coinPacks, isLoading: packsLoading } = trpc.billing.getCoinPacks.useQuery();
   const { data: b2bPlans, isLoading: b2bLoading } = trpc.b2b.getPlans.useQuery();
+  const { isAuthenticated } = useAuth();
   const { subscription, subscribe } = useSubscription();
+
+  const b2bCheckout = trpc.b2b.createCheckout.useMutation();
+  const coinPurchase = trpc.billing.purchaseCoinPack.useMutation();
 
   const currentPlanSlug = subscription?.plan ?? 'free';
 
@@ -55,6 +60,32 @@ export default function PricingPage() {
     if (planSlug === 'free') return;
     const result = await subscribe(planSlug as 'pro' | 'advance', billingCycle);
     if (result.error) toast.error(result.error);
+  };
+
+  const handleB2BCheckout = async (planId: string) => {
+    if (!isAuthenticated) {
+      window.location.href = '/register';
+      return;
+    }
+    try {
+      const result = await b2bCheckout.mutateAsync({ planId, billingCycle });
+      if (result.checkoutUrl) window.location.href = result.checkoutUrl;
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Checkout failed');
+    }
+  };
+
+  const handleCoinPurchase = async (packId: string) => {
+    if (!isAuthenticated) {
+      toast.error('Please sign in to purchase coins');
+      return;
+    }
+    try {
+      const result = await coinPurchase.mutateAsync({ packId });
+      if (result.checkoutUrl) window.location.href = result.checkoutUrl;
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Purchase failed');
+    }
   };
 
   const sortedPlans = (plansData ?? []).sort((a, b) => (a.priceMonthlyCents ?? 0) - (b.priceMonthlyCents ?? 0));
@@ -201,6 +232,15 @@ export default function PricingPage() {
                   {pack.bonusCoins > 0 && (
                     <Badge variant="secondary" className="mt-2">+{pack.bonusCoins} bonus</Badge>
                   )}
+                  <Button
+                    className="w-full mt-4"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleCoinPurchase(pack.id)}
+                    disabled={coinPurchase.isPending}
+                  >
+                    {coinPurchase.isPending ? 'Loading...' : 'Buy Now'}
+                  </Button>
                 </CardContent>
               </Card>
             ))}
@@ -254,8 +294,13 @@ export default function PricingPage() {
                       </ul>
                     </CardContent>
                     <CardFooter>
-                      <Button className="w-full" variant={isPopular ? 'default' : 'outline'} asChild>
-                        <Link href="/register">Get Started</Link>
+                      <Button
+                        className="w-full"
+                        variant={isPopular ? 'default' : 'outline'}
+                        onClick={() => handleB2BCheckout(plan.id)}
+                        disabled={b2bCheckout.isPending}
+                      >
+                        {b2bCheckout.isPending ? 'Loading...' : 'Get Started'}
                       </Button>
                     </CardFooter>
                   </Card>
