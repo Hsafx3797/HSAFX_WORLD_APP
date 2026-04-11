@@ -134,25 +134,37 @@ export const userRouter = router({
       emailNotifications: z.boolean().optional(),
       pushNotifications: z.boolean().optional(),
       marketingEmails: z.boolean().optional(),
+      extras: z.record(z.unknown()).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
+      const { extras, ...columns } = input;
+
       const [existing] = await ctx.db
         .select()
         .from(userSettings)
         .where(eq(userSettings.userId, ctx.user!.id))
         .limit(1);
 
+      const mergedSettings = extras
+        ? { ...(existing?.settings as Record<string, unknown> ?? {}), ...extras }
+        : undefined;
+
+      const setData = {
+        ...columns,
+        ...(mergedSettings !== undefined ? { settings: mergedSettings } : {}),
+      };
+
       if (existing) {
         const [updated] = await ctx.db
           .update(userSettings)
-          .set(input)
+          .set(setData)
           .where(eq(userSettings.userId, ctx.user!.id))
           .returning();
         return updated;
       } else {
         const [created] = await ctx.db
           .insert(userSettings)
-          .values({ userId: ctx.user!.id, ...input })
+          .values({ userId: ctx.user!.id, ...setData })
           .returning();
         return created;
       }

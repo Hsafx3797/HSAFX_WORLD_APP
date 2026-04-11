@@ -362,18 +362,27 @@ function NotificationsSection() {
   });
 
   const [emailNotifications, setEmailNotifications] = useState(true);
+  const [pushNotifications, setPushNotifications] = useState(false);
   const [marketingEmails, setMarketingEmails] = useState(false);
 
   useEffect(() => {
     if (data?.settings) {
       setEmailNotifications(data.settings.emailNotifications ?? true);
+      setPushNotifications(data.settings.pushNotifications ?? false);
       setMarketingEmails(data.settings.marketingEmails ?? false);
     }
   }, [data?.settings]);
 
+  const busy = isLoading || updateSettings.isPending;
+
   const handleEmailToggle = (val: boolean) => {
     setEmailNotifications(val);
     updateSettings.mutate({ emailNotifications: val });
+  };
+
+  const handlePushToggle = (val: boolean) => {
+    setPushNotifications(val);
+    updateSettings.mutate({ pushNotifications: val });
   };
 
   const handleMarketingToggle = (val: boolean) => {
@@ -395,7 +404,20 @@ function NotificationsSection() {
           <Toggle
             checked={emailNotifications}
             onChange={handleEmailToggle}
-            disabled={isLoading || updateSettings.isPending}
+            disabled={busy}
+          />
+        </div>
+        <div className="flex items-center justify-between border-t border-border pt-4">
+          <div>
+            <h3 className="font-medium">Push Notifications</h3>
+            <p className="text-sm text-muted-foreground">
+              Browser and mobile push notifications
+            </p>
+          </div>
+          <Toggle
+            checked={pushNotifications}
+            onChange={handlePushToggle}
+            disabled={busy}
           />
         </div>
         <div className="flex items-center justify-between border-t border-border pt-4">
@@ -408,7 +430,7 @@ function NotificationsSection() {
           <Toggle
             checked={marketingEmails}
             onChange={handleMarketingToggle}
-            disabled={isLoading || updateSettings.isPending}
+            disabled={busy}
           />
         </div>
       </div>
