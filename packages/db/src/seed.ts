@@ -291,9 +291,10 @@ async function seed() {
     // ── 8. B2B Plans ─────────────────────────────────────────
     console.log('  → B2B Plans');
     const b2bPlanData = [
-      { name: 'Basic', slug: 'basic', description: 'Starter API plan', priceMonthlyCents: 4900, priceYearlyCents: 49000 },
-      { name: 'Pro', slug: 'pro', description: 'Professional API plan', priceMonthlyCents: 14900, priceYearlyCents: 149000 },
-      { name: 'Enterprise', slug: 'enterprise', description: 'Enterprise API plan', priceMonthlyCents: 49900, priceYearlyCents: 499000 },
+      { name: 'Starter', slug: 'starter', description: 'Starter API plan — small teams and prototyping', priceMonthlyCents: 4900, priceYearlyCents: 49000 },
+      { name: 'Growth', slug: 'growth', description: 'Growth API plan — scaling businesses', priceMonthlyCents: 14900, priceYearlyCents: 149000 },
+      { name: 'Scale', slug: 'scale', description: 'Scale API plan — high-volume operations', priceMonthlyCents: 49900, priceYearlyCents: 499000 },
+      { name: 'Enterprise', slug: 'enterprise', description: 'Enterprise API plan — unlimited text/data, highest quotas', priceMonthlyCents: 149900, priceYearlyCents: 1499000 },
     ];
     await tx.insert(b2bPlans).values(b2bPlanData).onConflictDoNothing({ target: b2bPlans.slug });
     const allB2bPlans = await tx.select().from(b2bPlans);
@@ -301,13 +302,18 @@ async function seed() {
     console.log(`    ✓ ${allB2bPlans.length} B2B plans`);
 
     // ── 9. B2B Suites ────────────────────────────────────────
+    // Aligned with CATEGORY_ENGINES in apps/web/src/lib/engine-constants.ts
     console.log('  → B2B Suites');
     const b2bSuiteData = [
-      { slug: 'text-processing', name: 'Text Processing', description: 'Case, wrap, filter, transform, comment, markup', sortOrder: 1 },
-      { slug: 'data-encoding', name: 'Data & Encoding', description: 'Encode, hash, counter, unicode', sortOrder: 2 },
-      { slug: 'data-conversion', name: 'Data Conversion', description: 'Convert, format, schema, diff, api', sortOrder: 3 },
-      { slug: 'generation', name: 'Generation & Validation', description: 'Generate-data, generate-web, calculate, unit, validate', sortOrder: 4 },
-      { slug: 'media-processing', name: 'Media Processing', description: 'Image, video, audio, pdf, document, archive, file, font', sortOrder: 5 },
+      { slug: 'text', name: 'Text Processing', description: 'Case, wrap, comment, markup, filter, transform, encode, hash, counter, unicode', sortOrder: 1 },
+      { slug: 'data', name: 'Data Processing', description: 'Convert, format, schema, diff, api', sortOrder: 2 },
+      { slug: 'generate', name: 'Generators', description: 'Generate-data, generate-web', sortOrder: 3 },
+      { slug: 'validate', name: 'Validators', description: 'Validate', sortOrder: 4 },
+      { slug: 'calculate', name: 'Calculators', description: 'Calculate', sortOrder: 5 },
+      { slug: 'convert', name: 'Unit Conversion', description: 'Unit', sortOrder: 6 },
+      { slug: 'media', name: 'Media Processing', description: 'Image, video, audio, pdf, document, archive, file, font', sortOrder: 7 },
+      { slug: 'tracking', name: 'Tracking', description: 'Container, vessel, flight tracking', sortOrder: 8 },
+      { slug: 'cheque', name: 'Cheque Generation', description: 'Multi-currency cheque generation', sortOrder: 9 },
     ];
     await tx.insert(b2bSuites).values(b2bSuiteData).onConflictDoNothing({ target: b2bSuites.slug });
     const allB2bSuites = await tx.select().from(b2bSuites);
@@ -315,13 +321,18 @@ async function seed() {
     console.log(`    ✓ ${allB2bSuites.length} B2B suites`);
 
     // ── 10. B2B Suite Categories (engine → suite mapping) ────
+    // Must match CATEGORY_ENGINES exactly
     console.log('  → B2B Suite Categories');
     const engineSuiteMapping: Record<string, string[]> = {
-      'text-processing': ['case', 'wrap', 'filter', 'transform', 'comment', 'markup'],
-      'data-encoding': ['encode', 'hash', 'counter', 'unicode'],
-      'data-conversion': ['convert', 'format', 'schema', 'diff', 'api', 'tracking'],
-      'generation': ['generate-data', 'generate-web', 'calculate', 'unit', 'validate', 'cheque'],
-      'media-processing': ['image', 'video', 'audio', 'pdf', 'document', 'archive', 'file', 'font'],
+      text: ['case', 'wrap', 'comment', 'markup', 'filter', 'transform', 'encode', 'hash', 'counter', 'unicode'],
+      data: ['convert', 'format', 'schema', 'diff', 'api'],
+      generate: ['generate-data', 'generate-web'],
+      validate: ['validate'],
+      calculate: ['calculate'],
+      convert: ['unit'],
+      media: ['image', 'video', 'audio', 'pdf', 'document', 'archive', 'file', 'font'],
+      tracking: ['tracking'],
+      cheque: ['cheque'],
     };
     const suiteCategoryValues: { b2bSuiteId: string; category: string }[] = [];
     for (const [suiteSlug, engines] of Object.entries(engineSuiteMapping)) {
@@ -335,12 +346,13 @@ async function seed() {
     console.log(`    ✓ ${suiteCategoryValues.length} engine→suite mappings`);
 
     // ── 11. B2B Plan Quotas (suite × plan) ───────────────────
+    // Values from docs/ROADMAP/04_WEB_PLATFORM_BUILD.md §0.1
     console.log('  → B2B Plan Quotas');
-    // monthlyLimit: -1 = unlimited (enforced as MAX_SAFE_INTEGER in quota service)
     const quotaGrid: Record<string, Record<string, number>> = {
-      basic:      { 'text-processing': 5000, 'data-encoding': 3000, 'data-conversion': 2000, 'generation': 1000, 'media-processing': 500 },
-      pro:        { 'text-processing': 50000, 'data-encoding': 30000, 'data-conversion': 20000, 'generation': 10000, 'media-processing': 5000 },
-      enterprise: { 'text-processing': 999999999, 'data-encoding': 999999999, 'data-conversion': 999999999, 'generation': 999999999, 'media-processing': 50000 },
+      starter:    { text: 10000, data: 5000,  generate: 2000,  validate: 5000,  calculate: 5000,  convert: 5000,  media: 1000,  tracking: 500,  cheque: 200   },
+      growth:     { text: 50000, data: 25000, generate: 10000, validate: 25000, calculate: 25000, convert: 25000, media: 5000,  tracking: 2500, cheque: 1000  },
+      scale:      { text: 250000, data: 125000, generate: 50000, validate: 125000, calculate: 125000, convert: 125000, media: 25000, tracking: 12500, cheque: 5000 },
+      enterprise: { text: 1000000, data: 500000, generate: 200000, validate: 500000, calculate: 500000, convert: 500000, media: 100000, tracking: 50000, cheque: 20000 },
     };
     const quotaValues: { b2bPlanId: string; b2bSuiteId: string; monthlyLimit: number }[] = [];
     for (const [planSlug, suites] of Object.entries(quotaGrid)) {
@@ -362,10 +374,10 @@ async function seed() {
   console.log(`   Coin Packs: ${coinPackData.length}`);
   console.log(`   Feature Flags: ${flagData.length}`);
   console.log(`   Tool Categories: ${categoryData.length}`);
-  console.log(`   B2B Plans: 3`);
-  console.log(`   B2B Suites: 5`);
+  console.log(`   B2B Plans: 4`);
+  console.log(`   B2B Suites: 9`);
   console.log(`   B2B Engine→Suite Mappings: 30`);
-  console.log(`   B2B Plan Quotas: 15`);
+  console.log(`   B2B Plan Quotas: 36`);
 }
 
 seed().catch((err) => {

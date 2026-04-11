@@ -134,7 +134,7 @@ export default function B2bSuitesPage() {
                 label="Slug"
                 value={form.slug}
                 onChange={(e) => setForm({ ...form, slug: e.target.value })}
-                placeholder="text-processing"
+                placeholder="text"
                 disabled={!!editingSuite}
               />
             </FormGroup>
