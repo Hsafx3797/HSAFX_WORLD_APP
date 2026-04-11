@@ -12,7 +12,7 @@
 
 import { db } from '@hsafx/db';
 import { users, eq } from '@hsafx/db/schema';
-import { stripe } from '@/lib/stripe';
+import { getStripe } from '@/lib/stripe';
 import { createLogger } from '@hsafx/shared/logger';
 
 const log = createLogger('stripe-customer-sync');
@@ -35,20 +35,20 @@ export async function syncStripeCustomer(userId: string, email: string, name?: s
   }
 
   // Check for existing Stripe customer by email (e.g. if they previously purchased as guest)
-  const existing = await stripe.customers.list({ email, limit: 1 });
+  const existing = await getStripe().customers.list({ email, limit: 1 });
 
   let stripeCustomerId: string;
 
   if (existing.data.length > 0) {
     stripeCustomerId = existing.data[0]!.id;
     // Update Stripe metadata to link to our user
-    await stripe.customers.update(stripeCustomerId, {
+    await getStripe().customers.update(stripeCustomerId, {
       metadata: { hsafx_user_id: userId },
       ...(name ? { name } : {}),
     });
     log.info('Linked existing Stripe customer', { userId, stripeCustomerId });
   } else {
-    const customer = await stripe.customers.create({
+    const customer = await getStripe().customers.create({
       email,
       ...(name ? { name } : {}),
       metadata: { hsafx_user_id: userId },

@@ -12,6 +12,9 @@ export const authClient = createAuthClient({
       },
     }),
   ],
+  sessionOptions: {
+    refetchOnWindowFocus: false,
+  },
 });
 
 export const {

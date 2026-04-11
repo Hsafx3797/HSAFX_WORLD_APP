@@ -104,37 +104,9 @@ export function Header() {
     router.push('/');
   };
 
-  // Impersonation banner state
-  const [impersonation, setImpersonation] = React.useState<{ name: string; email: string; expiresAt: string } | null>(null);
-
-  React.useEffect(() => {
-    fetch('/api/admin/impersonate', { credentials: 'include' })
-      .then((r) => r.ok ? r.json() : null)
-      .then((data) => {
-        if (data?.impersonating) setImpersonation(data.impersonating);
-      })
-      .catch(() => {});
-  }, []);
-
-  const stopImpersonation = React.useCallback(async () => {
-    await fetch('/api/admin/impersonate', { method: 'DELETE', credentials: 'include' });
-    setImpersonation(null);
-    window.location.reload();
-  }, []);
-
+  // TODO [G16]: Wire impersonation banner once web app has its own /api/impersonate route
   return (
     <>
-      {impersonation && (
-        <div className="bg-warning text-warning-foreground px-4 py-2 text-sm text-center font-medium flex items-center justify-center gap-3 z-60 relative">
-          <span>⚠️ Impersonating: {impersonation.name} ({impersonation.email})</span>
-          <button
-            onClick={stopImpersonation}
-            className="px-3 py-1 bg-foreground text-background rounded text-xs font-bold hover:bg-foreground/80 transition-colors"
-          >
-            Stop Impersonation
-          </button>
-        </div>
-      )}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
       <nav className="container flex h-16 items-center justify-between">
         {/* Logo */}

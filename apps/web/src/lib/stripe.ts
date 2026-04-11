@@ -11,12 +11,6 @@
 
 import Stripe from 'stripe';
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  console.warn(
-    '[stripe] STRIPE_SECRET_KEY is not set — Stripe API calls will fail.',
-  );
-}
-
 /**
  * Singleton Stripe client (lazy).
  * Uses server-side secret key — never expose to the browser.
