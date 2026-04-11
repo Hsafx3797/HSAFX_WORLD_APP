@@ -13,6 +13,7 @@ export default function ApiKeysPage() {
   const { user, isLoading: authLoading } = useAuth();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newKeyName, setNewKeyName] = useState('');
+  const [newKeyScopes, setNewKeyScopes] = useState<string[]>(['tools:read', 'tools:execute']);
   const [createdKey, setCreatedKey] = useState<string | null>(null);
 
   const utils = trpc.useUtils();
@@ -41,7 +42,16 @@ export default function ApiKeysPage() {
 
   const createApiKey = () => {
     if (!newKeyName.trim()) return;
-    generateMutation.mutate({ name: newKeyName, scopes: ['tools:read', 'tools:execute'] });
+    generateMutation.mutate({ name: newKeyName, scopes: newKeyScopes });
+  };
+
+  const regenerateApiKey = (keyId: string, keyName: string) => {
+    if (!confirm(`Regenerate key "${keyName}"? The current key will be revoked immediately.`)) return;
+    revokeMutation.mutate({ id: keyId }, {
+      onSuccess: () => {
+        generateMutation.mutate({ name: keyName, scopes: ['tools:read', 'tools:execute'] });
+      },
+    });
   };
 
   const revokeApiKey = (keyId: string) => {
@@ -135,11 +145,31 @@ export default function ApiKeysPage() {
                   className="w-full mt-1 px-3 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
               </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Scopes</label>
+                <div className="space-y-2">
+                  {(['tools:read', 'tools:execute', 'billing:read', 'billing:write'] as const).map((scope) => (
+                    <label key={scope} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newKeyScopes.includes(scope)}
+                        onChange={(e) => {
+                          setNewKeyScopes(prev =>
+                            e.target.checked ? [...prev, scope] : prev.filter(s => s !== scope)
+                          );
+                        }}
+                        className="rounded border-border"
+                      />
+                      <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{scope}</code>
+                    </label>
+                  ))}
+                </div>
+              </div>
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setShowCreateModal(false)}>
+                <Button variant="outline" onClick={() => { setShowCreateModal(false); setNewKeyScopes(['tools:read', 'tools:execute']); }}>
                   Cancel
                 </Button>
-                <Button onClick={createApiKey} disabled={generateMutation.isPending || !newKeyName.trim()}>
+                <Button onClick={createApiKey} disabled={generateMutation.isPending || !newKeyName.trim() || newKeyScopes.length === 0}>
                   {generateMutation.isPending ? 'Creating...' : 'Create'}
                 </Button>
               </div>
@@ -212,15 +242,29 @@ export default function ApiKeysPage() {
                       <p className="text-sm text-muted-foreground font-mono">
                         {key.keyPrefix}••••••••
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      {key.scopes && key.scopes.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {key.scopes.map((scope: string) => (
+                            <Badge key={scope} variant="outline" className="text-xs font-mono">{scope}</Badge>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-1">
                         Created {new Date(key.createdAt).toLocaleDateString()}
                         {key.lastUsed && ` • Last used ${new Date(key.lastUsed).toLocaleDateString()}`}
                       </p>
                     </div>
                   </div>
-                  <Button variant="ghost" className="text-destructive" onClick={() => revokeApiKey(key.id)}>
-                    Revoke
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    {key.isActive && (
+                      <Button variant="outline" size="sm" onClick={() => regenerateApiKey(key.id, key.name)}>
+                        Regenerate
+                      </Button>
+                    )}
+                    <Button variant="ghost" className="text-destructive" onClick={() => revokeApiKey(key.id)} disabled={!key.isActive}>
+                      Revoke
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -245,81 +289,30 @@ export default function ApiKeysPage() {
         </CardContent>
       </Card>
 
-      {/* Rate Limits Dashboard (T3.6) */}
+      {/* Rate Limits Info */}
       <Card className="mt-8">
         <CardHeader>
           <CardTitle>Rate Limits</CardTitle>
-          <CardDescription>Your current API usage and rate limit quotas</CardDescription>
+          <CardDescription>API rate limits are determined by your B2B plan</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-6">
-            {/* Per-Minute Limit */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium">Requests per Minute</span>
-                <span className="text-sm text-muted-foreground">
-                  {apiKeys.length > 0 ? '— / 60' : 'No active keys'}
-                </span>
-              </div>
-              <div className="h-2 bg-muted rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary rounded-full transition-all"
-                  style={{ width: '0%' }}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Resets every minute. Real-time tracking available via response headers.
-              </p>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Rate limits are enforced per API key and depend on your subscription plan.
+              Every API response includes rate limit information in headers.
+            </p>
+            <div className="bg-muted/50 rounded-lg p-3 font-mono text-xs space-y-1">
+              <p><span className="text-primary">X-RateLimit-Limit:</span> 60</p>
+              <p><span className="text-primary">X-RateLimit-Remaining:</span> 58</p>
+              <p><span className="text-primary">X-RateLimit-Reset:</span> 1704067200</p>
             </div>
-
-            {/* Daily Limit */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium">Daily Requests</span>
-                <span className="text-sm text-muted-foreground">
-                  {apiKeys.length > 0 ? '— / 1,000' : 'No active keys'}
-                </span>
-              </div>
-              <div className="h-2 bg-muted rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary rounded-full transition-all"
-                  style={{ width: '0%' }}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Resets at midnight UTC. Upgrade your plan for higher limits.
-              </p>
-            </div>
-
-            {/* Monthly Limit */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium">Monthly Requests</span>
-                <span className="text-sm text-muted-foreground">
-                  {apiKeys.length > 0 ? '— / 10,000' : 'No active keys'}
-                </span>
-              </div>
-              <div className="h-2 bg-muted rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary rounded-full transition-all"
-                  style={{ width: '0%' }}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Resets on the 1st of each month.
-              </p>
-            </div>
-
-            <div className="pt-4 border-t border-border">
-              <h4 className="text-sm font-medium mb-2">Rate Limit Headers</h4>
-              <p className="text-xs text-muted-foreground mb-3">
-                Every API response includes rate limit info in headers:
-              </p>
-              <div className="bg-muted/50 rounded-lg p-3 font-mono text-xs space-y-1">
-                <p><span className="text-primary">X-RateLimit-Limit:</span> 60</p>
-                <p><span className="text-primary">X-RateLimit-Remaining:</span> 58</p>
-                <p><span className="text-primary">X-RateLimit-Reset:</span> 1704067200</p>
-              </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => router.push('/dashboard/api')}>
+                View Usage Dashboard
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => router.push('/pricing')}>
+                Upgrade Plan
+              </Button>
             </div>
           </div>
         </CardContent>
