@@ -4,21 +4,16 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { useCoins } from '@/hooks/use-coins';
+import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-
-const COIN_PACKAGES = [
-  { id: 'coins-100', amount: 100, price: 1.99, popular: false },
-  { id: 'coins-500', amount: 500, price: 7.99, popular: true },
-  { id: 'coins-1000', amount: 1000, price: 14.99, popular: false },
-  { id: 'coins-5000', amount: 5000, price: 59.99, popular: false },
-];
 
 export default function CoinsPage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
   const { balance, transactions, dailyBonusAvailable, claimDailyBonus, purchaseCoins, isLoading } = useCoins();
+  const { data: coinPacks, isLoading: packsLoading } = trpc.billing.getCoinPacks.useQuery();
   const [purchasing, setPurchasing] = useState(false);
 
   useEffect(() => {
@@ -29,21 +24,14 @@ export default function CoinsPage() {
 
   const handleClaimBonus = async () => {
     const result = await claimDailyBonus();
-    if (!result.success) {
-      alert(result.error);
-    }
+    if (!result.success) alert(result.error);
   };
 
   const handlePurchase = async (packId: string) => {
     setPurchasing(true);
     const result = await purchaseCoins(packId);
-    
-    if (result.success && result.checkoutUrl) {
-      window.location.href = result.checkoutUrl;
-    } else {
-      alert(result.error || 'Failed to create checkout');
-    }
-    
+    if (result.success && result.checkoutUrl) window.location.href = result.checkoutUrl;
+    else alert(result.error || 'Failed to create checkout');
     setPurchasing(false);
   };
 
@@ -71,12 +59,11 @@ export default function CoinsPage() {
               <CardTitle className="text-4xl">{balance} coins</CardTitle>
             </CardHeader>
             <CardContent>
-              {dailyBonusAvailable && (
+              {dailyBonusAvailable ? (
                 <Button className="w-full" onClick={handleClaimBonus} disabled={isLoading}>
                   {isLoading ? 'Claiming...' : 'Claim Daily Bonus (+10 coins)'}
                 </Button>
-              )}
-              {!dailyBonusAvailable && (
+              ) : (
                 <p className="text-sm text-muted-foreground text-center">
                   Daily bonus already claimed. Come back tomorrow!
                 </p>
@@ -85,7 +72,7 @@ export default function CoinsPage() {
           </Card>
         </div>
 
-        {/* Purchase Options */}
+        {/* Purchase Options — from DB */}
         <div className="lg:col-span-2">
           <Card>
             <CardHeader>
@@ -93,35 +80,48 @@ export default function CoinsPage() {
               <CardDescription>Get more coins to use premium tools</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4 sm:grid-cols-2">
-                {COIN_PACKAGES.map((pkg) => (
-                  <div
-                    key={pkg.amount}
-                    className={`relative p-4 border rounded-lg ${
-                      pkg.popular ? 'border-primary ring-2 ring-primary/20' : 'border-border'
-                    }`}
-                  >
-                    {pkg.popular && (
-                      <Badge className="absolute -top-2 -right-2" variant="default">
-                        Popular
-                      </Badge>
-                    )}
-                    <div className="text-2xl font-bold">{pkg.amount} coins</div>
-                    <div className="text-lg text-muted-foreground">${pkg.price}</div>
-                    <div className="text-sm text-muted-foreground mb-4">
-                      ${(pkg.price / pkg.amount * 100).toFixed(1)}¢ per coin
+              {packsLoading ? (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {[1, 2, 3, 4].map(i => (
+                    <div key={i} className="animate-pulse p-4 border rounded-lg">
+                      <div className="h-7 bg-muted rounded w-24 mb-2" />
+                      <div className="h-5 bg-muted rounded w-16 mb-4" />
+                      <div className="h-9 bg-muted rounded" />
                     </div>
-                    <Button
-                      variant={pkg.popular ? 'default' : 'outline'}
-                      className="w-full"
-                      onClick={() => handlePurchase(pkg.id)}
-                      disabled={purchasing}
-                    >
-                      {purchasing ? 'Processing...' : 'Purchase'}
-                    </Button>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {(coinPacks ?? []).map((pack, idx) => {
+                    const isPopular = idx === 1; // second pack highlighted
+                    const pricePerCoin = pack.priceInCents / pack.coins;
+                    return (
+                      <div
+                        key={pack.id}
+                        className={`relative p-4 border rounded-lg ${isPopular ? 'border-primary ring-2 ring-primary/20' : 'border-border'}`}
+                      >
+                        {isPopular && <Badge className="absolute -top-2 -right-2" variant="default">Popular</Badge>}
+                        <div className="text-2xl font-bold">{pack.coins.toLocaleString()} coins</div>
+                        <div className="text-lg text-muted-foreground">${(pack.priceInCents / 100).toFixed(2)}</div>
+                        {pack.bonusCoins > 0 && (
+                          <Badge variant="secondary" className="mt-1">+{pack.bonusCoins} bonus</Badge>
+                        )}
+                        <div className="text-sm text-muted-foreground mb-4">
+                          {pricePerCoin.toFixed(1)}¢ per coin
+                        </div>
+                        <Button
+                          variant={isPopular ? 'default' : 'outline'}
+                          className="w-full"
+                          onClick={() => handlePurchase(pack.id)}
+                          disabled={purchasing}
+                        >
+                          {purchasing ? 'Processing...' : 'Purchase'}
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
