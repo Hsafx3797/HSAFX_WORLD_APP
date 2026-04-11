@@ -13,6 +13,9 @@ import {
   desc,
   isNull,
   sql,
+  gte,
+  lte,
+  count,
 } from '@hsafx/db/schema';
 import { TRPCError } from '@trpc/server';
 import { isPlanAtLeast } from '@hsafx/shared/permissions';
@@ -264,19 +267,41 @@ export const toolsRouter = router({
     .input(z.object({
       page: z.number().int().min(1).default(1),
       pageSize: z.number().int().min(1).max(100).default(20),
+      status: z.enum(['pending', 'running', 'succeeded', 'failed']).optional(),
+      engineName: z.string().optional(),
+      dateFrom: z.string().datetime().optional(),
+      dateTo: z.string().datetime().optional(),
     }))
     .query(async ({ ctx, input }) => {
       const offset = (input.page - 1) * input.pageSize;
 
-      const items = await ctx.db
-        .select()
-        .from(toolExecutions)
-        .where(eq(toolExecutions.userId, ctx.user!.id))
-        .orderBy(desc(toolExecutions.createdAt))
-        .limit(input.pageSize)
-        .offset(offset);
+      const conditions = [eq(toolExecutions.userId, ctx.user!.id)];
+      if (input.status) conditions.push(eq(toolExecutions.status, input.status));
+      if (input.engineName) {
+        conditions.push(sql`${toolExecutions.metadata}->>'engineName' = ${input.engineName}`);
+      }
+      if (input.dateFrom) conditions.push(gte(toolExecutions.createdAt, new Date(input.dateFrom)));
+      if (input.dateTo) conditions.push(lte(toolExecutions.createdAt, new Date(input.dateTo)));
 
-      return { items, page: input.page, pageSize: input.pageSize };
+      const whereClause = and(...conditions);
+
+      const [items, [totalRow]] = await Promise.all([
+        ctx.db
+          .select()
+          .from(toolExecutions)
+          .where(whereClause)
+          .orderBy(desc(toolExecutions.createdAt))
+          .limit(input.pageSize)
+          .offset(offset),
+        ctx.db
+          .select({ count: count() })
+          .from(toolExecutions)
+          .where(whereClause),
+      ]);
+
+      const total = Number(totalRow?.count ?? 0);
+
+      return { items, page: input.page, pageSize: input.pageSize, total, totalPages: Math.ceil(total / input.pageSize) };
     }),
 
   // ─── Pro Trial Endpoints (T2.6) ─────────────────────────────
