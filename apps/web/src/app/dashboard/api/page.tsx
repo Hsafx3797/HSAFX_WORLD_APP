@@ -135,14 +135,14 @@ export default function B2bDashboardPage() {
           ) : (
             <div className="space-y-4">
               {usage.usage.map((u) => {
-                const pct = u.monthlyLimit > 0 ? Math.min((u.opsUsed / u.monthlyLimit) * 100, 100) : 0;
+                const pct = u.monthlyLimit > 0 ? Math.min((u.usageCount / u.monthlyLimit) * 100, 100) : 0;
                 const isHigh = pct >= 80;
                 return (
                   <div key={u.suiteId}>
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-sm font-medium capitalize">{u.suiteName}</span>
                       <span className="text-xs text-muted-foreground">
-                        {u.opsUsed.toLocaleString()} / {u.monthlyLimit.toLocaleString()}
+                        {u.usageCount.toLocaleString()} / {u.monthlyLimit.toLocaleString()}
                       </span>
                     </div>
                     <div className="w-full bg-muted rounded-full h-2">

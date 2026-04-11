@@ -109,7 +109,7 @@ export const b2bRouter = router({
         suiteId: b2bUsage.b2bSuiteId,
         suiteName: b2bSuites.name,
         suiteSlug: b2bSuites.slug,
-        opsUsed: b2bUsage.opsUsed,
+        usageCount: b2bUsage.usageCount,
         monthlyLimit: b2bPlanQuotas.monthlyLimit,
         periodStart: b2bUsage.periodStart,
         periodEnd: b2bUsage.periodEnd,
@@ -123,9 +123,9 @@ export const b2bRouter = router({
           eq(b2bPlanQuotas.b2bSuiteId, b2bUsage.b2bSuiteId)
         )
       )
-      .where(eq(b2bUsage.b2bSubscriptionId, sub.id))
+      .where(eq(b2bUsage.userId, ctx.user!.id))
       .orderBy(b2bSuites.sortOrder);
 
-    return { subscriptionId: sub.id, usage };
+    return { subscriptionId: sub.id, periodEnd: sub.currentPeriodEnd, usage };
   }),
 });
