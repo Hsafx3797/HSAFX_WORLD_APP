@@ -36,6 +36,9 @@ export default function DashboardPage() {
     enabled: !!user,
   });
 
+  const { data: b2bSub } = trpc.b2b.getMySubscription.useQuery(undefined, { enabled: !!user });
+  const { data: b2bUsage } = trpc.b2b.getMyUsage.useQuery(undefined, { enabled: !!user });
+
   const showOnboarding =
     onboardingQuery.data &&
     !onboardingQuery.data.completed &&
@@ -200,6 +203,28 @@ export default function DashboardPage() {
             </Link>
           </CardContent>
         </Card>
+
+        {/* B2B API Status */}
+        {b2bSub && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>API Plan</CardDescription>
+              <CardTitle className="flex items-center gap-2">
+                <span>{b2bSub.planName}</span>
+                <Badge variant={b2bSub.status === 'active' ? 'default' : 'secondary'} className="capitalize">
+                  {b2bSub.status}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {b2bSub.currentPeriodEnd && (
+                <p className="text-sm text-muted-foreground">
+                  Renews {new Date(b2bSub.currentPeriodEnd).toLocaleDateString()}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Onboarding Checklist */}
@@ -214,6 +239,40 @@ export default function DashboardPage() {
       <div className="mb-8">
         <ReferralCard />
       </div>
+
+      {/* B2B Suite Usage Overview */}
+      {b2bUsage && b2bUsage.usage.length > 0 && (
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">API Suite Usage</h2>
+            <Link href="/dashboard/api/usage">
+              <Button variant="ghost" size="sm">View Details</Button>
+            </Link>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {b2bUsage.usage.slice(0, 6).map((u) => {
+              const pct = u.monthlyLimit > 0 ? Math.min((u.usageCount / u.monthlyLimit) * 100, 100) : 0;
+              return (
+                <Card key={u.suiteId} className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium capitalize">{u.suiteName}</span>
+                    <span className="text-xs text-muted-foreground">{pct.toFixed(0)}%</span>
+                  </div>
+                  <div className="w-full bg-muted rounded-full h-2">
+                    <div
+                      className={`h-2 rounded-full ${pct >= 80 ? 'bg-destructive' : 'bg-primary'}`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {u.usageCount.toLocaleString()} / {u.monthlyLimit.toLocaleString()}
+                  </p>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Quick Actions */}
       <div className="mb-8">
