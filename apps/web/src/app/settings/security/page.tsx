@@ -643,39 +643,6 @@ export default function SecuritySettingsPage() {
             </div>
           </section>
 
-          {/* Security Log */}
-          <section className="bg-card border border-border rounded-lg p-6">
-            <h2 className="text-lg font-semibold mb-6">Security Log</h2>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between py-2 border-b border-border">
-                <div>
-                  <p className="text-sm font-medium">Password changed</p>
-                  <p className="text-xs text-muted-foreground">Chrome on Windows • Dubai, UAE</p>
-                </div>
-                <span className="text-xs text-muted-foreground">2 days ago</span>
-              </div>
-              <div className="flex items-center justify-between py-2 border-b border-border">
-                <div>
-                  <p className="text-sm font-medium">Successful login</p>
-                  <p className="text-xs text-muted-foreground">Safari on iPhone • Dubai, UAE</p>
-                </div>
-                <span className="text-xs text-muted-foreground">3 days ago</span>
-              </div>
-              <div className="flex items-center justify-between py-2">
-                <div>
-                  <p className="text-sm font-medium">Account created</p>
-                  <p className="text-xs text-muted-foreground">Chrome on Windows • Dubai, UAE</p>
-                </div>
-                <span className="text-xs text-muted-foreground">1 week ago</span>
-              </div>
-            </div>
-            <Link
-              href="/dashboard/history"
-              className="inline-block mt-4 text-sm text-primary hover:underline"
-            >
-              View full activity log →
-            </Link>
-          </section>
         </div>
       </div>
     </div>

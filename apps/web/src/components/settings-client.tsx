@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { trpc } from '@/lib/trpc';
@@ -349,6 +349,31 @@ function NotificationsSection() {
 }
 
 // ─── Security Section ───────────────────────────────────────
+interface SessionData {
+  id: string;
+  token: string;
+  userAgent: string | null;
+  ipAddress: string | null;
+  createdAt: Date;
+  isCurrent: boolean;
+}
+
+function parseUserAgent(ua: string | null): { device: string; browser: string } {
+  if (!ua) return { device: 'Unknown', browser: 'Unknown' };
+  const browser =
+    ua.includes('Firefox') ? 'Firefox' :
+    ua.includes('Edg') ? 'Edge' :
+    ua.includes('Chrome') ? 'Chrome' :
+    ua.includes('Safari') ? 'Safari' : 'Other';
+  const device =
+    /iPhone|iPad/.test(ua) ? 'iOS' :
+    /Android/.test(ua) ? 'Android' :
+    /Macintosh/.test(ua) ? 'Mac' :
+    /Windows/.test(ua) ? 'Windows' :
+    /Linux/.test(ua) ? 'Linux' : 'Unknown';
+  return { device, browser };
+}
+
 function SecuritySection() {
   const changePassword = trpc.user.changePassword.useMutation({
     onSuccess: () => {
@@ -364,6 +389,47 @@ function SecuritySection() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  // 2FA state
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [twoFAStep, setTwoFAStep] = useState<'idle' | 'setup' | 'backup' | 'verify'>('idle');
+  const [totpQRDataUrl, setTotpQRDataUrl] = useState('');
+  const [totpURI, setTotpURI] = useState('');
+  const [backupCodes, setBackupCodes] = useState<string[]>([]);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [twoFAPassword, setTwoFAPassword] = useState('');
+  const [twoFALoading, setTwoFALoading] = useState(false);
+
+  // Sessions state
+  const [sessions, setSessions] = useState<SessionData[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(true);
+
+  // Check 2FA status on mount
+  useEffect(() => {
+    authClient.getSession().then((res) => {
+      if (res.data?.user) {
+        const u = res.data.user as Record<string, unknown>;
+        setTwoFactorEnabled(!!u.twoFactorEnabled);
+      }
+    }).catch(() => {});
+  }, []);
+
+  // Fetch sessions
+  const fetchSessions = useCallback(async () => {
+    try {
+      setSessionsLoading(true);
+      const res = await authClient.listSessions();
+      if (res.data) {
+        setSessions(res.data as unknown as SessionData[]);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setSessionsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchSessions(); }, [fetchSessions]);
+
   const handleChangePassword = () => {
     if (newPassword !== confirmPassword) {
       toast.error('Passwords do not match');
@@ -376,10 +442,82 @@ function SecuritySection() {
     changePassword.mutate({ currentPassword, newPassword });
   };
 
+  // 2FA handlers
+  const handleEnable2FA = async () => {
+    if (!twoFAPassword) { toast.error('Enter your password'); return; }
+    setTwoFALoading(true);
+    try {
+      const res = await authClient.twoFactor.enable({ password: twoFAPassword });
+      if (res.error) { toast.error(res.error.message ?? 'Failed to enable 2FA'); return; }
+      const data = res.data as { totpURI: string; backupCodes: string[] };
+      setTotpURI(data.totpURI);
+      setBackupCodes(data.backupCodes);
+      const QRCode = (await import('qrcode')).default;
+      const qr = await QRCode.toDataURL(data.totpURI, { width: 200, margin: 2 });
+      setTotpQRDataUrl(qr);
+      setTwoFAStep('setup');
+    } catch { toast.error('Failed to enable 2FA'); } finally { setTwoFALoading(false); }
+  };
+
+  const handleVerify2FA = async () => {
+    if (verificationCode.length !== 6) { toast.error('Enter a valid 6-digit code'); return; }
+    setTwoFALoading(true);
+    try {
+      const res = await authClient.twoFactor.verifyTotp({ code: verificationCode });
+      if (res.error) { toast.error(res.error.message ?? 'Invalid code'); return; }
+      setTwoFactorEnabled(true);
+      setTwoFAStep('idle');
+      setVerificationCode('');
+      setTwoFAPassword('');
+      toast.success('Two-factor authentication enabled');
+    } catch { toast.error('Verification failed'); } finally { setTwoFALoading(false); }
+  };
+
+  const handleDisable2FA = async () => {
+    if (!twoFAPassword) { toast.error('Enter your password'); return; }
+    setTwoFALoading(true);
+    try {
+      const res = await authClient.twoFactor.disable({ password: twoFAPassword });
+      if (res.error) { toast.error(res.error.message ?? 'Failed to disable 2FA'); return; }
+      setTwoFactorEnabled(false);
+      setTwoFAPassword('');
+      toast.success('Two-factor authentication disabled');
+    } catch { toast.error('Failed to disable 2FA'); } finally { setTwoFALoading(false); }
+  };
+
+  const handleCancelSetup = () => {
+    setTwoFAStep('idle');
+    setVerificationCode('');
+    setTwoFAPassword('');
+    setTotpQRDataUrl('');
+    setTotpURI('');
+    setBackupCodes([]);
+  };
+
+  // Session handlers
+  const handleRevokeSession = async (token: string) => {
+    try {
+      await authClient.revokeSession({ token });
+      toast.success('Session revoked');
+      fetchSessions();
+    } catch { toast.error('Failed to revoke session'); }
+  };
+
+  const handleRevokeAllSessions = async () => {
+    try {
+      await authClient.revokeSessions();
+      toast.success('All other sessions revoked');
+      fetchSessions();
+    } catch { toast.error('Failed to revoke sessions'); }
+  };
+
+  const manualSecret = totpURI ? new URL(totpURI).searchParams.get('secret') ?? '' : '';
+
   return (
     <section id="security" className="bg-card border border-border rounded-lg p-6">
       <h2 className="text-xl font-semibold mb-6">Security</h2>
       <div className="space-y-6">
+        {/* ── Change Password ── */}
         <div>
           <h3 className="font-medium mb-4">Change Password</h3>
           <div className="space-y-4 max-w-md">
@@ -407,12 +545,7 @@ function SecuritySection() {
             />
             <button
               onClick={handleChangePassword}
-              disabled={
-                changePassword.isPending ||
-                !currentPassword ||
-                !newPassword ||
-                !confirmPassword
-              }
+              disabled={changePassword.isPending || !currentPassword || !newPassword || !confirmPassword}
               className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
               {changePassword.isPending ? 'Updating...' : 'Update Password'}
@@ -420,30 +553,175 @@ function SecuritySection() {
           </div>
         </div>
 
+        {/* ── Two-Factor Authentication ── */}
         <div className="border-t border-border pt-6">
-          <h3 className="font-medium mb-2">Two-Factor Authentication</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Add an extra layer of security to your account
-          </p>
-          <button className="px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors">
-            Enable 2FA
-          </button>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-medium">Two-Factor Authentication</h3>
+              <p className="text-sm text-muted-foreground">Add an extra layer of security to your account</p>
+            </div>
+            {twoFactorEnabled && (
+              <span className="px-2 py-1 bg-success/10 text-success rounded-full text-xs font-medium">Enabled</span>
+            )}
+          </div>
+
+          {/* Idle — not enabled: show enable form */}
+          {!twoFactorEnabled && twoFAStep === 'idle' && (
+            <div className="space-y-3 max-w-md">
+              <input
+                type="password"
+                placeholder="Enter your password"
+                value={twoFAPassword}
+                onChange={(e) => setTwoFAPassword(e.target.value)}
+                className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+              <button
+                onClick={handleEnable2FA}
+                disabled={twoFALoading || !twoFAPassword}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+              >
+                {twoFALoading ? 'Setting up...' : 'Enable 2FA'}
+              </button>
+            </div>
+          )}
+
+          {/* Step 1: QR code */}
+          {twoFAStep === 'setup' && (
+            <div className="space-y-4 max-w-md">
+              <p className="text-sm text-muted-foreground">
+                Scan this QR code with your authenticator app.
+              </p>
+              {totpQRDataUrl && (
+                <div className="flex justify-center">
+                  <img src={totpQRDataUrl} alt="TOTP QR Code" className="w-48 h-48 rounded-lg" />
+                </div>
+              )}
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground mb-1">Or enter manually:</p>
+                <code className="px-3 py-1 bg-muted rounded font-mono text-xs select-all">{manualSecret}</code>
+              </div>
+              <button onClick={() => setTwoFAStep('backup')} className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
+                Next: Backup Codes
+              </button>
+              <button onClick={handleCancelSetup} className="text-sm text-muted-foreground hover:text-foreground">Cancel</button>
+            </div>
+          )}
+
+          {/* Step 2: Backup codes */}
+          {twoFAStep === 'backup' && (
+            <div className="space-y-4 max-w-md">
+              <div className="p-3 bg-warning/10 border border-warning/20 rounded-lg">
+                <p className="text-sm font-medium text-warning">Save these backup codes securely</p>
+                <p className="text-xs text-muted-foreground mt-1">Each code can only be used once.</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2 p-3 bg-muted rounded-lg">
+                {backupCodes.map((code, i) => (
+                  <code key={i} className="font-mono text-xs text-center py-1 select-all">{code}</code>
+                ))}
+              </div>
+              <button
+                onClick={() => { navigator.clipboard.writeText(backupCodes.join('\n')); toast.success('Codes copied'); }}
+                className="w-full px-4 py-2 border border-border rounded-lg text-sm hover:bg-muted transition-colors"
+              >
+                Copy All Codes
+              </button>
+              <button onClick={() => setTwoFAStep('verify')} className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
+                I&apos;ve Saved My Codes
+              </button>
+              <button onClick={handleCancelSetup} className="text-sm text-muted-foreground hover:text-foreground">Cancel</button>
+            </div>
+          )}
+
+          {/* Step 3: Verify */}
+          {twoFAStep === 'verify' && (
+            <div className="space-y-3 max-w-md">
+              <p className="text-sm text-muted-foreground">Enter the 6-digit code from your authenticator app.</p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  className="flex-1 px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 font-mono text-center tracking-widest"
+                  placeholder="000000"
+                  maxLength={6}
+                />
+                <button
+                  onClick={handleVerify2FA}
+                  disabled={twoFALoading || verificationCode.length !== 6}
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  {twoFALoading ? 'Verifying...' : 'Verify'}
+                </button>
+              </div>
+              <button onClick={handleCancelSetup} className="text-sm text-muted-foreground hover:text-foreground">Cancel</button>
+            </div>
+          )}
+
+          {/* Enabled — show disable form */}
+          {twoFactorEnabled && twoFAStep === 'idle' && (
+            <div className="space-y-3 max-w-md">
+              <input
+                type="password"
+                placeholder="Enter your password to disable"
+                value={twoFAPassword}
+                onChange={(e) => setTwoFAPassword(e.target.value)}
+                className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+              <button
+                onClick={handleDisable2FA}
+                disabled={twoFALoading || !twoFAPassword}
+                className="px-4 py-2 border border-destructive text-destructive rounded-lg text-sm font-medium hover:bg-destructive/10 transition-colors disabled:opacity-50"
+              >
+                {twoFALoading ? 'Disabling...' : 'Disable 2FA'}
+              </button>
+            </div>
+          )}
         </div>
 
+        {/* ── Active Sessions ── */}
         <div className="border-t border-border pt-6">
-          <h3 className="font-medium mb-2">Active Sessions</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Manage your active sessions across devices
-          </p>
-          <div className="p-4 bg-muted/50 rounded-lg flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-xl">💻</span>
-              <div>
-                <p className="font-medium text-sm">Current Session</p>
-                <p className="text-xs text-muted-foreground">Chrome on Windows</p>
-              </div>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-medium">Active Sessions</h3>
+              <p className="text-sm text-muted-foreground">Manage your active sessions across devices</p>
             </div>
-            <span className="text-xs text-success font-medium">Active now</span>
+            {sessions.length > 1 && (
+              <button onClick={handleRevokeAllSessions} className="text-sm text-destructive hover:text-destructive/80">
+                Revoke all others
+              </button>
+            )}
+          </div>
+          <div className="space-y-3">
+            {sessionsLoading ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">Loading sessions...</p>
+            ) : sessions.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">No active sessions found.</p>
+            ) : (
+              sessions.map((session) => {
+                const { device, browser } = parseUserAgent(session.userAgent);
+                return (
+                  <div key={session.id} className="p-4 bg-muted/50 rounded-lg flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">{/iOS|Android/.test(device) ? '📱' : '💻'}</span>
+                      <div>
+                        <p className="font-medium text-sm">{device} &bull; {browser}</p>
+                        <p className="text-xs text-muted-foreground">{session.ipAddress ?? 'Unknown IP'}</p>
+                      </div>
+                    </div>
+                    {session.isCurrent ? (
+                      <span className="text-xs text-success font-medium">Current</span>
+                    ) : (
+                      <button
+                        onClick={() => handleRevokeSession(session.token)}
+                        className="text-sm text-destructive hover:text-destructive/80"
+                      >
+                        Revoke
+                      </button>
+                    )}
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       </div>
