@@ -6,12 +6,14 @@ import {
   b2bSuites,
   b2bPlanQuotas,
   b2bUsage,
+  users,
   eq,
   and,
   desc,
   sql,
 } from '@hsafx/db/schema';
 import { TRPCError } from '@trpc/server';
+import { getStripe } from '../lib/stripe';
 
 export const b2bRouter = router({
   // ─── Public: Get B2B Plans with Quotas ──────────────────────
@@ -128,4 +130,127 @@ export const b2bRouter = router({
 
     return { subscriptionId: sub.id, periodEnd: sub.currentPeriodEnd, usage };
   }),
+
+  // ─── Protected: Create B2B Checkout Session ─────────────────
+
+  createCheckout: protectedProcedure
+    .input(z.object({
+      planId: z.string().uuid(),
+      billingCycle: z.enum(['monthly', 'yearly']),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // Check for existing active subscription
+      const [existing] = await ctx.db
+        .select({ id: b2bSubscriptions.id })
+        .from(b2bSubscriptions)
+        .where(
+          and(
+            eq(b2bSubscriptions.userId, ctx.user!.id),
+            eq(b2bSubscriptions.status, 'active')
+          )
+        )
+        .limit(1);
+
+      if (existing) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'You already have an active B2B subscription. Use the billing portal to change plans.',
+        });
+      }
+
+      const [plan] = await ctx.db
+        .select()
+        .from(b2bPlans)
+        .where(and(eq(b2bPlans.id, input.planId), eq(b2bPlans.isActive, true)))
+        .limit(1);
+
+      if (!plan) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Plan not found' });
+      }
+
+      const priceId = input.billingCycle === 'yearly'
+        ? plan.stripePriceIdYearly
+        : plan.stripePriceIdMonthly;
+
+      if (!priceId) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Stripe price not configured for ${plan.name} ${input.billingCycle} billing`,
+        });
+      }
+
+      // Get or ensure Stripe customer
+      const [user] = await ctx.db
+        .select({ stripeCustomerId: users.stripeCustomerId, email: users.email })
+        .from(users)
+        .where(eq(users.id, ctx.user!.id))
+        .limit(1);
+
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+
+      try {
+        const stripe = getStripe();
+        const session = await stripe.checkout.sessions.create({
+          mode: 'subscription',
+          customer: user?.stripeCustomerId ?? undefined,
+          customer_email: user?.stripeCustomerId ? undefined : (user?.email ?? undefined),
+          line_items: [{ price: priceId, quantity: 1 }],
+          metadata: {
+            userId: ctx.user!.id,
+            b2bPlanId: plan.id,
+            billingCycle: input.billingCycle,
+          },
+          subscription_data: {
+            metadata: {
+              userId: ctx.user!.id,
+              b2bPlanId: plan.id,
+            },
+          },
+          success_url: `${appUrl}/dashboard/api?checkout=success`,
+          cancel_url: `${appUrl}/pricing?tab=api`,
+        });
+
+        return { checkoutUrl: session.url };
+      } catch (err) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to create checkout session',
+        });
+      }
+    }),
+
+  // ─── Protected: Create Billing Portal Session ───────────────
+
+  createPortalSession: protectedProcedure
+    .mutation(async ({ ctx }) => {
+      const [user] = await ctx.db
+        .select({ stripeCustomerId: users.stripeCustomerId })
+        .from(users)
+        .where(eq(users.id, ctx.user!.id))
+        .limit(1);
+
+      if (!user?.stripeCustomerId) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'No Stripe customer found. Subscribe to a plan first.',
+        });
+      }
+
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+
+      try {
+        const stripe = getStripe();
+        const session = await stripe.billingPortal.sessions.create({
+          customer: user.stripeCustomerId,
+          return_url: `${appUrl}/dashboard/api`,
+        });
+
+        return { portalUrl: session.url };
+      } catch (err) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to create billing portal session',
+        });
+      }
+    }),
 });

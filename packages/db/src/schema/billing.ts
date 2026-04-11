@@ -241,6 +241,8 @@ export const coinPacks = pgTable('coin_packs', {
   coins: integer('coins').notNull(),
   priceInCents: bigint('price_in_cents', { mode: 'number' }).notNull(),
   bonusCoins: integer('bonus_coins').notNull().default(0),
+  stripeProductId: text('stripe_product_id'),
+  stripePriceId: text('stripe_price_id'),
   isActive: boolean('is_active').notNull().default(true),
   sortOrder: integer('sort_order').notNull().default(0),
 });

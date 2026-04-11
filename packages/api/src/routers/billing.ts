@@ -353,10 +353,10 @@ export const billingRouter = router({
 
       try {
         const stripe = getStripe();
-        const session = await stripe.checkout.sessions.create({
-          mode: 'payment',
-          line_items: [
-            {
+
+        const lineItem = pack.stripePriceId
+          ? { price: pack.stripePriceId, quantity: 1 }
+          : {
               price_data: {
                 currency: 'usd',
                 product_data: {
@@ -366,8 +366,11 @@ export const billingRouter = router({
                 unit_amount: pack.priceInCents,
               },
               quantity: 1,
-            },
-          ],
+            };
+
+        const session = await stripe.checkout.sessions.create({
+          mode: 'payment',
+          line_items: [lineItem],
           metadata: {
             userId: ctx.user!.id,
             coinPackId: pack.id,

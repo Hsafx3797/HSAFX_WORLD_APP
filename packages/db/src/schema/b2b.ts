@@ -39,6 +39,7 @@ export const b2bPlans = pgTable('b2b_plans', {
   description: text('description'),
   priceMonthlyCents: bigint('price_monthly_cents', { mode: 'number' }),
   priceYearlyCents: bigint('price_yearly_cents', { mode: 'number' }),
+  stripeProductId: text('stripe_product_id'),
   stripePriceIdMonthly: text('stripe_price_id_monthly'),
   stripePriceIdYearly: text('stripe_price_id_yearly'),
   isActive: boolean('is_active').notNull().default(true),
