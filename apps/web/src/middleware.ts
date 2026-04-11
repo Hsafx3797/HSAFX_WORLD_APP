@@ -218,7 +218,7 @@ const PROTECTED_PREFIXES = ['/dashboard', '/settings', '/billing', '/account'];
 const ADMIN_PREFIXES = ['/admin'];
 
 /** Auth pages — redirect authenticated users away from here to /dashboard */
-const AUTH_PAGES = ['/auth/signin', '/auth/signup', '/auth/login', '/auth/register'];
+const AUTH_PAGES = ['/auth/signin', '/auth/signup'];
 
 /** The session cookie name used by better-auth (prefix: __hsafx) */
 const SESSION_COOKIE = '__hsafx.session_token';

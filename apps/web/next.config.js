@@ -144,6 +144,14 @@ const nextConfig = {
     // ];
     return [];
   },
+  async redirects() {
+    return [
+      { source: '/login', destination: '/auth/signin', permanent: true },
+      { source: '/register', destination: '/auth/signup', permanent: true },
+      { source: '/auth/login', destination: '/auth/signin', permanent: true },
+      { source: '/auth/register', destination: '/auth/signup', permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;

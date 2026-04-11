@@ -38,7 +38,7 @@ export default function AnalyticsPage() {
   }
 
   if (!user) {
-    router.push('/auth/login');
+    router.push('/auth/signin');
     return null;
   }
 

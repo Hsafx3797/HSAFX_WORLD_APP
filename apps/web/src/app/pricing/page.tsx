@@ -64,7 +64,7 @@ export default function PricingPage() {
 
   const handleB2BCheckout = async (planId: string) => {
     if (!isAuthenticated) {
-      window.location.href = '/register';
+      window.location.href = '/auth/signup';
       return;
     }
     try {
@@ -196,7 +196,7 @@ export default function PricingPage() {
                     <Button className="w-full" variant="outline" disabled>Current Plan</Button>
                   ) : plan.slug === 'free' ? (
                     <Button className="w-full" variant="outline" asChild>
-                      <Link href="/register">Get Started Free</Link>
+                      <Link href="/auth/signup">Get Started Free</Link>
                     </Button>
                   ) : (
                     <Button className="w-full" variant={isPopular ? 'default' : 'outline'} onClick={() => handleCheckout(plan.slug)}>

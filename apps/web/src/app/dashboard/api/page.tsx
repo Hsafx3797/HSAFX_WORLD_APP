@@ -45,7 +45,7 @@ export default function B2bDashboardPage() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push('/auth/login');
+      router.push('/auth/signin');
     }
   }, [authLoading, user, router]);
 

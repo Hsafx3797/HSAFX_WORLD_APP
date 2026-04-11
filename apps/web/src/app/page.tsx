@@ -127,7 +127,7 @@ export default function HomePage() {
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Button size="lg" variant="secondary" asChild>
-              <Link href="/register">Create Free Account</Link>
+              <Link href="/auth/signup">Create Free Account</Link>
             </Button>
             <Button size="lg" variant="outline" className="bg-transparent border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10" asChild>
               <Link href="/pricing">View Pricing</Link>

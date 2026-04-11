@@ -335,13 +335,13 @@ export function Header() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem asChild>
-                  <Link href="/login" className="flex items-center gap-2">
+                  <Link href="/auth/signin" className="flex items-center gap-2">
                     <LogIn className="h-4 w-4" />
                     Sign In
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/register" className="flex items-center gap-2">
+                  <Link href="/auth/signup" className="flex items-center gap-2">
                     <UserPlus className="h-4 w-4" />
                     Create Account
                   </Link>
@@ -492,10 +492,10 @@ export function Header() {
               ) : (
                 <>
                   <Button variant="outline" asChild>
-                    <Link href="/login" onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
+                    <Link href="/auth/signin" onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
                   </Button>
                   <Button asChild>
-                    <Link href="/register" onClick={() => setMobileMenuOpen(false)}>Create Account</Link>
+                    <Link href="/auth/signup" onClick={() => setMobileMenuOpen(false)}>Create Account</Link>
                   </Button>
                   <Link href="/pricing" onClick={() => setMobileMenuOpen(false)}>
                     <Button variant="ghost" className="w-full justify-start gap-2">

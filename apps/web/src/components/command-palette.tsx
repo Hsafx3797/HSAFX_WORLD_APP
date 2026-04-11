@@ -132,7 +132,7 @@ export function CommandPalette() {
                 <>
                   <Command.Item
                     value="Sign In Login"
-                    onSelect={() => runCommand(() => router.push('/login'))}
+                    onSelect={() => runCommand(() => router.push('/auth/signin'))}
                     className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm aria-selected:bg-accent aria-selected:text-accent-foreground"
                   >
                     <LogIn className="h-4 w-4 text-muted-foreground" />
@@ -140,7 +140,7 @@ export function CommandPalette() {
                   </Command.Item>
                   <Command.Item
                     value="Register Get Started Sign Up"
-                    onSelect={() => runCommand(() => router.push('/register'))}
+                    onSelect={() => runCommand(() => router.push('/auth/signup'))}
                     className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm aria-selected:bg-accent aria-selected:text-accent-foreground"
                   >
                     <LogIn className="h-4 w-4 text-muted-foreground" />

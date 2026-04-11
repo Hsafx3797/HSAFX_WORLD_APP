@@ -16,7 +16,7 @@ export default function B2bUsagePage() {
   const { data: usage, isLoading: usageLoading } = trpc.b2b.getMyUsage.useQuery(undefined, { enabled: !!user });
 
   useEffect(() => {
-    if (!authLoading && !user) router.push('/auth/login');
+    if (!authLoading && !user) router.push('/auth/signin');
   }, [authLoading, user, router]);
 
   if (authLoading || !user) {

@@ -18,7 +18,7 @@ export default function CoinsPage() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push('/auth/login');
+      router.push('/auth/signin');
     }
   }, [authLoading, user, router]);
 

@@ -11,10 +11,12 @@
     "pnpm": ">=9.0.0"
   },
   "scripts": {
-    "dev": "turbo run dev",
+    "dev": "turbo run dev --filter=@hsafx/web --filter=@hsafx/admin",
     "dev:web": "turbo run dev --filter=@hsafx/web",
     "dev:admin": "turbo run dev --filter=@hsafx/admin",
     "dev:api": "turbo run dev --filter=@hsafx/api",
+    "dev:fastapi": "cd backend/fastapi && .venv\\Scripts\\python.exe -m uvicorn src.main:app --reload --host 0.0.0.0 --port 8000",
+    "dev:all": "turbo run dev",
     "build": "turbo run build",
     "build:web": "turbo run build --filter=@hsafx/web",
     "build:admin": "turbo run build --filter=@hsafx/admin",

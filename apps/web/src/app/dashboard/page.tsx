@@ -73,7 +73,7 @@ export default function DashboardPage() {
   }
 
   if (!user) {
-    router.push('/auth/login');
+    router.push('/auth/signin');
     return null;
   }
 
