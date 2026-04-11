@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { useSubscription } from '@/hooks/use-subscription';
+import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,10 +16,12 @@ export default function SubscriptionPage() {
     subscription,
     isLoading,
     isPro,
+    isAdvance,
     cancel,
     reactivate,
     manageBilling,
   } = useSubscription();
+  const { data: allPlans } = trpc.billing.getPlans.useQuery();
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
@@ -27,42 +30,28 @@ export default function SubscriptionPage() {
     }
   }, [authLoading, user, router]);
 
-  const handleCancel = async () => {
-    if (!confirm('Are you sure you want to cancel your subscription? You will retain access until the end of your billing period.')) {
-      return;
-    }
+  const hasPaid = isPro || isAdvance;
 
+  const handleCancel = async () => {
+    if (!confirm('Are you sure you want to cancel your subscription? You will retain access until the end of your billing period.')) return;
     setProcessing(true);
     const result = await cancel(false);
-    
-    if (!result.success) {
-      alert(result.error);
-    }
-    
+    if (!result.success) alert(result.error);
     setProcessing(false);
   };
 
   const handleReactivate = async () => {
     setProcessing(true);
     const result = await reactivate();
-    
-    if (!result.success) {
-      alert(result.error);
-    }
-    
+    if (!result.success) alert(result.error);
     setProcessing(false);
   };
 
   const handleManageBilling = async () => {
     setProcessing(true);
     const result = await manageBilling();
-    
-    if (result.success && result.portalUrl) {
-      window.location.href = result.portalUrl;
-    } else {
-      alert(result.error || 'Failed to open billing portal');
-    }
-    
+    if (result.success && result.portalUrl) window.location.href = result.portalUrl;
+    else alert(result.error || 'Failed to open billing portal');
     setProcessing(false);
   };
 
@@ -73,6 +62,10 @@ export default function SubscriptionPage() {
       </div>
     );
   }
+
+  // Find the current plan's features/limits from DB
+  const currentPlanSlug = subscription?.plan ?? 'free';
+  const currentPlan = allPlans?.find(p => p.slug === currentPlanSlug);
 
   return (
     <div className="container py-8 max-w-3xl">
@@ -86,8 +79,8 @@ export default function SubscriptionPage() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
-                Current Plan: <span className="capitalize">{user.tier}</span>
-                {isPro && <Badge variant="default">Active</Badge>}
+                Current Plan: <span className="capitalize">{currentPlan?.name ?? user.tier}</span>
+                {hasPaid && <Badge variant="default">Active</Badge>}
                 {subscription?.cancelAtPeriodEnd && <Badge variant="warning">Canceling</Badge>}
               </CardTitle>
               <CardDescription>
@@ -99,12 +92,12 @@ export default function SubscriptionPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {isPro ? (
+          {hasPaid ? (
             <div className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="p-4 bg-muted rounded-lg">
                   <h4 className="font-medium mb-1">Plan</h4>
-                  <p className="text-2xl font-bold capitalize">{subscription?.plan || user.tier}</p>
+                  <p className="text-2xl font-bold capitalize">{currentPlan?.name ?? subscription?.plan ?? user.tier}</p>
                 </div>
                 <div className="p-4 bg-muted rounded-lg">
                   <h4 className="font-medium mb-1">Status</h4>
@@ -112,14 +105,28 @@ export default function SubscriptionPage() {
                 </div>
               </div>
 
+              {currentPlan && (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="p-4 bg-muted rounded-lg">
+                    <h4 className="font-medium mb-1">Monthly Coins</h4>
+                    <p className="text-2xl font-bold">{currentPlan.coinGrant}</p>
+                  </div>
+                  <div className="p-4 bg-muted rounded-lg">
+                    <h4 className="font-medium mb-1">Price</h4>
+                    <p className="text-2xl font-bold">
+                      ${((currentPlan.priceMonthlyCents ?? 0) / 100).toFixed(0)}/mo
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {subscription?.cancelAtPeriodEnd && (
                 <div className="p-4 bg-warning/10 border border-warning/20 rounded-lg">
                   <p className="text-sm">
                     Your subscription is set to cancel at the end of your billing period. You will retain access until{' '}
                     {subscription.currentPeriodEnd
                       ? new Date(subscription.currentPeriodEnd).toLocaleDateString()
-                      : 'the end of your billing period'}
-                    .
+                      : 'the end of your billing period'}.
                   </p>
                   <Button variant="outline" size="sm" className="mt-2" onClick={handleReactivate} disabled={processing}>
                     {processing ? 'Processing...' : 'Reactivate Subscription'}
@@ -136,7 +143,7 @@ export default function SubscriptionPage() {
             </div>
           )}
         </CardContent>
-        {isPro && !subscription?.cancelAtPeriodEnd && (
+        {hasPaid && !subscription?.cancelAtPeriodEnd && (
           <CardFooter className="flex justify-between border-t pt-6">
             <Button variant="outline" onClick={handleManageBilling} disabled={processing}>
               Manage Billing
@@ -148,79 +155,51 @@ export default function SubscriptionPage() {
         )}
       </Card>
 
-      {/* Plan Features */}
+      {/* Plan Features — Dynamic from DB */}
       <Card>
         <CardHeader>
           <CardTitle>Your Plan Features</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {isPro ? (
+          <div className="space-y-3">
+            {currentPlan ? (
               <>
-                <div className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>Unlimited tool executions</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>Access to all Pro tools</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>Priority processing</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>API access</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>500 coins per month</span>
-                </div>
+                {currentPlan.features.filter(f => f.enabled).map((f) => (
+                  <div key={f.id} className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-success shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>{f.featureKey.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</span>
+                  </div>
+                ))}
+                {currentPlan.limits.map((l) => (
+                  <div key={l.id} className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-success shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>{l.description ?? `${l.limitKey.replace(/_/g, ' ')}: ${l.limitValue}${l.unit ? ` ${l.unit}` : ''}`}</span>
+                  </div>
+                ))}
+                {currentPlan.coinGrant > 0 && (
+                  <div className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-success shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>{currentPlan.coinGrant} coins per month</span>
+                  </div>
+                )}
+                {/* Show disabled features from other plans */}
+                {currentPlan.features.filter(f => !f.enabled).map((f) => (
+                  <div key={f.id} className="flex items-center gap-3 text-muted-foreground">
+                    <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    <span>{f.featureKey.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</span>
+                  </div>
+                ))}
               </>
             ) : (
-              <>
-                <div className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>100 tool executions per day</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>Access to free tools</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>10 daily bonus coins</span>
-                </div>
-                <div className="flex items-center gap-3 text-muted-foreground">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                  <span>No API access</span>
-                </div>
-                <div className="flex items-center gap-3 text-muted-foreground">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                  <span>No Pro tools access</span>
-                </div>
-              </>
+              <p className="text-muted-foreground text-sm">Loading plan features...</p>
             )}
           </div>
         </CardContent>
