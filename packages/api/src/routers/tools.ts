@@ -365,10 +365,12 @@ export const toolsRouter = router({
 
   // ─── User Analytics (T3.2) ────────────────────────────────
 
-  getAnalytics: protectedProcedure.query(async ({ ctx }) => {
-    const { getUserAnalytics } = await import('@/server/analytics/analytics-service');
-    return getUserAnalytics(ctx.user!.id);
-  }),
+  getAnalytics: protectedProcedure
+    .input(z.object({ days: z.number().int().min(1).max(365).default(30) }).optional())
+    .query(async ({ ctx, input }) => {
+      const { getUserAnalytics } = await import('@/server/analytics/analytics-service');
+      return getUserAnalytics(ctx.user!.id, input?.days ?? 30);
+    }),
 
   // ─── Batch Processing (T3.8) ─────────────────────────────
 
