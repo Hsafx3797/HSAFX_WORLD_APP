@@ -63,8 +63,22 @@ export const userRouter = router({
       fullName: z.string().min(1).max(100).optional(),
       username: z.string().min(3).max(30).regex(/^[a-z0-9_]+$/).optional(),
       avatarUrl: z.string().url().optional(),
+      phoneNumber: z.string().max(20).optional().nullable(),
     }))
     .mutation(async ({ ctx, input }) => {
+      // Username uniqueness check
+      if (input.username) {
+        const [existing] = await ctx.db
+          .select({ id: users.id })
+          .from(users)
+          .where(and(eq(users.username, input.username), ne(users.id, ctx.user!.id)))
+          .limit(1);
+
+        if (existing) {
+          throw new TRPCError({ code: 'CONFLICT', message: 'Username is already taken' });
+        }
+      }
+
       const [updated] = await ctx.db
         .update(users)
         .set({ ...input, updatedAt: new Date() })

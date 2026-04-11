@@ -31,7 +31,7 @@ function Toggle({
       } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
     >
       <span
-        className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+        className={`absolute top-1 w-4 h-4 bg-background rounded-full shadow transition-transform ${
           checked ? 'right-1' : 'left-1'
         }`}
       />
@@ -42,6 +42,7 @@ function Toggle({
 // ─── Profile Section ────────────────────────────────────────
 function ProfileSection() {
   const { data, isLoading } = trpc.user.getProfile.useQuery();
+  const { data: referralData } = trpc.user.getMyReferralCode.useQuery();
   const utils = trpc.useUtils();
   const updateProfile = trpc.user.updateProfile.useMutation({
     onSuccess: () => {
@@ -53,11 +54,13 @@ function ProfileSection() {
 
   const [fullName, setFullName] = useState('');
   const [username, setUsername] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
 
   useEffect(() => {
     if (data?.user) {
       setFullName(data.user.fullName ?? '');
       setUsername(data.user.username ?? '');
+      setPhoneNumber(data.user.phoneNumber ?? '');
     }
   }, [data?.user]);
 
@@ -65,7 +68,15 @@ function ProfileSection() {
     updateProfile.mutate({
       fullName: fullName || undefined,
       username: username || undefined,
+      phoneNumber: phoneNumber || null,
     });
+  };
+
+  const handleCopyReferral = () => {
+    if (referralData?.code) {
+      navigator.clipboard.writeText(referralData.code);
+      toast.success('Referral code copied');
+    }
   };
 
   return (
@@ -134,6 +145,50 @@ function ProfileSection() {
           <p className="text-xs text-muted-foreground mt-1">
             Email changes require re-verification
           </p>
+        </div>
+
+        {/* Phone Number */}
+        <div>
+          <label className="block text-sm font-medium mb-2">Phone Number</label>
+          <input
+            type="tel"
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+            placeholder="+1 (555) 000-0000"
+            disabled={isLoading}
+            className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+          />
+        </div>
+
+        {/* Account Info */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-border pt-6">
+          <div>
+            <label className="block text-sm font-medium mb-2">Member Since</label>
+            <p className="text-sm text-muted-foreground">
+              {data?.user?.createdAt
+                ? new Date(data.user.createdAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })
+                : '—'}
+            </p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Referral Code</label>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 px-3 py-2 bg-muted border border-border rounded text-sm font-mono">
+                {referralData?.code ?? '—'}
+              </code>
+              <button
+                onClick={handleCopyReferral}
+                disabled={!referralData?.code}
+                className="px-3 py-2 border border-border rounded hover:bg-muted transition-colors text-sm disabled:opacity-50"
+              >
+                Copy
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className="flex justify-end">

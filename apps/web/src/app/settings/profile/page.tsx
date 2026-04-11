@@ -1,41 +1,48 @@
 'use client';
 
-import { useState } from 'react';
-import { useAuth } from '@/hooks/use-auth';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
+import { trpc } from '@/lib/trpc';
+import { toast } from 'sonner';
 
 export default function ProfileSettingsPage() {
-  const { user, updateProfile, isLoading } = useAuth();
-  const [formData, setFormData] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
-    bio: '',
-    website: '',
-    company: '',
-    location: '',
+  const { data, isLoading } = trpc.user.getProfile.useQuery();
+  const { data: referralData } = trpc.user.getMyReferralCode.useQuery();
+  const utils = trpc.useUtils();
+  const updateProfile = trpc.user.updateProfile.useMutation({
+    onSuccess: () => {
+      toast.success('Profile updated successfully!');
+      utils.user.getProfile.invalidate();
+    },
+    onError: (err) => toast.error(err.message),
   });
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
+  const [fullName, setFullName] = useState('');
+  const [username, setUsername] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+
+  useEffect(() => {
+    if (data?.user) {
+      setFullName(data.user.fullName ?? '');
+      setUsername(data.user.username ?? '');
+      setPhoneNumber(data.user.phoneNumber ?? '');
+    }
+  }, [data?.user]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateProfile.mutate({
+      fullName: fullName || undefined,
+      username: username || undefined,
+      phoneNumber: phoneNumber || null,
+    });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    setMessage(null);
-
-    try {
-      await updateProfile(formData);
-      setMessage({ type: 'success', text: 'Profile updated successfully!' });
-    } catch {
-      setMessage({ type: 'error', text: 'Failed to update profile. Please try again.' });
-    } finally {
-      setSaving(false);
+  const handleCopyReferral = () => {
+    if (referralData?.code) {
+      navigator.clipboard.writeText(referralData.code);
+      toast.success('Referral code copied');
     }
   };
 
@@ -66,41 +73,29 @@ export default function ProfileSettingsPage() {
 
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl">
-          {message && (
-            <div
-              className={`mb-6 p-4 rounded-lg ${
-                message.type === 'success'
-                  ? 'bg-success/10 border border-success/20 text-success'
-                  : 'bg-destructive/10 border border-destructive/20 text-destructive'
-              }`}
-            >
-              {message.text}
-            </div>
-          )}
-
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Avatar Section */}
             <section className="bg-card border border-border rounded-lg p-6">
               <h2 className="text-lg font-semibold mb-4">Profile Picture</h2>
               <div className="flex items-center gap-6">
                 <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center overflow-hidden">
-                  {(user as any)?.avatar ? (
-                    <img src={(user as any).avatar} alt="Avatar" className="w-full h-full object-cover" />
+                  {data?.user?.avatarUrl ? (
+                    <Image
+                      src={data.user.avatarUrl}
+                      alt={data.user.fullName ?? 'Avatar'}
+                      width={96}
+                      height={96}
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
                     <span className="text-4xl">
-                      {user?.name?.charAt(0).toUpperCase() || '👤'}
+                      {data?.user?.fullName?.charAt(0).toUpperCase() || '👤'}
                     </span>
                   )}
                 </div>
                 <div>
-                  <button
-                    type="button"
-                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
-                  >
-                    Upload New Picture
-                  </button>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    JPG, PNG or GIF. Maximum size 2MB.
+                  <p className="text-sm text-muted-foreground">
+                    Avatar is synced from your social login provider
                   </p>
                 </div>
               </div>
@@ -112,102 +107,100 @@ export default function ProfileSettingsPage() {
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="name" className="block text-sm font-medium mb-2">
+                    <label htmlFor="fullName" className="block text-sm font-medium mb-2">
                       Display Name
                     </label>
                     <input
                       type="text"
-                      id="name"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
+                      id="fullName"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
                       className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
                       placeholder="Your display name"
                     />
                   </div>
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium mb-2">
-                      Email Address
+                    <label htmlFor="username" className="block text-sm font-medium mb-2">
+                      Username
                     </label>
                     <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
+                      type="text"
+                      id="username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
                       className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
-                      placeholder="your@email.com"
+                      placeholder="your_username"
                     />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Lowercase letters, numbers, and underscores only
+                    </p>
                   </div>
                 </div>
 
                 <div>
-                  <label htmlFor="bio" className="block text-sm font-medium mb-2">
-                    Bio
+                  <label htmlFor="email" className="block text-sm font-medium mb-2">
+                    Email Address
                   </label>
-                  <textarea
-                    id="bio"
-                    name="bio"
-                    value={formData.bio}
-                    onChange={handleChange}
-                    rows={4}
-                    className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
-                    placeholder="Tell us a bit about yourself..."
+                  <input
+                    type="email"
+                    id="email"
+                    value={data?.user?.email ?? ''}
+                    readOnly
+                    className="w-full px-4 py-2 bg-muted border border-border rounded-lg text-muted-foreground cursor-not-allowed"
                   />
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Brief description for your profile. URLs are hyperlinked.
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Email changes require re-verification
                   </p>
+                </div>
+
+                <div>
+                  <label htmlFor="phoneNumber" className="block text-sm font-medium mb-2">
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    id="phoneNumber"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    placeholder="+1 (555) 000-0000"
+                  />
                 </div>
               </div>
             </section>
 
-            {/* Additional Info Section */}
+            {/* Account Info Section */}
             <section className="bg-card border border-border rounded-lg p-6">
-              <h2 className="text-lg font-semibold mb-4">Additional Information</h2>
+              <h2 className="text-lg font-semibold mb-4">Account Information</h2>
               <div className="space-y-4">
-                <div>
-                  <label htmlFor="website" className="block text-sm font-medium mb-2">
-                    Website
-                  </label>
-                  <input
-                    type="url"
-                    id="website"
-                    name="website"
-                    value={formData.website}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
-                    placeholder="https://yourwebsite.com"
-                  />
-                </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="company" className="block text-sm font-medium mb-2">
-                      Company
-                    </label>
-                    <input
-                      type="text"
-                      id="company"
-                      name="company"
-                      value={formData.company}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
-                      placeholder="Company name"
-                    />
+                    <label className="block text-sm font-medium mb-2">Member Since</label>
+                    <p className="text-sm text-muted-foreground px-4 py-2">
+                      {data?.user?.createdAt
+                        ? new Date(data.user.createdAt).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                          })
+                        : '—'}
+                    </p>
                   </div>
                   <div>
-                    <label htmlFor="location" className="block text-sm font-medium mb-2">
-                      Location
-                    </label>
-                    <input
-                      type="text"
-                      id="location"
-                      name="location"
-                      value={formData.location}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
-                      placeholder="City, Country"
-                    />
+                    <label className="block text-sm font-medium mb-2">Referral Code</label>
+                    <div className="flex items-center gap-2">
+                      <code className="flex-1 px-3 py-2 bg-muted border border-border rounded text-sm font-mono">
+                        {referralData?.code ?? '—'}
+                      </code>
+                      <button
+                        type="button"
+                        onClick={handleCopyReferral}
+                        disabled={!referralData?.code}
+                        className="px-3 py-2 border border-border rounded hover:bg-muted transition-colors text-sm disabled:opacity-50"
+                      >
+                        Copy
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -223,10 +216,10 @@ export default function ProfileSettingsPage() {
               </Link>
               <button
                 type="submit"
-                disabled={saving}
+                disabled={updateProfile.isPending}
                 className="px-6 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
               >
-                {saving ? 'Saving...' : 'Save Changes'}
+                {updateProfile.isPending ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
           </form>
