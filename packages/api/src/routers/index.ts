@@ -5,6 +5,7 @@ import { toolsRouter } from './tools';
 import { adminRouter } from './admin';
 import { rewardsRouter } from './rewards';
 import { apiKeysRouter } from './api-keys';
+import { b2bRouter } from './b2b';
 
 export const appRouter = router({
   user: userRouter,
@@ -13,6 +14,7 @@ export const appRouter = router({
   admin: adminRouter,
   rewards: rewardsRouter,
   apiKeys: apiKeysRouter,
+  b2b: b2bRouter,
 });
 
 export type AppRouter = typeof appRouter;

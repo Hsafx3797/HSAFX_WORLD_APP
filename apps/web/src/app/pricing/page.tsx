@@ -43,8 +43,10 @@ const faqs = [
 
 export default function PricingPage() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const [tab, setTab] = useState<'b2c' | 'b2b'>('b2c');
   const { data: plansData, isLoading: plansLoading } = trpc.billing.getPlans.useQuery();
   const { data: coinPacks, isLoading: packsLoading } = trpc.billing.getCoinPacks.useQuery();
+  const { data: b2bPlans, isLoading: b2bLoading } = trpc.b2b.getPlans.useQuery();
   const { subscription, subscribe } = useSubscription();
 
   const currentPlanSlug = subscription?.plan ?? 'free';
@@ -68,6 +70,22 @@ export default function PricingPage() {
         </p>
       </div>
 
+      {/* Tab Switcher */}
+      <div className="flex items-center justify-center gap-2 mb-8">
+        <button
+          onClick={() => setTab('b2c')}
+          className={`px-6 py-2 rounded-lg text-sm font-medium transition-colors ${tab === 'b2c' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}
+        >
+          Personal
+        </button>
+        <button
+          onClick={() => setTab('b2b')}
+          className={`px-6 py-2 rounded-lg text-sm font-medium transition-colors ${tab === 'b2b' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}
+        >
+          API / Business
+        </button>
+      </div>
+
       {/* Billing Cycle Toggle */}
       <div className="flex items-center justify-center gap-3 mb-12">
         <span className={`text-sm font-medium ${billingCycle === 'monthly' ? 'text-foreground' : 'text-muted-foreground'}`}>Monthly</span>
@@ -83,6 +101,7 @@ export default function PricingPage() {
         </span>
       </div>
 
+      {tab === 'b2c' && (<>
       {/* Pricing Cards */}
       {plansLoading ? (
         <div className="grid gap-8 lg:grid-cols-3 max-w-5xl mx-auto mb-16">
@@ -188,6 +207,79 @@ export default function PricingPage() {
           </div>
         )}
       </div>
+      </>)}
+
+      {tab === 'b2b' && (
+        <>
+          {/* B2B Pricing Cards */}
+          {b2bLoading ? (
+            <div className="grid gap-8 lg:grid-cols-4 max-w-6xl mx-auto mb-16">
+              {[1, 2, 3, 4].map((i) => (
+                <Card key={i} className="animate-pulse">
+                  <CardHeader><div className="h-6 bg-muted rounded w-20" /><div className="h-10 bg-muted rounded w-24 mt-2" /></CardHeader>
+                  <CardContent><div className="space-y-2">{[1,2,3,4,5].map(j => <div key={j} className="h-4 bg-muted rounded" />)}</div></CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid gap-6 lg:grid-cols-4 max-w-6xl mx-auto mb-16">
+              {(b2bPlans ?? []).map((plan) => {
+                const price = billingCycle === 'monthly'
+                  ? plan.priceMonthlyCents
+                  : plan.priceYearlyCents;
+                const isPopular = plan.slug === 'growth';
+
+                return (
+                  <Card key={plan.id} className={`relative flex flex-col ${isPopular ? 'border-primary shadow-lg' : ''}`}>
+                    {isPopular && (
+                      <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">Most Popular</Badge>
+                    )}
+                    <CardHeader>
+                      <CardTitle className="text-xl">{plan.name}</CardTitle>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-3xl font-bold">{formatPrice(price)}</span>
+                        <span className="text-muted-foreground">/{billingCycle === 'monthly' ? 'mo' : 'yr'}</span>
+                      </div>
+                      {plan.description && <CardDescription>{plan.description}</CardDescription>}
+                    </CardHeader>
+                    <CardContent className="flex-1">
+                      <p className="text-xs font-medium text-muted-foreground uppercase mb-3">Monthly API Ops per Suite</p>
+                      <ul className="space-y-2">
+                        {plan.quotas.map((q) => (
+                          <li key={q.suiteId} className="flex items-center justify-between text-sm">
+                            <span className="capitalize">{q.suiteName}</span>
+                            <span className="font-mono text-xs font-medium">{q.monthlyLimit.toLocaleString()}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                    <CardFooter>
+                      <Button className="w-full" variant={isPopular ? 'default' : 'outline'} asChild>
+                        <Link href="/register">Get Started</Link>
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+
+          {/* B2B CTA */}
+          <div className="max-w-3xl mx-auto mb-16 text-center">
+            <Card>
+              <CardContent className="p-8">
+                <h3 className="text-xl font-semibold mb-2">Need a Custom Plan?</h3>
+                <p className="text-muted-foreground mb-4">
+                  Enterprise customers can get custom quotas, dedicated support, and SLA guarantees.
+                </p>
+                <Button variant="outline" asChild>
+                  <Link href="mailto:support@hsafx.com">Contact Sales</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      )}
 
       {/* FAQ Section */}
       <div className="max-w-3xl mx-auto">
