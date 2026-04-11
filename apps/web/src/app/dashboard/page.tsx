@@ -92,7 +92,7 @@ export default function DashboardPage() {
         <h1 className="text-3xl font-bold flex items-center gap-2 flex-wrap">
           Welcome back, {user.name || user.email.split('@')[0]}!
           {isPro && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-linear-to-r from-yellow-400 to-amber-500 px-2.5 py-1 text-sm font-semibold text-white">
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-sm font-semibold text-primary-foreground">
               ✨ {subscription?.plan === 'advance' ? 'Advance' : 'Pro'} Member
             </span>
           )}
@@ -132,7 +132,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             {streakQuery.data && streakQuery.data.multiplier > 1 ? (
-              <p className="text-sm font-medium text-orange-500">
+              <p className="text-sm font-medium text-warning">
                 {streakQuery.data.multiplier}× coin bonus active
               </p>
             ) : streakQuery.data?.nextTier ? (
@@ -271,6 +271,20 @@ export default function DashboardPage() {
                 <div>
                   <h3 className="font-semibold">API Keys</h3>
                   <p className="text-sm text-muted-foreground">Manage API access</p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/dashboard/api">
+            <Card className="hover:border-primary/50 transition-colors cursor-pointer h-full">
+              <CardContent className="flex items-center gap-4 pt-6">
+                <div className="w-12 h-12 rounded-lg bg-chart-5/10 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-chart-5"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                </div>
+                <div>
+                  <h3 className="font-semibold">API Subscription</h3>
+                  <p className="text-sm text-muted-foreground">B2B plan & usage</p>
                 </div>
               </CardContent>
             </Card>
