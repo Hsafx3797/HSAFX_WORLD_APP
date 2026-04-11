@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { router, protectedProcedure, adminProcedure } from '../trpc';
+import { router, publicProcedure, protectedProcedure, adminProcedure } from '../trpc';
 import {
   plans,
   planLimits,
@@ -26,7 +26,7 @@ const log = createLogger('billing');
 export const billingRouter = router({
   // ─── Plans ────────────────────────────────────────────────
 
-  getPlans: protectedProcedure.query(async ({ ctx }) => {
+  getPlans: publicProcedure.query(async ({ ctx }) => {
     const allPlans = await ctx.db
       .select()
       .from(plans)
@@ -299,7 +299,7 @@ export const billingRouter = router({
 
   // ─── Coin Packs ───────────────────────────────────────────
 
-  getCoinPacks: protectedProcedure.query(async ({ ctx }) => {
+  getCoinPacks: publicProcedure.query(async ({ ctx }) => {
     const packs = await ctx.db
       .select()
       .from(coinPacks)

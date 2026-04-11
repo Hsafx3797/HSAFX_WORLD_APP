@@ -1,80 +1,18 @@
-import { Metadata } from 'next';
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { trpc } from '@/lib/trpc';
+import { useSubscription } from '@/hooks/use-subscription';
+import { toast } from 'sonner';
 
-export const metadata: Metadata = {
-  title: 'Pricing',
-  description: 'Simple, transparent pricing for HSAFX Tools. Free tier for everyone, Pro for power users.',
-};
-
-const tiers = [
-  {
-    name: 'Free',
-    price: '$0',
-    period: 'forever',
-    description: 'Perfect for casual users and trying out tools',
-    features: [
-      '400+ Free Tools',
-      'Unlimited text transformations',
-      'Basic data converters',
-      'Standard generators',
-      'Community support',
-      '100 API requests/day',
-    ],
-    limitations: [
-      '5MB file upload limit',
-      'Basic media processing',
-      'No batch operations',
-    ],
-    cta: 'Get Started Free',
-    ctaLink: '/register',
-    popular: false,
-  },
-  {
-    name: 'Pro',
-    price: '$10',
-    period: '/month',
-    description: 'For developers and professionals who need more power',
-    features: [
-      'Everything in Free, plus:',
-      '50MB file upload limit',
-      'Advanced media processing',
-      'Batch operations',
-      'Priority processing',
-      '10,000 API requests/day',
-      'No watermarks',
-      'Email support',
-      'Custom themes',
-      '150 coins/month',
-    ],
-    limitations: [],
-    cta: 'Start Pro Trial',
-    ctaLink: '/register?plan=pro',
-    popular: true,
-  },
-  {
-    name: 'Advance',
-    price: '$20',
-    period: '/month',
-    description: 'For power users and small teams with advanced needs',
-    features: [
-      'Everything in Pro, plus:',
-      '500MB file upload limit',
-      'Unlimited API requests',
-      'Priority execution',
-      'API access',
-      'All theme presets & customization',
-      'Dedicated support',
-      '250 coins/month',
-    ],
-    limitations: [],
-    cta: 'Start Advance Trial',
-    ctaLink: '/register?plan=advance',
-    popular: false,
-  },
-];
+function formatPrice(cents: number | null | undefined) {
+  if (!cents) return '$0';
+  return `$${(cents / 100).toFixed(cents % 100 === 0 ? 0 : 2)}`;
+}
 
 const faqs = [
   {
@@ -95,7 +33,7 @@ const faqs = [
   },
   {
     question: 'Do you offer refunds?',
-    answer: 'We offer a 30-day money-back guarantee for all paid plans. If you\'re not satisfied, contact support for a full refund.',
+    answer: "We offer a 30-day money-back guarantee for all paid plans. If you're not satisfied, contact support for a full refund.",
   },
   {
     question: 'What happens to my data?',
@@ -104,10 +42,25 @@ const faqs = [
 ];
 
 export default function PricingPage() {
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const { data: plansData, isLoading: plansLoading } = trpc.billing.getPlans.useQuery();
+  const { data: coinPacks, isLoading: packsLoading } = trpc.billing.getCoinPacks.useQuery();
+  const { subscription, subscribe } = useSubscription();
+
+  const currentPlanSlug = subscription?.plan ?? 'free';
+
+  const handleCheckout = async (planSlug: string) => {
+    if (planSlug === 'free') return;
+    const result = await subscribe(planSlug as 'pro' | 'advance', billingCycle);
+    if (result.error) toast.error(result.error);
+  };
+
+  const sortedPlans = (plansData ?? []).sort((a, b) => (a.priceMonthlyCents ?? 0) - (b.priceMonthlyCents ?? 0));
+
   return (
     <div className="container py-16">
       {/* Header */}
-      <div className="text-center mb-16">
+      <div className="text-center mb-12">
         <Badge variant="secondary" className="mb-4">Pricing</Badge>
         <h1 className="text-4xl font-bold mb-4">Simple, Transparent Pricing</h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -115,111 +68,125 @@ export default function PricingPage() {
         </p>
       </div>
 
-      {/* Pricing Cards */}
-      <div className="grid gap-8 lg:grid-cols-3 max-w-5xl mx-auto mb-16">
-        {tiers.map((tier) => (
-          <Card
-            key={tier.name}
-            className={`relative flex flex-col ${tier.popular ? 'border-primary shadow-lg' : ''}`}
-          >
-            {tier.popular && (
-              <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">
-                Most Popular
-              </Badge>
-            )}
-            <CardHeader>
-              <CardTitle className="text-2xl">{tier.name}</CardTitle>
-              <div className="flex items-baseline gap-1">
-                <span className="text-4xl font-bold">{tier.price}</span>
-                <span className="text-muted-foreground">{tier.period}</span>
-              </div>
-              <CardDescription>{tier.description}</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1">
-              <ul className="space-y-2">
-                {tier.features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-2">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-5 w-5 text-success shrink-0"
-                    >
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                    <span className="text-sm">{feature}</span>
-                  </li>
-                ))}
-                {tier.limitations.map((limitation) => (
-                  <li key={limitation} className="flex items-start gap-2 text-muted-foreground">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-5 w-5 shrink-0"
-                    >
-                      <circle cx="12" cy="12" r="10" />
-                      <path d="m15 9-6 6" />
-                      <path d="m9 9 6 6" />
-                    </svg>
-                    <span className="text-sm">{limitation}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-            <CardFooter>
-              <Button
-                className="w-full"
-                variant={tier.popular ? 'default' : 'outline'}
-                asChild
-              >
-                <Link href={tier.ctaLink}>{tier.cta}</Link>
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
+      {/* Billing Cycle Toggle */}
+      <div className="flex items-center justify-center gap-3 mb-12">
+        <span className={`text-sm font-medium ${billingCycle === 'monthly' ? 'text-foreground' : 'text-muted-foreground'}`}>Monthly</span>
+        <button
+          type="button"
+          onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'yearly' : 'monthly')}
+          className={`relative w-12 h-6 rounded-full transition-colors ${billingCycle === 'yearly' ? 'bg-primary' : 'bg-muted'}`}
+        >
+          <span className={`absolute top-1 w-4 h-4 bg-background rounded-full shadow transition-transform ${billingCycle === 'yearly' ? 'right-1' : 'left-1'}`} />
+        </button>
+        <span className={`text-sm font-medium ${billingCycle === 'yearly' ? 'text-foreground' : 'text-muted-foreground'}`}>
+          Yearly <Badge variant="secondary" className="ml-1 text-xs">Save ~17%</Badge>
+        </span>
       </div>
 
-      {/* Coins Section */}
+      {/* Pricing Cards */}
+      {plansLoading ? (
+        <div className="grid gap-8 lg:grid-cols-3 max-w-5xl mx-auto mb-16">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader><div className="h-6 bg-muted rounded w-20" /><div className="h-10 bg-muted rounded w-24 mt-2" /></CardHeader>
+              <CardContent><div className="space-y-2">{[1,2,3,4].map(j => <div key={j} className="h-4 bg-muted rounded" />)}</div></CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="grid gap-8 lg:grid-cols-3 max-w-5xl mx-auto mb-16">
+          {sortedPlans.map((plan) => {
+            const isCurrent = currentPlanSlug === plan.slug;
+            const isPopular = plan.slug === 'pro';
+            const price = billingCycle === 'monthly'
+              ? plan.priceMonthlyCents
+              : plan.priceYearlyCents;
+            const period = plan.slug === 'free' ? 'forever' : billingCycle === 'monthly' ? '/month' : '/year';
+
+            // Build feature list from plan data
+            const featureLabels: string[] = [];
+            for (const f of plan.features) {
+              if (f.enabled) featureLabels.push(f.featureKey.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()));
+            }
+            // Add limits as features
+            for (const l of plan.limits) {
+              if (l.description) featureLabels.push(l.description);
+              else featureLabels.push(`${l.limitKey.replace(/_/g, ' ')}: ${l.limitValue}${l.unit ? ` ${l.unit}` : ''}`);
+            }
+            if (plan.coinGrant > 0) featureLabels.push(`${plan.coinGrant} coins/month`);
+
+            return (
+              <Card
+                key={plan.id}
+                className={`relative flex flex-col ${isPopular ? 'border-primary shadow-lg' : ''}`}
+              >
+                {isPopular && (
+                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">Most Popular</Badge>
+                )}
+                <CardHeader>
+                  <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-bold">{formatPrice(price)}</span>
+                    <span className="text-muted-foreground">{period}</span>
+                  </div>
+                  {plan.description && <CardDescription>{plan.description}</CardDescription>}
+                </CardHeader>
+                <CardContent className="flex-1">
+                  <ul className="space-y-2">
+                    {featureLabels.map((label) => (
+                      <li key={label} className="flex items-start gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-success shrink-0"><polyline points="20 6 9 17 4 12" /></svg>
+                        <span className="text-sm">{label}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+                <CardFooter>
+                  {isCurrent ? (
+                    <Button className="w-full" variant="outline" disabled>Current Plan</Button>
+                  ) : plan.slug === 'free' ? (
+                    <Button className="w-full" variant="outline" asChild>
+                      <Link href="/register">Get Started Free</Link>
+                    </Button>
+                  ) : (
+                    <Button className="w-full" variant={isPopular ? 'default' : 'outline'} onClick={() => handleCheckout(plan.slug)}>
+                      {subscription ? `Upgrade to ${plan.name}` : `Start ${plan.name} Trial`}
+                    </Button>
+                  )}
+                </CardFooter>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Coin Packs Section */}
       <div className="max-w-3xl mx-auto mb-16 text-center">
         <h2 className="text-2xl font-bold mb-4">Need More Coins?</h2>
         <p className="text-muted-foreground mb-6">
           Coins are used for premium processing features. Buy additional coins anytime.
         </p>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Card>
-            <CardContent className="p-6 text-center">
-              <p className="text-2xl font-bold">100 Coins</p>
-              <p className="text-muted-foreground">$5</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6 text-center">
-              <p className="text-2xl font-bold">500 Coins</p>
-              <p className="text-muted-foreground">$20</p>
-              <Badge variant="secondary" className="mt-2">20% off</Badge>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6 text-center">
-              <p className="text-2xl font-bold">1000 Coins</p>
-              <p className="text-muted-foreground">$35</p>
-              <Badge variant="secondary" className="mt-2">30% off</Badge>
-            </CardContent>
-          </Card>
-        </div>
+        {packsLoading ? (
+          <div className="grid gap-4 sm:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="animate-pulse"><CardContent className="p-6"><div className="h-8 bg-muted rounded w-24 mx-auto" /><div className="h-4 bg-muted rounded w-16 mx-auto mt-2" /></CardContent></Card>
+            ))}
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-3">
+            {(coinPacks ?? []).map((pack) => (
+              <Card key={pack.id}>
+                <CardContent className="p-6 text-center">
+                  <p className="text-2xl font-bold">{pack.coins.toLocaleString()} Coins</p>
+                  <p className="text-muted-foreground">{formatPrice(pack.priceInCents)}</p>
+                  {pack.bonusCoins > 0 && (
+                    <Badge variant="secondary" className="mt-2">+{pack.bonusCoins} bonus</Badge>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* FAQ Section */}
