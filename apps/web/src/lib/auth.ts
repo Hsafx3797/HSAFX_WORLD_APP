@@ -15,6 +15,7 @@ import { getRedis } from '@/lib/redis';
 import { createLogger } from '@hsafx/shared/logger';
 import { createHmac } from 'crypto';
 import { provisionInternalApiKey } from '@/lib/internal-api-key';
+import { syncStripeCustomer } from '@/lib/stripe-customer-sync';
 
 const log = createLogger('auth');
 
@@ -185,6 +186,7 @@ function createAuth() {
       user: {
         create: {
           after: async (user) => {
+            // Provision internal API key (B2C→B2B bridge)
             try {
               await provisionInternalApiKey(user.id);
             } catch (e) {
@@ -192,7 +194,17 @@ function createAuth() {
                 userId: user.id,
                 error: e instanceof Error ? e.message : String(e),
               });
-              // Non-fatal — user can still use the app; key will be retried on first engine call
+            }
+
+            // Create/link Stripe customer
+            try {
+              await syncStripeCustomer(user.id, user.email, user.name);
+            } catch (e) {
+              log.error('Failed to sync Stripe customer', {
+                userId: user.id,
+                error: e instanceof Error ? e.message : String(e),
+              });
+              // Non-fatal — Stripe customer can be created on first payment attempt
             }
           },
         },
