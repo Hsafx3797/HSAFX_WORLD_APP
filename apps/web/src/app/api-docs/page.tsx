@@ -305,11 +305,19 @@ export default function ApiDocsPage() {
             All engines accept direct parameters — no presets, no tool IDs.
           </p>
 
+          <div className="flex gap-3 mb-8">
+            <a href="/api-docs/explorer" className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md font-medium text-sm hover:bg-primary/90 transition-colors">
+              Interactive Explorer &rarr;
+            </a>
+            <a href="/dashboard/api" className="inline-flex items-center gap-2 px-4 py-2 bg-card border border-border text-foreground rounded-md font-medium text-sm hover:bg-muted transition-colors">
+              Get API Keys
+            </a>
+          </div>
+
           {/* Quick Start */}
           <div className="bg-card border border-border rounded-xl p-6 max-w-3xl">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide">Quick Start</h2>
-              <a href="/dashboard/api" className="text-sm text-primary hover:underline">Get API Keys &rarr;</a>
             </div>
             <div className="relative">
               <CopyButton text={`curl -X POST https://api.hsafx.world/api/v1/engine/case \\\n  -H "X-API-Key: hsafx_live_xxxxxxxxxxxxxxxxxxxx" \\\n  -H "Content-Type: application/json" \\\n  -d '{"input": "hello world", "options": {"separator": "_", "wordCase": "upper"}}'`} />
