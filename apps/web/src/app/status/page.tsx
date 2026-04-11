@@ -98,17 +98,17 @@ export default function StatusPage() {
         : 'degraded';
 
   const statusColors: Record<string, string> = {
-    healthy: 'bg-green-500',
-    degraded: 'bg-yellow-500',
-    down: 'bg-red-500',
-    checking: 'bg-gray-400 animate-pulse',
+    healthy: 'bg-success',
+    degraded: 'bg-warning',
+    down: 'bg-destructive',
+    checking: 'bg-muted-foreground animate-pulse',
   };
 
   const overallColors: Record<string, string> = {
-    operational: 'text-green-600 bg-green-50 border-green-200',
-    degraded: 'text-yellow-600 bg-yellow-50 border-yellow-200',
-    outage: 'text-red-600 bg-red-50 border-red-200',
-    checking: 'text-gray-600 bg-gray-50 border-gray-200',
+    operational: 'text-success bg-success/10 border-success/30',
+    degraded: 'text-warning bg-warning/10 border-warning/30',
+    outage: 'text-destructive bg-destructive/10 border-destructive/30',
+    checking: 'text-muted-foreground bg-muted border-border',
   };
 
   const overallLabels: Record<string, string> = {

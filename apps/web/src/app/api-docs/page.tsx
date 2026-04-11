@@ -293,7 +293,7 @@ export default function ApiDocsPage() {
   return (
     <main className="min-h-screen bg-background">
       {/* Hero */}
-      <div className="border-b border-border bg-gradient-to-b from-muted/50 to-background">
+      <div className="border-b border-border bg-linear-to-b from-muted/50 to-background">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3 mb-4">
             <span className="px-3 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full">v1 API</span>
@@ -568,7 +568,7 @@ Body: { "input": "...", "options": { ... } }`}</code>
         </section>
 
         {/* Support */}
-        <section className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-border rounded-xl p-8">
+        <section className="bg-linear-to-r from-primary/10 via-primary/5 to-transparent border border-border rounded-xl p-8">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div>
               <h2 className="text-xl font-bold mb-2">Need Help?</h2>

@@ -1,4 +1,4 @@
-// TODO [G9/Task 1000]: Build individual tool browse + execution pages with unified UI and engine-first execution.
+// Home page — links to /tools for browsing engines
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +10,7 @@ export default function HomePage() {
       <section className="py-20 lg:py-32 bg-linear-to-b from-primary/5 to-background">
         <div className="container text-center">
           <Badge variant="secondary" className="mb-4">
-            28 Engines Available
+            30 Engines Available
           </Badge>
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl mb-6">
             Developer Tools for{' '}
@@ -24,9 +24,8 @@ export default function HomePage() {
           {/* TODO: Add SearchBar component back once tool routes are built (Task 1000) */}
 
           <div className="flex flex-wrap justify-center gap-4">
-            {/* TODO: Link to /tools once tool browse page is built (Task 1000) */}
             <Button size="lg" asChild>
-              <Link href="/dashboard">Get Started</Link>
+              <Link href="/tools">Browse Tools</Link>
             </Button>
             <Button size="lg" variant="outline" asChild>
               <Link href="/api-docs">API Access</Link>
@@ -40,11 +39,11 @@ export default function HomePage() {
         <div className="container">
           <div className="grid gap-8 sm:grid-cols-3 text-center">
             <div>
-              <p className="text-4xl font-bold text-primary">28</p>
+              <p className="text-4xl font-bold text-primary">30</p>
               <p className="text-muted-foreground mt-1">Engines Available</p>
             </div>
             <div>
-              <p className="text-4xl font-bold text-primary">9</p>
+              <p className="text-4xl font-bold text-primary">10</p>
               <p className="text-muted-foreground mt-1">Categories</p>
             </div>
             <div>
@@ -71,16 +70,16 @@ export default function HomePage() {
               <div className="text-4xl mb-4">🚀</div>
               <h3 className="text-xl font-semibold mb-2">Lightning Fast</h3>
               <p className="text-muted-foreground">
-                Client-side processing with WebAssembly for instant results.
-                No waiting for server responses.
+                Server-side processing with Rust, Node.js, and Python engines.
+                Optimized for speed and throughput.
               </p>
             </div>
             <div className="text-center">
               <div className="text-4xl mb-4">🔒</div>
               <h3 className="text-xl font-semibold mb-2">Privacy First</h3>
               <p className="text-muted-foreground">
-                Your data never leaves your browser. All processing happens locally.
-                No data collection.
+                Secure server-side processing with encryption in transit.
+                No data stored after processing.
               </p>
             </div>
             <div className="text-center">

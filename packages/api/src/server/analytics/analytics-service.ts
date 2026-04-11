@@ -83,9 +83,9 @@ export async function getTopTools(userId: string, limit = 5) {
 }
 
 /** Aggregate analytics for user dashboard */
-export async function getUserAnalytics(userId: string) {
+export async function getUserAnalytics(userId: string, days = 30) {
   const [executionsPerDay, categoryBreakdown, coinFlow, topTools] = await Promise.all([
-    getExecutionsPerDay(userId),
+    getExecutionsPerDay(userId, days),
     getCategoryBreakdown(userId),
     getCoinFlow(userId),
     getTopTools(userId),

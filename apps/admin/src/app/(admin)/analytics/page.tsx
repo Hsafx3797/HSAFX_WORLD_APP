@@ -28,7 +28,10 @@ import {
 import { Download, Activity, Users, TrendingDown, Cpu } from 'lucide-react';
 import { toast } from 'sonner';
 
-const COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#14b8a6'];
+const COLORS = [
+  'var(--chart-1)', 'var(--chart-2)', 'var(--warning)', 'var(--destructive)',
+  'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)', 'var(--success)',
+];
 
 function defaultRange() {
   const end = new Date();
@@ -161,8 +164,8 @@ export default function AnalyticsPage() {
                   <YAxis fontSize={12} />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="users_count" name="Signed Up" fill="#6366f1" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="active_users" name="Active" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="users_count" name="Signed Up" fill="var(--chart-1)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="active_users" name="Active" fill="var(--chart-2)" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -217,7 +220,7 @@ export default function AnalyticsPage() {
                 <XAxis dataKey="period" fontSize={12} tickFormatter={(v) => v.slice(0, 10)} />
                 <YAxis fontSize={12} />
                 <Tooltip />
-                <Area type="monotone" dataKey="revenue" stroke="#6366f1" fill="#6366f1" fillOpacity={0.15} />
+                <Area type="monotone" dataKey="revenue" stroke="var(--chart-1)" fill="var(--chart-1)" fillOpacity={0.15} />
               </AreaChart>
             </ResponsiveContainer>
           </CardContent>
@@ -306,7 +309,7 @@ export default function AnalyticsPage() {
                   <div className="text-sm text-muted-foreground">Avg Response</div>
                 </div>
                 <div className="text-center p-4 rounded-lg bg-muted/50 col-span-2">
-                  <div className={`text-3xl font-bold ${parseFloat(health.errorRate) > 5 ? 'text-destructive' : 'text-green-500'}`}>
+                  <div className={`text-3xl font-bold ${parseFloat(health.errorRate) > 5 ? 'text-destructive' : 'text-success'}`}>
                     {health.errorRate}%
                   </div>
                   <div className="text-sm text-muted-foreground">Error Rate</div>

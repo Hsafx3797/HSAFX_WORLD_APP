@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { trpc } from '@/lib/trpc/client';
+import { trpc } from '@/lib/trpc';
 import { toast } from 'sonner';
 
 export default function NotificationSettingsPage() {
@@ -13,7 +13,7 @@ export default function NotificationSettingsPage() {
       toast.success('Notification settings updated');
       utils.user.getProfile.invalidate();
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err: { message: string }) => toast.error(err.message),
   });
 
   // Top-level columns

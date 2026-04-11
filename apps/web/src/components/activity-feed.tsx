@@ -31,20 +31,20 @@ interface ActivityFeedProps {
 const statusConfig = {
   completed: {
     icon: CheckCircle2,
-    color: 'text-emerald-500',
-    bg: 'bg-emerald-500/10',
+    color: 'text-success',
+    bg: 'bg-success/10',
     label: 'Done',
   },
   failed: {
     icon: XCircle,
-    color: 'text-red-500',
-    bg: 'bg-red-500/10',
+    color: 'text-destructive',
+    bg: 'bg-destructive/10',
     label: 'Failed',
   },
   running: {
     icon: Clock,
-    color: 'text-blue-500',
-    bg: 'bg-blue-500/10',
+    color: 'text-info',
+    bg: 'bg-info/10',
     label: 'Running',
   },
 } as const;

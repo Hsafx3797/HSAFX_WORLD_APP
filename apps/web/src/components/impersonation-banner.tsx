@@ -57,38 +57,14 @@ export function ImpersonationBanner() {
   return (
     <div
       role="alert"
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 9999,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '1rem',
-        padding: '0.5rem 1rem',
-        backgroundColor: '#f59e0b',
-        color: '#000',
-        fontWeight: 600,
-        fontSize: '0.875rem',
-      }}
+      className="fixed top-0 inset-x-0 z-9999 flex items-center justify-center gap-4 px-4 py-2 bg-warning text-warning-foreground font-semibold text-sm"
     >
       <span>
         🔍 Impersonating: {info.name} ({info.email}) — Scoped session
       </span>
       <button
         onClick={handleStop}
-        style={{
-          padding: '0.25rem 0.75rem',
-          backgroundColor: '#000',
-          color: '#f59e0b',
-          border: 'none',
-          borderRadius: '0.375rem',
-          cursor: 'pointer',
-          fontWeight: 600,
-          fontSize: '0.75rem',
-        }}
+        className="px-3 py-1 bg-foreground text-background border-none rounded-md cursor-pointer font-semibold text-xs hover:opacity-90 transition-opacity"
       >
         Stop Impersonation
       </button>

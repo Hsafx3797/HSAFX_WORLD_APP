@@ -44,8 +44,8 @@ export function ProTrialBanner({ tool, onTrialActivated }: ProTrialBannerProps) 
 
   if (!isAuthenticated) {
     return (
-      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
-        <p className="text-sm text-amber-800 dark:text-amber-200">
+      <div className="rounded-lg border border-warning/30 bg-warning/10 p-4">
+        <p className="text-sm text-foreground">
           ⭐ This is a <strong>Pro</strong> tool. Sign in to get 1 free trial per day.
         </p>
       </div>
@@ -56,10 +56,10 @@ export function ProTrialBanner({ tool, onTrialActivated }: ProTrialBannerProps) 
 
   if (trialUsed) {
     return (
-      <div className="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950/30">
+      <div className="rounded-lg border border-success/30 bg-success/10 p-4">
         <div className="flex items-center gap-2">
-          <Badge className="bg-green-600 text-white">✓ Trial Active</Badge>
-          <p className="text-sm text-green-800 dark:text-green-200">
+          <Badge className="bg-success text-success-foreground">✓ Trial Active</Badge>
+          <p className="text-sm text-foreground">
             You&apos;re using a free trial of this Pro tool. Enjoy!
           </p>
         </div>
@@ -69,11 +69,11 @@ export function ProTrialBanner({ tool, onTrialActivated }: ProTrialBannerProps) 
 
   if (remaining > 0) {
     return (
-      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
+      <div className="rounded-lg border border-warning/30 bg-warning/10 p-4">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <Badge className="bg-amber-500 text-white">⭐ Free Trial</Badge>
-            <p className="text-sm text-amber-800 dark:text-amber-200">
+            <Badge className="bg-warning text-warning-foreground">⭐ Free Trial</Badge>
+            <p className="text-sm text-foreground">
               This is a Pro tool. You have <strong>{remaining} free trial{remaining !== 1 ? 's' : ''}</strong> remaining today.
             </p>
           </div>
@@ -91,7 +91,7 @@ export function ProTrialBanner({ tool, onTrialActivated }: ProTrialBannerProps) 
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900">
+    <div className="rounded-lg border border-border bg-muted p-4">
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className="text-sm text-muted-foreground">

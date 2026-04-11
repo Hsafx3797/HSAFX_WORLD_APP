@@ -147,7 +147,7 @@ export default function BillingSettingsPage() {
                     <p className="text-sm text-muted-foreground capitalize">{b2bSub.billingCycle} billing</p>
                   </div>
                   <p className="text-xl font-bold">
-                    ${((b2bSub.billingCycle === 'monthly' ? b2bSub.priceMonthlyCents : b2bSub.priceYearlyCents) / 100).toFixed(0)}
+                    ${(((b2bSub.billingCycle === 'monthly' ? b2bSub.priceMonthlyCents : b2bSub.priceYearlyCents) ?? 0) / 100).toFixed(0)}
                     <span className="text-sm font-normal text-muted-foreground">/{b2bSub.billingCycle === 'monthly' ? 'mo' : 'yr'}</span>
                   </p>
                 </div>
@@ -213,7 +213,7 @@ export default function BillingSettingsPage() {
                         <td className="py-4 px-4 font-mono text-xs">{inv.invoiceNumber}</td>
                         <td className="py-4 px-4 text-sm font-medium">${(inv.amountCents / 100).toFixed(2)} {inv.currency}</td>
                         <td className="py-4 px-4">
-                          <Badge variant={inv.status === 'paid' ? 'default' : inv.status === 'pending' ? 'secondary' : 'destructive'}>
+                          <Badge variant={inv.status === 'paid' ? 'default' : inv.status === 'open' ? 'secondary' : 'destructive'}>
                             {inv.status}
                           </Badge>
                         </td>

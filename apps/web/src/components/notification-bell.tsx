@@ -43,11 +43,11 @@ const typeIcons: Record<string, React.ElementType> = {
 };
 
 const typeColors: Record<string, string> = {
-  info: 'text-blue-500',
-  success: 'text-emerald-500',
-  warning: 'text-amber-500',
-  error: 'text-red-500',
-  billing: 'text-purple-500',
+  info: 'text-info',
+  success: 'text-success',
+  warning: 'text-warning',
+  error: 'text-destructive',
+  billing: 'text-primary',
   system: 'text-muted-foreground',
 };
 

@@ -36,8 +36,8 @@ export default function DashboardPage() {
   const { recentErrors, isLoading: errorsLoading } = useRecentErrors(5);
   const { alerts, acknowledge, isLoading: alertsLoading } = useAlerts();
 
-  const CHART_COLORS = ['hsl(215, 70%, 60%)', 'hsl(150, 60%, 50%)', 'hsl(0, 70%, 60%)', 'hsl(40, 80%, 55%)'];
-  const PIE_COLORS = ['hsl(215, 70%, 60%)', 'hsl(150, 60%, 50%)'];
+  const CHART_COLORS = ['var(--chart-1)', 'var(--chart-2)', 'var(--destructive)', 'var(--warning)'];
+  const PIE_COLORS = ['var(--chart-1)', 'var(--chart-2)'];
 
   const formatNumber = (num: number | undefined | null): string => {
     if (num == null) return '0';
@@ -200,15 +200,15 @@ export default function DashboardPage() {
                       <stop offset="95%" stopColor={CHART_COLORS[0]} stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(0, 0%, 25%)" />
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                   <XAxis
                     dataKey="date"
-                    tick={{ fill: 'hsl(0, 0%, 60%)', fontSize: 11 }}
+                    tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
                     tickFormatter={(v) => new Date(v).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   />
-                  <YAxis tick={{ fill: 'hsl(0, 0%, 60%)', fontSize: 11 }} />
+                  <YAxis tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }} />
                   <Tooltip
-                    contentStyle={{ backgroundColor: 'hsl(0, 0%, 12%)', border: '1px solid hsl(0, 0%, 20%)', borderRadius: 8, color: '#fff' }}
+                    contentStyle={{ backgroundColor: 'var(--popover)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--popover-foreground)' }}
                     labelFormatter={(v) => new Date(v).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                   />
                   <Area type="monotone" dataKey="users" stroke={CHART_COLORS[0]} fill="url(#userGrad)" strokeWidth={2} name="New Users" />
@@ -229,18 +229,18 @@ export default function DashboardPage() {
             ) : analytics?.executionTrend?.length ? (
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={analytics.executionTrend}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(0, 0%, 25%)" />
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                   <XAxis
                     dataKey="date"
-                    tick={{ fill: 'hsl(0, 0%, 60%)', fontSize: 11 }}
+                    tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
                     tickFormatter={(v) => new Date(v).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   />
-                  <YAxis tick={{ fill: 'hsl(0, 0%, 60%)', fontSize: 11 }} />
+                  <YAxis tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }} />
                   <Tooltip
-                    contentStyle={{ backgroundColor: 'hsl(0, 0%, 12%)', border: '1px solid hsl(0, 0%, 20%)', borderRadius: 8, color: '#fff' }}
+                    contentStyle={{ backgroundColor: 'var(--popover)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--popover-foreground)' }}
                     labelFormatter={(v) => new Date(v).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                   />
-                  <Legend wrapperStyle={{ color: 'hsl(0, 0%, 60%)' }} />
+                  <Legend wrapperStyle={{ color: 'var(--muted-foreground)' }} />
                   <Bar dataKey="executions" fill={CHART_COLORS[1]} name="Executions" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="errors" fill={CHART_COLORS[2]} name="Errors" radius={[4, 4, 0, 0]} />
                 </BarChart>
@@ -266,18 +266,18 @@ export default function DashboardPage() {
                       <stop offset="95%" stopColor={CHART_COLORS[1]} stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(0, 0%, 25%)" />
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                   <XAxis
                     dataKey="date"
-                    tick={{ fill: 'hsl(0, 0%, 60%)', fontSize: 11 }}
+                    tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
                     tickFormatter={(v) => new Date(v).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   />
                   <YAxis
-                    tick={{ fill: 'hsl(0, 0%, 60%)', fontSize: 11 }}
+                    tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
                     tickFormatter={(v) => `$${v}`}
                   />
                   <Tooltip
-                    contentStyle={{ backgroundColor: 'hsl(0, 0%, 12%)', border: '1px solid hsl(0, 0%, 20%)', borderRadius: 8, color: '#fff' }}
+                    contentStyle={{ backgroundColor: 'var(--popover)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--popover-foreground)' }}
                     labelFormatter={(v) => new Date(v).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                     formatter={(value: number) => [`$${value}`, 'Revenue']}
                   />
@@ -315,7 +315,7 @@ export default function DashboardPage() {
                       ))}
                     </Pie>
                     <Tooltip
-                      contentStyle={{ backgroundColor: 'hsl(0, 0%, 12%)', border: '1px solid hsl(0, 0%, 20%)', borderRadius: 8, color: '#fff' }}
+                      contentStyle={{ backgroundColor: 'var(--popover)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--popover-foreground)' }}
                     />
                   </PieChart>
                 </ResponsiveContainer>

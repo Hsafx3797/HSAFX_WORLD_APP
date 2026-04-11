@@ -31,11 +31,11 @@ function getStrength(password: string): number {
 }
 
 const STRENGTH_CONFIG = [
-  { label: 'Very Weak', color: 'bg-red-500' },
-  { label: 'Weak', color: 'bg-orange-500' },
-  { label: 'Fair', color: 'bg-yellow-500' },
-  { label: 'Good', color: 'bg-lime-500' },
-  { label: 'Strong', color: 'bg-green-500' },
+  { label: 'Very Weak', color: 'bg-destructive' },
+  { label: 'Weak', color: 'bg-warning' },
+  { label: 'Fair', color: 'bg-warning' },
+  { label: 'Good', color: 'bg-info' },
+  { label: 'Strong', color: 'bg-success' },
 ] as const;
 
 interface Props {
@@ -79,7 +79,7 @@ export function PasswordStrengthMeter({ password }: Props) {
           .filter((r) => r.key !== 'maxLength') // Only show maxLength if violated
           .map((r) => (
             <li key={r.key} className="flex items-center gap-2 text-xs">
-              <span className={r.passed ? 'text-green-500' : 'text-muted-foreground'}>
+              <span className={r.passed ? 'text-success' : 'text-muted-foreground'}>
                 {r.passed ? '✓' : '○'}
               </span>
               <span className={r.passed ? 'text-foreground' : 'text-muted-foreground'}>
@@ -90,8 +90,8 @@ export function PasswordStrengthMeter({ password }: Props) {
         {/* Show maxLength error only when violated */}
         {password.length > 128 && (
           <li className="flex items-center gap-2 text-xs">
-            <span className="text-red-500">✗</span>
-            <span className="text-red-500">At most 128 characters</span>
+            <span className="text-destructive">✗</span>
+            <span className="text-destructive">At most 128 characters</span>
           </li>
         )}
       </ul>

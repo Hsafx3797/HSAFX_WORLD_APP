@@ -182,7 +182,7 @@ export default function EmailTemplatesPage() {
 
       {/* Preview Modal */}
       <Modal open={previewOpen} onClose={() => setPreviewOpen(false)} title="Template Preview">
-        <div className="border border-border rounded-lg p-4 bg-white max-h-96 overflow-y-auto">
+        <div className="border border-border rounded-lg p-4 bg-card max-h-96 overflow-y-auto">
           <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
         </div>
         <div className="flex justify-end pt-4">

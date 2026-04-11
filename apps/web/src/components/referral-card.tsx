@@ -68,7 +68,7 @@ export function ReferralCard() {
           <p className="text-xs text-muted-foreground">Activated</p>
         </div>
         <div className="p-3 bg-muted/50 rounded-lg">
-          <p className="text-2xl font-bold text-amber-500">
+          <p className="text-2xl font-bold text-warning">
             {data?.totalCoinsEarned ?? 0}
           </p>
           <p className="text-xs text-muted-foreground">Coins Earned</p>

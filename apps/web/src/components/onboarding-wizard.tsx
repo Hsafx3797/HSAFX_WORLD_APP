@@ -93,7 +93,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
   }, [skipMutation]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/60 p-4">
       <div className="w-full max-w-lg rounded-xl bg-background p-6 shadow-2xl">
         {/* Progress Indicator */}
         <div className="mb-6 flex items-center gap-2">
@@ -183,7 +183,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
             <div className="text-5xl mb-4">🎉</div>
             <h2 className="text-2xl font-bold mb-2">You&apos;re All Set!</h2>
             <p className="text-muted-foreground mb-2">
-              Complete the wizard to earn <span className="font-bold text-yellow-500">25 bonus coins</span>.
+              Complete the wizard to earn <span className="font-bold text-primary">25 bonus coins</span>.
             </p>
             <p className="text-muted-foreground mb-6 text-sm">
               Try a tool from your recommendations, or jump right into the dashboard.

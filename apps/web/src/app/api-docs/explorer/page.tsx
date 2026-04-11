@@ -207,7 +207,7 @@ function CopyButton({ text }: { text: string }) {
 }
 
 export default function ApiExplorerPage() {
-  const [selectedEngine, setSelectedEngine] = useState(ENGINES[0].name);
+  const [selectedEngine, setSelectedEngine] = useState<string>(ENGINES[0].name);
   const [input, setInput] = useState('hello world');
   const [options, setOptions] = useState<Record<string, FieldValue>>({});
   const [apiKey, setApiKey] = useState('');
@@ -275,7 +275,7 @@ export default function ApiExplorerPage() {
 
   return (
     <main className="min-h-screen bg-background">
-      <div className="border-b border-border bg-gradient-to-b from-muted/50 to-background">
+      <div className="border-b border-border bg-linear-to-b from-muted/50 to-background">
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3 mb-4">
             <a href="/api-docs" className="text-sm text-muted-foreground hover:text-foreground">&larr; API Docs</a>
@@ -420,7 +420,7 @@ export default function ApiExplorerPage() {
               </div>
               <div className="relative">
                 <CopyButton text={snippets[codeTab]} />
-                <pre className="p-4 text-xs font-mono overflow-x-auto max-h-[600px] overflow-y-auto">
+                <pre className="p-4 text-xs font-mono overflow-x-auto max-h-150 overflow-y-auto">
                   <code>{snippets[codeTab]}</code>
                 </pre>
               </div>

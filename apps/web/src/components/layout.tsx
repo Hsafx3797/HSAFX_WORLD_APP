@@ -42,9 +42,21 @@ interface NavItem {
   children?: { label: string; href: string; description?: string }[];
 }
 
-// TODO: Re-add Tools nav item with children once tool routes are built (Task 1000)
-// Each child should link to /tools/category/<category> pages
 const navItems: NavItem[] = [
+  {
+    label: 'Tools',
+    href: '/tools',
+    children: [
+      { label: 'Text Tools', href: '/tools/text-tools', description: 'Case, wrap, filter, encode, hash, and more' },
+      { label: 'Data Tools', href: '/tools/data-tools', description: 'Convert, format, diff, and parse data' },
+      { label: 'Media Tools', href: '/tools/media-tools', description: 'Image, video, audio, PDF processing' },
+      { label: 'Generators', href: '/tools/generators', description: 'UUID, passwords, QR codes, lorem ipsum' },
+      { label: 'Calculators', href: '/tools/calculators', description: 'Math, financial, and health calculations' },
+      { label: 'Measurement', href: '/tools/measurement', description: 'Unit conversion and format validation' },
+      { label: 'Cheque Generator', href: '/tools/cheque-generator', description: 'Multi-currency cheque generation' },
+      { label: 'Container Tracking', href: '/tools/container-tracking', description: 'Ship, vessel, and flight tracking' },
+    ],
+  },
   { label: 'Pricing', href: '/pricing' },
   { label: 'API', href: '/api-docs' },
 ];
@@ -113,11 +125,11 @@ export function Header() {
   return (
     <>
       {impersonation && (
-        <div className="bg-amber-500 text-black px-4 py-2 text-sm text-center font-medium flex items-center justify-center gap-3 z-60 relative">
+        <div className="bg-warning text-warning-foreground px-4 py-2 text-sm text-center font-medium flex items-center justify-center gap-3 z-60 relative">
           <span>⚠️ Impersonating: {impersonation.name} ({impersonation.email})</span>
           <button
             onClick={stopImpersonation}
-            className="px-3 py-1 bg-black text-white rounded text-xs font-bold hover:bg-black/80 transition-colors"
+            className="px-3 py-1 bg-foreground text-background rounded text-xs font-bold hover:bg-foreground/80 transition-colors"
           >
             Stop Impersonation
           </button>
@@ -243,7 +255,7 @@ export function Header() {
                       <span className="text-sm font-medium flex items-center gap-1.5">
                         {user.name}
                         {(isPro || isAdvance) && (
-                          <span className="inline-flex items-center gap-0.5 rounded-full bg-linear-to-r from-yellow-400 to-amber-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                          <span className="inline-flex items-center gap-0.5 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
                             ✨ {isAdvance ? 'Advance' : 'Pro'}
                           </span>
                         )}
@@ -425,7 +437,7 @@ export function Header() {
                       <p className="text-sm font-medium flex items-center gap-1.5">
                         {user.name}
                         {(isPro || isAdvance) && (
-                          <span className="inline-flex items-center gap-0.5 rounded-full bg-linear-to-r from-yellow-400 to-amber-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                          <span className="inline-flex items-center gap-0.5 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
                             ✨ {isAdvance ? 'Advance' : 'Pro'}
                           </span>
                         )}
@@ -518,7 +530,7 @@ export function Footer() {
           <div>
             <h3 className="font-semibold mb-4">Product</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              {/* TODO: Re-add "All Tools" link once /tools route is built (Task 1000) */}
+              <li><Link href="/tools" className="hover:text-primary">All Tools</Link></li>
               <li><Link href="/pricing" className="hover:text-primary">Pricing</Link></li>
               <li><Link href="/api-docs" className="hover:text-primary">API</Link></li>
               <li><Link href="/changelog" className="hover:text-primary">Changelog</Link></li>
@@ -527,8 +539,11 @@ export function Footer() {
           <div>
             <h3 className="font-semibold mb-4">Categories</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              {/* TODO: Re-add category links once /tools/category/* routes are built (Task 1000) */}
-              <li className="text-muted-foreground/50 italic">Coming soon</li>
+              <li><Link href="/tools/text-tools" className="hover:text-primary">Text Tools</Link></li>
+              <li><Link href="/tools/data-tools" className="hover:text-primary">Data Tools</Link></li>
+              <li><Link href="/tools/media-tools" className="hover:text-primary">Media Tools</Link></li>
+              <li><Link href="/tools/generators" className="hover:text-primary">Generators</Link></li>
+              <li><Link href="/tools/calculators" className="hover:text-primary">Calculators</Link></li>
             </ul>
           </div>
           <div>

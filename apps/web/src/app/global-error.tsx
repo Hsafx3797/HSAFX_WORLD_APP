@@ -15,21 +15,21 @@ export default function GlobalError({
 
   return (
     <html lang="en">
-      <body className="flex min-h-screen items-center justify-center bg-neutral-950 text-white">
+      <body className="flex min-h-screen items-center justify-center bg-background text-foreground">
         <div className="mx-auto max-w-md text-center">
           <h1 className="text-4xl font-bold">Something went wrong</h1>
-          <p className="mt-4 text-neutral-400">
+          <p className="mt-4 text-muted-foreground">
             An unexpected error occurred. Please try again.
           </p>
           {error.digest && (
-            <p className="mt-2 text-xs text-neutral-500">
+            <p className="mt-2 text-xs text-muted-foreground/60">
               Error ID: {error.digest}
             </p>
           )}
           <button
             type="button"
             onClick={reset}
-            className="mt-6 rounded-md bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-500 transition-colors"
+            className="mt-6 rounded-md bg-primary px-6 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
           >
             Try again
           </button>

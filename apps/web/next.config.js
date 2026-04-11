@@ -1,7 +1,23 @@
 /** @type {import('next').NextConfig} */
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 const nextConfig = {
-  output: 'standalone',
+  output: process.env.NODE_ENV === 'production' ? 'standalone' : undefined,
   reactStrictMode: true,
+  serverExternalPackages: [
+    '@opentelemetry/sdk-node',
+    '@opentelemetry/exporter-trace-otlp-http',
+    '@opentelemetry/resources',
+    '@opentelemetry/api',
+    '@opentelemetry/semantic-conventions',
+    'prom-client',
+    'pino',
+    'pino-pretty',
+  ],
   transpilePackages: [
     '@hsafx/config',
     '@hsafx/db',
@@ -39,6 +55,38 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_FASTAPI_URL: process.env.NEXT_PUBLIC_FASTAPI_URL,
+  },
+  webpack: (config, { isServer, nextRuntime, webpack }) => {
+    if (isServer && nextRuntime === 'nodejs') {
+      // @opentelemetry/sdk-node transitively imports gRPC exporters we don't use.
+      // serverExternalPackages doesn't apply to instrumentation.ts, so we
+      // explicitly tell webpack to treat these as Node.js native requires.
+      config.externals.push(
+        '@opentelemetry/sdk-node',
+        '@opentelemetry/exporter-trace-otlp-http',
+        '@opentelemetry/resources',
+        '@opentelemetry/api',
+        '@opentelemetry/semantic-conventions',
+        'prom-client',
+        'pino',
+        'pino-pretty',
+      );
+    }
+
+    if (isServer && nextRuntime === 'edge') {
+      // Edge runtime can't bundle Node.js-only telemetry packages.
+      // Replace the real telemetry module with a noop for the Edge build.
+      // instrumentation.ts guards with NEXT_RUNTIME !== 'nodejs' so
+      // telemetry code is never actually called in Edge.
+      config.plugins.push(
+        new webpack.NormalModuleReplacementPlugin(
+          /lib\/telemetry$/,
+          resolve(__dirname, 'src/lib/telemetry-noop.ts'),
+        ),
+      );
+    }
+
+    return config;
   },
   async headers() {
     return [

@@ -72,39 +72,46 @@ export async function withSpan<T>(
 
 // ─── Prometheus Metrics ─────────────────────────────────────
 
-// Collect default Node.js metrics (CPU, memory, event loop, GC)
-client.collectDefaultMetrics({ prefix: 'hsafx_' });
+// Guard: prom-client is externalized (shared singleton) but this module
+// can be evaluated by multiple webpack route bundles — avoid double-registration.
+function getOrCreate<T extends client.Metric>(name: string, create: () => T): T {
+  return (client.register.getSingleMetric(name) as T | undefined) ?? create();
+}
 
-export const httpRequestDuration = new client.Histogram({
+if (!client.register.getSingleMetric('hsafx_process_cpu_user_seconds_total')) {
+  client.collectDefaultMetrics({ prefix: 'hsafx_' });
+}
+
+export const httpRequestDuration = getOrCreate('hsafx_http_request_duration_seconds', () => new client.Histogram({
   name: 'hsafx_http_request_duration_seconds',
   help: 'HTTP request duration in seconds',
   labelNames: ['method', 'route', 'status'] as const,
   buckets: [0.01, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
-});
+}));
 
-export const engineExecutionDuration = new client.Histogram({
+export const engineExecutionDuration = getOrCreate('hsafx_engine_execution_duration_seconds', () => new client.Histogram({
   name: 'hsafx_engine_execution_duration_seconds',
   help: 'Engine execution duration in seconds',
   labelNames: ['engine', 'backend', 'status'] as const,
   buckets: [0.01, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30],
-});
+}));
 
-export const engineExecutionTotal = new client.Counter({
+export const engineExecutionTotal = getOrCreate('hsafx_engine_executions_total', () => new client.Counter({
   name: 'hsafx_engine_executions_total',
   help: 'Total engine executions',
   labelNames: ['engine', 'backend', 'status'] as const,
-});
+}));
 
-export const apiKeyAuthTotal = new client.Counter({
+export const apiKeyAuthTotal = getOrCreate('hsafx_api_key_auth_total', () => new client.Counter({
   name: 'hsafx_api_key_auth_total',
   help: 'Total API key authentication attempts',
-  labelNames: ['result'] as const, // 'success' | 'invalid' | 'expired' | 'rate_limited'
-});
+  labelNames: ['result'] as const,
+}));
 
-export const jobsTotal = new client.Counter({
+export const jobsTotal = getOrCreate('hsafx_jobs_total', () => new client.Counter({
   name: 'hsafx_jobs_total',
   help: 'Total jobs created',
   labelNames: ['engine', 'status'] as const,
-});
+}));
 
 export const metricsRegistry = client.register;

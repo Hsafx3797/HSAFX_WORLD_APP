@@ -117,7 +117,7 @@ export default function CoinPacksPage() {
                 <tr key={pack.id} className="border-b hover:bg-muted/30">
                   <td className="p-3 font-medium">{pack.name}</td>
                   <td className="p-3 text-right">{pack.coins}</td>
-                  <td className="p-3 text-right text-green-500">{pack.bonusCoins > 0 ? `+${pack.bonusCoins}` : '—'}</td>
+                  <td className="p-3 text-right text-success">{pack.bonusCoins > 0 ? `+${pack.bonusCoins}` : '—'}</td>
                   <td className="p-3 text-right font-medium">{pack.coins + pack.bonusCoins}</td>
                   <td className="p-3 text-right">{formatPrice(pack.priceInCents)}</td>
                   <td className="p-3 text-right text-muted-foreground">

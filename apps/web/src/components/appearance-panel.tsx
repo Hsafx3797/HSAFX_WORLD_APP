@@ -91,7 +91,7 @@ function PresetSwatch({
         style={{ background: preset.preview.primary }}
       />
       {locked && (
-        <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/30">
+        <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-foreground/30">
           <span className="text-sm">🔒</span>
         </div>
       )}

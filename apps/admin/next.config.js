@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
+  output: process.env.NODE_ENV === 'production' ? 'standalone' : undefined,
   reactStrictMode: true,
   transpilePackages: ['@hsafx/db', '@hsafx/shared', '@hsafx/api', '@hsafx/config', '@hsafx/schemas', '@hsafx/theme'],
   experimental: {

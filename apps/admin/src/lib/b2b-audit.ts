@@ -36,7 +36,7 @@ export async function logB2bAudit(entry: AuditEntry): Promise<void> {
       ipAddress: entry.ipAddress,
       userAgent: entry.userAgent,
       metadata: { source: 'admin-b2b' },
-    });
+    } as typeof auditLogs.$inferInsert);
   } catch (err) {
     // Never let audit logging break the request
     console.error('[audit] Failed to write B2B audit log:', err);

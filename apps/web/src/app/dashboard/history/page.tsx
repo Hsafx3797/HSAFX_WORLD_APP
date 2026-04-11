@@ -204,12 +204,3 @@ export default function HistoryPage() {
     </div>
   );
 }
-                </div>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}

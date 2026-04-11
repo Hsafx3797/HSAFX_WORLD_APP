@@ -125,7 +125,7 @@ export default function AnalyticsPage() {
                 <p className="text-sm text-muted-foreground">Peak Hour</p>
                 <p className="text-3xl font-bold">
                   {data?.peakHours && data.peakHours.length > 0
-                    ? `${data.peakHours.reduce((max, h) => h.count > max.count ? h : max, data.peakHours[0]).hour}:00`
+                    ? `${data.peakHours.reduce((max, h) => h.count > max!.count ? h : max!, data.peakHours[0]!).hour}:00`
                     : '—'}
                 </p>
                 <p className="text-xs text-muted-foreground">Most active hour</p>

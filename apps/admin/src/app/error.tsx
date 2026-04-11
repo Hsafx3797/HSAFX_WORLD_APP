@@ -16,19 +16,19 @@ export default function Error({
   return (
     <div className="flex min-h-[60vh] items-center justify-center">
       <div className="mx-auto max-w-md text-center">
-        <h2 className="text-2xl font-bold text-[#fafafa]">Something went wrong</h2>
-        <p className="mt-3 text-[#a1a1a1]">
+        <h2 className="text-2xl font-bold text-foreground">Something went wrong</h2>
+        <p className="mt-3 text-muted-foreground">
           An unexpected error occurred. Please try again.
         </p>
         {error.digest && (
-          <p className="mt-2 text-xs text-[#666]">
+          <p className="mt-2 text-xs text-muted-foreground/60">
             Error ID: {error.digest}
           </p>
         )}
         <button
           type="button"
           onClick={reset}
-          className="mt-6 rounded-md bg-[#3b82f6] px-6 py-2 text-sm font-medium text-white hover:bg-[#2563eb] transition-colors"
+          className="mt-6 rounded-md bg-primary px-6 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
         >
           Try again
         </button>

@@ -80,7 +80,7 @@ export default function B2bDashboardPage() {
     );
   }
 
-  const price = sub.billingCycle === 'monthly' ? sub.priceMonthlyCents : sub.priceYearlyCents;
+  const price = (sub.billingCycle === 'monthly' ? sub.priceMonthlyCents : sub.priceYearlyCents) ?? 0;
   const statusColor = STATUS_COLORS[sub.status] ?? 'outline';
 
   return (

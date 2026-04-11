@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { trpc } from '@/lib/trpc/client';
+import { trpc } from '@/lib/trpc';
 import { toast } from 'sonner';
 
 export default function PreferencesPage() {
@@ -13,7 +13,7 @@ export default function PreferencesPage() {
       toast.success('Preferences updated');
       utils.user.getProfile.invalidate();
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err: { message: string }) => toast.error(err.message),
   });
 
   const [theme, setTheme] = useState<'system' | 'light' | 'dark'>('system');

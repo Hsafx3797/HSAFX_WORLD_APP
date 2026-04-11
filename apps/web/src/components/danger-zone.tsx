@@ -122,7 +122,7 @@ export function DangerZone() {
 
       {/* ── Confirmation Modal ── */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/60">
           <div className="bg-card border border-border rounded-xl shadow-xl p-6 w-full max-w-md mx-4 space-y-5">
             <div className="text-center">
               <span className="text-4xl">🗑️</span>

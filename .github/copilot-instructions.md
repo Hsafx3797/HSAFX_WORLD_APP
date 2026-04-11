@@ -17,7 +17,7 @@
 
 ## 2. Engine Architecture (THE CORE PATTERN)
 
-**Master Plan**: `docs/PLANNING/70_B2B_ENGINE_ONLY_IMPLEMENTATION_PLAN.md`
+**Documentation**: `docs/INDEX.md` → BUILT/ (current state), REFERENCE/ (stable specs), ROADMAP/ (next work)
 
 ### What It Is
 
@@ -153,12 +153,12 @@ apps/web/src/server/limits/
   b2b-quota-service.ts ← B2B suite quota enforcement
 
 backend/fastapi/src/
-  handlers/          ← 10 handler classes (ImageConverter, VideoConverter, TrackingHandler, ChequeHandler, etc.)
+  tools/             ← 10 handler classes (ImageConverter, VideoConverter, TrackingHandler, ChequeHandler, etc.)
   routes/engine.py   ← POST /execute/{engine} (unified media engine route)
 
 backend/rust/
-  text-tools/        ← Existing ~170 pure functions (being refactored from WASM to native)
-  engine-service/    ← NEW: Axum HTTP service wrapping text-tools
+  text-tools/        ← Existing ~170 pure functions (Rust service NOT YET BUILT)
+  engine-service/    ← PLANNED: Axum HTTP service wrapping text-tools (does not exist yet)
 
 packages/db/src/schema/
   b2b.ts             ← 7 B2B tables (plans, subscriptions, suites, quotas, usage, categories, overrides)
@@ -198,7 +198,7 @@ pnpm turbo build
 1. **Never use `npx tsx`** — use the full path shown above
 2. **ALL engines are server-side** — no client-side execution, no WASM, no browser
 3. **NO presets, NO tool IDs** — engines accept raw parameters only
-4. **The B2B plan (70_B2B_ENGINE_ONLY_IMPLEMENTATION_PLAN.md) is the source of truth** — follow it
+4. **Documentation lives in `docs/BUILT/`, `docs/REFERENCE/`, `docs/ROADMAP/`** — `docs/PLANNING/` is archived in DUST_BIN
 5. **3 execution backends**: Rust HTTP service, Node.js direct import, FastAPI HTTP service
 6. **B2B billing only** — no B2C coin system for engine execution
 

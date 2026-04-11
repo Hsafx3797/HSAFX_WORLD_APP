@@ -45,7 +45,7 @@ export function GdprExportButton() {
         {isExporting ? 'Preparing export...' : 'Export My Data'}
       </button>
       {exported && (
-        <span className="text-sm text-green-600">Download started!</span>
+        <span className="text-sm text-success">Download started!</span>
       )}
       {exportMutation.isError && (
         <span className="text-sm text-destructive">

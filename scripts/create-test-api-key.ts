@@ -1,6 +1,6 @@
 /**
  * Creates a test API key in the database for testing B2B API endpoints.
- * Usage: npx tsx scripts/create-test-api-key.ts
+ * Usage: node node_modules/.pnpm/tsx@4.21.0/node_modules/tsx/dist/cli.mjs scripts/create-test-api-key.ts
  */
 
 import { createHash, randomBytes } from 'crypto';

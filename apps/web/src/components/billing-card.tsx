@@ -26,7 +26,7 @@ interface BillingCardProps {
 const planColors = {
   free: 'bg-secondary text-secondary-foreground',
   pro: 'bg-primary text-primary-foreground',
-  advance: 'bg-gradient-to-r from-purple-500 to-pink-500 text-white',
+  advance: 'bg-primary text-primary-foreground',
 } as const;
 
 const statusDisplay = {

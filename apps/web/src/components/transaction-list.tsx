@@ -34,10 +34,10 @@ const typeIcons: Record<string, React.ElementType> = {
 };
 
 const typeColors: Record<string, string> = {
-  grant: 'text-emerald-500',
-  spend: 'text-orange-500',
-  purchase: 'text-blue-500',
-  refund: 'text-purple-500',
+  grant: 'text-success',
+  spend: 'text-warning',
+  purchase: 'text-info',
+  refund: 'text-primary',
 };
 
 function formatDate(iso: string): string {
@@ -133,7 +133,7 @@ function TransactionRow({ tx }: { tx: Transaction }) {
         <p
           className={cn(
             'text-sm font-semibold tabular-nums',
-            isPositive ? 'text-emerald-500' : 'text-red-500'
+            isPositive ? 'text-success' : 'text-destructive'
           )}
         >
           {isPositive ? '+' : ''}

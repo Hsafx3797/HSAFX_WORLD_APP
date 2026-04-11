@@ -305,7 +305,7 @@ if (Test-Path (Join-Path $ProjectRoot "node_modules")) {
 $workspacePackages = @(
   @{ Name = "@hsafx/shared";           Dir = "packages/shared" },
   @{ Name = "@hsafx/schemas";          Dir = "packages/schemas" },
-  @{ Name = "@hsafx/tools";            Dir = "packages/tools" },
+  @{ Name = "@hsafx/tool-execution";    Dir = "packages/tools" },
   @{ Name = "@hsafx/api";              Dir = "packages/api" },
   @{ Name = "@hsafx/ui";               Dir = "packages/ui" },
   @{ Name = "@hsafx/theme";            Dir = "packages/theme" },
