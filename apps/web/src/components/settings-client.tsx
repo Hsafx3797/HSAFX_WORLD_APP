@@ -220,11 +220,20 @@ function PreferencesSection() {
 
   const [theme, setTheme] = useState('system');
   const [language, setLanguage] = useState('en');
+  const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
+  const [compactMode, setCompactMode] = useState(false);
+  const [autoCopyResults, setAutoCopyResults] = useState(false);
 
   useEffect(() => {
     if (data?.preferences) {
       setTheme(data.preferences.theme ?? 'system');
       setLanguage(data.preferences.language ?? 'en');
+      setTimezone(data.preferences.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone);
+      const extras = data.preferences.preferences as Record<string, unknown> | undefined;
+      if (extras) {
+        setCompactMode(extras.compactMode === true);
+        setAutoCopyResults(extras.autoCopyResults === true);
+      }
     }
   }, [data?.preferences]);
 
@@ -236,6 +245,21 @@ function PreferencesSection() {
   const handleLanguageChange = (val: string) => {
     setLanguage(val);
     updatePreferences.mutate({ language: val });
+  };
+
+  const handleTimezoneChange = (val: string) => {
+    setTimezone(val);
+    updatePreferences.mutate({ timezone: val });
+  };
+
+  const handleCompactMode = (val: boolean) => {
+    setCompactMode(val);
+    updatePreferences.mutate({ extras: { compactMode: val } });
+  };
+
+  const handleAutoCopy = (val: boolean) => {
+    setAutoCopyResults(val);
+    updatePreferences.mutate({ extras: { autoCopyResults: val } });
   };
 
   return (
@@ -275,6 +299,50 @@ function PreferencesSection() {
             <option value="en">English</option>
             <option value="ar">العربية</option>
           </select>
+        </div>
+
+        {/* Timezone */}
+        <div className="flex items-center justify-between border-t border-border pt-6">
+          <div>
+            <h3 className="font-medium">Timezone</h3>
+            <p className="text-sm text-muted-foreground">Used for timestamps and scheduling</p>
+          </div>
+          <select
+            value={timezone}
+            disabled={isLoading}
+            onChange={(e) => handleTimezoneChange(e.target.value)}
+            className="px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 max-w-55"
+          >
+            {Intl.supportedValuesOf('timeZone').map((tz) => (
+              <option key={tz} value={tz}>{tz.replace(/_/g, ' ')}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Compact Mode */}
+        <div className="flex items-center justify-between border-t border-border pt-6">
+          <div>
+            <h3 className="font-medium">Compact Mode</h3>
+            <p className="text-sm text-muted-foreground">Reduce spacing for denser layouts</p>
+          </div>
+          <Toggle
+            checked={compactMode}
+            onChange={handleCompactMode}
+            disabled={isLoading || updatePreferences.isPending}
+          />
+        </div>
+
+        {/* Auto-Copy Results */}
+        <div className="flex items-center justify-between border-t border-border pt-6">
+          <div>
+            <h3 className="font-medium">Auto-Copy Results</h3>
+            <p className="text-sm text-muted-foreground">Copy engine output to clipboard automatically</p>
+          </div>
+          <Toggle
+            checked={autoCopyResults}
+            onChange={handleAutoCopy}
+            disabled={isLoading || updatePreferences.isPending}
+          />
         </div>
       </div>
     </section>

@@ -93,25 +93,37 @@ export const userRouter = router({
       theme: z.enum(['light', 'dark', 'system']).optional(),
       language: z.string().length(2).optional(),
       timezone: z.string().optional(),
+      extras: z.record(z.unknown()).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
+      const { extras, ...columns } = input;
+
       const [existing] = await ctx.db
         .select()
         .from(userPreferences)
         .where(eq(userPreferences.userId, ctx.user!.id))
         .limit(1);
 
+      const mergedPrefs = extras
+        ? { ...(existing?.preferences as Record<string, unknown> ?? {}), ...extras }
+        : undefined;
+
+      const setData = {
+        ...columns,
+        ...(mergedPrefs !== undefined ? { preferences: mergedPrefs } : {}),
+      };
+
       if (existing) {
         const [updated] = await ctx.db
           .update(userPreferences)
-          .set(input)
+          .set(setData)
           .where(eq(userPreferences.userId, ctx.user!.id))
           .returning();
         return updated;
       } else {
         const [created] = await ctx.db
           .insert(userPreferences)
-          .values({ userId: ctx.user!.id, ...input })
+          .values({ userId: ctx.user!.id, ...setData })
           .returning();
         return created;
       }
