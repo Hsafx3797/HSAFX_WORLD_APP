@@ -41,7 +41,10 @@ export const apiKeysRouter = router({
         revokedAt: apiKeys.revokedAt,
       })
       .from(apiKeys)
-      .where(eq(apiKeys.userId, ctx.user!.id))
+      .where(and(
+        eq(apiKeys.userId, ctx.user!.id),
+        eq(apiKeys.isInternal, false),
+      ))
       .orderBy(desc(apiKeys.createdAt));
 
     return keys;
@@ -53,13 +56,14 @@ export const apiKeysRouter = router({
       scopes: z.array(z.string()).default([]),
     }))
     .mutation(async ({ ctx, input }) => {
-      // Limit to 5 active keys per user
+      // Limit to 5 active user-created keys (excludes internal keys)
       const activeKeys = await ctx.db
         .select({ id: apiKeys.id })
         .from(apiKeys)
         .where(and(
           eq(apiKeys.userId, ctx.user!.id),
           eq(apiKeys.isActive, true),
+          eq(apiKeys.isInternal, false),
         ));
 
       if (activeKeys.length >= 5) {

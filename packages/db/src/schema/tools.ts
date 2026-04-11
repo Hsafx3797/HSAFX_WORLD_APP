@@ -169,6 +169,7 @@ export const apiKeys = pgTable('api_keys', {
   lastUsed: timestamp('last_used'),
   expiresAt: timestamp('expires_at'),
   isActive: boolean('is_active').notNull().default(true),
+  isInternal: boolean('is_internal').notNull().default(false), // Hidden web-UI keys for B2C→B2B bridge
   rateLimitTier: text('rate_limit_tier').notNull().default('standard'),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),

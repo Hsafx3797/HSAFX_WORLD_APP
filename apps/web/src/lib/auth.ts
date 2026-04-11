@@ -14,6 +14,7 @@ import {
 import { getRedis } from '@/lib/redis';
 import { createLogger } from '@hsafx/shared/logger';
 import { createHmac } from 'crypto';
+import { provisionInternalApiKey } from '@/lib/internal-api-key';
 
 const log = createLogger('auth');
 
@@ -180,6 +181,23 @@ function createAuth() {
     secret: process.env.BETTER_AUTH_SECRET,
     baseURL: process.env.NEXT_PUBLIC_APP_URL,
     trustedOrigins: [process.env.NEXT_PUBLIC_APP_URL],
+    databaseHooks: {
+      user: {
+        create: {
+          after: async (user) => {
+            try {
+              await provisionInternalApiKey(user.id);
+            } catch (e) {
+              log.error('Failed to provision internal API key', {
+                userId: user.id,
+                error: e instanceof Error ? e.message : String(e),
+              });
+              // Non-fatal — user can still use the app; key will be retried on first engine call
+            }
+          },
+        },
+      },
+    },
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
         if (ctx.path !== '/sign-in/email') return;
