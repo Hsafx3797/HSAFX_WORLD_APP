@@ -1,23 +1,17 @@
 """
 Tool Executor — Central dispatcher for server-side tool execution.
 
-Routes 121 tool IDs across 9 handlers (from packages/tool-definitions/src/registry/media-tools.ts)
-to the correct handler class.  Tool IDs MUST match the source-of-truth definitions;
-any rename in media-tools.ts must be reflected here.
-
+Routes tool slugs across 9 handlers to the correct handler class.
 Handler classes:
-  ImageConverter   — Pillow / libvips image processing (14 tools)
-  VideoConverter   — FFmpeg video processing (4 tools)
-  AudioConverter   — FFmpeg audio processing (2 tools¹)
-  DocumentConverter — LibreOffice / Calibre / Poppler doc conversions (15 tools)
-  PdfHandler       — pypdf / reportlab / Ghostscript PDF ops (27 tools)
-  ArchiveHandler   — zip / tar / 7z / rar compression (8 tools)
-  FileHandler      — Bulk rename / hash / metadata file ops (5 tools)
-  FontHandler      — fonttools TTF / OTF / WOFF / WOFF2 (4 tools)
-  PythonToolExecutor — Pure-Python NLP / data-science tools (13 tools)
-
-¹ speech-to-text and speech-to-text-2 are Audio subcategory in media-tools.ts
-  but routed to PythonToolExecutor (Whisper model, not FFmpeg).
+  ImageConverter   — Pillow / libvips image processing
+  VideoConverter   — FFmpeg video processing
+  AudioConverter   — FFmpeg audio processing
+  DocumentConverter — LibreOffice / Calibre / Poppler doc conversions
+  PdfHandler       — pypdf / reportlab / Ghostscript PDF ops
+  ArchiveHandler   — zip / tar / 7z / rar compression
+  FileHandler      — Bulk rename / hash / metadata file ops
+  FontHandler      — fonttools TTF / OTF / WOFF / WOFF2
+  PythonToolExecutor — Pure-Python NLP / data-science tools
 """
 
 from __future__ import annotations

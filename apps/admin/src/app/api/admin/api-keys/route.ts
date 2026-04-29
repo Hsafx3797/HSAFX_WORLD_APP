@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
           id: apiKeys.id,
           userId: apiKeys.userId,
           userEmail: users.email,
-          userName: users.fullName,
+          userName: users.name,
           name: apiKeys.name,
           keyPrefix: apiKeys.keyPrefix,
           lastUsed: apiKeys.lastUsed,

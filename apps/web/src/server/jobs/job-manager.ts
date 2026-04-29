@@ -7,7 +7,7 @@
  */
 
 import { redis, keys, TTL, generateInputHash } from '@/lib/redis';
-import { db, toolExecutions } from '@hsafx/db';
+import { db, asyncJobs } from '@hsafx/db';
 import crypto from 'crypto';
 import type { Job, JobResult, CreateJobInput, JobStatus } from './types';
 import { createLogger } from '@hsafx/shared/logger';
@@ -45,8 +45,6 @@ export async function createJob(input: CreateJobInput): Promise<Job> {
   const job: Job = {
     id,
     engineName: input.engineName,
-    toolId: input.toolId,
-    toolSlug: input.toolSlug,
     userId: input.userId,
     apiKeyId: input.apiKeyId,
     status: 'queued',
@@ -63,12 +61,10 @@ export async function createJob(input: CreateJobInput): Promise<Job> {
   await redis.set(redisKey, JSON.stringify(job), { ex: TTL.JOB_STATE });
 
   // Also create DB audit record (fire-and-forget)
-  db.insert(toolExecutions)
+  db.insert(asyncJobs)
     .values({
       userId: input.userId,
-      toolId: input.toolId,
-      status: 'pending',
-      coinCost: 0,
+      jobType: input.engineName ?? 'unknown',
       metadata: {
         jobId: id,
         source: input.source,
@@ -82,20 +78,6 @@ export async function createJob(input: CreateJobInput): Promise<Job> {
   // Dispatch to worker (imported lazily to avoid circular deps)
   dispatchJob(job).catch(async (err: unknown) => {
     log.error('Failed to dispatch job', { jobId: id, error: String(err) });
-    // Release orphaned coin reservation to avoid locking user's coins forever
-    const reservationId = input.options?.reservationId as string | undefined;
-    if (reservationId) {
-      try {
-        const { releaseReservation } = await import('../limits/coin-service');
-        await releaseReservation(reservationId);
-      } catch (releaseErr) {
-        log.error('Failed to release orphaned reservation', {
-          jobId: id,
-          reservationId,
-          error: String(releaseErr),
-        });
-      }
-    }
   });
 
   return job;
@@ -125,19 +107,6 @@ export async function getJob(jobId: string): Promise<Job | null> {
         error: `Job timed out in '${job.status}' state (stale after ${Math.round(age / 1000)}s)`,
         completedAt: new Date().toISOString(),
       });
-
-      // Release orphaned coin reservation if present
-      const reservationId = job.options?.reservationId as string | undefined;
-      if (reservationId) {
-        try {
-          const { releaseReservation } = await import('../limits/coin-service');
-          await releaseReservation(reservationId);
-        } catch (releaseErr) {
-          log.error('Failed to release reservation for stale job', {
-            jobId, reservationId, error: String(releaseErr),
-          });
-        }
-      }
 
       return failed ?? job;
     }

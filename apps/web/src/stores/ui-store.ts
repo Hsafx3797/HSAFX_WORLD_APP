@@ -1,6 +1,5 @@
 /**
  * UI Store — sidebar, modals, notifications, responsive state
- * Reference: SOLUTION_ROADMAP Task 4.3
  */
 
 import { create } from 'zustand';
@@ -32,10 +31,6 @@ export interface UIState {
   // Responsive
   isMobile: boolean;
 
-  // Ad modal
-  showAdModal: boolean;
-  adCallbackToolId: string | null;
-
   // Upgrade prompt
   showUpgradePrompt: boolean;
   upgradeReason: string | null;
@@ -60,10 +55,6 @@ export interface UIState {
   // Actions — responsive
   setIsMobile: (isMobile: boolean) => void;
 
-  // Actions — ad modal
-  showAd: (toolId: string) => void;
-  hideAd: () => void;
-
   // Actions — upgrade prompt
   showUpgrade: (reason: string) => void;
   hideUpgrade: () => void;
@@ -79,8 +70,6 @@ export const useUIStore = create<UIState>()((set) => ({
   globalLoading: false,
   loadingMessage: null,
   isMobile: false,
-  showAdModal: false,
-  adCallbackToolId: null,
   showUpgradePrompt: false,
   upgradeReason: null,
 
@@ -115,12 +104,6 @@ export const useUIStore = create<UIState>()((set) => ({
 
   // Responsive
   setIsMobile: (isMobile) => set({ isMobile }),
-
-  // Ad modal
-  showAd: (toolId) =>
-    set({ showAdModal: true, adCallbackToolId: toolId }),
-  hideAd: () =>
-    set({ showAdModal: false, adCallbackToolId: null }),
 
   // Upgrade prompt
   showUpgrade: (reason) =>

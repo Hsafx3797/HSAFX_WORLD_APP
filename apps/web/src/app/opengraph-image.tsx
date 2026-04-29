@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
-export const alt = 'HSAFX Tools - 446+ Free Online Developer Tools';
+export const alt = 'HSAFX Tools - B2B API Platform — 30 Parameterized Engines';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -40,7 +40,7 @@ export default function Image() {
             lineHeight: 1.4,
           }}
         >
-          446+ Free Online Developer Tools
+          30 Parameterized Engines
         </div>
         <div
           style={{

@@ -16,6 +16,8 @@
 #
 # Environment: Copy .env.dev.example → .env and fill in values.
 # Next.js apps run natively (pnpm dev) and connect to these services.
+# pnpm dev:web → http://localhost:3000
+# pnpm dev:admin → http://localhost:3002  (3002 to avoid collision with rust-engine:3001 below)
 # ═══════════════════════════════════════════════════════════════
 
 services:

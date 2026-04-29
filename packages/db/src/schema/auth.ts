@@ -20,11 +20,12 @@ export const sessions = pgTable('sessions', {
   userId: uuid('user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
-  sessionToken: text('session_token').notNull().unique(),
+  token: text('session_token').notNull().unique(),
   expiresAt: timestamp('expires_at').notNull(),
   ipAddress: text('ip_address'),
   userAgent: text('user_agent'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
 }, (t) => [
   index('sess_user_id_idx').on(t.userId),
   index('sess_expires_idx').on(t.expiresAt),
@@ -39,16 +40,20 @@ export const oauthConnections = pgTable('oauth_connections', {
   userId: uuid('user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
-  provider: text('provider').notNull(), // 'google', 'github', 'facebook'
-  providerUserId: text('provider_user_id').notNull(),
+  providerId: text('provider').notNull(), // 'google', 'github', 'facebook', 'credential'
+  accountId: text('provider_user_id').notNull(),
   accessToken: encryptedText('access_token'),
   refreshToken: encryptedText('refresh_token'),
-  expiresAt: timestamp('expires_at'),
+  accessTokenExpiresAt: timestamp('expires_at'),
+  refreshTokenExpiresAt: timestamp('refresh_token_expires_at'),
+  scope: text('scope'),
+  idToken: text('id_token'),
+  password: text('password'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 }, (t) => [
-  uniqueIndex('oauth_user_provider_idx').on(t.userId, t.provider),
-  uniqueIndex('oauth_provider_uid_idx').on(t.provider, t.providerUserId),
+  uniqueIndex('oauth_user_provider_idx').on(t.userId, t.providerId),
+  uniqueIndex('oauth_provider_uid_idx').on(t.providerId, t.accountId),
 ]);
 
 /**
@@ -202,6 +207,21 @@ export const refreshTokens = pgTable('refresh_tokens', {
 }, (t) => [
   index('rt_user_id_idx').on(t.userId),
   index('rt_expires_at_idx').on(t.expiresAt),
+]);
+
+/**
+ * Verification Table - General-purpose verification tokens (email verification, password reset, etc.)
+ * Required by Better Auth core schema
+ */
+export const verification = pgTable('verification', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  identifier: text('identifier').notNull(),
+  value: text('value').notNull(),
+  expiresAt: timestamp('expires_at').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (t) => [
+  index('verif_identifier_idx').on(t.identifier),
 ]);
 
 /**

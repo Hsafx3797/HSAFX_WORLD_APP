@@ -11,7 +11,7 @@ export const openApiSpec = {
     title: 'HSAFX WORLD API',
     version: '2.0.0',
     description:
-      'B2B REST API for HSAFX WORLD — 28 parameterized engines for text, data, and media processing. Authenticate with an API key, execute engines, and retrieve results via async jobs.',
+      'B2B REST API for HSAFX WORLD — 30 parameterized engines for text, data, and media processing. Authenticate with an API key, execute engines, and retrieve results via async jobs.',
     contact: { email: 'support@hsafx.world' },
     license: { name: 'Proprietary' },
   },
@@ -805,7 +805,7 @@ export const openApiSpec = {
         summary: 'Get subscription info',
         operationId: 'getSubscription',
         tags: ['Billing'],
-        description: 'Returns subscription plan and status. B2B customers with a Stripe customer ID have API usage reported to Stripe Billing Meters automatically.',
+        description: 'Returns subscription plan and status.',
         responses: {
           '200': {
             description: 'Current subscription details',
@@ -851,7 +851,7 @@ export const openApiSpec = {
 
   tags: [
     { name: 'Health', description: 'Health check endpoints' },
-    { name: 'Engines', description: 'Discover and execute 28 parameterized engines' },
+    { name: 'Engines', description: 'Discover and execute 30 parameterized engines' },
     { name: 'Jobs', description: 'Async job status and results' },
     { name: 'Account', description: 'Account info and usage statistics' },
     { name: 'Webhooks', description: 'Webhook endpoint management for job notifications' },

@@ -13,7 +13,7 @@ let _auth: ReturnType<typeof betterAuth> | undefined;
 
 function createAuth() {
   const secret = process.env.AUTH_SECRET || process.env.BETTER_AUTH_SECRET;
-  const baseURL = process.env.AUTH_URL || process.env.NEXT_PUBLIC_ADMIN_URL || 'http://localhost:3001';
+  const baseURL = process.env.AUTH_URL || process.env.NEXT_PUBLIC_ADMIN_URL || 'http://localhost:3002';
 
   if (!secret) {
     throw new Error('AUTH_SECRET environment variable is required for admin panel');

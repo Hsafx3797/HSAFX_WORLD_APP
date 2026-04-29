@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { trpc } from '@/lib/trpc';
+import { WINDOWS_TIMEZONES } from '@/lib/timezone';
 import { toast } from 'sonner';
 
 export default function PreferencesPage() {
@@ -132,8 +133,8 @@ export default function PreferencesPage() {
                   onChange={(e) => { setTimezone(e.target.value); mutateCol({ timezone: e.target.value }); }}
                   className="px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 max-w-55"
                 >
-                  {Intl.supportedValuesOf('timeZone').map((tz) => (
-                    <option key={tz} value={tz}>{tz.replace(/_/g, ' ')}</option>
+                  {WINDOWS_TIMEZONES.map((tz) => (
+                    <option key={tz.value} value={tz.value}>{tz.label}</option>
                   ))}
                 </select>
               </div>

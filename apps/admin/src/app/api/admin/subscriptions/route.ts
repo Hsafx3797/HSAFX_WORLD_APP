@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
         id: subscriptions.id,
         userId: subscriptions.userId,
         userEmail: users.email,
-        userName: users.fullName,
+        userName: users.name,
         planId: subscriptions.planId,
         planSlug: plans.slug,
         planName: plans.name,

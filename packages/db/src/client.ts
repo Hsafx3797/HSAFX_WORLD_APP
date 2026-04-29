@@ -8,7 +8,7 @@ function createDb(): NeonHttpDatabase<typeof schema> {
   if (!process.env.DATABASE_URL) {
     throw new Error('DATABASE_URL environment variable is required');
   }
-  const sql: NeonQueryFunction<boolean, boolean> = neon(process.env.DATABASE_URL);
+  const sql: NeonQueryFunction<boolean, boolean> = neon(process.env.DATABASE_URL, { fetchConnectionCache: true });
   return drizzle(sql, { schema });
 }
 

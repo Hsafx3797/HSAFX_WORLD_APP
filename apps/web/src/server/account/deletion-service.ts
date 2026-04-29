@@ -19,7 +19,7 @@ export async function requestAccountDeletion(userId: string): Promise<{ deletion
     .update(users)
     .set({ deletedAt: now, isActive: false, updatedAt: now })
     .where(and(eq(users.id, userId), sql`${users.deletedAt} IS NULL`))
-    .returning({ email: users.email, fullName: users.fullName });
+    .returning({ email: users.email, name: users.name });
 
   if (!user) {
     throw new Error('User not found or already scheduled for deletion');
@@ -38,7 +38,7 @@ export async function requestAccountDeletion(userId: string): Promise<{ deletion
     to: user.email,
     subject: `Account deletion scheduled — ${APP_NAME}`,
     html: `<h2>Account deletion scheduled</h2>
-<p>Hi ${user.fullName || 'there'},</p>
+<p>Hi ${user.name || 'there'},</p>
 <p>Your ${APP_NAME} account has been scheduled for deletion.</p>
 <p><strong>Your data will be permanently deleted on ${formattedDate}.</strong></p>
 <p>If you change your mind, you can cancel the deletion by signing back in and visiting your settings before that date.</p>
@@ -59,7 +59,7 @@ export async function cancelAccountDeletion(userId: string): Promise<void> {
     .update(users)
     .set({ deletedAt: null, isActive: true, updatedAt: new Date() })
     .where(and(eq(users.id, userId), isNotNull(users.deletedAt)))
-    .returning({ email: users.email, fullName: users.fullName });
+    .returning({ email: users.email, name: users.name });
 
   if (!user) {
     throw new Error('No pending deletion to cancel');
@@ -69,7 +69,7 @@ export async function cancelAccountDeletion(userId: string): Promise<void> {
     to: user.email,
     subject: `Account deletion cancelled — ${APP_NAME}`,
     html: `<h2>Deletion cancelled</h2>
-<p>Hi ${user.fullName || 'there'},</p>
+<p>Hi ${user.name || 'there'},</p>
 <p>Your ${APP_NAME} account deletion has been cancelled. Your account is fully active again.</p>
 <p style="font-size:13px;color:#999;margin-top:32px;">&copy; ${new Date().getFullYear()} ${APP_NAME}.</p>`,
     text: `Your ${APP_NAME} account deletion has been cancelled. Your account is fully active again.`,

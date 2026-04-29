@@ -6,8 +6,7 @@
  *   - Subscription checkout sessions
  *   - Subscription lifecycle (cancel, reactivate)
  *   - Tax collection & compliance
- *
- * Stripe continues to handle coin-pack one-time purchases separately.
+ *   - Coin-pack one-time purchases
  */
 
 import { Polar } from '@polar-sh/sdk';

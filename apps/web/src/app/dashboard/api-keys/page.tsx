@@ -282,7 +282,7 @@ export default function ApiKeysPage() {
                 Learn how to use the HSAFX Tools API in your applications
               </p>
             </div>
-            <Button variant="outline" onClick={() => router.push('/docs/api')}>
+            <Button variant="outline" onClick={() => router.push('/api-docs')}>
               View Docs
             </Button>
           </div>

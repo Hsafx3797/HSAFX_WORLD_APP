@@ -14,7 +14,7 @@ from typing import Any, Optional
 import hmac
 import httpx
 import structlog
-from fastapi import APIRouter, BackgroundTasks, Header, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException
 from pydantic import BaseModel
 
 logger = structlog.get_logger()
@@ -82,7 +82,7 @@ def verify_internal_secret(x_internal_secret: str = Header(...)):
 async def execute_tool(
     request: ExecuteRequest,
     background_tasks: BackgroundTasks,
-    _auth: bool = Header(None, alias="x-internal-secret"),
+    _=Depends(verify_internal_secret),
 ):
     """
     Accept a tool execution job from Next.js.
@@ -91,11 +91,6 @@ async def execute_tool(
     actual processing happens in a background task. When done, FastAPI
     calls back to Next.js POST /api/internal/job-complete.
     """
-    # Verify secret manually (Header dependency doesn't auto-validate here)
-    x_secret = _auth
-    if not INTERNAL_SECRET or not hmac.compare_digest(x_secret, INTERNAL_SECRET):
-        raise HTTPException(status_code=401, detail="Invalid internal secret")
-
     logger.info(
         "internal.execute.received",
         job_id=request.jobId,

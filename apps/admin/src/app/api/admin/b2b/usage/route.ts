@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
           id: b2bUsage.id,
           userId: b2bUsage.userId,
           userEmail: users.email,
-          userName: users.fullName,
+          userName: users.name,
           b2bSuiteId: b2bUsage.b2bSuiteId,
           suiteName: b2bSuites.name,
           suiteSlug: b2bSuites.slug,

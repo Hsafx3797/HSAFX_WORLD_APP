@@ -315,7 +315,7 @@ Write-Host ""
 Write-Host "  Quick start:" -ForegroundColor White
 Write-Host "    pnpm dev           Start all dev servers" -ForegroundColor Green
 Write-Host "    pnpm dev:web       Start web app only (port 3000)" -ForegroundColor Green
-Write-Host "    pnpm dev:admin     Start admin panel only (port 3001)" -ForegroundColor Green
+Write-Host "    pnpm dev:admin     Start admin panel only (port 3002)" -ForegroundColor Green
 Write-Host "    pnpm build         Build all packages" -ForegroundColor Green
 Write-Host "    pnpm test          Run all tests" -ForegroundColor Green
 Write-Host ""

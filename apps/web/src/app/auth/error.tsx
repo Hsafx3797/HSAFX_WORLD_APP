@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import Link from 'next/link';
 
 export default function AuthError({
   error,
@@ -33,12 +34,12 @@ export default function AuthError({
           >
             Try again
           </button>
-          <a
+          <Link
             href="/"
             className="rounded-md border border-border px-6 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
           >
             Go home
-          </a>
+          </Link>
         </div>
       </div>
     </div>

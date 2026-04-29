@@ -14,8 +14,13 @@ pub fn execute(input: &str, options: &serde_json::Value) -> Result<ExecuteRespon
 
     let hash_hex = match algorithm {
         "md5" => text_tools::md5_hash(input),
+        "sha1" | "sha-1" => text_tools::sha1_hash(input),
         "sha256" | "sha-256" => text_tools::sha256_hash(input),
         "sha512" | "sha-512" => text_tools::sha512_hash(input),
+        "crc32" => text_tools::crc32_hash(input),
+        "djb2" => text_tools::djb2_hash(input),
+        "fnv1a" | "fnv-1a" => text_tools::fnv1a_hash(input),
+        "adler32" => text_tools::adler32_hash(input),
         _ => return Err(format!("Unknown hash algorithm: {}", algorithm)),
     };
 

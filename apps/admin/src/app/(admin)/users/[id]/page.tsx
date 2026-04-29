@@ -151,8 +151,8 @@ export default function UserDetailPage() {
         <div className="flex-1">
           <div className="flex items-center gap-3">
             <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-              {user.avatarUrl ? (
-                <img src={user.avatarUrl} alt={user.name} className="h-12 w-12 rounded-full object-cover" />
+              {user.image ? (
+                <img src={user.image} alt={user.name} className="h-12 w-12 rounded-full object-cover" />
               ) : (
                 <UserIcon className="h-6 w-6 text-primary" />
               )}

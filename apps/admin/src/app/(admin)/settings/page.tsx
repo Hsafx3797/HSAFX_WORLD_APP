@@ -392,17 +392,7 @@ export default function SettingsPage() {
                 <h3 className="font-medium text-foreground">Polar</h3>
                 <Badge variant="success" dot>Connected</Badge>
               </div>
-              <p className="text-sm text-muted-foreground mb-3">Subscription management</p>
-              <Button variant="outline" size="sm" fullWidth>Configure</Button>
-            </div>
-
-            {/* Stripe */}
-            <div className="p-4 border border-border rounded-lg">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-medium text-foreground">Stripe</h3>
-                <Badge variant="success" dot>Connected</Badge>
-              </div>
-              <p className="text-sm text-muted-foreground mb-3">Payment processing</p>
+              <p className="text-sm text-muted-foreground mb-3">Billing & subscription management</p>
               <Button variant="outline" size="sm" fullWidth>Configure</Button>
             </div>
 

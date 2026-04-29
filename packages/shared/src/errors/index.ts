@@ -184,6 +184,7 @@ export const ApiErrorCode = {
 
   // Key Management (A0xx extended)
   AUTH_KEY_NOT_FOUND: 'A006',
+  AUTH_KEY_IN_GRACE: 'A007',
 
   // Limits (L0xx)
   LIMIT_REACHED: 'L001',

@@ -1,6 +1,5 @@
 /**
- * User Store — session, plan, coin balance, preferences
- * Reference: SOLUTION_ROADMAP Task 4.3
+ * User Store — session, plan, preferences
  */
 
 import { create } from 'zustand';
@@ -10,7 +9,6 @@ export interface UserPlan {
   id: string;
   slug: string;
   name: string;
-  coinGrant: number;
   discountPercent: number;
 }
 
@@ -32,16 +30,13 @@ export interface UserState {
   // Auth
   isAuthenticated: boolean;
   userId: string | null;
-  fullName: string | null;
+  name: string | null;
   email: string | null;
   role: string;
-  avatarUrl: string | null;
+  image: string | null;
 
   // Billing
   plan: UserPlan | null;
-  coinBalance: number;
-  lifetimeEarned: number;
-  lifetimeSpent: number;
 
   // Preferences & sessions
   preferences: UserPreferences | null;
@@ -50,15 +45,12 @@ export interface UserState {
   // Actions
   setUser: (user: {
     id: string;
-    fullName: string | null;
+    name: string | null;
     email: string;
     role: string;
-    avatarUrl?: string | null;
+    image?: string | null;
   }) => void;
   setPlan: (plan: UserPlan | null) => void;
-  setCoinBalance: (balance: number) => void;
-  updateCoinBalance: (delta: number) => void;
-  setLifetimeStats: (earned: number, spent: number) => void;
   setPreferences: (preferences: UserPreferences) => void;
   setSessions: (sessions: UserSession[]) => void;
   clearUser: () => void;
@@ -67,14 +59,11 @@ export interface UserState {
 const initialState = {
   isAuthenticated: false,
   userId: null as string | null,
-  fullName: null as string | null,
+  name: null as string | null,
   email: null as string | null,
   role: 'user',
-  avatarUrl: null as string | null,
+  image: null as string | null,
   plan: null as UserPlan | null,
-  coinBalance: 0,
-  lifetimeEarned: 0,
-  lifetimeSpent: 0,
   preferences: null as UserPreferences | null,
   sessions: [] as UserSession[],
 };
@@ -88,21 +77,13 @@ export const useUserStore = create<UserState>()(
         set({
           isAuthenticated: true,
           userId: user.id,
-          fullName: user.fullName,
+          name: user.name,
           email: user.email,
           role: user.role,
-          avatarUrl: user.avatarUrl ?? null,
+          image: user.image ?? null,
         }),
 
       setPlan: (plan) => set({ plan }),
-
-      setCoinBalance: (balance) => set({ coinBalance: balance }),
-
-      updateCoinBalance: (delta) =>
-        set((state) => ({ coinBalance: state.coinBalance + delta })),
-
-      setLifetimeStats: (earned, spent) =>
-        set({ lifetimeEarned: earned, lifetimeSpent: spent }),
 
       setPreferences: (preferences) => set({ preferences }),
 
@@ -115,9 +96,8 @@ export const useUserStore = create<UserState>()(
       partialize: (state) => ({
         // Only persist non-sensitive data
         userId: state.userId,
-        fullName: state.fullName,
+        name: state.name,
         plan: state.plan,
-        coinBalance: state.coinBalance,
         preferences: state.preferences,
       }),
     },

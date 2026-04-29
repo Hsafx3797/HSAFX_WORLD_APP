@@ -18,7 +18,7 @@ body:
         - Admin Panel (admin.hsafx.com)
         - FastAPI Backend
         - Database / Schema
-        - Billing (Stripe / Polar)
+        - Billing (Polar)
         - Authentication
         - Tool Execution
         - Theme / UI

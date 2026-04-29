@@ -30,6 +30,40 @@ function getStrength(password: string): number {
   return 4;
 }
 
+/** Estimate crack time based on character pool size and password length.
+ *  Assumes 10 billion guesses/second (modern GPU cluster). */
+function estimateCrackTime(password: string): string {
+  if (password.length === 0) return '';
+
+  let poolSize = 0;
+  if (/[a-z]/.test(password)) poolSize += 26;
+  if (/[A-Z]/.test(password)) poolSize += 26;
+  if (/\d/.test(password)) poolSize += 10;
+  if (/[^A-Za-z0-9]/.test(password)) poolSize += 33;
+  if (poolSize === 0) poolSize = 26; // fallback
+
+  // Entropy in bits
+  const entropy = password.length * Math.log2(poolSize);
+  // Guesses = 2^entropy / 2 (average case)
+  const guesses = Math.pow(2, entropy) / 2;
+  // 10 billion guesses per second (realistic GPU cluster)
+  const seconds = guesses / 1e10;
+
+  if (seconds < 0.001) return 'Instantly';
+  if (seconds < 1) return 'Less than a second';
+  if (seconds < 60) return `${Math.round(seconds)} seconds`;
+  if (seconds < 3600) return `${Math.round(seconds / 60)} minutes`;
+  if (seconds < 86400) return `${Math.round(seconds / 3600)} hours`;
+  if (seconds < 86400 * 30) return `${Math.round(seconds / 86400)} days`;
+  if (seconds < 86400 * 365) return `${Math.round(seconds / (86400 * 30))} months`;
+  const years = seconds / (86400 * 365);
+  if (years < 1000) return `${Math.round(years)} years`;
+  if (years < 1e6) return `${Math.round(years / 1000)}k years`;
+  if (years < 1e9) return `${Math.round(years / 1e6)}M years`;
+  if (years < 1e12) return `${Math.round(years / 1e9)}B years`;
+  return `${Math.round(years / 1e12)}T+ years`;
+}
+
 const STRENGTH_CONFIG = [
   { label: 'Very Weak', color: 'bg-destructive' },
   { label: 'Weak', color: 'bg-warning' },
@@ -49,6 +83,7 @@ export function PasswordStrengthMeter({ password }: Props) {
   );
 
   const strength = useMemo(() => getStrength(password), [password]);
+  const crackTime = useMemo(() => estimateCrackTime(password), [password]);
   const config = STRENGTH_CONFIG[strength]!;
 
   if (password.length === 0) return null;
@@ -72,6 +107,16 @@ export function PasswordStrengthMeter({ password }: Props) {
           ))}
         </div>
       </div>
+
+      {/* Crack time estimate */}
+      {crackTime && (
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-muted-foreground">Time to crack</span>
+          <span className={`font-medium ${strength >= 3 ? 'text-success' : strength >= 2 ? 'text-warning' : 'text-destructive'}`}>
+            {crackTime}
+          </span>
+        </div>
+      )}
 
       {/* Rule checklist */}
       <ul className="space-y-1">

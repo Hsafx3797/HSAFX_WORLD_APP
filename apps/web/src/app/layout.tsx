@@ -16,7 +16,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: 'HSAFX Tools - 446+ Free Online Developer Tools',
+    default: 'HSAFX Tools - B2B API Platform — 30 Parameterized Engines',
     template: '%s | HSAFX Tools',
   },
   description:
@@ -40,12 +40,13 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     siteName: 'HSAFX Tools',
-    title: 'HSAFX Tools - 446+ Free Online Developer Tools',
+    title: 'HSAFX Tools - B2B API Platform — 30 Parameterized Engines',
     description: 'Free online developer tools. Fast, secure, and privacy-focused.',
+    creator: '@hsafx',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'HSAFX Tools - 446+ Free Online Developer Tools',
+    title: 'HSAFX Tools - B2B API Platform — 30 Parameterized Engines',
     description: 'Free online developer tools. Fast, secure, and privacy-focused.',
     creator: '@hsafx',
   },

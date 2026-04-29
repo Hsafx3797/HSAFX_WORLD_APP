@@ -6,6 +6,7 @@
 'use client';
 
 import { useState } from 'react';
+import { trpc } from '@/lib/trpc';
 
 const ENGINE_LIST = [
   { name: 'case', backend: 'Rust', description: 'Case conversions (snake, camel, kebab, etc.)' },
@@ -241,12 +242,10 @@ const errorCodes = [
   { code: 503, name: 'Service Unavailable', description: 'Engine backend temporarily unavailable' },
 ];
 
-const B2B_PLANS = [
-  { name: 'Starter', price: '$49/mo', ops: '10,000', engines: '20 engines', support: 'Email' },
-  { name: 'Growth', price: '$149/mo', ops: '50,000', engines: '30 engines', support: 'Priority', popular: true },
-  { name: 'Scale', price: '$499/mo', ops: '250,000', engines: '30 engines', support: 'Dedicated' },
-  { name: 'Enterprise', price: '$1,499/mo', ops: 'Unlimited', engines: '30 engines + custom', support: '24/7 SLA' },
-];
+function formatB2bPrice(cents: number | null | undefined) {
+  if (!cents) return 'Contact us';
+  return `$${(cents / 100).toFixed(cents % 100 === 0 ? 0 : 2)}/mo`;
+}
 
 function MethodBadge({ method }: { method: string }) {
   const colors: Record<string, string> = {
@@ -282,6 +281,7 @@ export default function ApiDocsPage() {
   const [activeTab, setActiveTab] = useState('curl');
   const [expandedEndpoint, setExpandedEndpoint] = useState<string | null>(null);
   const [engineSearch, setEngineSearch] = useState('');
+  const { data: b2bPlans, isLoading: b2bLoading } = trpc.b2b.getPlans.useQuery();
 
   const filteredEngines = ENGINE_LIST.filter(
     (e) =>
@@ -362,27 +362,56 @@ Body: { "input": "...", "options": { ... } }`}</code>
         {/* B2B Plans */}
         <section className="mb-16">
           <h2 className="text-2xl font-bold text-foreground mb-6">Plans & Quotas</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {B2B_PLANS.map((plan) => (
-              <div
-                key={plan.name}
-                className={`relative bg-card border rounded-xl p-6 ${plan.popular ? 'border-primary ring-2 ring-primary/20' : 'border-border'}`}
-              >
-                {plan.popular && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 text-xs font-medium bg-primary text-primary-foreground rounded-full">
-                    Popular
-                  </span>
-                )}
-                <h3 className="text-lg font-semibold mb-1">{plan.name}</h3>
-                <p className="text-2xl font-bold mb-4">{plan.price}</p>
-                <div className="space-y-1 text-sm text-muted-foreground">
-                  <div><span className="font-medium text-foreground">{plan.ops}</span> ops/month</div>
-                  <div>{plan.engines}</div>
-                  <div>{plan.support} support</div>
+          {b2bLoading ? (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="animate-pulse bg-card border border-border rounded-xl p-6 space-y-3">
+                  <div className="h-5 bg-muted rounded w-24" />
+                  <div className="h-8 bg-muted rounded w-20" />
+                  <div className="space-y-2">{[1,2,3].map(j => <div key={j} className="h-4 bg-muted rounded" />)}</div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (b2bPlans ?? []).length === 0 ? (
+            <div className="bg-card border border-border rounded-xl p-8 text-center">
+              <p className="text-muted-foreground">API plans coming soon — <a href="mailto:support@hsafx.com" className="underline hover:text-foreground">contact us</a> for early access.</p>
+            </div>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {(b2bPlans ?? []).map((plan, idx) => {
+                const isPopular = plan.slug === 'growth';
+                const totalOps = plan.quotas.reduce((sum, q) => sum + q.monthlyLimit, 0);
+                return (
+                  <div
+                    key={plan.id}
+                    className={`relative bg-card border rounded-xl p-6 ${
+                      isPopular ? 'border-primary ring-2 ring-primary/20' : 'border-border'
+                    }`}
+                  >
+                    {isPopular && (
+                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 text-xs font-medium bg-primary text-primary-foreground rounded-full">
+                        Popular
+                      </span>
+                    )}
+                    <h3 className="text-lg font-semibold mb-1">{plan.name}</h3>
+                    <p className="text-2xl font-bold mb-4">{formatB2bPrice(plan.priceMonthlyCents)}</p>
+                    <div className="space-y-1 text-xs text-muted-foreground">
+                      <p className="text-xs font-medium uppercase mb-2">Monthly ops per suite</p>
+                      {plan.quotas.map((q) => (
+                        <div key={q.suiteId} className="flex items-center justify-between">
+                          <span className="capitalize">{q.suiteName}</span>
+                          <span className="font-mono font-medium text-foreground">{q.monthlyLimit.toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-border text-xs text-muted-foreground">
+                      Total: <span className="font-medium text-foreground">{totalOps.toLocaleString()}</span> ops/mo
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </section>
 
         {/* Engine Reference */}

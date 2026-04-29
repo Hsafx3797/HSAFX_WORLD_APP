@@ -52,7 +52,7 @@ export const tools = pgTable('tools', {
   longDescription: text('long_description'),
   toolGroup: integer('tool_group').notNull(), // 1-5 per 30_TOOLS_CATALOG.md
   toolClass: varchar('tool_class', { length: 50 }), // Derived class for billing rules
-  runtime: text('runtime').notNull(), // 'wasm', 'node', 'python', 'browser'
+  runtime: text('runtime').notNull(), // 'rust', 'node', 'python'
   executionMode: text('execution_mode').notNull(), // 'client', 'server', 'hybrid'
   coinCost: integer('coin_cost').notNull().default(0),
   isActive: boolean('is_active').notNull().default(true),
@@ -167,7 +167,7 @@ export const apiKeys = pgTable('api_keys', {
   expiresAt: timestamp('expires_at'),
   isActive: boolean('is_active').notNull().default(true),
   isInternal: boolean('is_internal').notNull().default(false), // Hidden web-UI keys for B2C→B2B bridge
-  rateLimitTier: text('rate_limit_tier').notNull().default('standard'),
+  rateLimitTier: text('rate_limit_tier').notNull().default('free'),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   revokedAt: timestamp('revoked_at'),

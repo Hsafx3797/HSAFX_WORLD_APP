@@ -24,7 +24,6 @@ export type ExecuteToolResult = {
   result?: unknown;
   jobId?: string;
   executionId: string;
-  coinsCharged: number;
   duration?: number;
 };
 
@@ -53,7 +52,6 @@ export async function executeToolServer(
     status: 'completed',
     result: output,
     executionId,
-    coinsCharged: 0, // Billing handled by caller
     duration: Date.now() - startTime,
   };
 }

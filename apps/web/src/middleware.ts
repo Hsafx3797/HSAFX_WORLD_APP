@@ -108,24 +108,27 @@ async function handleRateLimit(
 
   try {
     // ── Auth endpoint rate limit (strict: 10 req / 15 min) ──
-    if (
-      pathname.startsWith('/auth/') ||
-      pathname.startsWith('/api/auth/')
-    ) {
-      const authResult = await checkAuthRateLimit(ip);
-      if (!authResult.allowed) {
-        return NextResponse.json(
-          {
-            error: 'Too many authentication attempts. Please try again later.',
-            retryAfter: Math.ceil((authResult.reset - Date.now()) / 1000),
-          },
-          {
-            status: 429,
-            headers: rateLimitHeaders(authResult),
-          },
-        );
+    // Only apply to state-changing auth calls, NOT session checks or page navigations
+    if (pathname.startsWith('/api/auth/')) {
+      // Exempt read-only endpoints from auth rate limiting —
+      // get-session fires on every page load and should not consume the auth budget
+      const AUTH_RATE_LIMIT_EXEMPT = ['/api/auth/get-session', '/api/auth/session'];
+      if (!AUTH_RATE_LIMIT_EXEMPT.includes(pathname)) {
+        const authResult = await checkAuthRateLimit(ip);
+        if (!authResult.allowed) {
+          return NextResponse.json(
+            {
+              error: 'Too many authentication attempts. Please try again later.',
+              retryAfter: Math.ceil((authResult.reset - Date.now()) / 1000),
+            },
+            {
+              status: 429,
+              headers: rateLimitHeaders(authResult),
+            },
+          );
+        }
       }
-      return null; // Auth rate limit passed
+      return null; // Auth endpoint — skip generic IP limit (already checked above or exempt)
     }
 
     // ── B2B API key rate limit (60 req / min per key) ──
@@ -276,7 +279,7 @@ const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 /** Paths exempt from CSRF checks (webhooks, OAuth callbacks, B2B API key routes) */
 const CSRF_EXEMPT_PREFIXES = [
   '/api/auth/',      // better-auth handles its own CSRF via trustedOrigins
-  '/api/webhooks/',  // Stripe/Polar webhooks verify signatures instead
+  '/api/webhooks/',  // Polar webhooks verify signatures instead
   '/api/v1/',        // B2B routes use Bearer token auth, not cookies
 ];
 

@@ -233,7 +233,7 @@ export async function POST(request: NextRequest) {
 
     // 6. Verify target user exists
     const targetRows = await db
-      .select({ id: users.id, fullName: users.fullName, username: users.username, email: users.email })
+      .select({ id: users.id, fullName: users.name, username: users.username, email: users.email })
       .from(users)
       .where(eq(users.id, targetUserId))
       .limit(1);
@@ -370,7 +370,7 @@ export async function GET() {
 
     // Fetch target user details
     const targetRows = await db
-      .select({ id: users.id, fullName: users.fullName, username: users.username, email: users.email })
+      .select({ id: users.id, fullName: users.name, username: users.username, email: users.email })
       .from(users)
       .where(eq(users.id, parsed.targetUserId))
       .limit(1);

@@ -171,7 +171,7 @@ jobs:
         run: npx playwright test
         env:
           CI: true
-          ADMIN_URL: http://localhost:3001
+          ADMIN_URL: http://localhost:3002
           ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
           ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
         continue-on-error: true  # TODO: remove once DB is available in CI

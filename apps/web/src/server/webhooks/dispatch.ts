@@ -23,7 +23,6 @@ export interface WebhookPayload {
   timestamp: string;    // ISO-8601
   data: {
     jobId: string;
-    toolId: string;
     status: 'completed' | 'failed';
     engine?: string;
     output?: unknown;

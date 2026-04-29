@@ -142,7 +142,7 @@ def get_settings() -> Settings:
     if not s.DEBUG:
         if not s.SECRET_KEY:
             raise RuntimeError("SECRET_KEY must be set in production (via env or .env)")
-        if not s.INTERNAL_SECRET:
+        if not s.INTERNAL_API_SECRET:
             raise RuntimeError("INTERNAL_SECRET must be set in production (via env or .env)")
     return s
 

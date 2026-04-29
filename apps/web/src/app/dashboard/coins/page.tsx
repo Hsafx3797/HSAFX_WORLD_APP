@@ -14,13 +14,24 @@ export default function CoinsPage() {
   const { user, isLoading: authLoading } = useAuth();
   const { balance, transactions, dailyBonusAvailable, claimDailyBonus, purchaseCoins, isLoading } = useCoins();
   const { data: coinPacks, isLoading: packsLoading } = trpc.billing.getCoinPacks.useQuery();
+  const { data: subscriptionData, isLoading: subLoading } = trpc.billing.getMySubscription.useQuery(
+    undefined,
+    { enabled: !!user },
+  );
   const [purchasing, setPurchasing] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
       router.push('/auth/signin');
+      return;
     }
-  }, [authLoading, user, router]);
+    if (!authLoading && !subLoading && user && subscriptionData) {
+      const isPaid =
+        subscriptionData.plan.slug !== 'free' &&
+        subscriptionData.derivedStatus !== 'expired';
+      if (!isPaid) router.push('/pricing');
+    }
+  }, [authLoading, subLoading, user, subscriptionData, router]);
 
   const handleClaimBonus = async () => {
     const result = await claimDailyBonus();
@@ -35,7 +46,7 @@ export default function CoinsPage() {
     setPurchasing(false);
   };
 
-  if (authLoading || !user) {
+  if (authLoading || !user || subLoading) {
     return (
       <div className="container py-8 flex items-center justify-center min-h-[50vh]">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />

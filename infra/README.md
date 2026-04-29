@@ -46,7 +46,7 @@ docker compose up -d
 
 # Next.js apps run natively
 pnpm dev:web    # http://localhost:3000
-pnpm dev:admin  # http://localhost:3001
+pnpm dev:admin  # http://localhost:3002
 ```
 
 ## Production Deployment (VPS)
@@ -78,7 +78,7 @@ Requires: nginx ingress controller, cert-manager for TLS, sealed-secrets for sec
 | Service | Port | Technology |
 |---------|------|------------|
 | Web     | 3000 | Next.js 15 (standalone) |
-| Admin   | 3001 | Next.js 15 (standalone) |
+| Admin   | 3002 | Next.js 15 (local dev) / 3001 internal in Docker |
 | FastAPI | 8000 | Python 3.12, uvicorn |
 | Postgres | 5432 | PostgreSQL 16 |
 | Redis   | 6379 | Redis 7 |

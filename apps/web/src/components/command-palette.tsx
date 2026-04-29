@@ -14,8 +14,6 @@ import {
   Search,
   Wrench,
   LayoutDashboard,
-  History,
-  Coins,
   Key,
   Settings,
   FileText,
@@ -60,8 +58,6 @@ export function CommandPalette() {
     if (isAuthenticated) {
       base.push(
         { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-        { name: 'History', href: '/dashboard/history', icon: History },
-        { name: 'Coins', href: '/dashboard/coins', icon: Coins },
         { name: 'API Keys', href: '/settings/api-keys', icon: Key },
         { name: 'Settings', href: '/settings', icon: Settings }
       );

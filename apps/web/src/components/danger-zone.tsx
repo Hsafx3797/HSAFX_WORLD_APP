@@ -52,21 +52,8 @@ export function DangerZone() {
       <h2 className="text-xl font-semibold mb-6 text-destructive">Danger Zone</h2>
 
       <div className="space-y-4">
-        {/* Export Data */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-medium">Export Data</h3>
-            <p className="text-sm text-muted-foreground">
-              Download all your data in JSON format
-            </p>
-          </div>
-          <button className="px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors">
-            Export
-          </button>
-        </div>
-
         {/* Delete Account */}
-        <div className="border-t border-border pt-4">
+        <div>
           {status?.isPending ? (
             /* ── Pending deletion banner ── */
             <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg space-y-3">

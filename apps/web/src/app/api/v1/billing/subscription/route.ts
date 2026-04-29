@@ -1,15 +1,11 @@
 /**
  * GET /api/v1/billing/subscription
- * Returns the current subscription for the API key owner.
+ * Returns the current B2B subscription for the API key owner.
  * Requires scope: billing:read
- *
- * Stripe metered billing: Usage is reported via reportStripeUsage() in
- * job-worker.ts and job-complete/route.ts for users with a stripeCustomerId.
- * See: apps/web/src/server/billing/stripe-usage.ts
  */
 
 import { NextRequest } from 'next/server';
-import { db, eq, subscriptions, plans } from '@hsafx/db';
+import { db, eq, b2bSubscriptions, b2bPlans } from '@hsafx/db';
 import {
   authenticateApiKey,
   requireScope,
@@ -28,39 +24,30 @@ export async function GET(request: NextRequest) {
   if (scopeErr) return scopeErr;
 
   try {
-    const sub = await db.query.subscriptions.findFirst({
-      where: eq(subscriptions.userId, ctx.userId),
+    const sub = await db.query.b2bSubscriptions.findFirst({
+      where: eq(b2bSubscriptions.userId, ctx.userId),
     });
 
     if (!sub) {
-      return apiResponse(
-        {
-          plan: 'free',
-          status: 'none',
-          subscription: null,
-        },
-        ctx,
-      );
+      return apiResponse({ subscription: null }, ctx);
     }
 
-    // Fetch plan details
-    const plan = await db.query.plans.findFirst({
-      where: eq(plans.id, sub.planId),
+    const plan = await db.query.b2bPlans.findFirst({
+      where: eq(b2bPlans.id, sub.b2bPlanId),
     });
 
     return apiResponse(
       {
-        plan: plan?.slug ?? 'unknown',
-        status: sub.status,
         subscription: {
           id: sub.id,
+          planSlug: plan?.slug ?? 'unknown',
+          planName: plan?.name ?? 'Unknown',
+          status: sub.status,
           billingCycle: sub.billingCycle,
           currentPeriodStart: sub.currentPeriodStart.toISOString(),
           currentPeriodEnd: sub.currentPeriodEnd.toISOString(),
           cancelAtPeriodEnd: sub.cancelAtPeriodEnd,
           canceledAt: sub.canceledAt?.toISOString() ?? null,
-          trialStart: sub.trialStart?.toISOString() ?? null,
-          trialEnd: sub.trialEnd?.toISOString() ?? null,
           createdAt: sub.createdAt.toISOString(),
         },
       },
@@ -78,3 +65,4 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+

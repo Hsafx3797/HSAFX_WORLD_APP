@@ -50,7 +50,7 @@ const changelog: ChangelogEntry[] = [
     type: 'feature',
     items: [
       'Coin wallet with daily bonus rewards',
-      'Stripe and Polar payment integration',
+      'Polar payment integration',
       'Subscription tiers: Free, Pro, Advance',
       'API key management for developers',
       'Usage history and execution tracking',

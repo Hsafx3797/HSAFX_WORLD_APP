@@ -38,7 +38,7 @@ async function seed() {
     process.exit(1);
   }
 
-  const sql = neon(process.env.DATABASE_URL);
+  const sql = neon(process.env.DATABASE_URL!);
   const db = drizzle(sql, { schema });
 
   console.log('🌱 Seeding database...\n');
@@ -80,16 +80,35 @@ async function seed() {
 
   const planData = [
     { name: 'Free', slug: 'free', description: 'Basic access with daily coin grant', priceMonthlyCents: 0, priceYearlyCents: 0, coinGrant: 50 },
-    { name: 'Pro', slug: 'pro', description: 'Professional tier with 20% discount on tool costs', priceMonthlyCents: 999, priceYearlyCents: 9999, coinGrant: 500 },
-    { name: 'Advance', slug: 'advance', description: 'Enterprise-grade with priority execution and 40% discount', priceMonthlyCents: 2999, priceYearlyCents: 29999, coinGrant: 2000 },
+    { name: 'Pro', slug: 'pro', description: 'Professional tier with 20% discount on tool costs', priceMonthlyCents: 1000, priceYearlyCents: 9600, coinGrant: 200, polarProductIdMonthly: 'a6a6187d-1939-40d1-9da8-02667ff6565b', polarProductIdYearly: 'f755fc8b-d45a-4ee7-8828-a7912169b732' },
+    { name: 'Advance', slug: 'advance', description: 'Enterprise-grade with priority execution and 40% discount', priceMonthlyCents: 2000, priceYearlyCents: 18000, coinGrant: 500, polarProductIdMonthly: '1fe0594e-397a-4dd4-96ec-6e4b02918709', polarProductIdYearly: '1482bab9-125c-48ac-86d3-910bd9896a88' },
   ];
 
   const coinPackData = [
-    { name: 'Starter', coins: 100, priceInCents: 199, bonusCoins: 0, sortOrder: 1 },
-    { name: 'Popular', coins: 500, priceInCents: 799, bonusCoins: 50, sortOrder: 2 },
-    { name: 'Pro Pack', coins: 1000, priceInCents: 1499, bonusCoins: 150, sortOrder: 3 },
-    { name: 'Mega Pack', coins: 5000, priceInCents: 5999, bonusCoins: 1000, sortOrder: 4 },
-    { name: 'Enterprise', coins: 20000, priceInCents: 19999, bonusCoins: 5000, sortOrder: 5 },
+    {
+      name: '50 Coin Pack',
+      coins: 50,
+      priceInCents: 500,
+      bonusCoins: 0,
+      sortOrder: 1,
+      polarProductId: 'eded969c-ac9b-4532-99d3-d6da054abe6c',
+    },
+    {
+      name: '100 Coin Pack',
+      coins: 100,
+      priceInCents: 800,
+      bonusCoins: 0,
+      sortOrder: 2,
+      polarProductId: '52de0cba-031c-4e19-818b-c466f1629431',
+    },
+    {
+      name: '150 Coin Pack',
+      coins: 150,
+      priceInCents: 1200,
+      bonusCoins: 0,
+      sortOrder: 3,
+      polarProductId: 'c8b974c2-4d71-4b39-a146-376c65092b5f',
+    },
   ];
 
   const flagData = [
@@ -126,7 +145,9 @@ async function seed() {
     { name: 'Specialized Tools', slug: 'specialized', description: 'Islamic finance, GPA, timezone, and other specialized tools', icon: 'star', sortOrder: 15 },
   ];
 
-  await db.transaction(async (tx) => {
+  // neon-http does not support transactions — run sequentially (all inserts are idempotent)
+  {
+    const tx = db;
     // ── 1. Roles ──────────────────────────────────────────────
     console.log('  → Roles');
     const insertedRoles = await tx
@@ -262,11 +283,12 @@ async function seed() {
     console.log(`    ✓ ${planCoinRuleData.length} plan coin rules`);
 
     // ── 5. Coin Packs ────────────────────────────────────────
+    // DELETE first — no unique constraint on name, so onConflictDoNothing would insert duplicates
     console.log('  → Coin Packs');
+    await tx.delete(coinPacks);
     const insertedPacks = await tx
       .insert(coinPacks)
       .values(coinPackData)
-      .onConflictDoNothing()
       .returning();
     console.log(`    ✓ ${insertedPacks.length} coin packs`);
 
@@ -291,10 +313,24 @@ async function seed() {
     // ── 8. B2B Plans ─────────────────────────────────────────
     console.log('  → B2B Plans');
     const b2bPlanData = [
-      { name: 'Starter', slug: 'starter', description: 'Starter API plan — small teams and prototyping', priceMonthlyCents: 4900, priceYearlyCents: 49000 },
-      { name: 'Growth', slug: 'growth', description: 'Growth API plan — scaling businesses', priceMonthlyCents: 14900, priceYearlyCents: 149000 },
-      { name: 'Scale', slug: 'scale', description: 'Scale API plan — high-volume operations', priceMonthlyCents: 49900, priceYearlyCents: 499000 },
-      { name: 'Enterprise', slug: 'enterprise', description: 'Enterprise API plan — unlimited text/data, highest quotas', priceMonthlyCents: 149900, priceYearlyCents: 1499000 },
+      {
+        name: 'API Basic',
+        slug: 'api-basic',
+        description: 'Monthly B2B API subscription — Basic tier.',
+        priceMonthlyCents: 1000,
+        priceYearlyCents: 9600,
+        polarProductIdMonthly: '8192484c-c85d-4086-a13b-9fabfe31285d',
+        polarProductIdYearly: '817f2d56-fcc6-4dfc-94d3-f0c5b0f7a953',
+      },
+      {
+        name: 'API Enterprise',
+        slug: 'api-enterprise',
+        description: 'Monthly B2B API subscription — Enterprise tier.',
+        priceMonthlyCents: 2000,
+        priceYearlyCents: 18000,
+        polarProductIdMonthly: 'becb4f29-df90-4bf2-b627-df2399727845',
+        polarProductIdYearly: '9031bccc-3fef-4c6c-a176-0c9cef2eb792',
+      },
     ];
     await tx.insert(b2bPlans).values(b2bPlanData).onConflictDoNothing({ target: b2bPlans.slug });
     const allB2bPlans = await tx.select().from(b2bPlans);
@@ -349,10 +385,8 @@ async function seed() {
     // Values from docs/ROADMAP/04_WEB_PLATFORM_BUILD.md §0.1
     console.log('  → B2B Plan Quotas');
     const quotaGrid: Record<string, Record<string, number>> = {
-      starter:    { text: 10000, data: 5000,  generate: 2000,  validate: 5000,  calculate: 5000,  convert: 5000,  media: 1000,  tracking: 500,  cheque: 200   },
-      growth:     { text: 50000, data: 25000, generate: 10000, validate: 25000, calculate: 25000, convert: 25000, media: 5000,  tracking: 2500, cheque: 1000  },
-      scale:      { text: 250000, data: 125000, generate: 50000, validate: 125000, calculate: 125000, convert: 125000, media: 25000, tracking: 12500, cheque: 5000 },
-      enterprise: { text: 1000000, data: 500000, generate: 200000, validate: 500000, calculate: 500000, convert: 500000, media: 100000, tracking: 50000, cheque: 20000 },
+      'api-basic':      { text: 10000, data: 5000,  generate: 2000,  validate: 5000,  calculate: 5000,  convert: 5000,  media: 1000,  tracking: 500,  cheque: 200   },
+      'api-enterprise': { text: 250000, data: 125000, generate: 50000, validate: 125000, calculate: 125000, convert: 125000, media: 25000, tracking: 12500, cheque: 5000 },
     };
     const quotaValues: { b2bPlanId: string; b2bSuiteId: string; monthlyLimit: number }[] = [];
     for (const [planSlug, suites] of Object.entries(quotaGrid)) {
@@ -362,9 +396,11 @@ async function seed() {
         }
       }
     }
-    await tx.insert(b2bPlanQuotas).values(quotaValues).onConflictDoNothing();
+    if (quotaValues.length > 0) {
+      await tx.insert(b2bPlanQuotas).values(quotaValues).onConflictDoNothing();
+    }
     console.log(`    ✓ ${quotaValues.length} plan-suite quotas`);
-  });
+  }
 
   // ── Done ──────────────────────────────────────────────────
   console.log('\n✅ Seed complete!');

@@ -1,10 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { PasswordStrengthMeter, isPasswordValid } from '@/components/password-strength-meter';
+import { trpc } from '@/lib/trpc';
+
+/** Simple email format check (mirrors HTML type="email" behavior). */
+function isValidEmailFormat(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -13,24 +19,74 @@ export default function SignUpPage() {
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  // Email validation state
+  const [emailTouched, setEmailTouched] = useState(false);
+  const [debouncedEmail, setDebouncedEmail] = useState('');
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // Debounce email for availability check (500ms)
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (email && isValidEmailFormat(email)) {
+      debounceRef.current = setTimeout(() => setDebouncedEmail(email), 500);
+    } else {
+      setDebouncedEmail('');
+    }
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [email]);
+
+  // tRPC query for email availability (only fires when debouncedEmail is valid)
+  const emailCheck = trpc.user.checkEmailAvailability.useQuery(
+    { email: debouncedEmail },
+    { enabled: !!debouncedEmail && isValidEmailFormat(debouncedEmail), retry: false },
+  );
+
+  const emailFormatValid = !email || isValidEmailFormat(email);
+  const emailTaken = emailCheck.data?.available === false;
+  const emailAvailable = emailCheck.data?.available === true;
+
+  const handleEmailChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+    if (!emailTouched) setEmailTouched(true);
+  }, [emailTouched]);
+
   const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isPasswordValid(password)) {
       toast.error('Password does not meet all requirements');
       return;
     }
+    if (!isValidEmailFormat(email)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+    if (emailTaken) {
+      toast.error('This email is already registered');
+      return;
+    }
     setIsLoading(true);
 
     try {
-      await authClient.signUp.email({
+      const result = await authClient.signUp.email({
         email,
         password,
         name,
       });
+      if (result.error) {
+        const msg = result.error.message ?? 'Registration failed';
+        if (result.error.status === 422) {
+          toast.error('Invalid input. Please check your details and try again.');
+        } else if (result.error.status === 429) {
+          toast.error('Too many attempts. Please wait a moment and try again.');
+        } else {
+          toast.error(msg);
+        }
+        return;
+      }
       toast.success('Account created! Please check your email to verify.');
       router.push('/auth/signin');
     } catch (error) {
-      toast.error('Failed to create account. Please try again.');
+      toast.error('Network error. Please check your connection.');
       console.error('Sign up error:', error);
     } finally {
       setIsLoading(false);
@@ -48,6 +104,8 @@ export default function SignUpPage() {
       console.error('Social sign in error:', error);
     }
   };
+
+  const canSubmit = isPasswordValid(password) && isValidEmailFormat(email) && !emailTaken && !isLoading;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/50">
@@ -81,11 +139,47 @@ export default function SignUpPage() {
               id="email"
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={handleEmailChange}
+              onBlur={() => setEmailTouched(true)}
               required
-              className="w-full px-3 py-2 border rounded-md bg-background"
+              className={`w-full px-3 py-2 border rounded-md bg-background transition-colors ${
+                emailTouched && email
+                  ? emailTaken
+                    ? 'border-destructive focus:ring-destructive'
+                    : !emailFormatValid
+                      ? 'border-destructive focus:ring-destructive'
+                      : emailAvailable
+                        ? 'border-success focus:ring-success'
+                        : ''
+                  : ''
+              }`}
               placeholder="you@example.com"
             />
+            {/* Real-time email feedback */}
+            {emailTouched && email && (
+              <div className="mt-1.5 text-xs">
+                {!emailFormatValid && (
+                  <p className="text-destructive flex items-center gap-1">
+                    <span>✗</span> Please enter a valid email address
+                  </p>
+                )}
+                {emailFormatValid && emailTaken && (
+                  <p className="text-destructive flex items-center gap-1">
+                    <span>✗</span> This email is already registered
+                  </p>
+                )}
+                {emailFormatValid && emailCheck.isLoading && (
+                  <p className="text-muted-foreground flex items-center gap-1">
+                    <span>○</span> Checking availability...
+                  </p>
+                )}
+                {emailFormatValid && emailAvailable && (
+                  <p className="text-success flex items-center gap-1">
+                    <span>✓</span> Email available
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           <div>
@@ -108,7 +202,7 @@ export default function SignUpPage() {
 
           <button
             type="submit"
-            disabled={isLoading || !isPasswordValid(password)}
+            disabled={!canSubmit}
             className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
           >
             {isLoading ? 'Creating account...' : 'Create Account'}

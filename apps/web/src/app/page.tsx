@@ -24,10 +24,10 @@ export default function HomePage() {
           {/* TODO: Add SearchBar component back once tool routes are built (Task 1000) */}
 
           <div className="flex flex-wrap justify-center gap-4">
-            <Button size="lg" asChild>
+            <Button className='px-8' size="lg" asChild>
               <Link href="/tools">Browse Tools</Link>
             </Button>
-            <Button size="lg" variant="outline" asChild>
+            <Button className='px-8' size="lg" variant="outline" asChild>
               <Link href="/api-docs">API Access</Link>
             </Button>
           </div>
@@ -126,10 +126,10 @@ export default function HomePage() {
             Create a free account to save your preferences and unlock premium features.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <Button size="lg" variant="secondary" asChild>
+            <Button className='px-8' size="lg" variant="secondary" asChild>
               <Link href="/auth/signup">Create Free Account</Link>
             </Button>
-            <Button size="lg" variant="outline" className="bg-transparent border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10" asChild>
+            <Button className="px-8 bg-transparent border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10" size="lg" variant="outline" asChild>
               <Link href="/pricing">View Pricing</Link>
             </Button>
           </div>

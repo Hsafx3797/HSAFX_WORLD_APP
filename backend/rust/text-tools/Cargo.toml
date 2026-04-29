@@ -5,7 +5,7 @@ edition.workspace = true
 authors.workspace = true
 
 [lib]
-crate-type = ["cdylib", "rlib"]
+crate-type = ["rlib"]
 
 [dependencies]
 wasm-bindgen = { workspace = true, optional = true }
@@ -16,6 +16,7 @@ regex.workspace = true
 base64.workspace = true
 hex.workspace = true
 sha2.workspace = true
+sha1.workspace = true
 md-5.workspace = true
 getrandom.workspace = true
 uuid.workspace = true
@@ -25,8 +26,7 @@ urlencoding = "2.1"
 console_error_panic_hook = { version = "0.1", optional = true }
 
 [features]
-default = ["wasm"]
-wasm = ["dep:wasm-bindgen", "dep:serde-wasm-bindgen", "console_error_panic_hook"]
+default = []
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"

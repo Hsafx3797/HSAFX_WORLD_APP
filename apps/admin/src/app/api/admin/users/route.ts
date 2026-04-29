@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
       conditions.push(
         or(
           sql`LOWER(${users.email}) LIKE ${`%${search}%`}`,
-          sql`LOWER(${users.fullName}) LIKE ${`%${search}%`}`,
+          sql`LOWER(${users.name}) LIKE ${`%${search}%`}`,
           sql`LOWER(${users.username}) LIKE ${`%${search}%`}`
         )
       );
@@ -94,11 +94,11 @@ export async function GET(request: NextRequest) {
       .select({
         id: users.id,
         email: users.email,
-        name: users.fullName,
+        name: users.name,
         displayName: users.username,
-        avatarUrl: users.avatarUrl,
+        image: users.image,
         status: sql<string>`CASE WHEN ${users.isActive} = true THEN 'active' ELSE 'suspended' END`,
-        emailVerified: users.isEmailVerified,
+        emailVerified: users.emailVerified,
         lastActiveAt: users.lastLogin,
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,
@@ -142,9 +142,9 @@ export async function GET(request: NextRequest) {
 
 /**
  * PATCH /api/admin/users
- * Update a user: status (ban/unban), isActive, fullName, email
+ * Update a user: status (ban/unban), isActive, name, email
  *
- * Body: { id: string, isActive?: boolean, fullName?: string, email?: string }
+ * Body: { id: string, isActive?: boolean, name?: string, email?: string }
  */
 export async function PATCH(request: NextRequest) {
   try {
@@ -161,10 +161,10 @@ export async function PATCH(request: NextRequest) {
     // Only allow specific fields to be updated
     const allowedFields: Record<string, keyof typeof users> = {
       isActive: 'isActive',
-      fullName: 'fullName',
+      name: 'name',
       email: 'email',
       username: 'username',
-      isEmailVerified: 'isEmailVerified',
+      emailVerified: 'emailVerified',
     };
 
     const setValues: Record<string, unknown> = { updatedAt: new Date() };
@@ -181,7 +181,7 @@ export async function PATCH(request: NextRequest) {
       .returning({
         id: users.id,
         email: users.email,
-        fullName: users.fullName,
+        name: users.name,
         isActive: users.isActive,
         updatedAt: users.updatedAt,
       });
@@ -201,7 +201,7 @@ export async function PATCH(request: NextRequest) {
     return adminResponse({
       id: updated.id,
       email: updated.email,
-      fullName: updated.fullName,
+      name: updated.name,
       isActive: updated.isActive,
       updatedAt: updated.updatedAt?.toISOString(),
     });

@@ -24,7 +24,7 @@ export default function ProfileSettingsPage() {
 
   useEffect(() => {
     if (data?.user) {
-      setFullName(data.user.fullName ?? '');
+      setFullName(data.user.name ?? '');
       setUsername(data.user.username ?? '');
       setPhoneNumber(data.user.phoneNumber ?? '');
     }
@@ -33,7 +33,7 @@ export default function ProfileSettingsPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     updateProfile.mutate({
-      fullName: fullName || undefined,
+      name: fullName || undefined,
       username: username || undefined,
       phoneNumber: phoneNumber || null,
     });
@@ -79,17 +79,17 @@ export default function ProfileSettingsPage() {
               <h2 className="text-lg font-semibold mb-4">Profile Picture</h2>
               <div className="flex items-center gap-6">
                 <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center overflow-hidden">
-                  {data?.user?.avatarUrl ? (
+                  {data?.user?.image ? (
                     <Image
-                      src={data.user.avatarUrl}
-                      alt={data.user.fullName ?? 'Avatar'}
+                      src={data.user.image}
+                      alt={data.user.name ?? 'Avatar'}
                       width={96}
                       height={96}
                       className="w-full h-full object-cover"
                     />
                   ) : (
                     <span className="text-4xl">
-                      {data?.user?.fullName?.charAt(0).toUpperCase() || '👤'}
+                      {data?.user?.name?.charAt(0).toUpperCase() || '👤'}
                     </span>
                   )}
                 </div>

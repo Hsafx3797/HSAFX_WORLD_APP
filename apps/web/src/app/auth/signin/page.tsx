@@ -1,29 +1,42 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
 export default function SignInPage() {
   const router = useRouter();
+  const { data: session } = authClient.useSession();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (session?.user) router.replace('/dashboard');
+  }, [session, router]);
 
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      await authClient.signIn.email({
+      const result = await authClient.signIn.email({
         email,
         password,
       });
-      toast.success('Signed in successfully!');
+      if (result.error) {
+        const msg = result.error.message ?? 'Login failed';
+        if (result.error.status === 429) {
+          toast.error('Too many attempts. Please wait a moment and try again.');
+        } else {
+          toast.error(msg);
+        }
+        return;
+      }
       router.push('/dashboard');
     } catch (error) {
-      toast.error('Failed to sign in. Please check your credentials.');
+      toast.error('Network error. Please check your connection.');
       console.error('Sign in error:', error);
     } finally {
       setIsLoading(false);

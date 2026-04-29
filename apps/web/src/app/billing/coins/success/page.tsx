@@ -12,7 +12,7 @@ export default function CoinPurchaseSuccessPage() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
 
   useEffect(() => {
-    // Session ID presence indicates Stripe redirected us back
+    // Session ID presence indicates Polar redirected us back
     if (sessionId) {
       setStatus('success');
     } else {

@@ -2,23 +2,18 @@
  * Job Worker — processes queued jobs
  *
  * Routes engines to the correct execution backend:
- *   - 'node'   → @hsafx/tool-execution execute() (inline, same process)
- *   - 'python' → FastAPI POST /execute/{engine} or legacy /internal/execute
- *   - 'rust'   → Rust service POST /execute (not yet live — returns error)
+ *   - 'node'   → @hsafx/tools execute() (inline, same process)
+ *   - 'python' → FastAPI POST /execute/{engine}
+ *   - 'rust'   → Rust engine-service POST /execute
  *
- * Billing: Calls confirmReservation on success, releaseReservation on failure.
+ * Billing: Increments B2B usage on success.
  * Webhooks: Dispatches job.completed/job.failed to registered customer endpoints.
  */
 
 import { updateJob, setJobResult } from './job-manager';
 import type { Job, JobResult } from './types';
-import {
-  confirmReservation,
-  releaseReservation,
-} from '../limits/coin-service';
 import { incrementB2bUsage } from '../limits/b2b-quota-service';
 import { dispatchJobWebhooks } from '../webhooks/dispatch';
-import { reportStripeUsage } from '../billing/stripe-usage';
 import { redis } from '@/lib/redis';
 import { createLogger } from '@hsafx/shared/logger';
 import { ENGINE_RUNTIME } from '@/lib/engine-constants';
@@ -156,14 +151,11 @@ export async function processJob(job: Job): Promise<void> {
     engineExecutionTotal.inc({ engine: engineName, backend: runtime, status: 'success' });
     jobsTotal.inc({ engine: engineName, status: 'completed' });
 
-    // 5. Billing reconciliation — B2B (ops increment) vs B2C (coin confirmation)
+    // 5. Billing reconciliation — B2B ops increment on success
     const isB2b = job.options?._isB2b === true;
     const b2bSuiteId = job.options?._b2bSuiteId as string | undefined;
-    const reservationId = job.options?.reservationId as string | undefined;
-    const coinCost = (job.options?.coinCost as number) ?? 0;
 
     if (isB2b && b2bSuiteId) {
-      // B2B: increment usage count (SUCCESS-only counting)
       try {
         await incrementB2bUsage(job.userId, b2bSuiteId);
       } catch (err) {
@@ -173,20 +165,12 @@ export async function processJob(job: Job): Promise<void> {
           jobId: job.id,
           error: err,
         });
-        // Flag for reconciliation so ops that ran aren't lost from billing
         redis.set(
           `b2b:usage_failed:${job.id}`,
           JSON.stringify({ userId: job.userId, suiteId: b2bSuiteId, ts: Date.now() }),
           { ex: 7 * 24 * 60 * 60 }, // 7 day TTL
         ).catch(() => {});
       }
-    } else {
-      // B2C: confirm coin reservation (coins permanently deducted)
-      if (reservationId) {
-        await confirmReservation(reservationId);
-      }
-      // Report usage to Stripe metered billing (fire-and-forget, B2C only)
-      reportStripeUsage(job.userId, job.toolId, coinCost);
     }
 
     // 6. Update DB execution record (fire-and-forget)
@@ -215,14 +199,7 @@ export async function processJob(job: Job): Promise<void> {
     const errorMessage =
       err instanceof Error ? err.message : 'Unknown execution error';
 
-    // Release coin reservation so user is not charged for a failed job (B2C only)
-    const failedIsB2b = job.options?._isB2b === true;
-    const failedReservationId = job.options?.reservationId as string | undefined;
-    if (!failedIsB2b && failedReservationId) {
-      await releaseReservation(failedReservationId).catch(() => {});
-    }
-    // B2B: nothing to do on failure — failed executions are free
-
+    // B2B: failed executions are free — nothing to do on failure
     await updateJob(job.id, {
       status: 'failed',
       error: errorMessage,
@@ -268,7 +245,7 @@ export async function processJob(job: Job): Promise<void> {
 function sanitizeOptions(opts: Record<string, unknown>): Record<string, unknown> {
   const clean: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(opts)) {
-    if (!k.startsWith('_') && k !== 'reservationId' && k !== 'coinCost') {
+    if (!k.startsWith('_') && k !== 'reservationId') {
       clean[k] = v;
     }
   }
@@ -314,8 +291,7 @@ async function executeNodeEngine(job: Job, engineName: string): Promise<JobResul
 /**
  * Dispatch execution to the FastAPI backend.
  *
- * New route: POST /execute/{engineName} (engine-based, Phase 5)
- * Legacy route: POST /internal/execute (tool-based, fallback)
+ * Route: POST /execute/{engineName}
  *
  * FastAPI returns 202 immediately and processes in background.
  * Final result arrives via callback to /api/internal/job-complete.
@@ -341,9 +317,7 @@ async function executePythonEngine(job: Job, engineName: string): Promise<JobRes
   const cleanOptions = sanitizeOptions(job.options ?? {});
 
   try {
-    // Try new engine route first: POST /execute/{engineName}
-    // Falls back to legacy POST /internal/execute if the new route 404s
-    let response = await fetch(`${fastApiUrl}/execute/${engineName}`, {
+    const response = await fetch(`${fastApiUrl}/execute/${engineName}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -356,26 +330,6 @@ async function executePythonEngine(job: Job, engineName: string): Promise<JobRes
       }),
       signal: controller.signal,
     });
-
-    // Fallback to legacy route if new engine route is not yet deployed (404)
-    if (response.status === 404) {
-      log.info('New engine route not found, falling back to legacy /internal/execute', { engineName });
-      response = await fetch(`${fastApiUrl}/internal/execute`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Internal-Secret': internalSecret,
-        },
-        body: JSON.stringify({
-          jobId: job.id,
-          toolId: job.toolId,
-          toolSlug: job.toolSlug,
-          input: job.input,
-          options: cleanOptions,
-        }),
-        signal: controller.signal,
-      });
-    }
 
     if (!response.ok) {
       const text = await response.text().catch(() => 'Unknown error');
@@ -420,7 +374,7 @@ async function executeRustEngine(job: Job, engineName: string): Promise<JobResul
   // Rust service not configured → fall back to Node.js engine execution
   // (All 9 Rust-targeted engines still have Node.js implementations)
   if (!rustServiceUrl) {
-    log.info('RUST_SERVICE_URL not set, falling back to Node.js engine', { engineName });
+    log.warn('RUST_SERVICE_URL not set, falling back to Node.js engine', { engineName });
     return executeNodeEngine(job, engineName);
   }
 

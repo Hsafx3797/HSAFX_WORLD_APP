@@ -12,7 +12,7 @@ export interface AdminUser {
   email: string;
   name: string;
   role: AdminRole;
-  avatarUrl?: string;
+  image?: string;
   twoFactorEnabled: boolean;
   lastLogin?: string;
   createdAt: string;
@@ -62,7 +62,7 @@ export interface User {
   email: string;
   name: string;
   displayName?: string;
-  avatarUrl?: string;
+  image?: string;
   tier: UserTier;
   status: UserStatus;
   emailVerified: boolean;
@@ -175,7 +175,7 @@ export interface TransactionFilters {
 
 export interface PaymentWebhook {
   id: string;
-  provider: 'polar' | 'stripe' | 'uploadthing';
+  provider: 'polar' | 'uploadthing';
   eventType: string;
   status: 'success' | 'failed' | 'retrying';
   payload: Record<string, unknown>;

@@ -6,7 +6,6 @@ from typing import Callable
 
 import structlog
 from fastapi import Request, Response
-from slowapi import Limiter
 from slowapi.util import get_remote_address
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -25,9 +24,6 @@ def get_rate_limit_key(request: Request) -> str:
 
     # Otherwise use IP address
     return f"ip:{get_remote_address(request)}"
-
-
-limiter = Limiter(key_func=get_rate_limit_key)
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):

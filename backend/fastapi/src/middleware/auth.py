@@ -14,6 +14,7 @@ dispatching compute requests to FastAPI.
 
 from typing import Callable, Optional
 
+import hmac
 import structlog
 from fastapi import HTTPException, Request, Response
 from pydantic import BaseModel
@@ -39,7 +40,7 @@ def _parse_internal_headers(request: Request) -> Optional[SessionUser]:
     User info is passed via X-User-Id, X-User-Email, X-User-Tier, X-User-Role.
     """
     secret = request.headers.get("X-Internal-Secret")
-    if not secret or secret != settings.INTERNAL_SECRET:
+    if not secret or not hmac.compare_digest(secret, settings.INTERNAL_API_SECRET):
         return None
 
     user_id = request.headers.get("X-User-Id")

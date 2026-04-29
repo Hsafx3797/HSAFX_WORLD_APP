@@ -3,7 +3,7 @@
  * Rotate the calling API key: generates a new key, keeps old key active
  * for a 24-hour grace period, then the old key is auto-deactivated.
  *
- * Auth: Requires valid API key with `tools:execute` scope.
+ * Auth: Requires valid API key with `billing:write` scope.
  * Returns: New key plaintext (shown once — cannot be retrieved again).
  */
 
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
   // Prevent already-rotated keys from being rotated again (unbounded chain)
   if (currentKey.expiresAt && new Date(currentKey.expiresAt) > new Date()) {
     return apiErrorResponse(
-      ApiErrorCode.AUTH_KEY_NOT_FOUND,
+      ApiErrorCode.AUTH_KEY_IN_GRACE,
       'This key has already been rotated and is in its grace period. Use the new key to rotate again.',
       ctx,
       409,

@@ -30,20 +30,6 @@ export const SubscriptionStatusSchema = z.enum([
 export type SubscriptionStatus = z.infer<typeof SubscriptionStatusSchema>;
 
 /**
- * Coin transaction type enum
- */
-export const CoinTransactionTypeSchema = z.enum([
-  'grant',
-  'purchase',
-  'spend',
-  'refund',
-  'adjustment',
-  'reward',
-  'referral',
-]);
-export type CoinTransactionType = z.infer<typeof CoinTransactionTypeSchema>;
-
-/**
  * Plan details schema
  */
 export const PlanDetailsSchema = z.object({
@@ -56,7 +42,6 @@ export const PlanDetailsSchema = z.object({
     yearly: z.number().min(0),
   }),
   features: z.object({
-    coinGrant: z.number().int().min(0),
     maxFileSize: z.number().int().min(0),
     apiRateLimit: z.number().int().min(0),
     priority: z.string(),
@@ -68,31 +53,3 @@ export const PlanDetailsSchema = z.object({
 });
 
 export type PlanDetails = z.infer<typeof PlanDetailsSchema>;
-
-/**
- * Wallet balance schema
- */
-export const WalletBalanceSchema = z.object({
-  userId: z.string().uuid(),
-  balance: z.number().int().min(0),
-  lastTransaction: z
-    .object({
-      id: z.string().uuid(),
-      amount: z.number().int(),
-      type: CoinTransactionTypeSchema,
-      createdAt: z.string().datetime(),
-    })
-    .optional(),
-});
-
-export type WalletBalance = z.infer<typeof WalletBalanceSchema>;
-
-/**
- * Coin purchase request schema
- */
-export const CoinPurchaseRequestSchema = z.object({
-  packId: z.string().uuid(),
-  quantity: z.number().int().min(1).default(1),
-});
-
-export type CoinPurchaseRequest = z.infer<typeof CoinPurchaseRequestSchema>;

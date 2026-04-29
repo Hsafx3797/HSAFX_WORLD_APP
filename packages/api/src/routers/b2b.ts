@@ -6,14 +6,16 @@ import {
   b2bSuites,
   b2bPlanQuotas,
   b2bUsage,
-  users,
   eq,
   and,
   desc,
   sql,
 } from '@hsafx/db/schema';
 import { TRPCError } from '@trpc/server';
-import { getStripe } from '../lib/stripe';
+import { getPolar } from '../lib/polar';
+import { createLogger } from '@hsafx/shared/logger';
+
+const log = createLogger('b2b');
 
 export const b2bRouter = router({
   // ─── Public: Get B2B Plans with Quotas ──────────────────────
@@ -154,7 +156,7 @@ export const b2bRouter = router({
       if (existing) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message: 'You already have an active B2B subscription. Use the billing portal to change plans.',
+          message: 'You already have an active B2B subscription. Use the customer portal to change plans.',
         });
       }
 
@@ -168,50 +170,35 @@ export const b2bRouter = router({
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Plan not found' });
       }
 
-      const priceId = input.billingCycle === 'yearly'
-        ? plan.stripePriceIdYearly
-        : plan.stripePriceIdMonthly;
+      const productId = input.billingCycle === 'yearly'
+        ? plan.polarProductIdYearly
+        : plan.polarProductIdMonthly;
 
-      if (!priceId) {
+      if (!productId) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message: `Stripe price not configured for ${plan.name} ${input.billingCycle} billing`,
+          message: `Polar product not configured for ${plan.name} ${input.billingCycle} billing`,
         });
       }
-
-      // Get or ensure Stripe customer
-      const [user] = await ctx.db
-        .select({ stripeCustomerId: users.stripeCustomerId, email: users.email })
-        .from(users)
-        .where(eq(users.id, ctx.user!.id))
-        .limit(1);
 
       const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
 
       try {
-        const stripe = getStripe();
-        const session = await stripe.checkout.sessions.create({
-          mode: 'subscription',
-          customer: user?.stripeCustomerId ?? undefined,
-          customer_email: user?.stripeCustomerId ? undefined : (user?.email ?? undefined),
-          line_items: [{ price: priceId, quantity: 1 }],
+        const polar = getPolar();
+        const checkout = await polar.checkouts.create({
+          products: [productId],
+          successUrl: `${appUrl}/dashboard/api?checkout=success`,
+          externalCustomerId: ctx.user!.id,
           metadata: {
             userId: ctx.user!.id,
             b2bPlanId: plan.id,
             billingCycle: input.billingCycle,
           },
-          subscription_data: {
-            metadata: {
-              userId: ctx.user!.id,
-              b2bPlanId: plan.id,
-            },
-          },
-          success_url: `${appUrl}/dashboard/api?checkout=success`,
-          cancel_url: `${appUrl}/pricing?tab=api`,
         });
 
-        return { checkoutUrl: session.url };
+        return { checkoutUrl: checkout.url };
       } catch (err) {
+        log.error('Polar B2B checkout failed', { planId: input.planId, error: String(err) });
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to create checkout session',
@@ -219,37 +206,52 @@ export const b2bRouter = router({
       }
     }),
 
-  // ─── Protected: Create Billing Portal Session ───────────────
+  // ─── Protected: Create Customer Portal Session ───────────────
 
   createPortalSession: protectedProcedure
     .mutation(async ({ ctx }) => {
-      const [user] = await ctx.db
-        .select({ stripeCustomerId: users.stripeCustomerId })
-        .from(users)
-        .where(eq(users.id, ctx.user!.id))
+      // Verify user has an active B2B subscription
+      const [sub] = await ctx.db
+        .select({ id: b2bSubscriptions.id, polarSubscriptionId: b2bSubscriptions.polarSubscriptionId })
+        .from(b2bSubscriptions)
+        .where(
+          and(
+            eq(b2bSubscriptions.userId, ctx.user!.id),
+            eq(b2bSubscriptions.status, 'active')
+          )
+        )
         .limit(1);
 
-      if (!user?.stripeCustomerId) {
+      if (!sub) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message: 'No Stripe customer found. Subscribe to a plan first.',
+          message: 'No active B2B subscription found. Subscribe to a plan first.',
         });
       }
 
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
-
       try {
-        const stripe = getStripe();
-        const session = await stripe.billingPortal.sessions.create({
-          customer: user.stripeCustomerId,
-          return_url: `${appUrl}/dashboard/api`,
+        const polar = getPolar();
+
+        // Polar customer IDs are their own UUIDs — look up by externalId (our user ID)
+        const polarCustomer = await polar.customers.getExternal({ externalId: ctx.user!.id }).catch(() => null);
+
+        if (!polarCustomer) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'No Polar customer record found. Complete a checkout to create one.',
+          });
+        }
+
+        const session = await polar.customerSessions.create({
+          customerId: polarCustomer.id,
         });
 
-        return { portalUrl: session.url };
+        return { portalUrl: session.customerPortalUrl };
       } catch (err) {
+        log.error('Polar customer portal failed', { userId: ctx.user!.id, error: String(err) });
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to create billing portal session',
+          message: 'Failed to create customer portal session',
         });
       }
     }),

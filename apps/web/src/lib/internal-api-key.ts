@@ -55,7 +55,7 @@ export async function provisionInternalApiKey(userId: string): Promise<void> {
     keyPrefix: prefix,
     scopes: INTERNAL_KEY_SCOPES,
     isInternal: true,
-    rateLimitTier: 'standard',
+    rateLimitTier: 'advance',
   });
 
   log.info('Provisioned internal API key', { userId });

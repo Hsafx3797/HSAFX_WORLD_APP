@@ -7,7 +7,7 @@
  */
 
 import { NextRequest } from 'next/server';
-import { db, eq, users, subscriptions, userCoinWallets } from '@hsafx/db';
+import { db, eq, users, b2bSubscriptions, b2bPlans } from '@hsafx/db';
 import {
   authenticateApiKey,
   requireScope,
@@ -37,33 +37,32 @@ export async function GET(request: NextRequest) {
       return apiErrorResponse(ApiErrorCode.USER_NOT_FOUND, 'User not found', ctx, 404);
     }
 
-    // 4. Fetch subscription
-    const sub = await db.query.subscriptions.findFirst({
-      where: eq(subscriptions.userId, ctx.userId),
+    // 4. Fetch B2B subscription
+    const sub = await db.query.b2bSubscriptions.findFirst({
+      where: eq(b2bSubscriptions.userId, ctx.userId),
     });
 
-    // 5. Fetch coin wallet
-    const wallet = await db.query.userCoinWallets.findFirst({
-      where: eq(userCoinWallets.userId, ctx.userId),
-    });
+    // 5. Fetch B2B plan name
+    const plan = sub
+      ? await db.query.b2bPlans.findFirst({ where: eq(b2bPlans.id, sub.b2bPlanId) })
+      : null;
 
     return apiResponse(
       {
         userId: user.id,
         email: user.email,
-        name: user.fullName,
-        plan: sub
+        name: user.name,
+        subscription: sub
           ? {
-              id: sub.planId,
+              planSlug: plan?.slug ?? 'unknown',
+              planName: plan?.name ?? 'Unknown',
               status: sub.status,
-              currentPeriodEnd: sub.currentPeriodEnd,
+              billingCycle: sub.billingCycle,
+              currentPeriodStart: sub.currentPeriodStart.toISOString(),
+              currentPeriodEnd: sub.currentPeriodEnd.toISOString(),
+              cancelAtPeriodEnd: sub.cancelAtPeriodEnd,
             }
-          : { id: null, status: 'free', currentPeriodEnd: null },
-        coins: {
-          balance: wallet?.balance ?? 0,
-          lifetimeEarned: wallet?.lifetimeEarned ?? 0,
-          lifetimeSpent: wallet?.lifetimeSpent ?? 0,
-        },
+          : null,
         apiKey: {
           name: ctx.keyName,
           scopes: ctx.scopes,
@@ -84,3 +83,4 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+

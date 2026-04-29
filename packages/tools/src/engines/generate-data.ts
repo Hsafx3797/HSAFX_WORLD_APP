@@ -4,7 +4,7 @@
  * UUID variants, NanoID, passwords, mock persons, companies,
  * credit cards, colors, random numbers, timestamps, hashes, JWTs.
  *
- * Backend: Rust (will be ported to native Rust in Phase 3)
+ * Backend: Node.js
  */
 
 import type { Engine, GenerateDataOptions, EngineInput, EngineResult, ValidationOutcome } from './types';

@@ -11,37 +11,6 @@ import {
 } from '../gpa-calculator';
 import type { Course } from '../gpa-calculator';
 
-// ─── File Tree ────────────────────────────────────────────────────────────────
-import {
-  generateASCIITree,
-  generateMarkdownTree,
-  generateHTMLTree,
-  generateJSONTree,
-  parseDirectoryStructure,
-  textToTree,
-} from '../file-tree';
-import type { TreeNode } from '../file-tree';
-
-// ─── Container Validator ──────────────────────────────────────────────────────
-import {
-  validateContainerNumber,
-  calculateCheckDigit,
-  generateContainerNumber,
-  parseContainerNumber,
-  batchValidate,
-  getKnownOwnerCodes,
-  getEquipmentCategories,
-} from '../container-validator';
-
-// ─── Cheque Generator ─────────────────────────────────────────────────────────
-import {
-  numberToWords,
-  formatAmount,
-  generateMICRLine,
-  validateChequeData,
-  createCheque,
-} from '../cheque-generator';
-
 // ═══════════════════════════════════════════════════════════════════════════════
 // GPA Calculator Tests
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -263,9 +232,6 @@ describe('GPA Calculator', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// File Tree Tests
-// ═══════════════════════════════════════════════════════════════════════════════
 describe('File Tree', () => {
   const sampleTree: TreeNode = {
     name: 'src',

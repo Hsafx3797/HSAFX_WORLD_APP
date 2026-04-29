@@ -5,20 +5,14 @@ import {
   planLimits,
   planFeatures,
   subscriptions,
-  coinTransactions,
-  userCoinWallets,
-  coinPacks,
   invoices,
-  payments,
   eq,
   and,
   desc,
-  gte,
   sql,
 } from '@hsafx/db/schema';
 import { TRPCError } from '@trpc/server';
 import { getPolar } from '../lib/polar';
-import { getStripe } from '../lib/stripe';
 import { createLogger } from '@hsafx/shared/logger';
 
 const log = createLogger('billing');
@@ -73,21 +67,21 @@ export const billingRouter = router({
   // ─── Subscription ─────────────────────────────────────────
 
   getMySubscription: protectedProcedure.query(async ({ ctx }) => {
-    const [subscription] = await ctx.db
-      .select()
+    const rows = await ctx.db
+      .select({
+        subscription: subscriptions,
+        plan: plans,
+      })
       .from(subscriptions)
+      .innerJoin(plans, eq(plans.id, subscriptions.planId))
       .where(eq(subscriptions.userId, ctx.user!.id))
       .limit(1);
 
-    if (!subscription) {
+    if (!rows.length) {
       return null;
     }
 
-    const [plan] = await ctx.db
-      .select()
-      .from(plans)
-      .where(eq(plans.id, subscription.planId))
-      .limit(1);
+    const { subscription, plan } = rows[0]!;
 
     // Derive status from timestamps (never stored as enum)
     const now = new Date();
@@ -150,10 +144,14 @@ export const billingRouter = router({
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Plan not found' });
       }
 
-      if (!plan.polarProductId) {
+      const productId = input.interval === 'yearly'
+        ? plan.polarProductIdYearly
+        : plan.polarProductIdMonthly;
+
+      if (!productId) {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: 'Plan is not linked to a Polar product. Contact support.',
+          message: `Plan is not linked to a Polar ${input.interval} product. Contact support.`,
         });
       }
 
@@ -162,7 +160,7 @@ export const billingRouter = router({
       try {
         const polar = getPolar();
         const checkout = await polar.checkouts.create({
-          products: [plan.polarProductId],
+          products: [productId],
           successUrl: `${appUrl}/billing/success?checkout_id={CHECKOUT_ID}`,
           externalCustomerId: ctx.user!.id,
           metadata: {
@@ -239,214 +237,6 @@ export const billingRouter = router({
     return updated;
   }),
 
-  // ─── Wallet & Coins ──────────────────────────────────────
-
-  getWalletBalance: protectedProcedure.query(async ({ ctx }) => {
-    // Read from wallet cache (atomic, consistent)
-    const [wallet] = await ctx.db
-      .select()
-      .from(userCoinWallets)
-      .where(eq(userCoinWallets.userId, ctx.user!.id))
-      .limit(1);
-
-    if (wallet) {
-      return {
-        balance: wallet.balance,
-        lifetimeEarned: wallet.lifetimeEarned,
-        lifetimeSpent: wallet.lifetimeSpent,
-      };
-    }
-
-    // Fallback: compute from ledger SUM
-    const [result] = await ctx.db
-      .select({ total: sql<number>`COALESCE(SUM(${coinTransactions.amount}), 0)` })
-      .from(coinTransactions)
-      .where(eq(coinTransactions.userId, ctx.user!.id));
-
-    return {
-      balance: Number(result?.total ?? 0),
-      lifetimeEarned: 0,
-      lifetimeSpent: 0,
-    };
-  }),
-
-  getTransactionHistory: protectedProcedure
-    .input(z.object({
-      page: z.number().int().min(1).default(1),
-      pageSize: z.number().int().min(1).max(100).default(20),
-      type: z.enum(['grant', 'purchase', 'spend', 'refund', 'adjustment']).optional(),
-    }))
-    .query(async ({ ctx, input }) => {
-      const offset = (input.page - 1) * input.pageSize;
-
-      const transactions = await ctx.db
-        .select()
-        .from(coinTransactions)
-        .where(
-          input.type
-            ? and(
-                eq(coinTransactions.userId, ctx.user!.id),
-                eq(coinTransactions.type, input.type),
-              )
-            : eq(coinTransactions.userId, ctx.user!.id),
-        )
-        .orderBy(desc(coinTransactions.createdAt))
-        .limit(input.pageSize)
-        .offset(offset);
-
-      return { items: transactions, page: input.page, pageSize: input.pageSize };
-    }),
-
-  // ─── Coin Packs ───────────────────────────────────────────
-
-  getCoinPacks: publicProcedure.query(async ({ ctx }) => {
-    const packs = await ctx.db
-      .select()
-      .from(coinPacks)
-      .where(eq(coinPacks.isActive, true))
-      .orderBy(coinPacks.sortOrder);
-
-    return packs;
-  }),
-
-  /**
-   * Create a Stripe Checkout session for a coin pack purchase.
-   * No DB write here — the Stripe webhook (checkout.session.completed) credits coins.
-   */
-  purchaseCoinPack: protectedProcedure
-    .input(z.object({
-      packId: z.string().uuid(),
-    }))
-    .mutation(async ({ ctx, input }) => {
-      const [pack] = await ctx.db
-        .select()
-        .from(coinPacks)
-        .where(
-          and(eq(coinPacks.id, input.packId), eq(coinPacks.isActive, true)),
-        )
-        .limit(1);
-
-      if (!pack) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Coin pack not found' });
-      }
-
-      // Verify user has Pro/Advance plan (coin packs require subscription)
-      const [sub] = await ctx.db
-        .select({ planId: subscriptions.planId })
-        .from(subscriptions)
-        .where(
-          and(
-            eq(subscriptions.userId, ctx.user!.id),
-            eq(subscriptions.status, 'active'),
-          ),
-        )
-        .limit(1);
-
-      if (!sub) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Active subscription required to purchase coin packs',
-        });
-      }
-
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
-
-      try {
-        const stripe = getStripe();
-
-        const lineItem = pack.stripePriceId
-          ? { price: pack.stripePriceId, quantity: 1 }
-          : {
-              price_data: {
-                currency: 'usd',
-                product_data: {
-                  name: pack.name,
-                  description: `${pack.coins + pack.bonusCoins} coins`,
-                },
-                unit_amount: pack.priceInCents,
-              },
-              quantity: 1,
-            };
-
-        const session = await stripe.checkout.sessions.create({
-          mode: 'payment',
-          line_items: [lineItem],
-          metadata: {
-            userId: ctx.user!.id,
-            coinPackId: pack.id,
-          },
-          success_url: `${appUrl}/billing/coins/success?session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: `${appUrl}/billing/coins`,
-        });
-
-        return {
-          packId: pack.id,
-          name: pack.name,
-          coins: pack.coins + pack.bonusCoins,
-          priceInCents: pack.priceInCents,
-          checkoutUrl: session.url,
-        };
-      } catch (err) {
-        log.error('Stripe checkout failed', { packId: input.packId, error: String(err) });
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to create checkout session. Please try again.',
-        });
-      }
-    }),
-
-  // ─── Admin: Grant Coins ───────────────────────────────────
-
-  grantCoins: adminProcedure
-    .input(z.object({
-      userId: z.string().uuid(),
-      amount: z.number().int().positive(),
-      reason: z.string(),
-    }))
-    .mutation(async ({ ctx, input }) => {
-      return await ctx.db.transaction(async (tx) => {
-        const [wallet] = await tx
-          .select()
-          .from(userCoinWallets)
-          .where(eq(userCoinWallets.userId, input.userId))
-          .for('update')
-          .limit(1);
-
-        const currentBalance = wallet?.balance ?? 0;
-        const newBalance = currentBalance + input.amount;
-
-        const [transaction] = await tx
-          .insert(coinTransactions)
-          .values({
-            userId: input.userId,
-            amount: input.amount,
-            type: 'grant',
-            reason: input.reason,
-            balanceAfter: newBalance,
-          })
-          .returning();
-
-        if (wallet) {
-          await tx
-            .update(userCoinWallets)
-            .set({
-              balance: newBalance,
-              lifetimeEarned: sql`${userCoinWallets.lifetimeEarned} + ${input.amount}`,
-              updatedAt: new Date(),
-            })
-            .where(eq(userCoinWallets.userId, input.userId));
-        } else {
-          await tx.insert(userCoinWallets).values({
-            userId: input.userId,
-            balance: newBalance,
-            lifetimeEarned: input.amount,
-          });
-        }
-
-        return { transaction, newBalance };
-      });
-    }),
-
   // ─── Invoices ─────────────────────────────────────────────
 
   getInvoices: protectedProcedure
@@ -467,44 +257,6 @@ export const billingRouter = router({
 
       return { items, page: input.page, pageSize: input.pageSize };
     }),
-
-  // ─── Usage Stats ──────────────────────────────────────────
-
-  getUsageStats: protectedProcedure.query(async ({ ctx }) => {
-    const userId = ctx.user!.id;
-
-    // Total executions this month
-    const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-
-    const [execStats] = await ctx.db
-      .select({
-        totalExecutions: sql<number>`COUNT(*)`,
-        totalCoinsSpent: sql<number>`COALESCE(SUM(${coinTransactions.amount}), 0)`,
-      })
-      .from(coinTransactions)
-      .where(
-        and(
-          eq(coinTransactions.userId, userId),
-          eq(coinTransactions.type, 'spend'),
-          sql`${coinTransactions.createdAt} >= ${monthStart}`,
-        ),
-      );
-
-    const [wallet] = await ctx.db
-      .select()
-      .from(userCoinWallets)
-      .where(eq(userCoinWallets.userId, userId))
-      .limit(1);
-
-    return {
-      monthlyExecutions: Number(execStats?.totalExecutions ?? 0),
-      monthlyCoinsSpent: Math.abs(Number(execStats?.totalCoinsSpent ?? 0)),
-      currentBalance: wallet?.balance ?? 0,
-      lifetimeEarned: wallet?.lifetimeEarned ?? 0,
-      lifetimeSpent: wallet?.lifetimeSpent ?? 0,
-    };
-  }),
 
   // ─── Subscription Management ──────────────────────────────
 
@@ -600,10 +352,16 @@ export const billingRouter = router({
       }
 
       // Create checkout for the new plan via Polar (handles proration automatically)
-      if (newPlan.polarProductId) {
+      // Use the current billing cycle to pick the matching product ID
+      const productId =
+        currentSub.billingCycle === 'yearly'
+          ? newPlan.polarProductIdYearly
+          : newPlan.polarProductIdMonthly;
+
+      if (productId) {
         const polar = getPolar();
         const checkout = await polar.checkouts.create({
-          products: [newPlan.polarProductId],
+          products: [productId],
           successUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/dashboard/billing?upgraded=true`,
           externalCustomerId: userId,
           metadata: {
@@ -621,91 +379,4 @@ export const billingRouter = router({
         message: 'Plan has no payment provider configured',
       });
     }),
-
-  // ─── Daily Bonus ──────────────────────────────────────────
-
-  claimDailyBonus: protectedProcedure.mutation(async ({ ctx }) => {
-    const userId = ctx.user!.id;
-    const DAILY_BONUS_AMOUNT = 10;
-
-    return await ctx.db.transaction(async (tx) => {
-      // Lock the wallet row first to serialize concurrent claims
-      let [wallet] = await tx
-        .select()
-        .from(userCoinWallets)
-        .where(eq(userCoinWallets.userId, userId))
-        .for('update')
-        .limit(1);
-
-      if (!wallet) {
-        [wallet] = await tx
-          .insert(userCoinWallets)
-          .values({ userId, balance: 0, lifetimeEarned: 0, lifetimeSpent: 0 })
-          .returning();
-      }
-
-      // Check if user already claimed today (UTC day boundary)
-      const todayStart = new Date();
-      todayStart.setUTCHours(0, 0, 0, 0);
-
-      const [existing] = await tx
-        .select({ id: coinTransactions.id })
-        .from(coinTransactions)
-        .where(
-          and(
-            eq(coinTransactions.userId, userId),
-            eq(coinTransactions.type, 'grant'),
-            eq(coinTransactions.reason, 'daily_bonus'),
-            gte(coinTransactions.createdAt, todayStart),
-          ),
-        )
-        .limit(1);
-
-      if (existing) {
-        throw new TRPCError({
-          code: 'TOO_MANY_REQUESTS',
-          message: 'Daily bonus already claimed today. Come back tomorrow!',
-        });
-      }
-
-      const newBalance = wallet!.balance + DAILY_BONUS_AMOUNT;
-
-      await tx.insert(coinTransactions).values({
-        userId,
-        amount: DAILY_BONUS_AMOUNT,
-        type: 'grant',
-        reason: 'daily_bonus',
-        balanceAfter: newBalance,
-        metadata: { source: 'daily_bonus' },
-      });
-
-      await tx
-        .update(userCoinWallets)
-        .set({
-          balance: newBalance,
-          lifetimeEarned: wallet!.lifetimeEarned + DAILY_BONUS_AMOUNT,
-          updatedAt: new Date(),
-        })
-        .where(eq(userCoinWallets.userId, userId));
-
-      return { claimed: true, amount: DAILY_BONUS_AMOUNT, newBalance };
-    });
-  }),
-
-  // ─── Coin Multiplier Events (T3.7) ───────────────────────
-
-  getActiveCoinEvents: protectedProcedure.query(async ({ ctx }) => {
-    const { getActiveCoinEvents } = await import('@/server/coin-events/coin-events-service');
-    return getActiveCoinEvents();
-  }),
-
-  getCurrentMultiplier: protectedProcedure.query(async ({ ctx }) => {
-    const { getCurrentMultiplier } = await import('@/server/coin-events/coin-events-service');
-    return getCurrentMultiplier();
-  }),
-
-  getUpcomingCoinEvents: protectedProcedure.query(async ({ ctx }) => {
-    const { getUpcomingEvents } = await import('@/server/coin-events/coin-events-service');
-    return getUpcomingEvents();
-  }),
 });

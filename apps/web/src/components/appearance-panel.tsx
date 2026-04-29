@@ -6,7 +6,7 @@
  * UI for customizing theme preferences.
  * Respects plan tier access controls.
  * 
- * @see docs/planning/32_THEME_SYSTEM.md Section 8
+ * @see docs/BUILT/09_THEME_SYSTEM.md
  */
 
 import * as React from 'react';
@@ -437,7 +437,13 @@ export function CompactModeToggle() {
   const { effectiveMode, toggleMode, mounted } = useTheme();
 
   if (!mounted) {
-    return <div className="h-9 w-9 animate-pulse rounded-md bg-muted" />;
+    return (
+      <button
+        disabled
+        className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-input bg-background animate-pulse"
+        aria-label="Loading theme toggle"
+      />
+    );
   }
 
   return (

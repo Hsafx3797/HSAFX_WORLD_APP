@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
@@ -17,12 +18,8 @@ function formatPrice(cents: number | null | undefined) {
 
 const faqs = [
   {
-    question: 'What are coins used for?',
-    answer: 'Coins are used for premium features like advanced AI processing, OCR, and heavy media operations. Free tier users can purchase coins separately, while Pro and Advance users receive monthly allocations.',
-  },
-  {
     question: 'Can I upgrade or downgrade anytime?',
-    answer: 'Yes! You can change your plan at any time. Upgrades take effect immediately, and downgrades take effect at the end of your billing cycle. Unused coins do not roll over.',
+    answer: 'Yes! You can change your plan at any time. Upgrades take effect immediately, and downgrades take effect at the end of your billing cycle.',
   },
   {
     question: 'Is there a free trial for Pro?',
@@ -38,26 +35,29 @@ const faqs = [
   },
   {
     question: 'What happens to my data?',
-    answer: 'Most tools process data locally in your browser. For server-side tools, data is processed and immediately deleted. We never store or analyze your content.',
+    answer: 'All tools run server-side — your data is processed in our infrastructure and immediately discarded after each operation. We never store or analyze your content.', 
   },
 ];
 
 export default function PricingPage() {
+  const router = useRouter();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [tab, setTab] = useState<'b2c' | 'b2b'>('b2c');
   const { data: plansData, isLoading: plansLoading } = trpc.billing.getPlans.useQuery();
-  const { data: coinPacks, isLoading: packsLoading } = trpc.billing.getCoinPacks.useQuery();
   const { data: b2bPlans, isLoading: b2bLoading } = trpc.b2b.getPlans.useQuery();
   const { isAuthenticated } = useAuth();
   const { subscription, subscribe } = useSubscription();
 
   const b2bCheckout = trpc.b2b.createCheckout.useMutation();
-  const coinPurchase = trpc.billing.purchaseCoinPack.useMutation();
 
   const currentPlanSlug = subscription?.plan ?? 'free';
 
   const handleCheckout = async (planSlug: string) => {
     if (planSlug === 'free') return;
+    if (!isAuthenticated) {
+      router.push('/auth/signin?redirect=/pricing');
+      return;
+    }
     const result = await subscribe(planSlug as 'pro' | 'advance', billingCycle);
     if (result.error) toast.error(result.error);
   };
@@ -72,19 +72,6 @@ export default function PricingPage() {
       if (result.checkoutUrl) window.location.href = result.checkoutUrl;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Checkout failed');
-    }
-  };
-
-  const handleCoinPurchase = async (packId: string) => {
-    if (!isAuthenticated) {
-      toast.error('Please sign in to purchase coins');
-      return;
-    }
-    try {
-      const result = await coinPurchase.mutateAsync({ packId });
-      if (result.checkoutUrl) window.location.href = result.checkoutUrl;
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Purchase failed');
     }
   };
 
@@ -143,6 +130,16 @@ export default function PricingPage() {
             </Card>
           ))}
         </div>
+      ) : sortedPlans.length === 0 ? (
+        <div className="max-w-md mx-auto mb-16 text-center py-12">
+          <p className="text-lg font-medium mb-2">Plans coming soon</p>
+          <p className="text-sm text-muted-foreground">
+            We&apos;re finalizing our subscription plans. Check back shortly or sign up to be notified.
+          </p>
+          <Button className="mt-6" variant="outline" asChild>
+            <Link href="/auth/signup">Create Free Account</Link>
+          </Button>
+        </div>
       ) : (
         <div className="grid gap-8 lg:grid-cols-3 max-w-5xl mx-auto mb-16">
           {sortedPlans.map((plan) => {
@@ -163,8 +160,6 @@ export default function PricingPage() {
               if (l.description) featureLabels.push(l.description);
               else featureLabels.push(`${l.limitKey.replace(/_/g, ' ')}: ${l.limitValue}${l.unit ? ` ${l.unit}` : ''}`);
             }
-            if (plan.coinGrant > 0) featureLabels.push(`${plan.coinGrant} coins/month`);
-
             return (
               <Card
                 key={plan.id}
@@ -200,7 +195,7 @@ export default function PricingPage() {
                     </Button>
                   ) : (
                     <Button className="w-full" variant={isPopular ? 'default' : 'outline'} onClick={() => handleCheckout(plan.slug)}>
-                      {subscription ? `Upgrade to ${plan.name}` : `Start ${plan.name} Trial`}
+                      {subscription ? `Upgrade to ${plan.name}` : `Get ${plan.name} Now`}
                     </Button>
                   )}
                 </CardFooter>
@@ -210,43 +205,6 @@ export default function PricingPage() {
         </div>
       )}
 
-      {/* Coin Packs Section */}
-      <div className="max-w-3xl mx-auto mb-16 text-center">
-        <h2 className="text-2xl font-bold mb-4">Need More Coins?</h2>
-        <p className="text-muted-foreground mb-6">
-          Coins are used for premium processing features. Buy additional coins anytime.
-        </p>
-        {packsLoading ? (
-          <div className="grid gap-4 sm:grid-cols-3">
-            {[1, 2, 3].map((i) => (
-              <Card key={i} className="animate-pulse"><CardContent className="p-6"><div className="h-8 bg-muted rounded w-24 mx-auto" /><div className="h-4 bg-muted rounded w-16 mx-auto mt-2" /></CardContent></Card>
-            ))}
-          </div>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-3">
-            {(coinPacks ?? []).map((pack) => (
-              <Card key={pack.id}>
-                <CardContent className="p-6 text-center">
-                  <p className="text-2xl font-bold">{pack.coins.toLocaleString()} Coins</p>
-                  <p className="text-muted-foreground">{formatPrice(pack.priceInCents)}</p>
-                  {pack.bonusCoins > 0 && (
-                    <Badge variant="secondary" className="mt-2">+{pack.bonusCoins} bonus</Badge>
-                  )}
-                  <Button
-                    className="w-full mt-4"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleCoinPurchase(pack.id)}
-                    disabled={coinPurchase.isPending}
-                  >
-                    {coinPurchase.isPending ? 'Loading...' : 'Buy Now'}
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
       </>)}
 
       {tab === 'b2b' && (
@@ -260,6 +218,16 @@ export default function PricingPage() {
                   <CardContent><div className="space-y-2">{[1,2,3,4,5].map(j => <div key={j} className="h-4 bg-muted rounded" />)}</div></CardContent>
                 </Card>
               ))}
+            </div>
+          ) : (b2bPlans ?? []).length === 0 ? (
+            <div className="max-w-md mx-auto mb-16 text-center py-12">
+              <p className="text-lg font-medium mb-2">API plans coming soon</p>
+              <p className="text-sm text-muted-foreground">
+                We&apos;re finalizing B2B API pricing. Contact us for early access.
+              </p>
+              <Button className="mt-6" variant="outline" asChild>
+                <Link href="mailto:enterprise@hsafx.world">Contact Sales</Link>
+              </Button>
             </div>
           ) : (
             <div className="grid gap-6 lg:grid-cols-4 max-w-6xl mx-auto mb-16">

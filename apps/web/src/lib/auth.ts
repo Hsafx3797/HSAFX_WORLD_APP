@@ -15,7 +15,6 @@ import { getRedis } from '@/lib/redis';
 import { createLogger } from '@hsafx/shared/logger';
 import { createHmac } from 'crypto';
 import { provisionInternalApiKey } from '@/lib/internal-api-key';
-import { syncStripeCustomer } from '@/lib/stripe-customer-sync';
 
 const log = createLogger('auth');
 
@@ -71,6 +70,7 @@ function createAuth() {
         user: schema.users,
         session: schema.sessions,
         account: schema.oauthConnections,
+        verification: schema.verification,
         twoFactor: schema.twoFactor,
       },
     }),
@@ -167,17 +167,14 @@ function createAuth() {
     },
     advanced: {
       cookiePrefix: '__hsafx',
-    },
-    rateLimit: {
-      window: Number(process.env.AUTH_RATE_LIMIT_WINDOW ?? 60),
-      max: Number(process.env.AUTH_RATE_LIMIT_MAX ?? 30),
-      customRules: {
-        '/api/auth/sign-in/email': { window: 60, max: Number(process.env.AUTH_SIGNIN_MAX ?? 5) },
-        '/api/auth/sign-up/email': { window: 60, max: Number(process.env.AUTH_SIGNUP_MAX ?? 3) },
-        '/api/auth/forgot-password': { window: 300, max: Number(process.env.AUTH_FORGOT_PW_MAX ?? 3) },
-        '/api/auth/reset-password': { window: 300, max: Number(process.env.AUTH_RESET_PW_MAX ?? 5) },
-        '/api/auth/two-factor/*': { window: 10, max: Number(process.env.AUTH_2FA_MAX ?? 3) },
+      database: {
+        generateId: false,
       },
+    },
+    // Rate limiting is handled by Edge middleware (Upstash sliding window).
+    // Disable Better Auth's built-in rate limiter to avoid double-counting.
+    rateLimit: {
+      enabled: false,
     },
     secret: process.env.BETTER_AUTH_SECRET,
     baseURL: process.env.NEXT_PUBLIC_APP_URL,
@@ -194,17 +191,6 @@ function createAuth() {
                 userId: user.id,
                 error: e instanceof Error ? e.message : String(e),
               });
-            }
-
-            // Create/link Stripe customer
-            try {
-              await syncStripeCustomer(user.id, user.email, user.name);
-            } catch (e) {
-              log.error('Failed to sync Stripe customer', {
-                userId: user.id,
-                error: e instanceof Error ? e.message : String(e),
-              });
-              // Non-fatal — Stripe customer can be created on first payment attempt
             }
           },
         },

@@ -4,7 +4,7 @@
  * This file defines the TypeScript interfaces for the intent-driven theme system.
  * Users express preferences through ThemeIntent; the system derives CSS variables.
  * 
- * @see docs/planning/32_THEME_SYSTEM.md
+ * @see docs/BUILT/09_THEME_SYSTEM.md
  */
 
 /**

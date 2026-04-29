@@ -17,7 +17,6 @@ import {
   sql,
 } from '@hsafx/db';
 import { redis, keys, TTL } from '@/lib/redis';
-import { releaseStaleReservations } from '@/server/limits/coin-service';
 
 // ─── Auth guard ─────────────────────────────────────────────
 
@@ -31,7 +30,6 @@ function unauthorized() {
 
 const STALE_JOB_MINUTES = 60; // 1 hour
 const STALE_UPLOAD_HOURS = 24; // 24 hours
-const STALE_RESERVATION_MINUTES = 30; // 30 minutes
 
 // ─── Types ──────────────────────────────────────────────────
 
@@ -39,7 +37,6 @@ interface CleanupResult {
   staleJobsCanceled: number;
   redisKeysCleared: number;
   staleUploadsFailed: number;
-  orphanedReservationsReleased: number;
   errors: string[];
 }
 
@@ -56,7 +53,6 @@ export async function GET(req: NextRequest) {
     staleJobsCanceled: 0,
     redisKeysCleared: 0,
     staleUploadsFailed: 0,
-    orphanedReservationsReleased: 0,
     errors: [],
   };
 
@@ -122,14 +118,6 @@ export async function GET(req: NextRequest) {
 
     result.staleUploadsFailed = failedUploads.length;
 
-    // ── 4. Release orphaned coin reservations ─────────────────
-
-    try {
-      result.orphanedReservationsReleased = await releaseStaleReservations(STALE_RESERVATION_MINUTES);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      result.errors.push(`reservations → ${msg}`);
-    }
 
     const durationMs = Date.now() - startTime;
 

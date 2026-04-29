@@ -5,9 +5,6 @@ import {
   toolCategories,
   toolLimits,
   toolExecutions,
-  usageCounters,
-  coinTransactions,
-  dailyProTrials,
   eq,
   and,
   desc,
@@ -18,24 +15,6 @@ import {
   count,
 } from '@hsafx/db/schema';
 import { TRPCError } from '@trpc/server';
-import { isPlanAtLeast } from '@hsafx/shared/permissions';
-import type { UserPlan } from '@hsafx/shared/permissions';
-
-// Lazy import for server execution layer (only in Next.js runtime)
-type ExecuteToolInput = {
-  toolId: string;
-  inputs: Record<string, unknown>;
-  userId: string;
-  idempotencyKey?: string;
-};
-type ExecuteToolResult = {
-  status: 'completed' | 'queued';
-  result?: unknown;
-  jobId?: string;
-  executionId: string;
-  coinsCharged: number;
-  duration?: number;
-};
 
 export const toolsRouter = router({
   getCategories: publicProcedure.query(async ({ ctx }) => {
@@ -157,91 +136,6 @@ export const toolsRouter = router({
       return { tool, category, limits };
     }),
 
-  execute: planGatedProcedure
-    .input(z.object({
-      toolId: z.string().uuid(),
-      inputs: z.record(z.unknown()),
-      idempotencyKey: z.string().optional(),
-      isTrialExecution: z.boolean().optional(),
-    }))
-    .mutation(async ({ ctx, input }) => {
-      const [tool] = await ctx.db
-        .select()
-        .from(tools)
-        .where(eq(tools.id, input.toolId))
-        .limit(1);
-
-      if (!tool) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Tool not found' });
-      }
-
-      if (!tool.isActive) {
-        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Tool is disabled' });
-      }
-
-      // Plan-based access check: premium tools require 'pro' or higher
-      // Allow trial executions for free/guest users (1 per day)
-      if (tool.isPremium && !isPlanAtLeast(ctx.plan as UserPlan, 'pro')) {
-        if (input.isTrialExecution) {
-          const { consumeTrial } = (await import('@/server/limits/pro-trial-service')) as {
-            consumeTrial: (userId: string, toolId: string) => Promise<{ success: boolean; reason?: string }>;
-          };
-          const trialResult = await consumeTrial(ctx.user!.id, input.toolId);
-          if (!trialResult.success) {
-            throw new TRPCError({
-              code: 'FORBIDDEN',
-              message: trialResult.reason ?? 'No free trials remaining today',
-            });
-          }
-        } else {
-          throw new TRPCError({
-            code: 'FORBIDDEN',
-            message: 'This tool requires a Pro or Advance subscription',
-          });
-        }
-      }
-
-      try {
-        // Delegate to the server execution layer which handles:
-        // - Cost calculation with BA weights & plan discounts
-        // - Atomic coin deduction / reservation
-        // - Sync execution (wasm/node) or async job creation (python/native)
-        // - Usage counter increment
-        // - Execution audit logging
-        const { executeToolServer } = (await import(
-          '../server/tool-execution'
-        )) as { executeToolServer: (input: ExecuteToolInput) => Promise<ExecuteToolResult> };
-
-        const result = await executeToolServer({
-          toolId: input.toolId,
-          inputs: input.inputs,
-          userId: ctx.user!.id,
-          idempotencyKey: input.idempotencyKey,
-        });
-
-        return {
-          executionId: result.executionId,
-          status: result.status,
-          result: result.result,
-          jobId: result.jobId,
-          coinsCharged: result.coinsCharged,
-          duration: result.duration,
-          tool,
-        };
-      } catch (err: unknown) {
-        if (err && typeof err === 'object' && 'name' in err && err.name === 'InsufficientCoinsError') {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: (err as Error).message,
-          });
-        }
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: err instanceof Error ? err.message : 'Execution failed',
-        });
-      }
-    }),
-
   getExecutionStatus: protectedProcedure
     .input(z.object({ executionId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
@@ -304,31 +198,6 @@ export const toolsRouter = router({
       return { items, page: input.page, pageSize: input.pageSize, total, totalPages: Math.ceil(total / input.pageSize) };
     }),
 
-  // ─── Pro Trial Endpoints (T2.6) ─────────────────────────────
-
-  getTrialStatus: protectedProcedure.query(async ({ ctx }) => {
-    const { getTrialStatus } = (await import('@/server/limits/pro-trial-service')) as {
-      getTrialStatus: (userId: string) => Promise<{ trialsUsedToday: number; trialsRemaining: number; maxTrialsPerDay: number }>;
-    };
-    return getTrialStatus(ctx.user!.id);
-  }),
-
-  useProTrial: protectedProcedure
-    .input(z.object({ toolId: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      const { consumeTrial } = (await import('@/server/limits/pro-trial-service')) as {
-        consumeTrial: (userId: string, toolId: string) => Promise<{ success: boolean; remaining?: number; reason?: string }>;
-      };
-      const result = await consumeTrial(ctx.user!.id, input.toolId);
-      if (!result.success) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: result.reason ?? 'No free trials remaining today',
-        });
-      }
-      return { remaining: result.remaining ?? 0 };
-    }),
-
   create: adminProcedure
     .input(z.object({
       categoryId: z.string().uuid(),
@@ -337,9 +206,6 @@ export const toolsRouter = router({
       description: z.string().min(1),
       longDescription: z.string().optional(),
       toolGroup: z.number().int().min(1).max(5),
-      runtime: z.enum(['wasm', 'node', 'python', 'browser']),
-      executionMode: z.enum(['client', 'server', 'hybrid']),
-      coinCost: z.number().int().min(0).default(0),
       isPremium: z.boolean().default(false),
       tags: z.array(z.string()).default([]),
       icon: z.string().optional(),
@@ -359,7 +225,6 @@ export const toolsRouter = router({
       name: z.string().min(1).optional(),
       description: z.string().min(1).optional(),
       longDescription: z.string().optional(),
-      coinCost: z.number().int().min(0).optional(),
       isActive: z.boolean().optional(),
       isPremium: z.boolean().optional(),
       tags: z.array(z.string()).optional(),
@@ -388,30 +253,21 @@ export const toolsRouter = router({
       return deleted;
     }),
 
-  // ─── User Analytics (T3.2) ────────────────────────────────
-
-  getAnalytics: protectedProcedure
-    .input(z.object({ days: z.number().int().min(1).max(365).default(30) }).optional())
-    .query(async ({ ctx, input }) => {
-      const { getUserAnalytics } = await import('@/server/analytics/analytics-service');
-      return getUserAnalytics(ctx.user!.id, input?.days ?? 30);
-    }),
-
   // ─── Batch Processing (T3.8) ─────────────────────────────
 
   createBatchJob: planGatedProcedure
     .input(z.object({
-      toolId: z.string().uuid(),
+      engineName: z.string(),
       inputs: z.array(z.record(z.unknown())).min(1).max(100),
     }))
     .mutation(async ({ ctx, input }) => {
       const { createBatchJob } = await import('@/server/batch/batch-service');
       return createBatchJob({
         userId: ctx.user!.id,
-        jobType: input.toolId,
+        jobType: input.engineName,
         files: input.inputs.map((item, idx) => ({
           filename: `input-${idx}`,
-          storageKey: `batch/${ctx.user!.id}/${input.toolId}/${idx}`,
+          storageKey: `batch/${ctx.user!.id}/${input.engineName}/${idx}`,
           mimeType: 'application/json',
           fileSize: JSON.stringify(item).length,
         })),

@@ -274,7 +274,7 @@ export default function BillingPage() {
                   sortable: true,
                   width: '120px',
                   render: (wh: PaymentWebhook) => (
-                    <Badge variant={wh.provider === 'stripe' ? 'info' : wh.provider === 'polar' ? 'primary' : 'default'}>
+                    <Badge variant={wh.provider === 'polar' ? 'primary' : 'default'}>
                       {wh.provider.charAt(0).toUpperCase() + wh.provider.slice(1)}
                     </Badge>
                   ),

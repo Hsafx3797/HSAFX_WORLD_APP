@@ -4,7 +4,7 @@
  * Transforms user intent into resolved CSS variables.
  * Guarantees WCAG AA contrast ratios and mode-aware color derivation.
  * 
- * @see docs/planning/32_THEME_SYSTEM.md Section 6
+ * @see docs/BUILT/09_THEME_SYSTEM.md
  */
 
 import type {

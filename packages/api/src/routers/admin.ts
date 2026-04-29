@@ -635,7 +635,7 @@ export const adminRouter = router({
     const [verified] = await ctx.db
       .select({ count: sql<number>`count(*)` })
       .from(users)
-      .where(eq(users.isEmailVerified, true));
+      .where(eq(users.emailVerified, true));
 
     const [executed] = await ctx.db
       .select({ count: sql<number>`count(distinct ${toolExecutions.userId})` })

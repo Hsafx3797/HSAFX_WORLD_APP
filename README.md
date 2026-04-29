@@ -15,7 +15,7 @@ HSAFX World is a B2B API platform providing server-side engine execution:
 hsafx_world_app/
 ├── apps/
 │   ├── web/          # Next.js 15 B2B API server (port 3000)
-│   └── admin/        # Next.js 15 admin panel (port 3001)
+│   └── admin/        # Next.js 15 admin panel (port 3002)
 ├── backend/
 │   ├── fastapi/      # FastAPI Python backend (port 8000)
 │   └── rust/         # Rust text/data engine service
@@ -73,26 +73,23 @@ hsafx_world_app/
 
    # Or individually:
    pnpm dev:web          # Next.js app (port 3000)
-   pnpm dev:admin        # Admin panel (port 3001)
+   pnpm dev:admin        # Admin panel (port 3002)
    
    # FastAPI server
    cd backend/fastapi && uvicorn src.main:app --reload  # (port 8000)
    ```
 
-## 📚 Documentation
+## Documentation
 
-Comprehensive documentation in `docs/planning/`:
+Current build documentation in `docs/BUILT/`:
 
-- **[EXECUTIVE_SUMMARY.md](docs/PLANNING/EXECUTIVE_SUMMARY.md)** - Project overview
-- **[DOCUMENTATION_INDEX.md](docs/PLANNING/DOCUMENTATION_INDEX.md)** - All documents indexed
-- **[00_PRODUCT_REQUIREMENTS.md](docs/PLANNING/00_PRODUCT_REQUIREMENTS.md)** - Complete PRD
-- **[10_SYSTEM_ARCHITECTURE.md](docs/PLANNING/10_SYSTEM_ARCHITECTURE.md)** - Architecture design
-- **[11_TECHNOLOGY_STACK.md](docs/PLANNING/11_TECHNOLOGY_STACK.md)** - Tech decisions
-- **[12_FILE_STRUCTURE.md](docs/PLANNING/12_FILE_STRUCTURE.md)** - Monorepo structure
-- **[13_DATABASE_SCHEMA.md](docs/PLANNING/13_DATABASE_SCHEMA.md)** - Database design
-- **[30_TOOLS_CATALOG.md](docs/PLANNING/30_TOOLS_CATALOG.md)** - All 451 tools listed
+- **[01_ENGINES.md](docs/BUILT/01_ENGINES.md)** - All 30 engines
+- **[02_API_SURFACE.md](docs/BUILT/02_API_SURFACE.md)** - API routes
+- **[03_DATABASE.md](docs/BUILT/03_DATABASE.md)** - Database schema
+- **[04_BILLING.md](docs/BUILT/04_BILLING.md)** - B2B billing
+- **[05_AUTH_AND_ROLES.md](docs/BUILT/05_AUTH_AND_ROLES.md)** - Auth system
 
-See [DOCUMENTATION_INDEX.md](docs/PLANNING/DOCUMENTATION_INDEX.md) for full list.
+See [docs/INDEX.md](docs/INDEX.md) for full documentation index.
 
 ## 🏗️ Technology Stack
 
@@ -124,8 +121,7 @@ See [DOCUMENTATION_INDEX.md](docs/PLANNING/DOCUMENTATION_INDEX.md) for full list
 - **Region**: Singapore (ap-southeast-1)
 
 ### External Services
-- **Stripe** - Payment processing
-- **Polar** - Subscription management
+- **Polar** - Payment processing & subscriptions
 - **Resend** - Email service
 - **Sentry** - Error tracking (planned)
 - **Plausible** - Analytics (planned)
@@ -218,7 +214,7 @@ pnpm build:admin
 
 ### Deployment
 
-See [49_DEPLOYMENT_GUIDE.md](docs/planning/49_DEPLOYMENT_GUIDE.md) for detailed deployment instructions.
+See [docs/BUILT/11_DEPLOYMENT.md](docs/BUILT/11_DEPLOYMENT.md) for detailed deployment instructions.
 
 **Quick Deploy:**
 - Next.js → Vercel (automatic via Git)
@@ -232,7 +228,7 @@ See [.env.example](.env.example) for all required variables:
 - **Database**: Neon PostgreSQL
 - **Cache**: Upstash Redis
 - **Auth**: Better-Auth + OAuth providers
-- **Billing**: Stripe + Polar
+- **Billing**: Polar
 - **Storage**: Cloudflare R2
 - **Jobs**: Inngest
 - **Search**: Meilisearch

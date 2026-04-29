@@ -1,5 +1,5 @@
 @import "tailwindcss";
-
+@source "../../../../packages/ui/src/**/*.{ts,tsx}";
 /* === ADMIN DARK THEME TOKENS === */
 :root {
   /* Core surfaces - Dark */

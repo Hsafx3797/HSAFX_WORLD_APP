@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { trpc } from '@/lib/trpc';
@@ -8,7 +8,9 @@ import { toast } from 'sonner';
 import { authClient } from '@/lib/auth-client';
 import { DangerZone } from '@/components/danger-zone';
 import { GdprExportButton } from '@/components/gdpr-export-button';
+import { AppearancePanel } from '@/components/appearance-panel';
 import { PasswordStrengthMeter, isPasswordValid } from '@/components/password-strength-meter';
+import { WINDOWS_TIMEZONES } from '@/lib/timezone';
 
 // ─── Toggle Switch ──────────────────────────────────────────
 function Toggle({
@@ -40,6 +42,38 @@ function Toggle({
   );
 }
 
+// ─── Helpers ────────────────────────────────────────────────
+const COUNTRY_CODES = [
+  { code: '+1',   flag: '🇺🇸', label: 'US/CA' },
+  { code: '+44',  flag: '🇬🇧', label: 'UK' },
+  { code: '+92',  flag: '🇵🇰', label: 'PK' },
+  { code: '+91',  flag: '🇮🇳', label: 'IN' },
+  { code: '+971', flag: '🇦🇪', label: 'UAE' },
+  { code: '+966', flag: '🇸🇦', label: 'SA' },
+  { code: '+974', flag: '🇶🇦', label: 'QA' },
+  { code: '+965', flag: '🇰🇼', label: 'KW' },
+  { code: '+968', flag: '🇴🇲', label: 'OM' },
+  { code: '+973', flag: '🇧🇭', label: 'BH' },
+  { code: '+962', flag: '🇯🇴', label: 'JO' },
+  { code: '+964', flag: '🇮🇶', label: 'IQ' },
+  { code: '+20',  flag: '🇪🇬', label: 'EG' },
+  { code: '+33',  flag: '🇫🇷', label: 'FR' },
+  { code: '+49',  flag: '🇩🇪', label: 'DE' },
+  { code: '+86',  flag: '🇨🇳', label: 'CN' },
+  { code: '+81',  flag: '🇯🇵', label: 'JP' },
+  { code: '+55',  flag: '🇧🇷', label: 'BR' },
+  { code: '+61',  flag: '🇦🇺', label: 'AU' },
+] as const;
+
+function parsePhone(full: string): { dialCode: string; local: string } {
+  if (!full) return { dialCode: '+1', local: '' };
+  const sorted = [...COUNTRY_CODES].sort((a, b) => b.code.length - a.code.length);
+  for (const { code } of sorted) {
+    if (full.startsWith(code)) return { dialCode: code, local: full.slice(code.length).trim() };
+  }
+  return { dialCode: '+1', local: full };
+}
+
 // ─── Profile Section ────────────────────────────────────────
 function ProfileSection() {
   const { data, isLoading } = trpc.user.getProfile.useQuery();
@@ -55,23 +89,39 @@ function ProfileSection() {
 
   const [fullName, setFullName] = useState('');
   const [username, setUsername] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [debouncedUsername, setDebouncedUsername] = useState('');
+  const usernameDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [dialCode, setDialCode] = useState('+1');
+  const [localPhone, setLocalPhone] = useState('');
 
   useEffect(() => {
     if (data?.user) {
-      setFullName(data.user.fullName ?? '');
+      setFullName(data.user.name ?? '');
       setUsername(data.user.username ?? '');
-      setPhoneNumber(data.user.phoneNumber ?? '');
+      const parsed = parsePhone(data.user.phoneNumber ?? '');
+      setDialCode(parsed.dialCode);
+      setLocalPhone(parsed.local);
     }
   }, [data?.user]);
 
   const handleSave = () => {
     updateProfile.mutate({
-      fullName: fullName || undefined,
+      name: fullName || undefined,
       username: username || undefined,
-      phoneNumber: phoneNumber || null,
+      phoneNumber: localPhone ? `${dialCode}${localPhone}` : null,
     });
   };
+
+  useEffect(() => {
+    if (usernameDebounceRef.current) clearTimeout(usernameDebounceRef.current);
+    usernameDebounceRef.current = setTimeout(() => setDebouncedUsername(username), 500);
+    return () => { if (usernameDebounceRef.current) clearTimeout(usernameDebounceRef.current); };
+  }, [username]);
+
+  const { data: usernameCheck } = trpc.user.checkUsernameAvailability.useQuery(
+    { username: debouncedUsername },
+    { enabled: debouncedUsername.length >= 3 && debouncedUsername !== (data?.user?.username ?? '') },
+  );
 
   const handleCopyReferral = () => {
     if (referralData?.code) {
@@ -86,23 +136,25 @@ function ProfileSection() {
       <div className="space-y-6">
         {/* Avatar */}
         <div className="flex items-center gap-6">
-          <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center overflow-hidden">
-            {data?.user?.avatarUrl ? (
+          <div className={`w-20 h-20 rounded-full flex items-center justify-center overflow-hidden ${data?.user?.image ? 'bg-muted' : 'bg-primary'}`}>
+            {data?.user?.image ? (
               <Image
-                src={data.user.avatarUrl}
-                alt={data.user.fullName ?? 'Avatar'}
+                src={data.user.image}
+                alt={data.user.name ?? 'Avatar'}
                 width={80}
                 height={80}
                 className="w-full h-full object-cover rounded-full"
               />
             ) : (
-              <span className="text-3xl">👤</span>
+              <span className="text-2xl font-semibold text-primary-foreground select-none">
+                {data?.user?.name
+                  ? data.user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+                  : '?'}
+              </span>
             )}
           </div>
           <div>
-            <p className="text-sm text-muted-foreground">
-              Avatar is synced from your social login provider
-            </p>
+            <p className="text-sm text-muted-foreground">Profile picture &middot; avatar upload coming soon</p>
           </div>
         </div>
 
@@ -129,9 +181,16 @@ function ProfileSection() {
               disabled={isLoading}
               className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
-            <p className="text-xs text-muted-foreground mt-1">
-              Lowercase letters, numbers, and underscores only
-            </p>
+            {debouncedUsername.length >= 3 && debouncedUsername !== (data?.user?.username ?? '') ? (
+              <p className={`text-xs mt-1 ${
+                usernameCheck === undefined ? 'text-muted-foreground' :
+                usernameCheck.available ? 'text-success' : 'text-destructive'
+              }`}>
+                {usernameCheck === undefined ? 'Checking…' : usernameCheck.available ? '✓ Available' : '✗ Already taken'}
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground mt-1">Lowercase letters, numbers, and underscores only</p>
+            )}
           </div>
         </div>
 
@@ -151,14 +210,26 @@ function ProfileSection() {
         {/* Phone Number */}
         <div>
           <label className="block text-sm font-medium mb-2">Phone Number</label>
-          <input
-            type="tel"
-            value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value)}
-            placeholder="+1 (555) 000-0000"
-            disabled={isLoading}
-            className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
-          />
+          <div className="flex gap-2">
+            <select
+              value={dialCode}
+              disabled={isLoading}
+              onChange={(e) => setDialCode(e.target.value)}
+              className="px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+            >
+              {COUNTRY_CODES.map(({ code, flag, label }) => (
+                <option key={code} value={code}>{flag} {code} ({label})</option>
+              ))}
+            </select>
+            <input
+              type="tel"
+              value={localPhone}
+              onChange={(e) => setLocalPhone(e.target.value)}
+              placeholder="555 000-0000"
+              disabled={isLoading}
+              className="flex-1 px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+          </div>
         </div>
 
         {/* Account Info */}
@@ -218,43 +289,24 @@ function PreferencesSection() {
     onError: (err) => toast.error(err.message),
   });
 
-  const [theme, setTheme] = useState('system');
   const [language, setLanguage] = useState('en');
   const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
-  const [compactMode, setCompactMode] = useState(false);
   const [autoCopyResults, setAutoCopyResults] = useState(false);
 
   useEffect(() => {
     if (data?.preferences) {
-      setTheme(data.preferences.theme ?? 'system');
       setLanguage(data.preferences.language ?? 'en');
       setTimezone(data.preferences.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone);
       const extras = data.preferences.preferences as Record<string, unknown> | undefined;
       if (extras) {
-        setCompactMode(extras.compactMode === true);
         setAutoCopyResults(extras.autoCopyResults === true);
       }
     }
   }, [data?.preferences]);
 
-  const handleThemeChange = (val: string) => {
-    setTheme(val);
-    updatePreferences.mutate({ theme: val as 'light' | 'dark' | 'system' });
-  };
-
-  const handleLanguageChange = (val: string) => {
-    setLanguage(val);
-    updatePreferences.mutate({ language: val });
-  };
-
   const handleTimezoneChange = (val: string) => {
     setTimezone(val);
     updatePreferences.mutate({ timezone: val });
-  };
-
-  const handleCompactMode = (val: boolean) => {
-    setCompactMode(val);
-    updatePreferences.mutate({ extras: { compactMode: val } });
   };
 
   const handleAutoCopy = (val: boolean) => {
@@ -266,35 +318,16 @@ function PreferencesSection() {
     <section id="preferences" className="bg-card border border-border rounded-lg p-6">
       <h2 className="text-xl font-semibold mb-6">Preferences</h2>
       <div className="space-y-6">
-        {/* Theme */}
+        {/* Language */}
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-medium">Theme</h3>
-            <p className="text-sm text-muted-foreground">Choose your preferred theme</p>
-          </div>
-          <select
-            value={theme}
-            disabled={isLoading}
-            onChange={(e) => handleThemeChange(e.target.value)}
-            className="px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
-          >
-            <option value="system">System</option>
-            <option value="light">Light</option>
-            <option value="dark">Dark</option>
-          </select>
-        </div>
-
-        {/* Language */}
-        <div className="flex items-center justify-between border-t border-border pt-6">
-          <div>
             <h3 className="font-medium">Language</h3>
-            <p className="text-sm text-muted-foreground">Select your preferred language</p>
+            <p className="text-sm text-muted-foreground">UI language &middot; coming soon</p>
           </div>
           <select
             value={language}
-            disabled={isLoading}
-            onChange={(e) => handleLanguageChange(e.target.value)}
-            className="px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+            disabled
+            className="px-4 py-2 bg-muted border border-border rounded-lg text-muted-foreground cursor-not-allowed"
           >
             <option value="en">English</option>
             <option value="ar">العربية</option>
@@ -311,32 +344,19 @@ function PreferencesSection() {
             value={timezone}
             disabled={isLoading}
             onChange={(e) => handleTimezoneChange(e.target.value)}
-            className="px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 max-w-55"
+            className="px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 max-w-xs"
           >
-            {Intl.supportedValuesOf('timeZone').map((tz) => (
-              <option key={tz} value={tz}>{tz.replace(/_/g, ' ')}</option>
+            {WINDOWS_TIMEZONES.map((tz) => (
+              <option key={tz.value} value={tz.value}>{tz.label}</option>
             ))}
           </select>
-        </div>
-
-        {/* Compact Mode */}
-        <div className="flex items-center justify-between border-t border-border pt-6">
-          <div>
-            <h3 className="font-medium">Compact Mode</h3>
-            <p className="text-sm text-muted-foreground">Reduce spacing for denser layouts</p>
-          </div>
-          <Toggle
-            checked={compactMode}
-            onChange={handleCompactMode}
-            disabled={isLoading || updatePreferences.isPending}
-          />
         </div>
 
         {/* Auto-Copy Results */}
         <div className="flex items-center justify-between border-t border-border pt-6">
           <div>
             <h3 className="font-medium">Auto-Copy Results</h3>
-            <p className="text-sm text-muted-foreground">Copy engine output to clipboard automatically</p>
+            <p className="text-sm text-muted-foreground">Automatically copy engine output to clipboard when tools are available</p>
           </div>
           <Toggle
             checked={autoCopyResults}
@@ -392,7 +412,10 @@ function NotificationsSection() {
 
   return (
     <section id="notifications" className="bg-card border border-border rounded-lg p-6">
-      <h2 className="text-xl font-semibold mb-6">Notifications</h2>
+      <h2 className="text-xl font-semibold mb-2">Notifications</h2>
+      <p className="text-sm text-muted-foreground mb-6">
+        Preferences are saved. Email delivery for non-critical notification types is pending infrastructure.
+      </p>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
@@ -465,10 +488,12 @@ function parseUserAgent(ua: string | null): { device: string; browser: string } 
 }
 
 function SecuritySection() {
+  const { data: passwordStatus } = trpc.user.hasPassword.useQuery();
   const changePassword = trpc.user.changePassword.useMutation({
     onSuccess: () => {
       toast.success('Password updated successfully');
       setCurrentPassword('');
+      setCurrentPasswordValid(null);
       setNewPassword('');
       setConfirmPassword('');
     },
@@ -476,8 +501,27 @@ function SecuritySection() {
   });
 
   const [currentPassword, setCurrentPassword] = useState('');
+  const [currentPasswordValid, setCurrentPasswordValid] = useState<boolean | null>(null);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const currentPasswordDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const verifyPassword = trpc.user.verifyCurrentPassword.useMutation();
+
+  useEffect(() => {
+    if (currentPasswordDebounceRef.current) clearTimeout(currentPasswordDebounceRef.current);
+    if (!currentPassword || currentPassword.length < 8) {
+      setCurrentPasswordValid(null);
+      return;
+    }
+    currentPasswordDebounceRef.current = setTimeout(() => {
+      verifyPassword.mutate(
+        { password: currentPassword },
+        { onSuccess: (d) => setCurrentPasswordValid(d.valid), onError: () => setCurrentPasswordValid(null) },
+      );
+    }, 700);
+    return () => { if (currentPasswordDebounceRef.current) clearTimeout(currentPasswordDebounceRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPassword]);
 
   // 2FA state
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
@@ -610,14 +654,31 @@ function SecuritySection() {
         {/* ── Change Password ── */}
         <div>
           <h3 className="font-medium mb-4">Change Password</h3>
+          {passwordStatus && !passwordStatus.hasPassword ? (
+            <div className="max-w-md p-4 bg-muted/50 rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                No password set on this account. Use{' '}
+                <Link href="/auth/forgot-password" className="text-primary hover:underline">password reset</Link>{' '}
+                to set one.
+              </p>
+            </div>
+          ) : (
           <div className="space-y-4 max-w-md">
-            <input
-              type="password"
-              placeholder="Current password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
-            />
+            <div>
+              <input
+                type="password"
+                placeholder="Current password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+              {currentPasswordValid === false && currentPassword && (
+                <p className="text-xs text-destructive mt-1">✗ Incorrect password</p>
+              )}
+              {currentPasswordValid === true && currentPassword && (
+                <p className="text-xs text-success mt-1">✓ Password correct</p>
+              )}
+            </div>
             <input
               type="password"
               placeholder="New password"
@@ -626,13 +687,21 @@ function SecuritySection() {
               className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
             <PasswordStrengthMeter password={newPassword} />
-            <input
-              type="password"
-              placeholder="Confirm new password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
-            />
+            <div>
+              <input
+                type="password"
+                placeholder="Confirm new password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+              {confirmPassword && newPassword !== confirmPassword && (
+                <p className="text-xs text-destructive mt-1">✗ Passwords do not match</p>
+              )}
+              {confirmPassword && newPassword === confirmPassword && newPassword && (
+                <p className="text-xs text-success mt-1">✓ Passwords match</p>
+              )}
+            </div>
             <button
               onClick={handleChangePassword}
               disabled={changePassword.isPending || !currentPassword || !newPassword || !confirmPassword}
@@ -641,6 +710,7 @@ function SecuritySection() {
               {changePassword.isPending ? 'Updating...' : 'Update Password'}
             </button>
           </div>
+          )}
         </div>
 
         {/* ── Two-Factor Authentication ── */}
@@ -790,7 +860,7 @@ function SecuritySection() {
               sessions.map((session) => {
                 const { device, browser } = parseUserAgent(session.userAgent);
                 return (
-                  <div key={session.id} className="p-4 bg-muted/50 rounded-lg flex items-center justify-between">
+                  <div key={session.id ?? session.token} className="p-4 bg-muted/50 rounded-lg flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <span className="text-xl">{/iOS|Android/.test(device) ? '📱' : '💻'}</span>
                       <div>
@@ -842,7 +912,7 @@ function SocialAccountsSection() {
   const handleLink = (provider: string) => {
     authClient.signIn.social({
       provider: provider as 'google' | 'github' | 'facebook',
-      callbackURL: '/settings#social',
+      callbackURL: '/settings',
     });
   };
 
@@ -1026,7 +1096,7 @@ function ApiAccessSection() {
         {activeKeys.length >= 5 && (
           <p className="text-xs text-muted-foreground">Maximum 5 active keys. Revoke a key to generate a new one.</p>
         )}
-        <Link href="/docs/api" className="block text-sm text-primary hover:underline">
+        <Link href="/api-docs" className="block text-sm text-primary hover:underline">
           View API Documentation →
         </Link>
       </div>
@@ -1116,6 +1186,9 @@ function SettingsSidebar() {
       <a href="#preferences" className="block px-4 py-2 rounded-lg hover:bg-muted transition-colors">
         Preferences
       </a>
+      <a href="#appearance" className="block px-4 py-2 rounded-lg hover:bg-muted transition-colors">
+        Appearance
+      </a>
       <a href="#notifications" className="block px-4 py-2 rounded-lg hover:bg-muted transition-colors">
         Notifications
       </a>
@@ -1138,6 +1211,16 @@ function SettingsSidebar() {
         Danger Zone
       </a>
     </nav>
+  );
+}
+
+// ─── Appearance Section ─────────────────────────────────────
+function AppearanceSection() {
+  return (
+    <section id="appearance" className="bg-card border border-border rounded-lg p-6">
+      <h2 className="text-xl font-semibold mb-6">Appearance</h2>
+      <AppearancePanel />
+    </section>
   );
 }
 
@@ -1166,6 +1249,7 @@ export function SettingsClient() {
           <div className="lg:col-span-3 space-y-8">
             <ProfileSection />
             <PreferencesSection />
+            <AppearanceSection />
             <NotificationsSection />
             <SecuritySection />
             <SocialAccountsSection />

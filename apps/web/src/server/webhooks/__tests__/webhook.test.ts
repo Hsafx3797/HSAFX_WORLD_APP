@@ -2,7 +2,7 @@
  * Webhook Handler Tests
  * Tests for idempotency logic and webhook processing patterns.
  *
- * Since the actual route handlers require Stripe/Polar SDK verification,
+ * Since the actual route handlers require Polar SDK verification,
  * these tests validate the idempotency utilities and error handling in isolation.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -87,13 +87,13 @@ describe('isWebhookProcessed', () => {
 
 describe('markWebhookProcessed', () => {
   it('should insert a record with eventId, provider, and eventType', async () => {
-    await markWebhookProcessed('evt_123', 'stripe', 'checkout.session.completed');
+    await markWebhookProcessed('evt_123', 'polar', 'order.paid');
     expect(mockInsert).toHaveBeenCalled();
     expect(mockValues).toHaveBeenCalledWith(
       expect.objectContaining({
         eventId: 'evt_123',
-        provider: 'stripe',
-        eventType: 'checkout.session.completed',
+        provider: 'polar',
+        eventType: 'order.paid',
       }),
     );
     expect(mockOnConflictDoNothing).toHaveBeenCalled();

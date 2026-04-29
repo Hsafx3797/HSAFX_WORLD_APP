@@ -3,19 +3,9 @@ HSAFX World App — FastAPI Compute Backend
 
 Stateless compute service. Per the Backend Ownership Matrix:
   - NO database access (auth, billing, catalog, users all in Next.js)
-  - Redis for async job orchestration only
   - Internal secret auth for Next.js → FastAPI calls
-  - Public endpoints for tool execution and capabilities
-
-TODO [G5]: 21 tool handlers still raise NotImplementedError (stubs).
-  Complete implementations for: video-transcode, video-metadata-strip,
-  audio-metadata-strip, pdf-deskew, pdf-remove-annotations, pdf-rename-content,
-  and others. Check each handler file for NotImplementedError.
-  See: docs/PLANNING/30_TOOLS_CATALOG.md
-
-Active routers: tools (compute), jobs (Redis)
-Internal router: /internal/* (callback from Next.js)
-Engine router: /execute/{engine} (9 engines: 8 media + 1 tracking)
+  - Internal router: /internal/* (callback from Next.js)
+  - Engine router: /execute/{engine} (10 engines: 8 media + tracking + cheque)
 """
 
 from contextlib import asynccontextmanager
@@ -47,13 +37,13 @@ async def lifespan(app: FastAPI):
         mode="compute-only",
     )
 
-    # Redis for async job queue (jobs.py)
+    # Redis (used by tracking scraper and rate-limit middleware)
     try:
         from src.core.redis import init_redis
         await init_redis()
         logger.info("Redis connection initialized")
     except Exception as e:
-        logger.warning("Redis not available — jobs will fail", error=str(e))
+        logger.warning("Redis not available — tracking/rate-limit may degrade", error=str(e))
 
     yield
 
@@ -80,7 +70,7 @@ def create_app() -> FastAPI:
 
     app = FastAPI(
         title="HSAFX World App API",
-        description="Backend API for HSAFX World App - 448 Online Tools",
+        description="Backend API for HSAFX World App — 30 parameterized engines",
         version=settings.VERSION,
         docs_url="/docs" if settings.DEBUG else None,
         redoc_url="/redoc" if settings.DEBUG else None,

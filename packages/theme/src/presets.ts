@@ -4,7 +4,7 @@
  * Collection of curated presets organized by category.
  * Each preset defines partial ThemeIntent overrides.
  * 
- * @see docs/planning/33_THEME_PRESETS.md
+ * @see docs/BUILT/09_THEME_SYSTEM.md
  */
 
 import type { ThemePreset, ThemeIntent, PlanTier, PresetCategory } from './types';

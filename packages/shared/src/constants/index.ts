@@ -17,8 +17,7 @@ export const UserRole = {
 export type UserRoleType = (typeof UserRole)[keyof typeof UserRole];
 
 /**
- * Subscription Plans (B2C)
- * Reference: 20_BILLING_SYSTEM.md Section 3.1
+ * Subscription Plans
  * Canonical: free ($0), pro ($10/mo), advance ($20/mo)
  */
 export const SubscriptionPlan = {
@@ -67,25 +66,11 @@ export const ToolGroup = {
 export type ToolGroupType = (typeof ToolGroup)[keyof typeof ToolGroup];
 
 /**
- * Tool Execution Modes
- * Reference: 73_TOOL_EXECUTION_ROUTER.md
- */
-export const ExecutionMode = {
-  CLIENT: 'client', // Browser/WASM execution
-  SERVER: 'server', // Backend execution
-  HYBRID: 'hybrid', // Client + server validation
-} as const;
-
-export type ExecutionModeType = (typeof ExecutionMode)[keyof typeof ExecutionMode];
-
-/**
- * Tool Runtimes
+ * Tool Runtimes (server-side only)
  */
 export const ToolRuntime = {
-  WASM: 'wasm',
   NODE: 'node',
   PYTHON: 'python',
-  BROWSER: 'browser',
 } as const;
 
 export type ToolRuntimeType = (typeof ToolRuntime)[keyof typeof ToolRuntime];
@@ -101,22 +86,6 @@ export const PaymentStatus = {
 } as const;
 
 export type PaymentStatusType = (typeof PaymentStatus)[keyof typeof PaymentStatus];
-
-/**
- * Transaction Types
- * Reference: 21_BILLING_LOGIC.md
- */
-export const TransactionType = {
-  GRANT: 'grant', // Coins granted (subscription, admin)
-  PURCHASE: 'purchase', // Coins purchased
-  SPEND: 'spend', // Coins spent on tools
-  REFUND: 'refund', // Coins refunded
-  ADJUSTMENT: 'adjustment', // Manual adjustment
-  REWARD: 'reward', // Earned from login rewards (daily/hourly)
-  REFERRAL: 'referral', // Referral bonus
-} as const;
-
-export type TransactionTypeType = (typeof TransactionType)[keyof typeof TransactionType];
 
 /**
  * File Upload Status
@@ -175,30 +144,6 @@ export const FILE_SIZE_LIMITS = {
   FREE: 10 * 1024 * 1024, // 10 MB
   PRO: 100 * 1024 * 1024, // 100 MB
   ADVANCE: 1024 * 1024 * 1024, // 1 GB
-} as const;
-
-/**
- * Default coin costs
- * Reference: 21_BILLING_LOGIC.md Section 3
- */
-export const DEFAULT_COIN_COSTS = {
-  TEXT_TOOL: 1,
-  DATA_CONVERTER: 2,
-  MEDIA_PROCESSOR_LIGHT: 5,
-  MEDIA_PROCESSOR_HEAVY: 10,
-  GENERATOR: 1,
-  SCRAPER: 20,
-  API_CALL: 1,
-} as const;
-
-/**
- * Coin grants per plan (monthly)
- * Reference: 20_BILLING_SYSTEM.md Section 3.1
- */
-export const PLAN_COIN_GRANTS = {
-  [SubscriptionPlan.FREE]: 50,
-  [SubscriptionPlan.PRO]: 150,
-  [SubscriptionPlan.ADVANCE]: 250,
 } as const;
 
 /**

@@ -6,7 +6,7 @@
  * Wraps next-themes with intent-based theming.
  * Manages theme intent state and applies derived CSS variables.
  * 
- * @see docs/planning/32_THEME_SYSTEM.md Section 7
+ * @see docs/BUILT/09_THEME_SYSTEM.md
  */
 
 import * as React from 'react';

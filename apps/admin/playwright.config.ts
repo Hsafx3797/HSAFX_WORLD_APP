@@ -10,7 +10,7 @@ export default defineConfig({
   timeout: 30_000,
 
   use: {
-    baseURL: process.env.ADMIN_URL || 'http://localhost:3001',
+    baseURL: process.env.ADMIN_URL || 'http://localhost:3002',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
@@ -32,7 +32,7 @@ export default defineConfig({
 
   webServer: {
     command: process.env.CI ? 'pnpm start' : 'pnpm dev',
-    port: 3001,
+    port: 3002,
     reuseExistingServer: !process.env.CI,
   },
 });

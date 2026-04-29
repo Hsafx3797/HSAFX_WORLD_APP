@@ -1,16 +1,15 @@
 /**
  * GET /api/v1/billing/transactions
- * Returns paginated coin transaction history for the API key owner.
+ * Returns paginated B2B usage log (ops consumed per suite per period).
  * Requires scope: billing:read
  *
  * Query params:
  *   - limit:  number (1–100, default 20)
  *   - offset: number (default 0)
- *   - type:   coin_transaction_type filter (optional)
  */
 
 import { NextRequest } from 'next/server';
-import { db, eq, and, desc, sql, coinTransactions } from '@hsafx/db';
+import { db, eq, desc, sql, b2bUsage, b2bSuites } from '@hsafx/db';
 import {
   authenticateApiKey,
   requireScope,
@@ -19,11 +18,6 @@ import {
   type ApiContext,
 } from '@/lib/api-v1-auth';
 import { ApiErrorCode } from '@hsafx/shared/errors';
-
-// Must match actual types used in coin-service.ts
-const VALID_TYPES = [
-  'spend', 'refund', 'grant', 'purchase', 'adjustment',
-] as const;
 
 export async function GET(request: NextRequest) {
   const result = await authenticateApiKey(request);
@@ -36,49 +30,43 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '20', 10) || 20, 1), 100);
   const offset = Math.max(parseInt(searchParams.get('offset') || '0', 10) || 0, 0);
-  const type = searchParams.get('type');
-
-  if (type && !VALID_TYPES.includes(type as (typeof VALID_TYPES)[number])) {
-    return apiErrorResponse(ApiErrorCode.INVALID_FIELD, `Invalid type. Must be one of: ${VALID_TYPES.join(', ')}`, ctx, 400);
-  }
 
   try {
-    const conditions = [eq(coinTransactions.userId, ctx.userId)];
-    if (type) {
-      conditions.push(sql`${coinTransactions.type} = ${type}`);
-    }
-    const where = and(...conditions);
-
     const [items, countRows] = await Promise.all([
       db
         .select({
-          id: coinTransactions.id,
-          amount: coinTransactions.amount,
-          type: coinTransactions.type,
-          reason: coinTransactions.reason,
-          balanceAfter: coinTransactions.balanceAfter,
-          resourceType: coinTransactions.resourceType,
-          resourceId: coinTransactions.resourceId,
-          createdAt: coinTransactions.createdAt,
+          id: b2bUsage.id,
+          suite: b2bSuites.slug,
+          suiteName: b2bSuites.name,
+          usageCount: b2bUsage.usageCount,
+          periodStart: b2bUsage.periodStart,
+          periodEnd: b2bUsage.periodEnd,
+          updatedAt: b2bUsage.updatedAt,
         })
-        .from(coinTransactions)
-        .where(where)
-        .orderBy(desc(coinTransactions.createdAt))
+        .from(b2bUsage)
+        .innerJoin(b2bSuites, eq(b2bUsage.b2bSuiteId, b2bSuites.id))
+        .where(eq(b2bUsage.userId, ctx.userId))
+        .orderBy(desc(b2bUsage.periodStart))
         .limit(limit)
         .offset(offset),
       db
         .select({ count: sql<number>`count(*)` })
-        .from(coinTransactions)
-        .where(where),
+        .from(b2bUsage)
+        .where(eq(b2bUsage.userId, ctx.userId)),
     ]);
 
     const total = Number(countRows[0]?.count ?? 0);
 
     return apiResponse(
       {
-        transactions: items.map((t) => ({
-          ...t,
-          createdAt: t.createdAt.toISOString(),
+        usage: items.map((r) => ({
+          id: r.id,
+          suite: r.suite,
+          suiteName: r.suiteName,
+          opsConsumed: r.usageCount,
+          periodStart: r.periodStart.toISOString(),
+          periodEnd: r.periodEnd.toISOString(),
+          lastUpdated: r.updatedAt.toISOString(),
         })),
         pagination: {
           total,
@@ -92,7 +80,7 @@ export async function GET(request: NextRequest) {
   } catch (err) {
     return apiErrorResponse(
       ApiErrorCode.SERVER_ERROR,
-      'Failed to retrieve transactions',
+      'Failed to retrieve usage history',
       ctx,
       500,
       process.env.NODE_ENV !== 'production'
@@ -101,3 +89,4 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+

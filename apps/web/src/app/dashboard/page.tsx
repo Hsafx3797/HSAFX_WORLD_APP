@@ -1,36 +1,23 @@
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
-import { useCoins } from '@/hooks/use-coins';
 import { useSubscription } from '@/hooks/use-subscription';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ActivityFeed, ActivityFeedSkeleton, type ActivityItem } from '@/components/activity-feed';
 import { OnboardingWizard } from '@/components/onboarding-wizard';
 import { OnboardingChecklist } from '@/components/onboarding-checklist';
 import { ReferralCard } from '@/components/referral-card';
-import { CoinEventBanner } from '@/components/coin-event-banner';
 import { trpc } from '@/lib/trpc';
 import { ALL_ENGINE_NAMES } from '@/lib/engine-constants';
-import { toast } from 'sonner';
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
-  const { balance, dailyBonusAvailable, claimDailyBonus } = useCoins();
   const { subscription, isPro } = useSubscription();
-
-  const executionsQuery = trpc.tools.getMyExecutions.useQuery(
-    { page: 1, pageSize: 10 },
-    { enabled: !!user }
-  );
-
-  const streakQuery = trpc.rewards.getStreak.useQuery(undefined, {
-    enabled: !!user,
-  });
 
   const onboardingQuery = trpc.user.getOnboarding.useQuery(undefined, {
     enabled: !!user,
@@ -39,30 +26,16 @@ export default function DashboardPage() {
   const { data: b2bSub } = trpc.b2b.getMySubscription.useQuery(undefined, { enabled: !!user });
   const { data: b2bUsage } = trpc.b2b.getMyUsage.useQuery(undefined, { enabled: !!user });
 
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/auth/signin');
+    }
+  }, [authLoading, user, router]);
+
   const showOnboarding =
     onboardingQuery.data &&
     !onboardingQuery.data.completed &&
     !onboardingQuery.data.skipped;
-
-  const activityItems: ActivityItem[] = (executionsQuery.data?.items ?? []).map((exec) => ({
-    id: exec.id,
-    toolId: exec.toolId,
-    toolName: (exec as Record<string, unknown>).toolName as string ?? exec.toolId,
-    status: exec.status === 'completed' ? 'completed' : exec.status === 'failed' ? 'failed' : 'running',
-    coinsCharged: exec.coinCost ?? 0,
-    duration: exec.executionTime ?? undefined,
-    timestamp: exec.createdAt instanceof Date ? exec.createdAt.toISOString() : String(exec.createdAt),
-  }));
-
-  const todayCount = (executionsQuery.data?.items ?? []).filter((exec) => {
-    const created = exec.createdAt instanceof Date ? exec.createdAt : new Date(String(exec.createdAt));
-    const today = new Date();
-    return (
-      created.getDate() === today.getDate() &&
-      created.getMonth() === today.getMonth() &&
-      created.getFullYear() === today.getFullYear()
-    );
-  }).length;
 
   if (authLoading) {
     return (
@@ -73,16 +46,8 @@ export default function DashboardPage() {
   }
 
   if (!user) {
-    router.push('/auth/signin');
     return null;
   }
-
-  const handleClaimBonus = async () => {
-    const result = await claimDailyBonus();
-    if (result.success) {
-      toast.success('Daily bonus claimed! Coins added to your balance.');
-    }
-  };
 
   return (
     <div className="container py-8">
@@ -107,49 +72,6 @@ export default function DashboardPage() {
 
       {/* Stats Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
-        {/* Coin Balance */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Coin Balance</CardDescription>
-            <CardTitle className="text-3xl">{balance}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {dailyBonusAvailable && (
-              <Button size="sm" onClick={handleClaimBonus}>
-                Claim Daily Bonus
-              </Button>
-            )}
-            {!dailyBonusAvailable && (
-              <p className="text-sm text-muted-foreground">Daily bonus claimed</p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Login Streak */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Login Streak</CardDescription>
-            <CardTitle className="text-3xl flex items-center gap-2">
-              <span>🔥</span> {streakQuery.data?.currentStreak ?? 0}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {streakQuery.data && streakQuery.data.multiplier > 1 ? (
-              <p className="text-sm font-medium text-warning">
-                {streakQuery.data.multiplier}× coin bonus active
-              </p>
-            ) : streakQuery.data?.nextTier ? (
-              <p className="text-sm text-muted-foreground">
-                {streakQuery.data.nextTier.days - (streakQuery.data.currentStreak)} days to {streakQuery.data.nextTier.multiplier}× bonus
-              </p>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                Claim daily to start a streak
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
         {/* Subscription */}
         <Card>
           <CardHeader className="pb-2">
@@ -189,21 +111,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Executions Today */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Executions Today</CardDescription>
-            <CardTitle className="text-3xl">{todayCount}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Link href="/dashboard/history">
-              <Button size="sm" variant="outline">
-                View History
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-
         {/* B2B API Status */}
         {b2bSub && (
           <Card>
@@ -229,11 +136,6 @@ export default function DashboardPage() {
 
       {/* Onboarding Checklist */}
       <OnboardingChecklist />
-
-      {/* Coin Multiplier Event Banner */}
-      <div className="mb-8">
-        <CoinEventBanner />
-      </div>
 
       {/* Referral Program */}
       <div className="mb-8">
@@ -379,30 +281,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Recent Activity */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold">Recent Activity</h2>
-          <Link href="/dashboard/history">
-            <Button variant="ghost" size="sm">View All</Button>
-          </Link>
-        </div>
-        {executionsQuery.isLoading ? (
-          <ActivityFeedSkeleton />
-        ) : activityItems.length > 0 ? (
-          <ActivityFeed items={activityItems} />
-        ) : (
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center py-8 text-muted-foreground">
-                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-4 opacity-50"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-                <p>No recent activity</p>
-                <p className="text-sm mt-1">Start using tools to see your history here</p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
     </div>
   );
 }

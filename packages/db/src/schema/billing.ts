@@ -71,7 +71,8 @@ export const plans = pgTable('plans', {
   priceYearlyCents: bigint('price_yearly_cents', { mode: 'number' }),
   coinGrant: integer('coin_grant').notNull().default(0), // Coins granted per billing cycle
   isActive: boolean('is_active').notNull().default(true),
-  polarProductId: text('polar_product_id').unique(), // Polar product mapping
+  polarProductIdMonthly: text('polar_product_id_monthly').unique(), // Polar monthly product
+  polarProductIdYearly: text('polar_product_id_yearly').unique(),   // Polar yearly product
   metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
@@ -171,7 +172,7 @@ export const invoices = pgTable('invoices', {
   currency: text('currency').notNull().default('USD'),
   dueDate: timestamp('due_date'),
   paidAt: timestamp('paid_at'),
-  stripeInvoiceId: text('stripe_invoice_id').unique(),
+  polarOrderId: text('polar_order_id').unique(),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdate(() => new Date()),
@@ -196,7 +197,7 @@ export const payments = pgTable('payments', {
   currency: text('currency').notNull().default('USD'),
   status: paymentStatusEnum('status').notNull(),
   paymentMethod: text('payment_method').notNull(), // 'card', 'bank_transfer', 'coins'
-  stripePaymentIntentId: text('stripe_payment_intent_id').unique(),
+  polarCheckoutId: text('polar_checkout_id').unique(),
   failureReason: text('failure_reason'),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),
@@ -205,7 +206,7 @@ export const payments = pgTable('payments', {
   index('pay_user_id_idx').on(t.userId),
   index('pay_status_idx').on(t.status),
   index('pay_invoice_id_idx').on(t.invoiceId),
-  index('pay_stripe_pi_idx').on(t.stripePaymentIntentId),
+  index('pay_polar_co_idx').on(t.polarCheckoutId),
   index('pay_user_created_idx').on(t.userId, t.createdAt),
   index('pay_sub_status_idx').on(t.invoiceId, t.status),
 ]);
@@ -241,8 +242,7 @@ export const coinPacks = pgTable('coin_packs', {
   coins: integer('coins').notNull(),
   priceInCents: bigint('price_in_cents', { mode: 'number' }).notNull(),
   bonusCoins: integer('bonus_coins').notNull().default(0),
-  stripeProductId: text('stripe_product_id'),
-  stripePriceId: text('stripe_price_id'),
+  polarProductId: text('polar_product_id'),
   isActive: boolean('is_active').notNull().default(true),
   sortOrder: integer('sort_order').notNull().default(0),
 });
@@ -350,13 +350,13 @@ export const userStreaks = pgTable('user_streaks', {
 });
 
 /**
- * Processed Webhooks - Idempotency tracking for Stripe/Polar webhooks (C-11)
+ * Processed Webhooks - Idempotency tracking for Polar webhooks (C-11)
  * Reference: 15_SECURITY_MODEL.md, 24_ERROR_HANDLING.md
  */
 export const processedWebhooks = pgTable('processed_webhooks', {
   id: uuid('id').primaryKey().defaultRandom(),
   eventId: varchar('event_id', { length: 255 }).notNull().unique(),
-  provider: varchar('provider', { length: 20 }).notNull(), // 'stripe' | 'polar'
+  provider: varchar('provider', { length: 20 }).notNull(), // 'polar'
   eventType: varchar('event_type', { length: 100 }),
   processedAt: timestamp('processed_at').notNull().defaultNow(),
 }, (t) => [
@@ -413,7 +413,7 @@ export const paymentMethods = pgTable('payment_methods', {
   userId: uuid('user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
-  provider: text('provider').notNull(), // 'stripe', 'paypal'
+  provider: text('provider').notNull(), // 'polar'
   providerMethodId: text('provider_method_id').notNull(),
   type: text('type').notNull(), // 'card', 'bank_account'
   last4: text('last4'),

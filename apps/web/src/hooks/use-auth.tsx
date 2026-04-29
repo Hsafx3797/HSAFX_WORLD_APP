@@ -3,7 +3,7 @@
  *
  * PHASE 0: Replaced custom JWT/FastAPI auth with better-auth.
  * Keeps the same export surface (AuthProvider, useAuth) for backward compat
- * with dashboard pages, use-coins.ts, use-subscription.ts, etc.
+ * with dashboard pages and use-subscription.ts.
  *
  * better-auth manages sessions via httpOnly cookies — no more localStorage tokens.
  */
@@ -20,7 +20,6 @@ export interface User {
   email: string;
   name: string;
   tier: PlanTier;
-  coinBalance: number;
   avatarUrl?: string;
   role?: string;
 }
@@ -49,11 +48,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       id: u.id,
       email: u.email,
       name: u.name ?? u.email.split('@')[0],
-      // Tier & balance are populated by Zustand stores / tRPC queries
-      // in use-session.ts and use-coins.ts respectively.
-      // This default is only the initial value before hydration.
+      // Tier is populated by Zustand stores / tRPC queries
+      // in use-session.ts. This default is only the initial value before hydration.
       tier: 'free' as PlanTier,
-      coinBalance: 0,
       avatarUrl: u.image ?? undefined,
       role: undefined,
     };

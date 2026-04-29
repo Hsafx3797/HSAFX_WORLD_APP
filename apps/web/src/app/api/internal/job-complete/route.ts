@@ -5,18 +5,14 @@
  *
  * Reference: SOLUTION_ROADMAP Task 3.5
  *
- * Handles billing reconciliation: confirmReservation on success,
- * releaseReservation on failure. This is the canonical completion path
- * for all tools dispatched to FastAPI (native/python runtimes).
+ * Handles B2B billing: incrementB2bUsage on success. Failed executions are free.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getJob, updateJob, setJobResult } from '@/server/jobs/job-manager';
-import { confirmReservation, releaseReservation } from '@/server/limits/coin-service';
 import { incrementB2bUsage } from '@/server/limits/b2b-quota-service';
 import { dispatchJobWebhooks } from '@/server/webhooks/dispatch';
-import { reportStripeUsage } from '@/server/billing/stripe-usage';
 import { redis } from '@/lib/redis';
 import { createLogger } from '@hsafx/shared/logger';
 
@@ -76,7 +72,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 3. Look up original job to get reservationId for billing
+  // 3. Look up original job
   const existingJob = await getJob(body.jobId);
   if (!existingJob) {
     log.warn('Job not found in Redis (may have expired)', { jobId: body.jobId });
@@ -85,7 +81,6 @@ export async function POST(request: NextRequest) {
       { status: 404 },
     );
   }
-  const reservationId = existingJob.options?.reservationId as string | undefined;
   const isB2b = existingJob.options?._isB2b === true;
   const b2bSuiteId = existingJob.options?._b2bSuiteId as string | undefined;
 
@@ -119,9 +114,8 @@ export async function POST(request: NextRequest) {
         completedAt: new Date().toISOString(),
       });
 
-      // Billing reconciliation — B2B (ops increment) vs B2C (coin confirmation)
+      // B2B: increment usage count (SUCCESS-only counting)
       if (isB2b && b2bSuiteId && existingJob?.userId) {
-        // B2B: increment usage count (SUCCESS-only counting)
         try {
           await incrementB2bUsage(existingJob.userId, b2bSuiteId);
         } catch (err) {
@@ -131,27 +125,11 @@ export async function POST(request: NextRequest) {
             jobId: body.jobId,
             error: err,
           });
-          // Flag for reconciliation so ops that ran aren't lost from billing
           redis.set(
             `b2b:usage_failed:${body.jobId}`,
             JSON.stringify({ userId: existingJob.userId, suiteId: b2bSuiteId, ts: Date.now() }),
             { ex: 7 * 24 * 60 * 60 }, // 7 day TTL
           ).catch(() => {});
-        }
-      } else {
-        // B2C: confirm coin reservation (coins permanently deducted)
-        if (reservationId) {
-          await confirmReservation(reservationId).catch((err) =>
-            log.error('Failed to confirm reservation', { reservationId, error: err }),
-          );
-        }
-      }
-
-      // Report usage to Stripe metered billing (fire-and-forget, B2C only)
-      if (!isB2b) {
-        const coinCost = (existingJob?.options as Record<string, unknown> | null)?.coinCost as number ?? 0;
-        if (existingJob?.userId) {
-          reportStripeUsage(existingJob.userId, existingJob.toolId, coinCost);
         }
       }
 
@@ -172,13 +150,7 @@ export async function POST(request: NextRequest) {
         completedAt: new Date().toISOString(),
       });
 
-      // Release coin reservation (refund user, B2C only)
-      if (!isB2b && reservationId) {
-        await releaseReservation(reservationId).catch((err) =>
-          log.error('Failed to release reservation', { reservationId, error: err }),
-        );
-      }
-      // B2B: nothing to do on failure — failed executions are free
+      // B2B: failed executions are free — nothing to do on failure
 
       // Dispatch failure webhook notification (fire-and-forget)
       if (existingJob?.userId) {

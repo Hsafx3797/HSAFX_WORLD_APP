@@ -39,9 +39,8 @@ export const b2bPlans = pgTable('b2b_plans', {
   description: text('description'),
   priceMonthlyCents: bigint('price_monthly_cents', { mode: 'number' }),
   priceYearlyCents: bigint('price_yearly_cents', { mode: 'number' }),
-  stripeProductId: text('stripe_product_id'),
-  stripePriceIdMonthly: text('stripe_price_id_monthly'),
-  stripePriceIdYearly: text('stripe_price_id_yearly'),
+  polarProductIdMonthly: text('polar_product_id_monthly'),
+  polarProductIdYearly: text('polar_product_id_yearly'),
   isActive: boolean('is_active').notNull().default(true),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),
@@ -65,8 +64,7 @@ export const b2bSubscriptions = pgTable('b2b_subscriptions', {
   b2bPlanId: uuid('b2b_plan_id')
     .notNull()
     .references(() => b2bPlans.id, { onDelete: 'restrict' }),
-  stripeSubscriptionId: text('stripe_subscription_id').unique(),
-  stripeCustomerId: text('stripe_customer_id'),
+  polarSubscriptionId: text('polar_subscription_id').unique(),
   status: b2bSubscriptionStatusEnum('status').notNull(),
   billingCycle: billingIntervalEnum('billing_cycle').notNull(),
   currentPeriodStart: timestamp('current_period_start').notNull(),

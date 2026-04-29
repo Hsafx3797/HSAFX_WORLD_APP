@@ -3,7 +3,6 @@ import { userRouter } from './user';
 import { billingRouter } from './billing';
 import { toolsRouter } from './tools';
 import { adminRouter } from './admin';
-import { rewardsRouter } from './rewards';
 import { apiKeysRouter } from './api-keys';
 import { b2bRouter } from './b2b';
 
@@ -12,7 +11,6 @@ export const appRouter = router({
   billing: billingRouter,
   tools: toolsRouter,
   admin: adminRouter,
-  rewards: rewardsRouter,
   apiKeys: apiKeysRouter,
   b2b: b2bRouter,
 });

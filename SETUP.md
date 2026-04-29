@@ -74,16 +74,10 @@ cd ../..
 
 ### 4. Billing
 
-**Polar** (Subscriptions):
+**Polar** (Payments & Subscriptions):
 - Sign up at [polar.sh](https://polar.sh)
-- Create subscription plans
+- Create subscription plans and coin pack products
 - Copy API keys and webhook secret
-
-**Stripe** (Payments):
-- Sign up at [stripe.com](https://stripe.com)
-- Get API keys (test + live)
-- Setup webhook endpoint
-- Copy webhook signing secret
 
 ### 5. Storage (Cloudflare R2)
 - Sign up at [cloudflare.com](https://cloudflare.com)
@@ -230,16 +224,16 @@ PORT=3001 pnpm --filter @hsafx/web dev
 
 ## Next Steps
 
-1. **Read Documentation**: Start with [DOCUMENTATION_INDEX.md](docs/PLANNING/DOCUMENTATION_INDEX.md)
-2. **Implement Tools**: See [30_TOOLS_CATALOG.md](docs/PLANNING/30_TOOLS_CATALOG.md) for all 451 tools
+1. **Read Documentation**: Start with [docs/INDEX.md](docs/INDEX.md)
+2. **Understand Engines**: See [docs/BUILT/01_ENGINES.md](docs/BUILT/01_ENGINES.md) for all 30 engines
 3. **Setup Admin Panel**: Configure at `/admin`
 4. **Test Billing Flow**: Create test subscription
-5. **Deploy**: Follow [49_DEPLOYMENT_GUIDE.md](docs/PLANNING/49_DEPLOYMENT_GUIDE.md)
+5. **Deploy**: Follow [docs/BUILT/11_DEPLOYMENT.md](docs/BUILT/11_DEPLOYMENT.md)
 
 ## Getting Help
 
 - Check [README.md](README.md) for overview
-- Review planning docs in `docs/planning/`
+- Review documentation in `docs/BUILT/`
 - Email: support@hsafx.world
 
 ---

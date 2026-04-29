@@ -89,8 +89,8 @@ export default function AdminsPage() {
       render: (admin) => (
         <div className="flex items-center gap-3">
           <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
-            {admin.avatarUrl ? (
-              <img src={admin.avatarUrl} alt={admin.name} className="h-9 w-9 rounded-full object-cover" />
+            {admin.image ? (
+              <img src={admin.image} alt={admin.name} className="h-9 w-9 rounded-full object-cover" />
             ) : (
               <Shield className="h-4 w-4 text-primary" />
             )}

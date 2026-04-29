@@ -4,7 +4,7 @@
  * OKLCH color space utilities, contrast checking, and CSS variable helpers.
  * Uses culori for perceptually uniform color transformations.
  * 
- * @see docs/planning/32_THEME_SYSTEM.md Section 6
+ * @see docs/BUILT/09_THEME_SYSTEM.md
  */
 
 import { oklch, formatHex, formatCss, converter, parse } from 'culori';

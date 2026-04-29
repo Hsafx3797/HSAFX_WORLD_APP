@@ -4,7 +4,7 @@
  * Plan-based access control for theme features and presets.
  * Defines feature gates per plan tier.
  * 
- * @see docs/planning/32_THEME_SYSTEM.md Section 5
+ * @see docs/BUILT/09_THEME_SYSTEM.md
  */
 
 import type { PlanTier, ThemePreset, FontOption, ThemeIntent } from './types';

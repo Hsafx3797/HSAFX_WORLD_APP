@@ -1,15 +1,14 @@
 /**
  * GET /api/v1/account/usage
- * Returns usage statistics for the API key owner.
+ * Returns B2B usage statistics for the API key owner.
  * Requires scope: billing:read
  *
  * Query params:
  *   - period: 'day' | 'week' | 'month' (default: 'month')
- *   - toolId: filter by specific tool (optional)
  */
 
 import { NextRequest } from 'next/server';
-import { db, eq, and, gte, sql, toolExecutions, coinTransactions } from '@hsafx/db';
+import { db, eq, and, gte, sql, b2bUsage, b2bSuites } from '@hsafx/db';
 import {
   authenticateApiKey,
   requireScope,
@@ -45,69 +44,42 @@ export async function GET(request: NextRequest) {
   // 3. Parse params
   const { searchParams } = new URL(request.url);
   const period = searchParams.get('period') ?? 'month';
-  const toolId = searchParams.get('toolId');
   const periodStart = getPeriodStart(period);
 
   try {
-    // 4. Count executions
-    const baseConditions = [
-      eq(toolExecutions.userId, ctx.userId),
-      gte(toolExecutions.createdAt, periodStart),
-    ];
-    if (toolId) {
-      baseConditions.push(eq(toolExecutions.toolId, toolId));
-    }
-
-    const execStats = await db
+    // 4. Fetch B2B usage rows for this user in the requested period
+    const usageRows = await db
       .select({
-        total: sql<number>`count(*)`,
-        succeeded: sql<number>`count(*) filter (where ${toolExecutions.status} = 'succeeded')`,
-        failed: sql<number>`count(*) filter (where ${toolExecutions.status} = 'failed')`,
-        avgExecutionTime: sql<number>`avg(${toolExecutions.executionTime})`,
-        totalCoinsSpent: sql<number>`coalesce(sum(${toolExecutions.coinCost}), 0)`,
+        suiteId: b2bUsage.b2bSuiteId,
+        suiteName: b2bSuites.name,
+        suiteSlug: b2bSuites.slug,
+        usageCount: b2bUsage.usageCount,
+        periodStart: b2bUsage.periodStart,
+        periodEnd: b2bUsage.periodEnd,
       })
-      .from(toolExecutions)
-      .where(and(...baseConditions));
-
-    const stats = execStats[0] ?? {
-      total: 0,
-      succeeded: 0,
-      failed: 0,
-      avgExecutionTime: 0,
-      totalCoinsSpent: 0,
-    };
-
-    // 5. Coin transactions summary
-    const coinStats = await db
-      .select({
-        totalCredits: sql<number>`coalesce(sum(case when amount > 0 then amount else 0 end), 0)`,
-        totalDebits: sql<number>`coalesce(sum(case when amount < 0 then abs(amount) else 0 end), 0)`,
-      })
-      .from(coinTransactions)
+      .from(b2bUsage)
+      .innerJoin(b2bSuites, eq(b2bUsage.b2bSuiteId, b2bSuites.id))
       .where(
         and(
-          eq(coinTransactions.userId, ctx.userId),
-          gte(coinTransactions.createdAt, periodStart),
+          eq(b2bUsage.userId, ctx.userId),
+          gte(b2bUsage.periodStart, periodStart),
         ),
       );
 
-    const coins = coinStats[0] ?? { totalCredits: 0, totalDebits: 0 };
+    const totalOps = usageRows.reduce((sum, r) => sum + r.usageCount, 0);
 
     return apiResponse(
       {
         period,
         periodStart: periodStart.toISOString(),
-        executions: {
-          total: Number(stats.total),
-          succeeded: Number(stats.succeeded),
-          failed: Number(stats.failed),
-          avgExecutionTimeMs: Math.round(Number(stats.avgExecutionTime ?? 0)),
-        },
-        coins: {
-          spent: Number(stats.totalCoinsSpent),
-          credited: Number(coins.totalCredits),
-          debited: Number(coins.totalDebits),
-        },
+        totalOps,
+        suites: usageRows.map((r) => ({
+          suite: r.suiteSlug,
+          suiteName: r.suiteName,
+          ops: r.usageCount,
+          periodStart: r.periodStart.toISOString(),
+          periodEnd: r.periodEnd.toISOString(),
+        })),
       },
       ctx,
     );

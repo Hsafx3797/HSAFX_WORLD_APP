@@ -13,7 +13,6 @@ export interface ExecutionRecord {
   output: string;
   status: 'completed' | 'failed';
   error?: string;
-  coinsCharged: number;
   duration?: number;
   timestamp: number;
 }
@@ -26,7 +25,6 @@ export interface ExecutionState {
   currentStatus: 'idle' | 'running' | 'completed' | 'failed' | 'queued';
   currentError: string | null;
   currentJobId: string | null;
-  currentCoinsCharged: number;
 
   // History (ring buffer — last 50 executions per tool)
   history: Record<string, ExecutionRecord[]>;
@@ -39,7 +37,7 @@ export interface ExecutionState {
   setCurrentTool: (toolId: string) => void;
   setInput: (input: string) => void;
   startExecution: () => void;
-  completeExecution: (output: string, coinsCharged: number, duration?: number) => void;
+  completeExecution: (output: string, duration?: number) => void;
   failExecution: (error: string) => void;
   queueExecution: (jobId: string) => void;
 
@@ -64,7 +62,6 @@ const initialState = {
   currentStatus: 'idle' as const,
   currentError: null as string | null,
   currentJobId: null as string | null,
-  currentCoinsCharged: 0,
   history: {} as Record<string, ExecutionRecord[]>,
   undoStack: [] as string[],
   redoStack: [] as string[],
@@ -81,7 +78,6 @@ export const useExecutionStore = create<ExecutionState>()((set, get) => ({
       currentStatus: 'idle',
       currentError: null,
       currentJobId: null,
-      currentCoinsCharged: 0,
       undoStack: [],
       redoStack: [],
     }),
@@ -94,10 +90,9 @@ export const useExecutionStore = create<ExecutionState>()((set, get) => ({
       currentError: null,
       currentOutput: '',
       currentJobId: null,
-      currentCoinsCharged: 0,
     }),
 
-  completeExecution: (output, coinsCharged, duration) => {
+  completeExecution: (output, duration) => {
     const state = get();
     const toolId = state.currentToolId;
 
@@ -108,7 +103,6 @@ export const useExecutionStore = create<ExecutionState>()((set, get) => ({
         input: state.currentInput,
         output,
         status: 'completed',
-        coinsCharged,
         duration,
         timestamp: Date.now(),
       };
@@ -118,14 +112,12 @@ export const useExecutionStore = create<ExecutionState>()((set, get) => ({
       set({
         currentOutput: output,
         currentStatus: 'completed',
-        currentCoinsCharged: coinsCharged,
         history: { ...state.history, [toolId]: updatedHistory },
       });
     } else {
       set({
         currentOutput: output,
         currentStatus: 'completed',
-        currentCoinsCharged: coinsCharged,
       });
     }
   },
@@ -142,7 +134,6 @@ export const useExecutionStore = create<ExecutionState>()((set, get) => ({
         output: '',
         status: 'failed',
         error,
-        coinsCharged: 0,
         timestamp: Date.now(),
       };
       const toolHistory = state.history[toolId] ?? [];

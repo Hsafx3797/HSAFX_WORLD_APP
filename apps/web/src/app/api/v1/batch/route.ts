@@ -25,13 +25,10 @@ import {
   checkB2bQuota,
 } from '@/server/limits/b2b-quota-service';
 import { getEngine } from '@hsafx/tool-execution/engines';
-import { getUserPlan } from '@hsafx/api/helpers';
-import { isPlanAtLeast } from '@hsafx/shared/permissions';
 import { createLogger } from '@hsafx/shared/logger';
 import { ApiErrorCode } from '@hsafx/shared/errors';
 import {
   ENGINE_RUNTIME,
-  ENGINE_MIN_TIER,
   ENGINE_TO_CATEGORY,
   ALL_ENGINE_NAMES,
 } from '@/lib/engine-constants';
@@ -133,19 +130,6 @@ export async function POST(request: NextRequest) {
         return apiErrorResponse(ApiErrorCode.INVALID_FIELD, `operations[${i}]: "options" must be an object`, ctx, 400);
       }
     }
-    // Tier check
-    const requiredTier = ENGINE_MIN_TIER[op.engine];
-    if (requiredTier) {
-      const userPlan = await getUserPlan(ctx.userId);
-      if (!isPlanAtLeast(userPlan, requiredTier)) {
-        return apiErrorResponse(
-          ApiErrorCode.PLAN_REQUIRED,
-          `operations[${i}]: engine '${op.engine}' requires a ${requiredTier} or higher subscription`,
-          ctx,
-          403,
-        );
-      }
-    }
     // Node engine validation
     if (runtime === 'node') {
       const engine = getEngine(op.engine)!;
@@ -232,8 +216,6 @@ export async function POST(request: NextRequest) {
 
     const job = await createJob({
       engineName: op.engine,
-      toolId: `engine:${op.engine}`,
-      toolSlug: `engine:${op.engine}`,
       userId: ctx.userId,
       apiKeyId: ctx.keyId,
       input: op.input,

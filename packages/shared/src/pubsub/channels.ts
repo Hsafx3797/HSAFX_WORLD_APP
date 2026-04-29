@@ -4,8 +4,6 @@
  * Central registry of all event channels used across the platform.
  * Channels follow the pattern: {domain}:{event-type}
  *
- * Reference: docs/PLANNING/26_ADMIN_PANEL_SPECIFICATION.md §12
- * Reference: docs/PLANNING/10_SYSTEM_ARCHITECTURE.md §Pub/Sub
  */
 
 /** All available pub/sub channels */

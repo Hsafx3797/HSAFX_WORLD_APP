@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     if (search) {
       conditions.push(
         or(
-          ilike(users.fullName, `%${search}%`),
+          ilike(users.name, `%${search}%`),
           ilike(users.email, `%${search}%`),
         ),
       );
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
         id: b2bSubscriptions.id,
         userId: b2bSubscriptions.userId,
         userEmail: users.email,
-        userName: users.fullName,
+        userName: users.name,
         b2bPlanId: b2bSubscriptions.b2bPlanId,
         planName: b2bPlans.name,
         planSlug: b2bPlans.slug,

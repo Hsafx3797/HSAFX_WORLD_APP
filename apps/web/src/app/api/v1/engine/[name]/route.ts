@@ -30,13 +30,10 @@ import {
   B2bNoSubscriptionError,
 } from '@/server/limits/b2b-quota-service';
 import { getEngine } from '@hsafx/tool-execution/engines';
-import { getUserPlan } from '@hsafx/api/helpers';
-import { isPlanAtLeast } from '@hsafx/shared/permissions';
 import { createLogger } from '@hsafx/shared/logger';
 import { ApiErrorCode } from '@hsafx/shared/errors';
 import {
   ENGINE_RUNTIME,
-  ENGINE_MIN_TIER,
   ENGINE_TO_CATEGORY,
   ALL_ENGINE_NAMES,
 } from '@/lib/engine-constants';
@@ -84,21 +81,7 @@ export async function POST(
     }
   }
 
-  // 4. Plan-based access check
-  const requiredTier = ENGINE_MIN_TIER[engineName];
-  if (requiredTier) {
-    const userPlan = await getUserPlan(ctx.userId);
-    if (!isPlanAtLeast(userPlan, requiredTier)) {
-      return apiErrorResponse(
-        ApiErrorCode.PLAN_REQUIRED,
-        `Engine '${engineName}' requires a ${requiredTier} or higher subscription`,
-        ctx,
-        403,
-      );
-    }
-  }
-
-  // 5. Parse body
+  // 4. Parse body
   let body: { input: unknown; options?: unknown };
   try {
     body = await request.json();
@@ -234,8 +217,6 @@ export async function POST(
   // 11. Create async job
   const job = await createJob({
     engineName,
-    toolId: billingToolId,
-    toolSlug: billingToolId,
     userId: ctx.userId,
     apiKeyId: ctx.keyId,
     input: body.input,

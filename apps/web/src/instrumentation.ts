@@ -10,6 +10,11 @@ export async function register() {
   // Only validate on the Node.js server runtime (not Edge)
   if (process.env.NEXT_RUNTIME !== 'nodejs') return;
 
+  // Increase the default EventEmitter listener limit to suppress the MaxListenersExceededWarning
+  // that fires when many concurrent DB/HTTP requests share the same socket (Neon serverless).
+  const EventEmitter = (await import('events')).default;
+  EventEmitter.defaultMaxListeners = 50;
+
   // ── OpenTelemetry tracing (when OTEL_EXPORTER_OTLP_ENDPOINT is set) ──
   const { initTracing } = await import('./lib/telemetry');
   initTracing();
@@ -56,8 +61,6 @@ export async function register() {
   // Optional but recommended — warn if missing so bad config doesn't hide at runtime
   const recommended: { name: string; condition: () => boolean }[] = [
     { name: 'RESEND_API_KEY', condition: () => !!process.env.RESEND_API_KEY },
-    { name: 'STRIPE_SECRET_KEY', condition: () => !!process.env.STRIPE_SECRET_KEY },
-    { name: 'STRIPE_WEBHOOK_SECRET', condition: () => !!process.env.STRIPE_WEBHOOK_SECRET },
     { name: 'POLAR_ACCESS_TOKEN', condition: () => !!process.env.POLAR_ACCESS_TOKEN },
     { name: 'POLAR_WEBHOOK_SECRET', condition: () => !!process.env.POLAR_WEBHOOK_SECRET },
   ];

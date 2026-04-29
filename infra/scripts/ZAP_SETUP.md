@@ -21,8 +21,8 @@ Automated DAST (Dynamic Application Security Testing) using OWASP ZAP against HS
 # Scan web app (port 3000)
 .\infra\scripts\zap-scan.ps1 -Target "http://localhost:3000" -ApiKey "your-api-key"
 
-# Scan admin app (port 3001)
-.\infra\scripts\zap-scan.ps1 -Target "http://localhost:3001" -ApiKey "your-api-key"
+# Scan admin app (port 3002)
+.\infra\scripts\zap-scan.ps1 -Target "http://localhost:3002" -ApiKey "your-api-key"
 
 # Spider-only scan (faster, discovery only)
 .\infra\scripts\zap-scan.ps1 -Target "http://localhost:3000" -ScanType "spider" -ApiKey "key"
@@ -71,7 +71,7 @@ Reports are saved to `reports/security/<timestamp>/`:
 | App | URL | Notes |
 |-----|-----|-------|
 | Web | `http://localhost:3000` | Public-facing app, 30+ routes |
-| Admin | `http://localhost:3001` | Auth-protected, 38+ routes |
+| Admin | `http://localhost:3002` | Auth-protected, 38+ routes |
 | FastAPI | `http://localhost:8000` | Backend API, tool execution |
 
 ## Authenticated Scanning
@@ -84,7 +84,7 @@ For scanning auth-protected routes (admin), you can configure ZAP authentication
 ```powershell
 # Set up authentication context (example)
 $ctx = Invoke-RestMethod "$ZapHost/JSON/context/action/newContext/?apikey=$key&contextName=admin"
-Invoke-RestMethod "$ZapHost/JSON/authentication/action/setAuthenticationMethod/?apikey=$key&contextId=$($ctx.contextId)&authMethodName=formBasedAuthentication&authMethodConfigParams=loginUrl=http://localhost:3001/login&loginRequestData=email={%username%}%26password={%password%}"
+Invoke-RestMethod "$ZapHost/JSON/authentication/action/setAuthenticationMethod/?apikey=$key&contextId=$($ctx.contextId)&authMethodName=formBasedAuthentication&authMethodConfigParams=loginUrl=http://localhost:3002/login&loginRequestData=email={%username%}%26password={%password%}"
 ```
 
 ## GitHub Actions Integration

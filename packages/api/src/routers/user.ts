@@ -1,14 +1,35 @@
 import { z } from 'zod';
-import { scrypt, randomBytes, timingSafeEqual } from 'node:crypto';
-import { promisify } from 'node:util';
-import { router, protectedProcedure, adminProcedure } from '../trpc';
-import { users, userPreferences, userSettings, sessions, userOnboarding, plans, planLimits, oauthConnections, eq, and, ne, or, ilike } from '@hsafx/db/schema';
+import { hashPassword, verifyPassword } from 'better-auth/crypto';
+import { router, publicProcedure, protectedProcedure, adminProcedure } from '../trpc';
+import { users, userPreferences, userSettings, sessions, userOnboarding, plans, planLimits, oauthConnections, eq, and, ne, or, ilike, isNotNull } from '@hsafx/db/schema';
 import { TRPCError } from '@trpc/server';
 import { getUserPlan } from '../helpers/get-user-plan';
 
-const scryptAsync = promisify(scrypt);
-
 export const userRouter = router({
+  /** Public: check if an email is already registered (for signup form). */
+  checkEmailAvailability: publicProcedure
+    .input(z.object({ email: z.string().email().max(255) }))
+    .query(async ({ ctx, input }) => {
+      const normalized = input.email.toLowerCase().trim();
+      const existing = await ctx.db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.email, normalized))
+        .limit(1);
+      return { available: existing.length === 0 };
+    }),
+
+  checkUsernameAvailability: publicProcedure
+    .input(z.object({ username: z.string().min(3).max(30).regex(/^[a-z0-9_]+$/) }))
+    .query(async ({ ctx, input }) => {
+      const existing = await ctx.db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.username, input.username))
+        .limit(1);
+      return { available: existing.length === 0 };
+    }),
+
   me: protectedProcedure.query(async ({ ctx }) => {
     return ctx.user;
   }),
@@ -60,9 +81,9 @@ export const userRouter = router({
 
   updateProfile: protectedProcedure
     .input(z.object({
-      fullName: z.string().min(1).max(100).optional(),
+      name: z.string().min(1).max(100).optional(),
       username: z.string().min(3).max(30).regex(/^[a-z0-9_]+$/).optional(),
-      avatarUrl: z.string().url().optional(),
+      image: z.string().url().optional(),
       phoneNumber: z.string().max(20).optional().nullable(),
     }))
     .mutation(async ({ ctx, input }) => {
@@ -98,6 +119,7 @@ export const userRouter = router({
     .mutation(async ({ ctx, input }) => {
       const { extras, ...columns } = input;
 
+      // Read existing for merging jsonb extras
       const [existing] = await ctx.db
         .select()
         .from(userPreferences)
@@ -113,20 +135,15 @@ export const userRouter = router({
         ...(mergedPrefs !== undefined ? { preferences: mergedPrefs } : {}),
       };
 
-      if (existing) {
-        const [updated] = await ctx.db
-          .update(userPreferences)
-          .set(setData)
-          .where(eq(userPreferences.userId, ctx.user!.id))
-          .returning();
-        return updated;
-      } else {
-        const [created] = await ctx.db
-          .insert(userPreferences)
-          .values({ userId: ctx.user!.id, ...setData })
-          .returning();
-        return created;
-      }
+      const [result] = await ctx.db
+        .insert(userPreferences)
+        .values({ userId: ctx.user!.id, ...setData })
+        .onConflictDoUpdate({
+          target: userPreferences.userId,
+          set: setData,
+        })
+        .returning();
+      return result;
     }),
 
   updateSettings: protectedProcedure
@@ -139,6 +156,7 @@ export const userRouter = router({
     .mutation(async ({ ctx, input }) => {
       const { extras, ...columns } = input;
 
+      // Read existing for merging jsonb extras
       const [existing] = await ctx.db
         .select()
         .from(userSettings)
@@ -154,20 +172,15 @@ export const userRouter = router({
         ...(mergedSettings !== undefined ? { settings: mergedSettings } : {}),
       };
 
-      if (existing) {
-        const [updated] = await ctx.db
-          .update(userSettings)
-          .set(setData)
-          .where(eq(userSettings.userId, ctx.user!.id))
-          .returning();
-        return updated;
-      } else {
-        const [created] = await ctx.db
-          .insert(userSettings)
-          .values({ userId: ctx.user!.id, ...setData })
-          .returning();
-        return created;
-      }
+      const [result] = await ctx.db
+        .insert(userSettings)
+        .values({ userId: ctx.user!.id, ...setData })
+        .onConflictDoUpdate({
+          target: userSettings.userId,
+          set: setData,
+        })
+        .returning();
+      return result;
     }),
 
   list: adminProcedure
@@ -181,7 +194,7 @@ export const userRouter = router({
 
       const where = input.search
         ? or(
-            ilike(users.fullName, `%${input.search}%`),
+            ilike(users.name, `%${input.search}%`),
             ilike(users.email, `%${input.search}%`),
           )
         : undefined;
@@ -243,50 +256,36 @@ export const userRouter = router({
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.user!.id;
 
-      // Fetch current password hash
-      const [user] = await ctx.db
-        .select({ passwordHash: users.passwordHash })
-        .from(users)
-        .where(eq(users.id, userId))
+      // Fetch credential account (better-auth stores passwords in oauthConnections)
+      const [account] = await ctx.db
+        .select({ id: oauthConnections.id, password: oauthConnections.password })
+        .from(oauthConnections)
+        .where(and(eq(oauthConnections.userId, userId), eq(oauthConnections.providerId, 'credential'), isNotNull(oauthConnections.password)))
         .limit(1);
 
-      if (!user?.passwordHash) {
+      if (!account?.password) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: 'No password set. Use password reset instead.',
         });
       }
 
-      // Verify current password (scrypt format: hash:salt, both base64)
-      const [storedHash, storedSalt] = user.passwordHash.split(':');
-      if (!storedHash || !storedSalt) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Invalid password hash format',
-        });
-      }
-
-      const saltBuffer = Buffer.from(storedSalt, 'base64');
-      const derivedKey = (await scryptAsync(input.currentPassword, saltBuffer, 64)) as Buffer;
-      const storedKey = Buffer.from(storedHash, 'base64');
-
-      if (!timingSafeEqual(derivedKey, storedKey)) {
+      const isCorrect = await verifyPassword({ hash: account.password, password: input.currentPassword });
+      if (!isCorrect) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
           message: 'Current password is incorrect',
         });
       }
 
-      // Hash new password
-      const newSalt = randomBytes(16);
-      const newHash = (await scryptAsync(input.newPassword, newSalt, 64)) as Buffer;
-      const newPasswordHash = `${newHash.toString('base64')}:${newSalt.toString('base64')}`;
+      // Hash new password using better-auth format
+      const newPasswordHash = await hashPassword(input.newPassword);
 
-      // Update password
+      // Update password in credential account
       await ctx.db
-        .update(users)
-        .set({ passwordHash: newPasswordHash, updatedAt: new Date() })
-        .where(eq(users.id, userId));
+        .update(oauthConnections)
+        .set({ password: newPasswordHash, updatedAt: new Date() })
+        .where(and(eq(oauthConnections.userId, userId), eq(oauthConnections.providerId, 'credential')));
 
       // Invalidate all other sessions (keep current session active)
       if (ctx.session?.id) {
@@ -301,6 +300,31 @@ export const userRouter = router({
       }
 
       return { success: true };
+    }),
+
+  hasPassword: protectedProcedure.query(async ({ ctx }) => {
+    const [account] = await ctx.db
+      .select({ id: oauthConnections.id })
+      .from(oauthConnections)
+      .where(and(eq(oauthConnections.userId, ctx.user!.id), eq(oauthConnections.providerId, 'credential'), isNotNull(oauthConnections.password)))
+      .limit(1);
+    return { hasPassword: !!account };
+  }),
+
+  verifyCurrentPassword: protectedProcedure
+    .input(z.object({ password: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const [account] = await ctx.db
+        .select({ password: oauthConnections.password })
+        .from(oauthConnections)
+        .where(and(eq(oauthConnections.userId, ctx.user!.id), eq(oauthConnections.providerId, 'credential'), isNotNull(oauthConnections.password)))
+        .limit(1);
+      if (!account?.password) return { valid: false };
+      try {
+        return { valid: await verifyPassword({ hash: account.password, password: input.password }) };
+      } catch {
+        return { valid: false };
+      }
     }),
 
   // ─── Onboarding ───────────────────────────────────────────
@@ -323,7 +347,7 @@ export const userRouter = router({
   completeOnboarding: protectedProcedure
     .input(
       z.object({
-        selectedCategories: z.array(z.string()).min(1).max(8),
+        selectedCategories: z.array(z.string()).min(1).max(12),
         firstToolUsed: z.string().optional(),
       }),
     )
@@ -346,14 +370,6 @@ export const userRouter = router({
             firstToolUsed: input.firstToolUsed ?? null,
           },
         });
-
-      // Award 25 bonus coins via lazy-loaded reward service
-      try {
-        const { claimOnboardingBonus } = await import('@/server/rewards/onboarding-bonus');
-        await claimOnboardingBonus(userId);
-      } catch {
-        // Coin award is best-effort; don't fail the onboarding
-      }
 
       return { success: true };
     }),
@@ -396,7 +412,7 @@ export const userRouter = router({
         .limit(1);
 
       const current = (row?.checklistProgress ?? {}) as Record<string, boolean>;
-      if (current[input.step]) return { alreadyCompleted: true, coinsAwarded: 0 };
+      if (current[input.step]) return { alreadyCompleted: true };
 
       const updated = { ...current, [input.step]: true };
 
@@ -411,15 +427,7 @@ export const userRouter = router({
           .values({ userId, checklistProgress: updated });
       }
 
-      // Award 5 coins
-      try {
-        const { claimChecklistBonus } = await import('@/server/rewards/checklist-bonus');
-        await claimChecklistBonus(userId, input.step);
-      } catch {
-        // Best-effort
-      }
-
-      return { alreadyCompleted: false, coinsAwarded: 5 };
+      return { alreadyCompleted: false };
     }),
 
   // ─── Account Deletion ────────────────────────────────────
@@ -436,26 +444,18 @@ export const userRouter = router({
       const userId = ctx.user!.id;
 
       // Verify password before allowing deletion
-      const [user] = await ctx.db
-        .select({ passwordHash: users.passwordHash })
-        .from(users)
-        .where(eq(users.id, userId))
+      const [account] = await ctx.db
+        .select({ password: oauthConnections.password })
+        .from(oauthConnections)
+        .where(and(eq(oauthConnections.userId, userId), eq(oauthConnections.providerId, 'credential'), isNotNull(oauthConnections.password)))
         .limit(1);
 
-      if (!user?.passwordHash) {
+      if (!account?.password) {
         throw new TRPCError({ code: 'BAD_REQUEST', message: 'No password set on this account.' });
       }
 
-      const [storedHash, storedSalt] = user.passwordHash.split(':');
-      if (!storedHash || !storedSalt) {
-        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Invalid password hash format' });
-      }
-
-      const saltBuffer = Buffer.from(storedSalt, 'base64');
-      const derivedKey = (await scryptAsync(input.password, saltBuffer, 64)) as Buffer;
-      const storedKey = Buffer.from(storedHash, 'base64');
-
-      if (!timingSafeEqual(derivedKey, storedKey)) {
+      const isValid = await verifyPassword({ hash: account.password, password: input.password });
+      if (!isValid) {
         throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Incorrect password.' });
       }
 
@@ -497,8 +497,8 @@ export const userRouter = router({
     const rows = await ctx.db
       .select({
         id: oauthConnections.id,
-        provider: oauthConnections.provider,
-        providerUserId: oauthConnections.providerUserId,
+        provider: oauthConnections.providerId,
+        providerUserId: oauthConnections.accountId,
         createdAt: oauthConnections.createdAt,
       })
       .from(oauthConnections)
@@ -518,7 +518,7 @@ export const userRouter = router({
         .where(eq(users.id, userId));
 
       const linkedAccounts = await ctx.db
-        .select({ id: oauthConnections.id, provider: oauthConnections.provider })
+        .select({ id: oauthConnections.id, provider: oauthConnections.providerId })
         .from(oauthConnections)
         .where(eq(oauthConnections.userId, userId));
 
@@ -535,7 +535,7 @@ export const userRouter = router({
 
       const deleted = await ctx.db
         .delete(oauthConnections)
-        .where(and(eq(oauthConnections.userId, userId), eq(oauthConnections.provider, input.provider)))
+        .where(and(eq(oauthConnections.userId, userId), eq(oauthConnections.providerId, input.provider)))
         .returning({ id: oauthConnections.id });
 
       if (deleted.length === 0) {

@@ -26,48 +26,48 @@ Each engine exposes `execute(input, options)` and runs on one of 3 server backen
 
 ### Execution Backends (ALL Server-Side)
 
-| Backend  | Service       | Protocol      | Engines |
-|----------|---------------|---------------|---------|
-| Rust     | Separate HTTP | `X-Internal-Secret` | 9 engines: case, wrap, filter, transform, encode, hash, counter, unicode, generate-data |
-| Node.js  | Next.js process | Direct import | 11 engines: comment, markup, convert, format, schema, diff, api, generate-web, validate, calculate, unit |
-| FastAPI  | Separate HTTP | `X-Internal-Secret` | 10 engines: image, video, audio, pdf, document, archive, file, font, tracking, cheque |
+| Backend | Service         | Protocol            | Engines                                                                                                  |
+| ------- | --------------- | ------------------- | -------------------------------------------------------------------------------------------------------- |
+| Rust    | Separate HTTP   | `X-Internal-Secret` | 9 engines: case, wrap, filter, transform, encode, hash, counter, unicode, generate-data                  |
+| Node.js | Next.js process | Direct import       | 11 engines: comment, markup, convert, format, schema, diff, api, generate-web, validate, calculate, unit |
+| FastAPI | Separate HTTP   | `X-Internal-Secret` | 10 engines: image, video, audio, pdf, document, archive, file, font, tracking, cheque                    |
 
 **NOTHING runs client-side. The API IS the product.**
 
 ### Engine List (30 Total)
 
-| #  | Engine          | Backend  | What It Does                          |
-|----|-----------------|----------|---------------------------------------|
-| 1  | `case`          | Rust     | Case conversions (snake, camel, etc.) |
-| 2  | `wrap`          | Rust     | Text wrapping (quotes, brackets, etc.)|
-| 3  | `filter`        | Rust     | Remove/extract/keep text patterns     |
-| 4  | `transform`     | Rust     | Reverse/sort/shuffle/pad/join         |
-| 5  | `encode`        | Rust     | Base64/hex/URL/ROT13/morse/etc.       |
-| 6  | `hash`          | Rust     | SHA/MD5/CRC/HMAC/checksum             |
-| 7  | `counter`       | Rust     | Word/char/line/frequency counts       |
-| 8  | `unicode`       | Rust     | Unicode transforms (zalgo, fullwidth) |
-| 9  | `generate-data` | Rust     | UUID/password/nanoid/person/etc.      |
-| 10 | `comment`       | Node.js  | Add/remove comments (37 languages)    |
-| 11 | `markup`        | Node.js  | HTML/MD/BBCode/LaTeX tag wrapping     |
-| 12 | `convert`       | Node.js  | JSON↔YAML↔XML↔CSV↔TOML converters    |
-| 13 | `format`        | Node.js  | Format/minify SQL/JSON/CSS/GraphQL    |
-| 14 | `schema`        | Node.js  | JSON Schema↔TypeScript↔Zod↔Joi       |
-| 15 | `diff`          | Node.js  | Text/schema/OpenAPI diff              |
-| 16 | `api`           | Node.js  | curl parse, JWT decode, URL parse     |
-| 17 | `generate-web`  | Node.js  | CSS generators, QR, SEO, lorem        |
-| 18 | `validate`      | Node.js  | 39 format validators (email, UUID, etc.)|
-| 19 | `calculate`     | Node.js  | Expression, financial, health calcs   |
-| 20 | `unit`          | Node.js  | Unit conversions (length, weight, etc.)|
-| 21 | `image`         | FastAPI  | Resize, crop, convert, watermark (19 ops) |
-| 22 | `video`         | FastAPI  | Convert, trim, extract audio (12 ops) |
-| 23 | `audio`         | FastAPI  | Convert, normalize, split (12 ops)    |
-| 24 | `pdf`           | FastAPI  | Merge, split, compress, OCR (27 ops)  |
-| 25 | `document`      | FastAPI  | DOCX↔PDF, EPUB, markdown (15 ops)     |
-| 26 | `archive`       | FastAPI  | Zip, tar, 7z, extract (8 ops)         |
-| 27 | `file`          | FastAPI  | Metadata extraction (5 ops)           |
-| 28 | `font`          | FastAPI  | Convert, subset, WOFF2 (4 ops)        |
-| 29 | `tracking`      | FastAPI  | Container/vessel/flight tracking      |
-| 30 | `cheque`        | FastAPI  | Multi-currency cheque generation      |
+| #   | Engine          | Backend | What It Does                              |
+| --- | --------------- | ------- | ----------------------------------------- |
+| 1   | `case`          | Rust    | Case conversions (snake, camel, etc.)     |
+| 2   | `wrap`          | Rust    | Text wrapping (quotes, brackets, etc.)    |
+| 3   | `filter`        | Rust    | Remove/extract/keep text patterns         |
+| 4   | `transform`     | Rust    | Reverse/sort/shuffle/pad/join             |
+| 5   | `encode`        | Rust    | Base64/hex/URL/ROT13/morse/etc.           |
+| 6   | `hash`          | Rust    | SHA/MD5/CRC/HMAC/checksum                 |
+| 7   | `counter`       | Rust    | Word/char/line/frequency counts           |
+| 8   | `unicode`       | Rust    | Unicode transforms (zalgo, fullwidth)     |
+| 9   | `generate-data` | Rust    | UUID/password/nanoid/person/etc.          |
+| 10  | `comment`       | Node.js | Add/remove comments (37 languages)        |
+| 11  | `markup`        | Node.js | HTML/MD/BBCode/LaTeX tag wrapping         |
+| 12  | `convert`       | Node.js | JSON↔YAML↔XML↔CSV↔TOML converters         |
+| 13  | `format`        | Node.js | Format/minify SQL/JSON/CSS/GraphQL        |
+| 14  | `schema`        | Node.js | JSON Schema↔TypeScript↔Zod↔Joi            |
+| 15  | `diff`          | Node.js | Text/schema/OpenAPI diff                  |
+| 16  | `api`           | Node.js | curl parse, JWT decode, URL parse         |
+| 17  | `generate-web`  | Node.js | CSS generators, QR, SEO, lorem            |
+| 18  | `validate`      | Node.js | 39 format validators (email, UUID, etc.)  |
+| 19  | `calculate`     | Node.js | Expression, financial, health calcs       |
+| 20  | `unit`          | Node.js | Unit conversions (length, weight, etc.)   |
+| 21  | `image`         | FastAPI | Resize, crop, convert, watermark (19 ops) |
+| 22  | `video`         | FastAPI | Convert, trim, extract audio (12 ops)     |
+| 23  | `audio`         | FastAPI | Convert, normalize, split (12 ops)        |
+| 24  | `pdf`           | FastAPI | Merge, split, compress, OCR (27 ops)      |
+| 25  | `document`      | FastAPI | DOCX↔PDF, EPUB, markdown (15 ops)         |
+| 26  | `archive`       | FastAPI | Zip, tar, 7z, extract (8 ops)             |
+| 27  | `file`          | FastAPI | Metadata extraction (5 ops)               |
+| 28  | `font`          | FastAPI | Convert, subset, WOFF2 (4 ops)            |
+| 29  | `tracking`      | FastAPI | Container/vessel/flight tracking          |
+| 30  | `cheque`        | FastAPI | Multi-currency cheque generation          |
 
 ### How It Works
 
@@ -81,7 +81,7 @@ execute('comment', 'const x = 1;', { language: 'javascript', style: 'line', acti
 POST http://rust-service:3001/execute
 { "engine": "case", "input": "hello world", "options": { "separator": "_", "wordCase": "lower" } }
 
-// FastAPI media engines — HTTP call to FastAPI service  
+// FastAPI media engines — HTTP call to FastAPI service
 POST http://fastapi:8000/execute/image
 { "input": { "file_url": "..." }, "options": { "operation": "resize", "width": 800, "height": 600 } }
 ```
@@ -100,7 +100,7 @@ POST http://fastapi:8000/execute/image
 
 ## 3. API Surface (B2B Only)
 
-### Target API (Being Built)
+### Target API (Built)
 
 ```
 POST /api/v1/engine/{name}          ← Execute any of 30 engines
@@ -157,8 +157,8 @@ backend/fastapi/src/
   routes/engine.py   ← POST /execute/{engine} (unified media engine route)
 
 backend/rust/
-  text-tools/        ← Existing ~170 pure functions (Rust service NOT YET BUILT)
-  engine-service/    ← PLANNED: Axum HTTP service wrapping text-tools (does not exist yet)
+  text-tools/        ← ~170 pure Rust functions (used by engine-service)
+  engine-service/    ← BUILT: Axum HTTP service (src/main.rs, src/engines/, Dockerfile). POST /execute + GET /health
 
 packages/db/src/schema/
   b2b.ts             ← 7 B2B tables (plans, subscriptions, suites, quotas, usage, categories, overrides)
@@ -198,7 +198,7 @@ pnpm turbo build
 1. **Never use `npx tsx`** — use the full path shown above
 2. **ALL engines are server-side** — no client-side execution, no WASM, no browser
 3. **NO presets, NO tool IDs** — engines accept raw parameters only
-4. **Documentation lives in `docs/BUILT/`, `docs/REFERENCE/`, `docs/ROADMAP/`** — `docs/PLANNING/` is archived in DUST_BIN
+4. **Documentation lives in `docs/BUILT/`, `docs/REFERENCE/`, `docs/ROADMAP/`** — old planning docs are in `docs/DUST_BIN/PLANNING_ARCHIVE/`
 5. **3 execution backends**: Rust HTTP service, Node.js direct import, FastAPI HTTP service
 6. **B2B billing only** — no B2C coin system for engine execution
 
@@ -209,6 +209,6 @@ pnpm turbo build
 - Don't say "client-side" — ALL engines are server-side
 - Don't add presets or tool IDs — they're dead
 - Don't reference executor.ts — it's deleted
-- Don't add category routes — they're deleted  
+- Don't add category routes — they're deleted
 - Don't import from `@hsafx/tool-definitions` — package is deleted
 - Don't add B2C coin billing for engine execution — B2B ops billing only
