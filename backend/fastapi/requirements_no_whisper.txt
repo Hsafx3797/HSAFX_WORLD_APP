@@ -42,4 +42,4 @@ pytest-cov==6.0.0
 httpx-sse==0.4.0
 black==24.1.1
 ruff==0.1.14
-mypy==1.8.0
+mypy==2.4.1
