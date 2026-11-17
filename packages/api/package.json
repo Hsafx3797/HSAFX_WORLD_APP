@@ -22,7 +22,7 @@
     "@hsafx/shared": "workspace:*",
     "@hsafx/tool-execution": "workspace:*",
     "@polar-sh/sdk": "^0.43.0",
-    "@trpc/server": "^11.0.0",
+    "@trpc/server": "^11.28.1",
     "superjson": "^2.2.1",
     "zod": "^3.22.4"
   },
