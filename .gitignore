@@ -106,3 +106,7 @@ folders.txt
 # Graphify tool cache
 graphify-out/
 .graphify/
+
+# Graphify tool cache
+graphify-out/
+.graphify/
