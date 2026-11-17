@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@hsafx/shared": "workspace:*",
-    "@neondatabase/serverless": "^0.10.0",
+    "@neondatabase/serverless": "^1.2.1",
     "drizzle-orm": "^0.42.0",
     "drizzle-zod": "^0.6.0",
     "zod": "^3.25.0"
