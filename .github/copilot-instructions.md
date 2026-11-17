@@ -212,3 +212,9 @@ pnpm turbo build
 - Don't add category routes — they're deleted
 - Don't import from `@hsafx/tool-definitions` — package is deleted
 - Don't add B2C coin billing for engine execution — B2B ops billing only
+
+## graphify
+
+Before answering architecture or codebase questions, read `graphify-out/GRAPH_REPORT.md` if it exists.
+If `graphify-out/wiki/index.md` exists, navigate it for deep questions.
+Type `/graphify` in Copilot Chat to build or update the knowledge graph.

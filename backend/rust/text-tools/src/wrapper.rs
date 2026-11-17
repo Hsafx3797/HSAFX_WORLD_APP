@@ -1,4 +1,4 @@
-#[cfg(feature = "wasm")]
+﻿#[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::*;
 
 /// Wrap text with prefix and suffix

@@ -102,3 +102,7 @@ docs/
 
 # Stale docs / temp files
 folders.txt
+
+# Graphify tool cache
+graphify-out/
+.graphify/
