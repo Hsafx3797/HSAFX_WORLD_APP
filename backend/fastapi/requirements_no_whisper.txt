@@ -30,7 +30,7 @@ rarfile==4.2              # RAR archive support (needs unrar binary)
 qrcode==7.4.2
 fastavro==1.9.7
 pyarrow==18.1.0
-pymongo==4.12.1            # BSON decode support
+pymongo==4.20.0            # BSON decode support
 sentry-sdk[fastapi]==2.21.0
 structlog==25.5.0
 prometheus-client==0.23.1

@@ -62,7 +62,7 @@ qrcode==7.4.2
 # Data Format Converters (Avro / Parquet / BSON)
 fastavro==1.9.7
 pyarrow==18.1.0
-pymongo==4.12.1            # BSON decode support
+pymongo==4.20.0            # BSON decode support
 
 # Speech-to-Text (optional — large model)
 openai-whisper==20240930
