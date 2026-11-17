@@ -19,7 +19,7 @@
     "@hsafx/schemas": "workspace:*",
     "@hsafx/shared": "workspace:*",
     "@hsafx/theme": "workspace:*",
-    "@sentry/nextjs": "^10.38.0",
+    "@sentry/nextjs": "^11.12.0",
     "@tanstack/react-query": "^5.75.0",
     "better-auth": "^1.4.0",
     "class-variance-authority": "^0.7.1",
